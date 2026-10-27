@@ -45,6 +45,17 @@ function rationaleProblem(r: unknown): string | null {
   return null;
 }
 
+// What is wrong with one Node of a layer, or null when it is fine. `seen` holds the ids already taken on that layer.
+// The same rules apply to a file edited by hand and to what the builder proposes.
+export function nodeProblem(layer: string, n: unknown, seen: Set<string>): string | null {
+  return !isObject(n) ? "must be an object"
+    : !isNonEmptyString(n.id) ? '"id" must be a non-empty string'
+    : seen.has(n.id as string) ? `duplicate id "${n.id}"`
+    : !isNonEmptyString(n.title) ? '"title" must be a non-empty string'
+    : n.traces !== undefined && !(Array.isArray(n.traces) && n.traces.every(isNonEmptyString)) ? '"traces" must be an array of non-empty strings'
+    : layerChecks[layer](n) ?? rationaleProblem(n.rationale);
+}
+
 function parseLayer(layer: string, source: string, file: string): AuthoredLayer {
   const out: AuthoredLayer = { nodes: [], errors: [] };
   const fail = (message: string) => out.errors.push({ file, message });
@@ -61,12 +72,7 @@ function parseLayer(layer: string, source: string, file: string): AuthoredLayer 
   }
   const seen = new Set<string>();
   for (const [i, n] of doc.nodes.entries()) {
-    const problem = !isObject(n) ? "must be an object"
-      : !isNonEmptyString(n.id) ? '"id" must be a non-empty string'
-      : seen.has(n.id as string) ? `duplicate id "${n.id}"`
-      : !isNonEmptyString(n.title) ? '"title" must be a non-empty string'
-      : n.traces !== undefined && !(Array.isArray(n.traces) && n.traces.every(isNonEmptyString)) ? '"traces" must be an array of non-empty strings'
-      : layerChecks[layer](n) ?? rationaleProblem(n.rationale);
+    const problem = nodeProblem(layer, n, seen);
     if (problem) {
       fail(`nodes[${i}]: ${problem}`);
       continue;

@@ -25,6 +25,7 @@ export async function startCore({ port, adapter = createClaudeAdapter() }: { por
     projects: new Map<string, Project>(),
     recordings: new Map<string, unknown>(),
     permissions: createBroker(),
+    proposals: new Map(),
     send: (res, status, body, headers = {}) => {
       res.writeHead(status, { "content-type": "application/json", ...headers });
       res.end(JSON.stringify(body));

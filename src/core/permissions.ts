@@ -9,7 +9,7 @@ export type Decision = { behavior: "allow" } | { behavior: "deny"; message: stri
 
 const MAX_PENDING = 20; // requests one conversation may have waiting at once
 
-type Conversation = { secret: string; emit: (event: object) => void; pending: Set<string> };
+type Conversation = { project: string; secret: string; emit: (event: object) => void; pending: Set<string> };
 type Request = { conversation: Conversation; resolve: (decision: Decision) => void };
 
 const sameSecret = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
@@ -20,10 +20,10 @@ export function createBroker() {
   let counter = 0;
 
   return {
-    // A conversation starts. `emit` sends an event to the person's chat stream.
-    open(emit: (event: object) => void) {
+    // A conversation starts, about one Project. `emit` sends an event to the person's chat stream.
+    open(emit: (event: object) => void, project: string) {
       const token = randomBytes(16).toString("hex");
-      const conversation: Conversation = { secret: randomBytes(16).toString("hex"), emit, pending: new Set() };
+      const conversation: Conversation = { project, secret: randomBytes(16).toString("hex"), emit, pending: new Set() };
       conversations.set(token, conversation);
       return {
         token,
@@ -40,6 +40,12 @@ export function createBroker() {
     },
 
     isOpen: (token: string) => conversations.has(token),
+
+    // What the builder's tools need to know about the conversation they belong to.
+    conversationOf(token: string): { project: string; secret: string; emit: (event: object) => void } | undefined {
+      const c = conversations.get(token);
+      return c && { project: c.project, secret: c.secret, emit: c.emit };
+    },
 
     // The builder asks for permission. Resolves when the person answers; undefined if the conversation is not running.
     // `gaveUp` fires when the builder stops waiting (Claude Code drops a request that goes unanswered for too long):

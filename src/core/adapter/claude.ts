@@ -70,7 +70,11 @@ export function createClaudeAdapter(spawnFn: SpawnFn = realSpawn): Adapter {
       const args = ["-p", "--output-format", "stream-json", "--verbose"];
       if (sessionId) args.push("--resume", sessionId);
       // Permission requests that the person's own rules do not settle go to aidea's tool instead of being denied.
-      if (permission) args.push("--mcp-config", permission.mcpConfig, "--permission-prompt-tool", permission.tool);
+      if (permission) {
+        args.push("--mcp-config", permission.mcpConfig, "--permission-prompt-tool", permission.tool);
+        // aidea's own tools that only create Proposals write nothing, so they need no card. The person's deny rules still win.
+        if (permission.allowedTools.length) args.push("--allowedTools", permission.allowedTools.join(","));
+      }
       const child = spawnFn(args, cwd);
 
       const lines = createInterface({ input: child.stdout! });

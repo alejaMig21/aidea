@@ -88,7 +88,8 @@ test("Claude Code is launched unmodified, in the Project folder, with the messag
   const message = "-p; rm -rf $(whoami) `id`";
   await chat({ project: shop, message }, "real-ok.jsonl");
   // Everything but the pair of flags that routes permission requests to aidea (checked in the next test).
-  const withoutPermissionFlags = (args: string[]) => args.filter((a, i) => !["--mcp-config", "--permission-prompt-tool"].includes(a) && !["--mcp-config", "--permission-prompt-tool"].includes(args[i - 1]));
+  const aideaFlags = ["--mcp-config", "--permission-prompt-tool", "--allowedTools"];
+  const withoutPermissionFlags = (args: string[]) => args.filter((a, i) => !aideaFlags.includes(a) && !aideaFlags.includes(args[i - 1]));
   assert.deepEqual(withoutPermissionFlags(calls[0].args), ["-p", "--output-format", "stream-json", "--verbose"]);
   assert.equal(calls[0].cwd, shop);
   assert.equal(calls[0].stdin, message);
@@ -106,6 +107,10 @@ test("permission requests are routed to aidea's own tool, whose address belongs 
   const url: string = config.mcpServers.aidea.url;
   assert.match(url, /^http:\/\/127\.0\.0\.1:\d+\/mcp\/[0-9a-f]{32}$/);
   assert.ok(!args.includes("--bare") && !args.includes("--strict-mcp-config")); // the person's own servers and login stay in use
+
+  // aidea's own tools that only create Proposals need no permission card; nothing else is pre-approved.
+  const allowed = args[args.indexOf("--allowedTools") + 1].split(",");
+  assert.deepEqual(allowed.sort(), ["mcp__aidea__list_proposals", "mcp__aidea__propose_add_node", "mcp__aidea__propose_remove_node", "mcp__aidea__propose_update_node"]);
 
   await chat({ project: shop, message: "two" }, "real-ok.jsonl");
   assert.notEqual(JSON.parse(calls[0].args[calls[0].args.indexOf("--mcp-config") + 1]).mcpServers.aidea.url, url);

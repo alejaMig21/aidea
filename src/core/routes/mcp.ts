@@ -1,21 +1,62 @@
-// aidea's own MCP server, as small as it can be: one tool, `approve`, which Claude Code calls (through
-// --permission-prompt-tool) when a tool call needs the person's permission. Plain JSON over HTTP, one message per request.
-// The address contains the token of a running conversation, so only the Claude Code process we started can use it.
+// aidea's own MCP server, as small as it can be. Claude Code (started by aidea) uses it for two things:
+//  - `approve`: Claude Code's permission prompt, when a tool call needs the person's permission (ticket 07);
+//  - the builder's tools: propose changes to the authored layers and list the proposals (ticket 08). The builder never
+//    writes those files itself: its tools only create pending Proposals, and the person decides.
+// Plain JSON over HTTP, one message per request. The address contains the token of a running conversation, so only
+// the Claude Code process we started can use it.
+import { publicView, propose } from "../proposals.ts";
+import type { Proposal } from "../proposals.ts";
 import type { Handler } from "../types.ts";
 
 const MAX_MCP_BODY_BYTES = 4 * 1024 * 1024; // a request to write a file carries the whole content
-const TOOL = {
-  name: "approve",
-  description: "Asks the person whether Claude may use a tool. Used by Claude Code's permission prompt.",
-  inputSchema: {
-    type: "object",
-    properties: { tool_name: { type: "string" }, input: { type: "object" }, tool_use_id: { type: "string" } },
-    required: ["tool_name", "input"],
+
+const LAYERS = ["business", "requirements", "architecture"];
+const NODE_HELP =
+  "A Node has a unique `id`, a `title` and a `rationale` { why, rejected: [{ option, reason }] } that explains the decision and the alternatives " +
+  "that were rejected. Business Nodes also need `block` (one of the nine Business Model Canvas blocks, such as \"value propositions\"); " +
+  "requirements Nodes need `as`, `want` and `so`; architecture Nodes need `technology` and may have `parent`. Any Node may have " +
+  "`traces`: the ids of the Nodes in the layer below that realise it.";
+
+const TOOLS = [
+  {
+    name: "approve",
+    description: "Asks the person whether Claude may use a tool. Used by Claude Code's permission prompt.",
+    inputSchema: {
+      type: "object",
+      properties: { tool_name: { type: "string" }, input: { type: "object" }, tool_use_id: { type: "string" } },
+      required: ["tool_name", "input"],
+    },
   },
-};
+  {
+    name: "propose_add_node",
+    description: `Proposes adding a Node to an authored layer. Nothing changes until the person accepts it. ${NODE_HELP}`,
+    inputSchema: { type: "object", properties: { layer: { type: "string", enum: LAYERS }, node: { type: "object" } }, required: ["layer", "node"] },
+  },
+  {
+    name: "propose_update_node",
+    description: "Proposes changing fields of an existing Node (give only the fields that change; the id cannot change). Nothing changes until the person accepts it.",
+    inputSchema: {
+      type: "object",
+      properties: { layer: { type: "string", enum: LAYERS }, id: { type: "string" }, changes: { type: "object" } },
+      required: ["layer", "id", "changes"],
+    },
+  },
+  {
+    name: "propose_remove_node",
+    description: "Proposes removing a Node from an authored layer. Nothing changes until the person accepts it.",
+    inputSchema: { type: "object", properties: { layer: { type: "string", enum: LAYERS }, id: { type: "string" } }, required: ["layer", "id"] },
+  },
+  {
+    name: "list_proposals",
+    description: "Lists the proposals made for this Project and whether the person has accepted, rejected or not yet decided each one.",
+    inputSchema: { type: "object", properties: {} },
+  },
+];
 
 const rpcError = (id: unknown, code: number, message: string) => ({ jsonrpc: "2.0", id, error: { code, message } });
 const rpcResult = (id: unknown, result: unknown) => ({ jsonrpc: "2.0", id, result });
+// A tool that ran but did not succeed answers with isError, so the builder reads the reason and can try again.
+const toolText = (id: unknown, text: string, isError = false) => rpcResult(id, { content: [{ type: "text", text }], ...(isError ? { isError } : {}) });
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
 const handler: Handler = async (req, res, core) => {
@@ -50,21 +91,48 @@ const handler: Handler = async (req, res, core) => {
   } else if (method === "ping") {
     core.send(res, 200, rpcResult(id, {}));
   } else if (method === "tools/list") {
-    core.send(res, 200, rpcResult(id, { tools: [TOOL] }));
+    core.send(res, 200, rpcResult(id, { tools: TOOLS }));
   } else if (method === "tools/call") {
     const args = isObject(params.arguments) ? params.arguments : {};
-    // The person approves exactly what the card shows, so a request without a proper input is refused, never guessed.
-    if (params.name !== TOOL.name || typeof args.tool_name !== "string" || !isObject(args.input)) {
-      core.send(res, 200, rpcError(id, -32602, "Call approve with a tool_name and an input object"));
-      return true;
+    const name = params.name;
+
+    if (name === "approve") {
+      // The person approves exactly what the card shows, so a request without a proper input is refused, never guessed.
+      if (typeof args.tool_name !== "string" || !isObject(args.input)) {
+        core.send(res, 200, rpcError(id, -32602, "Call approve with a tool_name and an input object"));
+        return true;
+      }
+      // If Claude Code drops this request before it is answered, the connection closes: that withdraws the card.
+      const gaveUp = new AbortController();
+      res.on("close", () => gaveUp.abort());
+      const decision = (await core.permissions.ask(token, args.tool_name, args.input, gaveUp.signal)) ?? { behavior: "deny" as const, message: "The conversation is not running" };
+      // Claude Code expects the decision as JSON text: { behavior: "allow", updatedInput } or { behavior: "deny", message }.
+      const text = JSON.stringify(decision.behavior === "allow" ? { behavior: "allow", updatedInput: args.input } : decision);
+      core.send(res, 200, rpcResult(id, { content: [{ type: "text", text }] }));
+    } else if (typeof name === "string" && TOOLS.some((t) => t.name === name)) {
+      const conversation = core.permissions.conversationOf(token);
+      const project = conversation && core.projects.get(conversation.project);
+      if (!conversation || !project) {
+        core.send(res, 200, toolText(id, "The Project is not open", true));
+        return true;
+      }
+      if (name === "list_proposals") {
+        const mine = [...core.proposals.values()].filter((p) => p.project === project.id).map(publicView);
+        core.send(res, 200, toolText(id, JSON.stringify({ proposals: mine })));
+        return true;
+      }
+      const kind: Proposal["kind"] = name === "propose_add_node" ? "add" : name === "propose_update_node" ? "update" : "remove";
+      const result = propose(core.proposals, project, conversation.secret, kind, { layer: args.layer, node: args.node, id: args.id, changes: args.changes });
+      if ("error" in result) {
+        core.send(res, 200, toolText(id, result.error, true));
+        return true;
+      }
+      // The person's interface hears about it in the chat stream, with the secret that lets it decide.
+      conversation.emit({ type: "proposal", ...result.proposal });
+      core.send(res, 200, toolText(id, JSON.stringify({ proposal: result.proposal.id, status: "pending", message: "The person will review it. Nothing changes until they accept." })));
+    } else {
+      core.send(res, 200, rpcError(id, -32602, `Unknown tool: ${String(name)}`));
     }
-    // If Claude Code drops this request before it is answered, the connection closes: that withdraws the card.
-    const gaveUp = new AbortController();
-    res.on("close", () => gaveUp.abort());
-    const decision = (await core.permissions.ask(token, args.tool_name, args.input, gaveUp.signal)) ?? { behavior: "deny" as const, message: "The conversation is not running" };
-    // Claude Code expects the decision as JSON text: { behavior: "allow", updatedInput } or { behavior: "deny", message }.
-    const text = JSON.stringify(decision.behavior === "allow" ? { behavior: "allow", updatedInput: args.input } : decision);
-    core.send(res, 200, rpcResult(id, { content: [{ type: "text", text }] }));
   } else {
     core.send(res, 200, rpcError(id, -32601, `Unknown method: ${method}`));
   }

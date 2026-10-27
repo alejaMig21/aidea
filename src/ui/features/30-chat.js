@@ -140,6 +140,15 @@
     if (event.type === "session") sessions.set(project, event.sessionId);
     else if (event.type === "permission") permissionCard(event);
     else if (event.type === "permission_expired") expireCard(event.id);
+    else if (event.type === "proposal") {
+      // The Canvas shows it highlighted on its layer; the chat says it happened and offers to take the person there.
+      const line = add("meta", `Proposal: ${event.kind} "${event.nodeId}" on the ${event.layer} layer. `);
+      const review = document.createElement("button");
+      review.textContent = "Review";
+      review.onclick = () => document.dispatchEvent(new CustomEvent("proposal-open", { detail: { id: event.id } }));
+      line.append(review);
+      document.dispatchEvent(new CustomEvent("proposal-created", { detail: event }));
+    }
     else if (event.type === "text") add("text", event.text, event.parent);
     else if (event.type === "tool") add("tool", `> ${event.name} ${hint(event.input)}`.trim(), event.parent);
     else if (event.type === "error") add("error", event.message);
