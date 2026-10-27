@@ -1,12 +1,14 @@
 // Desktop shell: runs the core as a separate Node process and shows its interface.
 // AIDEA_DISPLAY=secondary opens the window on the second monitor, for live testing.
-import { app, BrowserWindow, screen } from "electron";
+import { app, BrowserWindow, Menu, screen } from "electron";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const coreScript = fileURLToPath(new URL("../src/core/main.ts", import.meta.url));
-const core = spawn("node", [coreScript], { stdio: ["ignore", "pipe", "inherit"] });
+// windowsHide: without it Windows opens a console window for the core, which looks untrustworthy in a desktop app.
+const core = spawn("node", [coreScript], { stdio: ["ignore", "pipe", "inherit"], windowsHide: true });
 app.on("quit", () => core.kill());
+Menu.setApplicationMenu(null); // the default File/Edit/View/Window menu has nothing aidea needs
 
 function openWindow(url) {
   const primary = screen.getPrimaryDisplay();
