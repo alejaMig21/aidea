@@ -1,7 +1,7 @@
 // Algorithms layer: the control-flow graph of one function, laid out and framed by the core.
 import { frameOf, layoutFlow } from "../layout.ts";
 import type { FlowEdge } from "../layout.ts";
-import { locate } from "../locate.ts";
+import { locate, moduleAndName } from "../locate.ts";
 import { runPython } from "../python.ts";
 import type { Handler } from "../types.ts";
 
@@ -17,14 +17,11 @@ const handler: Handler = async (req, res, core) => {
     return true;
   }
 
-  // The script wants the name inside its file: the Node id without the module's own id in front.
-  let module = node;
-  while (module.parent) module = project.nodes.find((n) => n.id === module.parent) ?? { ...module, parent: null };
-  const qualifiedName = node.id.slice(module.id.length + 1);
+  const { qualifiedName } = moduleAndName(project, node);
 
   let flow: { steps: { id: string }[]; edges: FlowEdge[] };
   try {
-    flow = JSON.parse(await runPython("flow.py", [file, qualifiedName], 30_000));
+    flow = JSON.parse(await runPython("flow.py", [file, qualifiedName], { timeoutMs: 30_000 }));
   } catch (e) {
     const failure = e as { code?: number; killed?: boolean };
     if (failure.code === 2) {

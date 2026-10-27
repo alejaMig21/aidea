@@ -90,6 +90,7 @@ svg.addEventListener("dblclick", async (e) => {
     drawAlgorithm(body);
     algoTab.disabled = false;
     algoTab.textContent = `Algorithm: ${id.split(".").pop()}`;
+    document.dispatchEvent(new CustomEvent("algorithm-opened", { detail: body }));
     showLayer("algorithms");
     fit(body.frame);
     return;

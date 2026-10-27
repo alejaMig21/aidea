@@ -33,6 +33,8 @@ export type SpawnFn = (args: string[], cwd: string) => Pick<ChildProcess, "stdin
 export type Core = {
   adapter: Adapter;
   projects: Map<string, Project>;
+  // Playback recordings by id. A recording is replayed from here and never re-run.
+  recordings: Map<string, unknown>;
   send: (res: ServerResponse, status: number, body: unknown, headers?: Record<string, string>) => void;
   // Returns null when the body exceeds the size limit.
   readBody: (req: IncomingMessage) => Promise<string | null>;

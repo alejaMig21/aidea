@@ -40,6 +40,10 @@ _Avoid_: Flowchart, UML diagram
 An animated run of an algorithm graph showing which step is active and how values change.
 _Avoid_: Simulation, debug view
 
+**Recording**:
+The saved record of one real run of a function: the steps it went through and the values on arrival at each. Playback replays it and never runs the code again.
+_Avoid_: Trace, log, simulation
+
 **Footprint**:
 The region of the next layer down that a node is realised by, which the canvas centers on when the user zooms into that node.
 _Avoid_: Children, scope

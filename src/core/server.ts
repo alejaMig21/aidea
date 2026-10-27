@@ -22,6 +22,7 @@ export async function startCore({ port, adapter = createClaudeAdapter() }: { por
   const core: Core = {
     adapter,
     projects: new Map<string, Project>(),
+    recordings: new Map<string, unknown>(),
     send: (res, status, body, headers = {}) => {
       res.writeHead(status, { "content-type": "application/json", ...headers });
       res.end(JSON.stringify(body));

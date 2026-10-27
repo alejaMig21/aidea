@@ -5,6 +5,13 @@ import type { Core, CoreNode, Project } from "./types.ts";
 
 export type Located = { project: Project; node: CoreNode; file: string };
 
+// Scripts want a Node's module and its name inside that module: the Node id without the module's own id in front.
+export function moduleAndName(project: Project, node: CoreNode): { module: CoreNode; qualifiedName: string } {
+  let module = node;
+  while (module.parent) module = project.nodes.find((n) => n.id === module.parent) ?? { ...module, parent: null };
+  return { module, qualifiedName: node.id.slice(module.id.length + 1) };
+}
+
 // Finds the Node in an opened Project and resolves its file, refusing anything outside the Project folder.
 // Sends the error response and returns null when the request is not acceptable.
 export function locate(core: Core, res: ServerResponse, projectId: unknown, nodeId: unknown): Located | null {
