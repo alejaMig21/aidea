@@ -1,0 +1,24 @@
+{
+  "nodes": [
+    {
+      "id": "checkout",
+      "title": "Checkout flow",
+      "technology": "Python",
+      "traces": ["orders.place", "billing.charge"],
+      "rationale": { "why": "One flow spans ordering and billing.", "rejected": [] }
+    },
+    {
+      "id": "ledger",
+      "title": "Ledger",
+      "technology": "Python",
+      "traces": ["billing.charge"],
+      "rationale": { "why": "Payments are recorded in one place.", "rejected": [] }
+    },
+    {
+      "id": "lonely",
+      "title": "Not built yet",
+      "technology": "TBD",
+      "rationale": { "why": "Planned, no code yet.", "rejected": [] }
+    }
+  ]
+}

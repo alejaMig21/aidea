@@ -65,6 +65,7 @@ function parseLayer(layer: string, source: string, file: string): AuthoredLayer 
       : !isNonEmptyString(n.id) ? '"id" must be a non-empty string'
       : seen.has(n.id as string) ? `duplicate id "${n.id}"`
       : !isNonEmptyString(n.title) ? '"title" must be a non-empty string'
+      : n.traces !== undefined && !(Array.isArray(n.traces) && n.traces.every(isNonEmptyString)) ? '"traces" must be an array of non-empty strings'
       : layerChecks[layer](n) ?? rationaleProblem(n.rationale);
     if (problem) {
       fail(`nodes[${i}]: ${problem}`);

@@ -5,8 +5,9 @@ const AUTHORED_LAYERS = [
   { key: "requirements", label: "Requirements", detail: (n) => `As ${n.as}, I want ${n.want}` },
   { key: "architecture", label: "Architecture", detail: (n) => n.technology },
 ];
-let authoredShown = "code"; // "code" is the derived view
+let authoredShown = "components"; // "components" is the derived view
 let authoredData = null;
+let authoredLayouts = {};
 
 const authoredStyle = document.createElement("style");
 authoredStyle.textContent = `
@@ -57,11 +58,12 @@ function drawAuthored() {
   if (!authoredData) return;
   AUTHORED_LAYERS.forEach(({ key, detail }) => {
     const g = el("g", { "data-layer": key });
-    authoredData.layers[key].nodes.forEach((n, i) => {
-      const x = (i % 4) * 280, y = Math.floor(i / 4) * 80;
-      const node = el("g", { class: "anode", tabindex: 0 });
+    authoredData.layers[key].nodes.forEach((n) => {
+      // The core decides where each card sits.
+      const { x, y, width, height } = authoredLayouts[key].find((r) => r.id === n.id);
+      const node = el("g", { class: "anode", tabindex: 0, "data-node": n.id, "data-ref": n.id });
       node.append(
-        el("rect", { x, y, width: 240, height: 64, rx: 6 }),
+        el("rect", { x, y, width, height, rx: 6 }),
         el("text", { x: x + 10, y: y + 26 }, n.title),
         el("text", { x: x + 10, y: y + 47, class: "sub" }, detail(n) ?? ""),
       );
@@ -90,15 +92,15 @@ function showLayer(which) {
   const world = $("world");
   if (authoredGroup.parentNode !== world) world.append(authoredGroup);
   for (const child of world.children) {
-    if (child !== authoredGroup) child.style.display = which === "code" ? "" : "none";
+    if (child !== authoredGroup) child.style.display = which === "components" ? "" : "none";
   }
-  authoredGroup.style.display = which === "code" ? "none" : "";
+  authoredGroup.style.display = which === "components" ? "none" : "";
   authoredGroup.querySelectorAll("[data-layer]").forEach((g) => { g.style.display = g.dataset.layer === which ? "" : "none"; });
   layerBar.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.layer === which)));
   $("panel").replaceChildren();
 }
 
-layerBar.replaceChildren(...[{ key: "code", label: "Code" }, ...AUTHORED_LAYERS].map(({ key, label }) => {
+layerBar.replaceChildren(...[{ key: "components", label: "Components" }, ...AUTHORED_LAYERS].map(({ key, label }) => {
   const b = document.createElement("button");
   b.textContent = label;
   b.dataset.layer = key;
@@ -108,16 +110,19 @@ layerBar.replaceChildren(...[{ key: "code", label: "Code" }, ...AUTHORED_LAYERS]
 
 // Each time a Project is drawn, fetch its authored files fresh and keep the chosen layer.
 const drawDerived = draw;
-draw = (nodes) => {
-  drawDerived(nodes);
+draw = async (nodes) => {
+  await drawDerived(nodes);
   const project = current;
-  fetch(`/authored?project=${encodeURIComponent(project)}`)
-    .then((r) => (r.ok ? r.json() : null))
-    .then((data) => {
-      if (project !== current) return;
-      authoredData = data;
-      drawAuthored();
-      showLayer(authoredShown);
-    });
+  const id = encodeURIComponent(project);
+  const data = await fetch(`/authored?project=${id}`).then((r) => (r.ok ? r.json() : null));
+  const layouts = {};
+  for (const { key } of AUTHORED_LAYERS) {
+    layouts[key] = (await (await fetch(`/layout?project=${id}&layer=${key}`)).json()).rects;
+  }
+  if (project !== current) return;
+  authoredData = data;
+  authoredLayouts = layouts;
+  drawAuthored();
+  showLayer(authoredShown);
 };
-showLayer("code");
+showLayer("components");

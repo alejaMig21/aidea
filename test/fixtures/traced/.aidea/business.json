@@ -1,0 +1,11 @@
+{
+  "nodes": [
+    {
+      "id": "b1",
+      "title": "Sell online",
+      "block": "value propositions",
+      "traces": ["r1"],
+      "rationale": { "why": "Customers want to order without calling.", "rejected": [] }
+    }
+  ]
+}

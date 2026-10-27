@@ -1,0 +1,13 @@
+{
+  "nodes": [
+    {
+      "id": "r1",
+      "title": "Checkout",
+      "as": "a customer",
+      "want": "to pay for my order",
+      "so": "I receive it",
+      "traces": ["checkout"],
+      "rationale": { "why": "Payment is the core of selling online.", "rejected": [] }
+    }
+  ]
+}

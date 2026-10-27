@@ -39,37 +39,36 @@ svg.addEventListener("pointerup", (e) => {
   downAt = null;
 });
 
-// Drawing: one column per module, members stacked below, indented by depth
+// Drawing: the core says where every Node sits (GET /layout); this only draws the rectangles it is given.
+// `data-ref` marks every drawn piece with the id the core uses, so the core can ask for some to be dimmed.
 const el = (name, attrs, text) => {
   const n = document.createElementNS(NS, name);
   for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
   if (text) n.textContent = text;
   return n;
 };
-function draw(nodes) {
+async function draw(nodes) {
+  const project = current;
+  const { rects } = await (await fetch(`/layout?project=${encodeURIComponent(project)}&layer=components`)).json();
+  if (project !== current) return;
+  const at = new Map(rects.map((r) => [r.id, r]));
   const world = $("world");
   world.replaceChildren();
-  const kids = (id) => nodes.filter((n) => n.parent === id);
-  nodes.filter((n) => n.kind === "module").forEach((mod, col) => {
-    let row = 0;
-    const place = (n, depth, parentPos) => {
-      const pos = { x: col * 280 + depth * 18, y: row++ * 36, w: 240 - depth * 18, h: 28 };
-      if (parentPos) {
-        const mx = parentPos.x + 9;
-        world.append(el("path", { class: "edge", d: `M${mx} ${parentPos.y + parentPos.h} V${pos.y + 14} H${pos.x}` }));
-      }
-      world.append(el("rect", { x: pos.x, y: pos.y, width: pos.w, height: pos.h, rx: 6, fill: `var(--${n.kind})`, "data-id": n.id }));
-      world.append(el("text", { x: pos.x + 10, y: pos.y + 19 }, `${n.kind === "function" ? "ƒ " : ""}${n.name.split(".").pop()}`));
-      // Attributes are members of a class Node, drawn as slim rows above its methods.
-      (n.attributes ?? []).forEach((a) => {
-        const apos = { x: pos.x + 18, y: row++ * 36, w: pos.w - 18, h: 24 };
-        world.append(el("rect", { x: apos.x, y: apos.y, width: apos.w, height: apos.h, rx: 6, fill: "none", "stroke-dasharray": "3 3" }));
-        world.append(el("text", { x: apos.x + 10, y: apos.y + 17 }, `• ${a.name}`));
-      });
-      kids(n.id).forEach((c) => place(c, depth + 1, pos));
-    };
-    place(mod, 0, null);
-  });
+  for (const n of nodes) {
+    const parent = at.get(n.parent), r = at.get(n.id);
+    if (parent) world.append(el("path", { class: "edge", d: `M${parent.x + 9} ${parent.y + parent.height} V${r.y + 14} H${r.x}`, "data-ref": n.id }));
+  }
+  for (const n of nodes) {
+    const r = at.get(n.id);
+    world.append(el("rect", { x: r.x, y: r.y, width: r.width, height: r.height, rx: 6, fill: `var(--${n.kind})`, "data-id": n.id, "data-ref": n.id }));
+    world.append(el("text", { x: r.x + 10, y: r.y + 19, "data-ref": n.id }, `${n.kind === "function" ? "ƒ " : ""}${n.name.split(".").pop()}`));
+    // Attributes are members of a class Node, drawn as slim rows above its methods.
+    for (const a of n.attributes ?? []) {
+      const ref = `${n.id}#${a.name}`, ar = at.get(ref);
+      world.append(el("rect", { x: ar.x, y: ar.y, width: ar.width, height: ar.height, rx: 6, fill: "none", "stroke-dasharray": "3 3", "data-ref": ref }));
+      world.append(el("text", { x: ar.x + 10, y: ar.y + 17, "data-ref": ref }, `• ${a.name}`));
+    }
+  }
 }
 
 // Projects
@@ -93,6 +92,8 @@ async function open(path) {
   const body = await res.json();
   if (!res.ok) { $("error").textContent = body.error; return; }
   current = body.id;
+  Object.assign(view, { x: 40, y: 40, k: 1 });
+  apply();
   draw(body.nodes);
   refreshList();
 }
