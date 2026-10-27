@@ -2,7 +2,8 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { readdirSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import type { Core, Handler, Project } from "./types.ts";
+import type { Adapter, Core, Handler, Project } from "./types.ts";
+import { createClaudeAdapter } from "./adapter/claude.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
 const routesDir = fileURLToPath(new URL("./routes/", import.meta.url));
@@ -13,12 +14,13 @@ async function loadRoutes(): Promise<Handler[]> {
   return Promise.all(files.map(async (f) => (await import(pathToFileURL(routesDir + f).href)).default as Handler));
 }
 
-export async function startCore({ port }: { port: number }) {
+export async function startCore({ port, adapter = createClaudeAdapter() }: { port: number; adapter?: Adapter }) {
   const routes = await loadRoutes();
   // Only the core's own address may talk to it: stops web pages from reaching it (CSRF, DNS rebinding).
   let allowedHosts = new Set<string>();
 
   const core: Core = {
+    adapter,
     projects: new Map<string, Project>(),
     send: (res, status, body, headers = {}) => {
       res.writeHead(status, { "content-type": "application/json", ...headers });
