@@ -72,7 +72,9 @@ const switcherCurrent = () => { closeSwitcher(); hideHome(); refreshSwitcherLabe
 async function openSwitcher() {
   const [recents, projects] = await Promise.all([fetch("/recents").then((r) => r.json()), fetch("/projects").then((r) => r.json())]);
   const here = projects.find((p) => p.id === current);
-  const others = recents.filter((r) => !(here && r.path === here.path));
+  const folderKey = (p) => p.replaceAll("\\", "/").replace(/\/$/, "").toLowerCase();
+  const sameFolder = (a, b) => folderKey(a) === folderKey(b);
+  const others = recents.filter((r) => !(here && sameFolder(r.path, here.path)));
   const parts = [];
   if (here) parts.push(switcherLabel("Current"), switcherRow(here.name, here.path, switcherCurrent, { current: true }));
   if (others.length) {
