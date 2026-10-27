@@ -34,6 +34,12 @@ const pbEl = (tag, props = {}, ...children) => {
 
 function pbShowStep() {
   const entry = pbRecording.visits[pbIndex];
+  if (!entry) { // the run failed before its first step (for example a missing argument)
+    $("pb-position").textContent = "0 / 0";
+    $("pb-values").replaceChildren(pbEl("div", { className: "pb-error" }, pbEl("span", { textContent: pbRecording.error ? `${pbRecording.error.type}: ${pbRecording.error.message}` : "Nothing was recorded" })));
+    $("pb-output").textContent = pbRecording.output ?? "";
+    return;
+  }
   document.querySelectorAll("#algorithm .flow-step").forEach((g) => {
     const seen = pbRecording.visits.slice(0, pbIndex + 1).some((e) => e.step === g.dataset.step);
     g.classList.toggle("visited", seen);

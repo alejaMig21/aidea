@@ -11,8 +11,8 @@ let authoredLayouts = {};
 
 const authoredStyle = document.createElement("style");
 authoredStyle.textContent = `
-  #layers { position: absolute; left: 0; right: 0; top: 0; height: 40px; padding: 0 12px; display: flex; align-items: flex-end; gap: 2px; background: var(--panel); border-bottom: 1px solid var(--line); z-index: 1; }
-  #layers button { --tab: var(--derived); background: transparent; color: var(--text); border: 0; border-bottom: 3px solid color-mix(in srgb, var(--tab) 45%, transparent); border-radius: 6px 6px 0 0; }
+  #layers { position: absolute; left: 0; right: 0; top: 0; height: 40px; padding: 0 12px; display: flex; align-items: flex-end; gap: 2px; background: var(--panel); border-bottom: 1px solid var(--line); z-index: 1; overflow-x: auto; overflow-y: hidden; }
+  #layers button { --tab: var(--derived); background: transparent; color: var(--text); border: 0; border-bottom: 3px solid color-mix(in srgb, var(--tab) 45%, transparent); border-radius: 6px 6px 0 0; flex: none; white-space: nowrap; }
   #layers :is([data-layer="business"], [data-layer="requirements"], [data-layer="architecture"]) { --tab: var(--authored); }
   #layers button[aria-pressed="true"] { border-bottom-color: var(--tab); background: color-mix(in srgb, var(--tab) 18%, transparent); font-weight: 600; }
   #layers button[disabled] { opacity: .55; cursor: default; }
