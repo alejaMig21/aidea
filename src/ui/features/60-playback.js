@@ -21,6 +21,7 @@ const pbPane = document.createElement("div");
 let pbGraph = null;     // the open Algorithm graph
 let pbRecording = null; // the recording being replayed
 let pbIndex = 0;
+let pbRenderedFor = null; // the graph the form was last built for: the form is rebuilt only when this changes
 let pbTimer = null;
 
 const pbStop = () => { clearInterval(pbTimer); pbTimer = null; };
@@ -93,7 +94,7 @@ async function pbRecord() {
   pbGo(0);
 }
 
-const pbNode = () => algoNodes.find((n) => n.id === pbGraph.node);
+const pbNode = () => pbGraph && algoNodes.find((n) => n.id === pbGraph.node);
 
 // One labelled field per item (a parameter, or an effect row), prefilled with its suggested example.
 // Its error shows right under it, under the key the core reports (`name`, `constructor.name` or `effect:name`).
@@ -122,6 +123,8 @@ function pbFields(node) {
 
 // Builds the panel: the inputs always, the controls once there is a recording.
 function pbRender() {
+  if (!pbNode()) { rightUnregisterTab("algorithm"); return; } // the function is gone (another Project): nothing to show
+  pbRenderedFor = pbGraph;
   const parts = [
     pbEl("h2", { textContent: `Playback: ${pbGraph.node.split(".").pop()}` }),
     ...pbFields(pbNode()),
@@ -163,16 +166,29 @@ document.addEventListener("algorithm-opened", (e) => {
   pbGraph = e.detail;
   pbRecording = null;
   pbIndex = 0;
+  pbRenderedFor = null;
 });
+
+// Opening or redrawing a Project drops the graph the form belonged to.
+const drawWithoutPlayback = draw;
+draw = async (nodes) => {
+  pbStop();
+  pbGraph = null;
+  pbRecording = null;
+  pbIndex = 0;
+  pbRenderedFor = null;
+  rightUnregisterTab("algorithm");
+  await drawWithoutPlayback(nodes);
+};
 
 // The column belongs to the Algorithms layer: opening it adds and selects the tab, leaving removes it and pauses the replay.
 const showLayerWithoutPlayback = showLayer;
 showLayer = (which) => {
   showLayerWithoutPlayback(which);
-  if (which !== "algorithms" || !pbGraph) { pbStop(); rightUnregisterTab("algorithm"); }
+  if (which !== "algorithms" || !pbNode()) { pbStop(); rightUnregisterTab("algorithm"); }
   else {
     if (!pbPane.isConnected) rightRegisterTab("algorithm", "Algorithm", pbPane); // in the page first: pbRender looks fields up by id
-    pbRender();
+    if (pbRenderedFor !== pbGraph) pbRender(); // keep what the person typed unless the graph changed
     rightShowTab("algorithm");
     if (pbRecording) { $("algorithm").classList.add("has-recording"); pbShowStep(); }
   }
