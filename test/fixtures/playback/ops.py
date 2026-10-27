@@ -56,3 +56,48 @@ def helper():
 def indirect():
     helper()
     return 1
+
+
+def reader(path):
+    return open(path).read()
+
+
+def peek_outside(path):
+    return reader(path)
+
+
+def peek_inside():
+    return reader("data.txt")
+
+
+def native():
+    return load_native()
+
+
+def load_native():
+    import ctypes
+    ctypes.pythonapi.Py_GetVersion()
+    return 1
+
+
+def slow():
+    import time
+    time.sleep(30)
+    return 1
+
+
+import os as o
+
+
+def aliased():
+    o.remove("nothing.txt")
+
+
+def gen():
+    yield 1
+
+
+def fact(n):
+    if n <= 1:
+        return 1
+    return n * fact(n - 1)

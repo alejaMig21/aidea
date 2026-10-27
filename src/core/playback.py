@@ -2,15 +2,19 @@
 
 Usage: playback.py <project folder> <module id> <qualified name> <file>
 Standard input: {"args": [...], "kwargs": {...}, "instance": {"args": [...], "kwargs": {...}} or null, "fakes": {name: value}}
-Standard output: {"refused": [{"name", "line"}]} when the function has external effects that are not replaced, or
-  {"result", "output", "trace": [{"step", "locals"}], "truncated", "error"?} after running it.
+Standard output: {"refused": [{"name", "line"}]} when the function has external effects that are not replaced,
+  {"unsupported": "..."} for generators and async functions, or
+  {"result", "output", "visits": [{"step", "locals"}], "truncated", "error"?} after running it.
 Exit codes: 2 = the function is not in the file; 3 = the file cannot be read as Python.
 
-The inputs are JSON values, never code. Two guards protect against accidental effects:
-  1. before running, calls that read or write the outside world (files, network, processes) are refused unless the
-     person replaced them with fake data;
-  2. while running, an audit hook stops file writes, network access and new processes, even when they are hidden
-     inside a helper. This is a safety net for mistakes, not a sandbox against code written to escape it.
+THIS RUNS THE PROJECT'S OWN CODE, including whatever the module does when it is imported. The inputs are JSON values,
+never code. Two guards help against accidents:
+  1. before running, calls in the function's own body that read or write the outside world (files, network, processes,
+     native code) are refused unless the person replaced them with fake data. This looks at names only;
+  2. while running, an audit hook stops file writes, reads outside the project and the Python installation, network
+     access, new processes and calls into native code, even when they are hidden inside a helper. (Loading a native
+     library is allowed: `import ctypes` itself does it on Windows, and many packages import ctypes.)
+Both are a safety net for mistakes. They are NOT a sandbox: code written to get around them can. Only play code you trust.
 """
 import ast
 import builtins
@@ -23,20 +27,32 @@ import io
 import json
 import os
 import sys
+import sysconfig
 
 MAX_STEPS = 2000  # a run that records more steps than this is cut short (for example an endless loop)
 MAX_TEXT = 80
 
 EFFECT_CALLS = {"open", "input", "exec", "eval", "__import__"}
-EFFECT_ROOTS = {"os", "subprocess", "socket", "requests", "urllib", "http", "shutil", "sqlite3", "ftplib", "smtplib", "webbrowser", "tempfile", "glob"}
+EFFECT_ROOTS = {
+    "os", "subprocess", "socket", "requests", "urllib", "http", "shutil", "sqlite3", "ftplib", "smtplib", "webbrowser",
+    "tempfile", "glob", "ctypes", "_winapi", "multiprocessing",
+}
 EFFECT_METHODS = {"read_text", "write_text", "read_bytes", "write_bytes", "unlink", "mkdir", "rmdir", "touch", "rename"}
 PURE_PREFIXES = ("os.path.join", "os.path.basename", "os.path.dirname", "os.path.splitext", "os.path.split", "os.path.normpath", "urllib.parse.")
+# Audit events that are stopped while the function runs. Python names them after the operation.
 BLOCKED_EVENTS = {
-    "socket.connect", "socket.bind", "socket.sendto", "socket.getaddrinfo", "subprocess.Popen", "os.system", "os.exec",
-    "os.posix_spawn", "os.spawn", "os.remove", "os.rename", "os.rmdir", "os.mkdir", "os.chmod", "os.truncate",
-    "os.putenv", "os.startfile", "shutil.copyfile", "shutil.rmtree", "shutil.move", "shutil.copytree", "urllib.Request",
-    "http.client.connect", "smtplib.connect", "ftplib.connect", "sqlite3.connect", "webbrowser.open",
+    "os.system", "os.exec", "os.posix_spawn", "os.spawn", "os.startfile", "os.remove", "os.rename", "os.rmdir", "os.mkdir",
+    "os.chmod", "os.chown", "os.truncate", "os.utime", "os.symlink", "os.link", "os.mkfifo", "os.mknod", "os.kill",
+    "os.putenv", "os.unsetenv", "os.add_dll_directory", "shutil.copyfile", "shutil.copy", "shutil.copymode",
+    "shutil.copystat", "shutil.copytree", "shutil.rmtree", "shutil.move", "shutil.chown", "shutil.make_archive",
+    "shutil.unpack_archive", "tempfile.mkstemp", "tempfile.mkdtemp", "sqlite3.connect", "webbrowser.open",
+    "ctypes.call_function", "ctypes.call_cdeclfunction",
 }
+# Whole families of events: processes, the network and the Windows system calls behind them.
+BLOCKED_PREFIXES = (
+    "subprocess.", "socket.", "urllib.", "http.", "ftplib.", "smtplib.", "imaplib.", "poplib.", "telnetlib.",
+    "_winapi.", "winreg.", "msvcrt.", "multiprocessing.",
+)
 
 
 class StopRecording(BaseException):
@@ -51,30 +67,62 @@ def load_flow():
     return module
 
 
-def effects_of(function, fakes):
-    """Calls in the function's own body that touch the outside world and are not replaced."""
+def import_aliases(tree):
+    """Names a module gives to what it imports: `import os as o` and `from os import remove as rm`."""
+    aliases = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for a in node.names:
+                aliases[(a.asname or a.name).split(".")[0]] = a.name if a.asname else a.name.split(".")[0]
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            for a in node.names:
+                aliases[a.asname or a.name] = f"{node.module}.{a.name}"
+    return aliases
+
+
+def resolve_alias(name, aliases):
+    first, dot, rest = name.partition(".")
+    return aliases[first] + dot + rest if first in aliases else name
+
+
+def effects_of(function, fakes, aliases):
+    """Calls in the function's own body that touch the outside world and are not replaced.
+    This looks at names only: a helper that the function calls is not inspected (the audit hook covers it)."""
     found = []
     for node in ast.walk(function):
         if not isinstance(node, ast.Call):
             continue
         name = ast.unparse(node.func)
-        if name in fakes or name.startswith(PURE_PREFIXES):
+        resolved = resolve_alias(name, aliases)
+        if name in fakes or resolved in fakes or resolved.startswith(PURE_PREFIXES):
             continue
-        root, last = name.split(".")[0], name.rsplit(".", 1)[-1]
-        if name in EFFECT_CALLS or ("." in name and (root in EFFECT_ROOTS or last in EFFECT_METHODS)):
+        root, last = resolved.split(".")[0], resolved.rsplit(".", 1)[-1]
+        if resolved in EFFECT_CALLS or ("." in resolved and (root in EFFECT_ROOTS or last in EFFECT_METHODS)):
             found.append({"name": name, "line": node.lineno})
     return sorted(found, key=lambda e: (e["line"], e["name"]))
 
 
-def install_audit_hook():
+def install_audit_hook(readable_roots):
     write_flags = os.O_WRONLY | os.O_RDWR | os.O_APPEND | os.O_CREAT | os.O_TRUNC
+    roots = [os.path.normcase(os.path.realpath(r)) for r in readable_roots]
+
+    def may_read(path):
+        if isinstance(path, int):  # a file that is already open
+            return True
+        try:
+            real = os.path.normcase(os.path.realpath(os.fsdecode(path)))
+        except (TypeError, ValueError):
+            return False
+        return any(real == r or real.startswith(r + os.sep) for r in roots)
 
     def hook(event, args):
         if event == "open":
-            _, mode, flags = args
+            path, mode, flags = args
             if (isinstance(mode, str) and any(c in mode for c in "wax+")) or (isinstance(flags, int) and flags & write_flags):
                 raise PermissionError("blocked by aidea: writing a file")
-        elif event in BLOCKED_EVENTS:
+            if not may_read(path):
+                raise PermissionError("blocked by aidea: reading a file outside the project")
+        elif event in BLOCKED_EVENTS or event.startswith(BLOCKED_PREFIXES):
             raise PermissionError(f"blocked by aidea: {event}")
 
     sys.addaudithook(hook)
@@ -135,14 +183,21 @@ def main():
         with open(file, encoding="utf-8") as f:
             source = f.read()
         parts = qualified.split(".")
-        function = flow.find_function(ast.parse(source), parts)
+        tree = ast.parse(source)
+        function = flow.find_function(tree, parts)
         graph = flow.flow_of(source, qualified)
     except (OSError, SyntaxError, ValueError, RecursionError):
         sys.exit(3)
     if function is None or graph is None:
         sys.exit(2)
 
-    found = effects_of(function, fakes)
+    # ponytail: a generator reports a "return" at every yield and an async function runs inside an event loop;
+    # neither fits one straight recording, so they are refused until there is a design for them.
+    if isinstance(function, ast.AsyncFunctionDef) or any(isinstance(n, (ast.Yield, ast.YieldFrom)) for n in ast.walk(function)):
+        json.dump({"unsupported": "Generators and async functions cannot be played yet"}, sys.stdout)
+        return
+
+    found = effects_of(function, fakes, import_aliases(tree))
     if found:
         json.dump({"refused": found}, sys.stdout)
         return
@@ -158,9 +213,14 @@ def main():
     sys.dont_write_bytecode = True
     os.chdir(root)
     sys.path.insert(0, root)
-    install_audit_hook()
+    # Reads are allowed inside the project and where Python and the project's packages live, so imports keep working.
+    own_folder = os.path.dirname(os.path.abspath(__file__))
+    readable = {root, sys.prefix, sys.base_prefix, sys.exec_prefix, sys.base_exec_prefix}
+    readable |= {os.path.abspath(p) if p else root for p in sys.path if os.path.abspath(p or ".") != own_folder}
+    readable |= {p for p in sysconfig.get_paths().values() if p}
+    install_audit_hook(readable)
 
-    trace, out, state = [], io.StringIO(), {"last": None, "result": None, "raising": False}
+    trace, out, state = [], io.StringIO(), {"last": None, "result": None, "raising": False, "frame": None}
     recording = {"truncated": False}
 
     def record(step, frame):
@@ -188,7 +248,9 @@ def main():
         code = getattr(code, "__func__", code).__code__
 
         def global_trace(frame, event, arg):
-            if frame.f_code is code and event == "call":
+            # Only the outermost call is recorded: a recursive call would interleave its steps with the first one.
+            if frame.f_code is code and event == "call" and state["frame"] is None:
+                state["frame"] = frame
                 record(start_id, frame)
                 return local_trace
             return None
@@ -210,7 +272,7 @@ def main():
     except Exception as e:  # the function (or the module around it) failed: that is part of the recording
         recording["error"] = {"type": type(e).__name__, "message": str(e)[:300]}
 
-    result = {"output": out.getvalue()[:10000], "trace": trace, **recording}
+    result = {"output": out.getvalue()[:10000], "visits": trace, **recording}
     if "error" not in recording and not recording["truncated"]:
         result["result"] = state["result"]
     json.dump(result, sys.stdout)

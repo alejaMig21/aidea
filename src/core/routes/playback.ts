@@ -7,7 +7,7 @@ import type { Handler } from "../types.ts";
 const MAX_RECORDINGS = 200;
 const MAX_ARGS = 50;
 const FAKE_NAME = /^[A-Za-z_][\w.]{0,100}$/;
-const RUN_TIMEOUT_MS = 20_000;
+const DEFAULT_RUN_TIMEOUT_MS = 20_000;
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const isList = (v: unknown): v is unknown[] => Array.isArray(v) && v.length <= MAX_ARGS;
@@ -48,6 +48,19 @@ const handler: Handler = async (req, res, core) => {
     return true;
   }
 
+  // The Python that runs the code. The Project's own virtual environment holds a program that comes with the
+  // Project, so it is used only when the person asks for it.
+  const wantsProjectPython = body?.useProjectPython;
+  if (wantsProjectPython !== undefined && typeof wantsProjectPython !== "boolean") {
+    core.send(res, 400, { error: "useProjectPython must be true or false" });
+    return true;
+  }
+  const projectInterpreter = wantsProjectPython ? projectPython(project.path) : undefined;
+  if (wantsProjectPython && !projectInterpreter) {
+    core.send(res, 422, { error: "This Project has no virtual environment (.venv, venv or env) to use" });
+    return true;
+  }
+
   const { module, qualifiedName } = moduleAndName(project, node);
   const input = { args, kwargs, instance, fakes };
   let outcome: Record<string, unknown>;
@@ -55,8 +68,8 @@ const handler: Handler = async (req, res, core) => {
     outcome = JSON.parse(
       await runPython("playback.py", [project.path, module.id, qualifiedName, file], {
         input: JSON.stringify(input),
-        timeoutMs: RUN_TIMEOUT_MS,
-        python: projectPython(project.path),
+        timeoutMs: Number(process.env.AIDEA_PLAYBACK_TIMEOUT_MS) || DEFAULT_RUN_TIMEOUT_MS,
+        python: projectInterpreter,
         cwd: project.path,
       }),
     );
@@ -69,6 +82,10 @@ const handler: Handler = async (req, res, core) => {
     return true;
   }
 
+  if (typeof outcome.unsupported === "string") {
+    core.send(res, 422, { error: outcome.unsupported });
+    return true;
+  }
   const refused = outcome.refused as { name: string; line: number }[] | undefined;
   if (refused) {
     const list = refused.map((r) => `${r.name} (line ${r.line})`).join(", ");
@@ -80,7 +97,7 @@ const handler: Handler = async (req, res, core) => {
   }
 
   const id = `pb-${++counter}`;
-  const recording = { id, node: node.id, input, ...outcome };
+  const recording = { id, node: node.id, input, interpreter: projectInterpreter ?? "default", ...outcome };
   if (core.recordings.size >= MAX_RECORDINGS) core.recordings.delete(core.recordings.keys().next().value!);
   core.recordings.set(id, recording);
   core.send(res, 201, recording);

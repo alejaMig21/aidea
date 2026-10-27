@@ -9,6 +9,8 @@ playbackStyle.textContent = `
   #panel .pb-values { font: 12px/1.5 ui-monospace, monospace; margin: 8px 0; }
   #panel .pb-values div { display: flex; justify-content: space-between; gap: 8px; }
   #panel .pb-error { color: #c0392b; font-size: 12px; }
+  #panel .pb-warning { color: var(--muted); font-size: 12px; margin: 4px 0; }
+  #panel .pb-check { flex-direction: row; align-items: center; gap: 6px; }
   #panel input[type="range"] { flex: 1; }
 `;
 document.head.append(playbackStyle);
@@ -27,17 +29,17 @@ const pbEl = (tag, props = {}, ...children) => {
 };
 
 function pbShowStep() {
-  const entry = pbRecording.trace[pbIndex];
+  const entry = pbRecording.visits[pbIndex];
   document.querySelectorAll("#algorithm .flow-step").forEach((g) => {
-    const seen = pbRecording.trace.slice(0, pbIndex + 1).some((e) => e.step === g.dataset.step);
+    const seen = pbRecording.visits.slice(0, pbIndex + 1).some((e) => e.step === g.dataset.step);
     g.classList.toggle("visited", seen);
     g.classList.toggle("now", g.dataset.step === entry.step);
   });
-  $("pb-position").textContent = `${pbIndex + 1} / ${pbRecording.trace.length}`;
+  $("pb-position").textContent = `${pbIndex + 1} / ${pbRecording.visits.length}`;
   $("pb-slider").value = pbIndex;
   const names = Object.keys(entry.locals);
   const rows = names.map((name) => pbEl("div", {}, pbEl("span", { textContent: name }), pbEl("span", { textContent: entry.locals[name] })));
-  const last = pbIndex === pbRecording.trace.length - 1;
+  const last = pbIndex === pbRecording.visits.length - 1;
   if (last && pbRecording.result !== undefined) rows.push(pbEl("div", {}, pbEl("strong", { textContent: "returns" }), pbEl("span", { textContent: pbRecording.result })));
   if (last && pbRecording.error) rows.push(pbEl("div", { className: "pb-error" }, pbEl("span", { textContent: `${pbRecording.error.type}: ${pbRecording.error.message}` })));
   if (last && pbRecording.truncated) rows.push(pbEl("div", { className: "pb-error" }, pbEl("span", { textContent: "Cut short: too many steps" })));
@@ -47,15 +49,15 @@ function pbShowStep() {
 }
 
 function pbGo(index) {
-  pbIndex = Math.max(0, Math.min(pbRecording.trace.length - 1, index));
+  pbIndex = Math.max(0, Math.min(pbRecording.visits.length - 1, index));
   pbShowStep();
 }
 
 function pbPlayPause() {
   if (pbTimer) { pbStop(); pbShowStep(); return; }
-  if (pbIndex >= pbRecording.trace.length - 1) pbIndex = 0;
+  if (pbIndex >= pbRecording.visits.length - 1) pbIndex = 0;
   pbTimer = setInterval(() => {
-    if (pbIndex >= pbRecording.trace.length - 1) { pbStop(); pbShowStep(); return; }
+    if (pbIndex >= pbRecording.visits.length - 1) { pbStop(); pbShowStep(); return; }
     pbGo(pbIndex + 1);
   }, 600);
   pbShowStep();
@@ -67,14 +69,19 @@ async function pbRecord() {
   message.className = "pb-error";
   let body;
   try {
-    body = { project: current, node: pbGraph.node, args: JSON.parse($("pb-args").value || "[]"), fakes: JSON.parse($("pb-fakes").value || "{}") };
+    body = {
+      project: current, node: pbGraph.node, args: JSON.parse($("pb-args").value || "[]"), fakes: JSON.parse($("pb-fakes").value || "{}"),
+      useProjectPython: $("pb-own-python").checked,
+    };
     if ($("pb-instance")) body.instance = { args: JSON.parse($("pb-instance").value || "[]") };
   } catch {
     message.textContent = "The inputs must be valid JSON, for example [130] for the arguments.";
     return;
   }
+  const project = current;
   const res = await post("/playback", body);
-  const answer = await res.json();
+  const answer = await res.json().catch(() => ({ error: "The core sent an answer that could not be read." }));
+  if (project !== current) return; // another Project was opened meanwhile
   if (!res.ok) { message.textContent = answer.error; return; }
   pbStop();
   pbRecording = answer;
@@ -93,6 +100,8 @@ function pbRender() {
     field("Arguments (JSON list)", "pb-args", "[]"),
     ...(isMethod ? [field("Constructor arguments of the instance (JSON list)", "pb-instance", "[]")] : []),
     field("Fake data for effects (JSON object)", "pb-fakes", "{}"),
+    pbEl("label", { className: "pb-check" }, pbEl("input", { id: "pb-own-python", type: "checkbox" }), "Use the Project's own Python (.venv, venv or env)"),
+    pbEl("p", { className: "pb-warning", textContent: "Recording runs this function for real, on your computer, with the Project's own code. Writing files, network access and new programs are blocked as a safety net, not as a guarantee: only play code you trust." }),
     pbEl("button", { id: "pb-record", textContent: "Record a run", onclick: pbRecord }),
     pbEl("div", { id: "pb-message", className: "pb-error" }),
   ];
@@ -105,16 +114,18 @@ function pbRender() {
         pbEl("button", { textContent: "▶", title: "Step forward", onclick: () => { pbStop(); pbGo(pbIndex + 1); } }),
       ),
       pbEl("div", { className: "pb-row" },
-        pbEl("input", { id: "pb-slider", type: "range", min: 0, max: pbRecording.trace.length - 1, value: pbIndex, oninput: (e) => { pbStop(); pbGo(Number(e.target.value)); } }),
+        pbEl("input", { id: "pb-slider", type: "range", min: 0, max: pbRecording.visits.length - 1, value: pbIndex, oninput: (e) => { pbStop(); pbGo(Number(e.target.value)); } }),
         pbEl("span", { id: "pb-position" }),
       ),
       pbEl("div", { id: "pb-values", className: "pb-values" }),
       pbEl("pre", { id: "pb-output" }),
+      pbEl("p", { className: "pb-warning", textContent: `Python used: ${pbRecording.interpreter}` }),
     );
   }
   $("panel").replaceChildren(...parts);
   if (pbRecording) {
     const inputs = pbRecording.input;
+    $("pb-own-python").checked = pbRecording.interpreter !== "default";
     $("pb-args").value = JSON.stringify(inputs.args);
     $("pb-fakes").value = JSON.stringify(inputs.fakes);
     if ($("pb-instance")) $("pb-instance").value = JSON.stringify(inputs.instance?.args ?? []);

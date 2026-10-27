@@ -1,11 +1,14 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, rmSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { cpSync, existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fixture, startTestCore } from "./helpers.ts";
 
 let t: Awaited<ReturnType<typeof startTestCore>>;
 const project = fixture("playback");
+const scratch: string[] = [];
 before(async () => {
   t = await startTestCore();
   await t.post("/projects", { path: project });
@@ -14,6 +17,7 @@ after(() => {
   t.core.close();
   rmSync(join(project, "blocked.txt"), { force: true }); // only exists if the safety net failed
   rmSync(join(project, "x.txt"), { force: true });
+  for (const dir of scratch) rmSync(dir, { recursive: true, force: true });
 });
 
 type Entry = { step: string; locals: Record<string, string> };
@@ -29,7 +33,7 @@ test("choosing a pure function and inputs records the steps it went through and 
   assert.equal(res.status, 201);
   const rec = await res.json();
   const label = await labelsOf("ops.drain");
-  assert.deepEqual(rec.trace.map(label), [
+  assert.deepEqual(rec.visits.map(label), [
     "drain(total)",
     "steps = 0",
     "while total > 100",
@@ -46,9 +50,9 @@ test("choosing a pure function and inputs records the steps it went through and 
     "end",
   ]);
   assert.equal(rec.result, "3");
-  assert.deepEqual(rec.trace[0].locals, { total: "130" }); // the arguments
-  assert.deepEqual(rec.trace[1].locals, { total: "130" }); // `steps` does not exist yet
-  assert.deepEqual(rec.trace[11].locals, { total: "100", steps: "3" }); // the fourth time the loop condition is checked
+  assert.deepEqual(rec.visits[0].locals, { total: "130" }); // the arguments
+  assert.deepEqual(rec.visits[1].locals, { total: "130" }); // `steps` does not exist yet
+  assert.deepEqual(rec.visits[11].locals, { total: "100", steps: "3" }); // the fourth time the loop condition is checked
   assert.equal(rec.error, undefined);
   assert.equal(rec.truncated, false);
 });
@@ -56,7 +60,7 @@ test("choosing a pure function and inputs records the steps it went through and 
 test("a method is played on an instance built from the given constructor arguments", async () => {
   const rec = await (await record("ops.Counter.bump", { instance: { args: [5] }, args: [2] })).json();
   assert.equal(rec.result, "7");
-  assert.equal(rec.trace[0].locals.by, "2");
+  assert.equal(rec.visits[0].locals.by, "2");
 });
 
 test("a function that prints has its output kept in the recording", async () => {
@@ -105,13 +109,82 @@ test("a function that raises is recorded up to the failure", async () => {
   const rec = await res.json();
   assert.equal(rec.error.type, "ZeroDivisionError");
   const label = await labelsOf("ops.divide");
-  assert.deepEqual(rec.trace.map(label), ["divide(a, b)", "return a / b"]);
+  assert.deepEqual(rec.visits.map(label), ["divide(a, b)", "return a / b"]);
 });
 
 test("a function that never ends is stopped and the recording says it is cut short", async () => {
   const rec = await (await record("ops.forever")).json();
   assert.equal(rec.truncated, true);
-  assert.ok(rec.trace.length > 100 && rec.trace.length <= 5000);
+  assert.equal(rec.visits.length, 2000); // the limit on recorded steps
+});
+
+test("an effect hidden behind an import alias is still refused before running", async () => {
+  const res = await record("ops.aliased");
+  assert.equal(res.status, 422);
+  assert.deepEqual((await res.json()).effects, [{ name: "o.remove", line: 93 }]);
+});
+
+test("a function may read files of its own Project but not files elsewhere", async () => {
+  const outside = mkdtempSync(join(tmpdir(), "aidea-secret-"));
+  scratch.push(outside);
+  writeFileSync(join(outside, "secret.txt"), "do not show");
+  const blocked = await (await record("ops.peek_outside", { args: [join(outside, "secret.txt")] })).json();
+  assert.equal(blocked.error.type, "PermissionError");
+  assert.match(blocked.error.message, /outside the project/);
+  const allowed = await (await record("ops.peek_inside")).json();
+  assert.equal(allowed.result, "'inside data\\n'");
+});
+
+test("calling native code is stopped while running", async () => {
+  const rec = await (await record("ops.native")).json();
+  assert.equal(rec.error.type, "PermissionError");
+  assert.match(rec.error.message, /blocked/);
+});
+
+test("generators and async functions are refused with a clear message", async () => {
+  const res = await record("ops.gen");
+  assert.equal(res.status, 422);
+  assert.match((await res.json()).error, /generator/i);
+});
+
+test("a recursive function is recorded for its outermost call only", async () => {
+  const rec = await (await record("ops.fact", { args: [3] })).json();
+  const label = await labelsOf("ops.fact");
+  assert.deepEqual(rec.visits.map(label), ["fact(n)", "if n <= 1", "return n * fact(n - 1)", "end"]);
+  assert.equal(rec.result, "6");
+});
+
+test("a run that takes too long is stopped with a clear message", { timeout: 20_000 }, async () => {
+  process.env.AIDEA_PLAYBACK_TIMEOUT_MS = "1500";
+  try {
+    const started = Date.now();
+    const res = await record("ops.slow");
+    assert.equal(res.status, 504);
+    assert.match((await res.json()).error, /too long/);
+    assert.ok(Date.now() - started < 10_000);
+  } finally {
+    delete process.env.AIDEA_PLAYBACK_TIMEOUT_MS;
+  }
+});
+
+test("the person's own virtual environment is used only when asked for, and the recording says which Python ran", async () => {
+  const first = await (await record("ops.drain", { args: [130] })).json();
+  assert.equal(first.interpreter, "default");
+
+  const bare = mkdtempSync(join(tmpdir(), "aidea-bare-"));
+  scratch.push(bare);
+  cpSync(project, bare, { recursive: true });
+  await t.post("/projects", { path: bare });
+  const refused = await t.post("/playback", { project: bare, node: "ops.drain", args: [130], useProjectPython: true });
+  assert.equal(refused.status, 422);
+  assert.match((await refused.json()).error, /virtual environment/);
+
+  execFileSync(process.env.AIDEA_PYTHON ?? "python", ["-m", "venv", "--without-pip", join(bare, ".venv")]);
+  const used = await t.post("/playback", { project: bare, node: "ops.drain", args: [130], useProjectPython: true });
+  assert.equal(used.status, 201);
+  const rec = await used.json();
+  assert.equal(rec.result, "3");
+  assert.ok(rec.interpreter.includes(".venv"));
 });
 
 test("asking to play with bad input gives clear errors", async () => {
