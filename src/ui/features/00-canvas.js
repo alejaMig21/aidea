@@ -16,19 +16,27 @@ svg.addEventListener("wheel", (e) => {
   apply();
 }, { passive: false });
 let downAt = null;
-svg.addEventListener("pointerdown", (e) => { downAt = [e.clientX, e.clientY]; svg.setPointerCapture(e.pointerId); svg.classList.add("dragging"); });
+// The pointer is captured only once the gesture is a drag: capturing on press would
+// redirect the click to the Canvas and Nodes would never receive it.
+svg.addEventListener("pointerdown", (e) => { downAt = [e.clientX, e.clientY]; });
 svg.addEventListener("pointermove", (e) => {
-  if (!svg.hasPointerCapture(e.pointerId)) return;
+  if (!downAt) return;
+  if (!svg.hasPointerCapture(e.pointerId)) {
+    if (Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) < 4) return;
+    svg.setPointerCapture(e.pointerId);
+    svg.classList.add("dragging");
+  }
   view.x += e.movementX; view.y += e.movementY; apply();
 });
 svg.addEventListener("pointerup", (e) => {
-  svg.releasePointerCapture(e.pointerId);
+  if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId);
   svg.classList.remove("dragging");
   // A press that barely moved is a click: select the Node under the pointer.
   if (downAt && Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) < 4) {
     const id = document.elementFromPoint(e.clientX, e.clientY)?.getAttribute("data-id");
     if (id && typeof onSelect === "function") onSelect(id);
   }
+  downAt = null;
 });
 
 // Drawing: one column per module, members stacked below, indented by depth
