@@ -11,3 +11,11 @@
 - [ ] In a plain browser, "Open folder" falls back to a typed path.
 - [ ] The opened folder appears first in the recents.
 - [ ] Checked live in the real window on the second monitor; result noted in the ticket.
+
+## Review notes
+
+Implemented: `electron/preload.cjs` exposes `window.aidea.pickFolder()` (contextIsolation on, no nodeIntegration); `electron/main.js` handles `pick-folder` with `dialog.showOpenDialog`; Home has an "Open folder" button that opens the chosen folder through the existing open route, or focuses the typed path box when `window.aidea` is absent.
+
+Verified: `npm run typecheck` and `npm test` pass (no regressions). No criterion is verified live; none ticked.
+
+Still needs the live check in the real window on the second monitor (`AIDEA_DISPLAY=secondary npm run desktop`): picker appears and opens the folder; cancel changes nothing; opened folder is first in recents; plain-browser fallback focuses the typed path box.
