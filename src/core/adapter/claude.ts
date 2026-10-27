@@ -1,0 +1,97 @@
+import { spawn } from "node:child_process";
+import { createInterface } from "node:readline";
+import type { Adapter, AgentEvent, SpawnFn } from "../types.ts";
+
+// Real process source: the person's installed, unmodified Claude Code. No shell, so the message can never
+// be interpreted as a command. Never `--bare`: it ignores the subscription login and the person's plugins.
+// Credentials are never read here; Claude Code finds its own login.
+const realSpawn: SpawnFn = (args, cwd) => spawn("claude", args, { cwd, stdio: ["pipe", "pipe", "pipe"] });
+
+// Turns stream-json lines into aidea events. Stateful because Claude Code reports a signed-out run twice
+// (an assistant message flagged with `error`, then an error result) and we want a single error event.
+export function createParser() {
+  let errored = false;
+  return (line: string): AgentEvent[] => {
+    let j: any;
+    try {
+      j = JSON.parse(line);
+    } catch {
+      return [];
+    }
+    if (j.type === "system" && j.subtype === "init") return [{ type: "session", sessionId: j.session_id }];
+    if (j.type === "assistant") {
+      // Observed by running with an empty CLAUDE_CONFIG_DIR: `error: "authentication_failed"`, text "Not logged in".
+      if (j.error === "authentication_failed") {
+        errored = true;
+        return [{ type: "error", code: "not_signed_in", message: "Claude Code is not signed in. Run `claude` in a terminal, use /login, then try again." }];
+      }
+      // Messages from a sub-agent carry the id of the tool call that started them.
+      const parent = typeof j.parent_tool_use_id === "string" ? { parent: j.parent_tool_use_id } : {};
+      const out: AgentEvent[] = [];
+      for (const block of j.message?.content ?? []) {
+        if (block.type === "text") out.push({ type: "text", text: block.text, ...parent });
+        if (block.type === "tool_use") out.push({ type: "tool", id: block.id, name: block.name, input: block.input, ...parent });
+      }
+      return out;
+    }
+    if (j.type === "result") {
+      if (j.is_error) {
+        if (errored) return [];
+        return [{ type: "error", code: "failed", message: String(j.result ?? "Claude Code reported an error") }];
+      }
+      return [{
+        type: "result",
+        text: String(j.result ?? ""),
+        costUsd: j.total_cost_usd,
+        durationMs: j.duration_ms,
+        usage: { inputTokens: j.usage?.input_tokens, outputTokens: j.usage?.output_tokens },
+      }];
+    }
+    return [];
+  };
+}
+
+export function createClaudeAdapter(spawnFn: SpawnFn = realSpawn): Adapter {
+  return {
+    async *run({ cwd, message, sessionId, signal }) {
+      const args = ["-p", "--output-format", "stream-json", "--verbose"];
+      if (sessionId) args.push("--resume", sessionId);
+      const child = spawnFn(args, cwd);
+
+      const lines = createInterface({ input: child.stdout! });
+      let spawnError: NodeJS.ErrnoException | undefined;
+      child.once("error", (e) => {
+        spawnError = e;
+        lines.close();
+      });
+      let stderr = "";
+      child.stderr?.on("data", (d) => (stderr = (stderr + d).slice(-2000)));
+      const closed = new Promise<number | null>((resolve) => child.once("close", resolve));
+      signal?.addEventListener("abort", () => child.kill());
+
+      // The message goes on stdin, not in the arguments, so it can never be mistaken for a flag.
+      child.stdin?.on("error", () => {});
+      child.stdin?.end(message);
+
+      const parse = createParser();
+      let finished = false;
+      for await (const line of lines) {
+        for (const event of parse(line)) {
+          if (event.type === "result" || event.type === "error") finished = true;
+          yield event;
+        }
+      }
+
+      if (spawnError) {
+        yield spawnError.code === "ENOENT"
+          ? { type: "error", code: "not_installed", message: "Claude Code is not installed (the `claude` command was not found). Install it, sign in, then try again." }
+          : { type: "error", code: "failed", message: `Could not start Claude Code: ${spawnError.message}` };
+      } else {
+        const code = await closed;
+        if (!finished) {
+          yield { type: "error", code: "failed", message: stderr.trim() || `Claude Code exited with code ${code} without an answer.` };
+        }
+      }
+    },
+  };
+}
