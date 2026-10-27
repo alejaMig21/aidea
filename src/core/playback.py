@@ -1,14 +1,15 @@
 """Run one Python function under a tracer and print what happened as JSON.
 
 Usage: playback.py <project folder> <module id> <qualified name> <file>
-Standard input: {"args": [...], "kwargs": {...}, "instance": {"args": [...], "kwargs": {...}} or null, "fakes": {name: value}}
-Standard output: {"refused": [{"name", "line"}]} when the function has external effects that are not replaced,
+Standard input: {"values": {parameter: Python literal text}} or {"args": [...], "kwargs": {...}}, plus {"instance": {"args": [...], "kwargs": {...}} or null, "fakes": {name: value}}
+Standard output: {"invalid": {parameter: message}} when a value is not a plain literal (it is parsed, never run),
+  {"refused": [{"name", "line"}]} when the function has external effects that are not replaced,
   {"unsupported": "..."} for generators and async functions, or
   {"result", "output", "visits": [{"step", "locals"}], "truncated", "error"?} after running it.
 Exit codes: 2 = the function is not in the file; 3 = the file cannot be read as Python.
 
-THIS RUNS THE PROJECT'S OWN CODE, including whatever the module does when it is imported. The inputs are JSON values,
-never code. Two guards help against accidents:
+THIS RUNS THE PROJECT'S OWN CODE, including whatever the module does when it is imported. The inputs are JSON values or
+Python literals parsed with ast.literal_eval, never code. Two guards help against accidents:
   1. before running, calls in the function's own body that read or write the outside world (files, network, processes,
      native code) are refused unless the person replaced them with fake data. This looks at names only;
   2. while running, an audit hook stops file writes, reads outside the project and the Python installation, network
@@ -171,6 +172,29 @@ def resolve(module, parts, instance):
     return getattr(owner, parts[-1])
 
 
+def evaluate_values(function, values):
+    """Turn {parameter: Python literal text} into call arguments. Text is parsed, never run: only literals pass.
+    Returns (args, kwargs, problems) where problems maps a parameter name to what is wrong with its text."""
+    a = function.args
+    names = [x.arg for x in a.posonlyargs + a.args + a.kwonlyargs]
+    problems, evaluated = {}, {}
+    for name, text in values.items():
+        if name not in names:
+            problems[name] = f"{name} is not a parameter of this function"
+        elif text.strip():  # a blank value leaves the default in place
+            try:
+                evaluated[name] = ast.literal_eval(text.strip())
+            except (ValueError, SyntaxError, TypeError, MemoryError, RecursionError) as e:
+                what = "is not valid Python" if isinstance(e, SyntaxError) else "is not a plain value (calls, names and expressions are not run)"
+                problems[name] = f"{name}: {text.strip()[:60]} {what}"
+    args = []
+    for x in a.posonlyargs:  # these cannot be given by name, so they go first, in order
+        if x.arg not in evaluated:
+            break
+        args.append(evaluated.pop(x.arg))
+    return args, evaluated, problems
+
+
 def main():
     root, module_id, qualified, file = sys.argv[1:5]
     root, file = os.path.abspath(root), os.path.abspath(file)  # the script changes folder below
@@ -196,6 +220,12 @@ def main():
     if isinstance(function, ast.AsyncFunctionDef) or any(isinstance(n, (ast.Yield, ast.YieldFrom)) for n in ast.walk(function)):
         json.dump({"unsupported": "Generators and async functions cannot be played yet"}, sys.stdout)
         return
+
+    if request.get("values"):
+        args, kwargs, problems = evaluate_values(function, request["values"])
+        if problems:
+            json.dump({"invalid": problems}, sys.stdout)
+            return
 
     found = effects_of(function, fakes, import_aliases(tree))
     if found:

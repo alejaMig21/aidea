@@ -67,12 +67,13 @@ async function pbRecord() {
   const message = $("pb-message");
   message.textContent = "";
   message.className = "pb-error";
+  document.querySelectorAll("#panel .pb-field-error").forEach((n) => { n.textContent = ""; });
+  const params = pbParameters();
   let body;
   try {
-    body = {
-      project: current, node: pbGraph.node, args: JSON.parse($("pb-args").value || "[]"), fakes: JSON.parse($("pb-fakes").value || "{}"),
-      useProjectPython: $("pb-own-python").checked,
-    };
+    body = { project: current, node: pbGraph.node, fakes: JSON.parse($("pb-fakes").value || "{}"), useProjectPython: $("pb-own-python").checked };
+    if (params) body.values = Object.fromEntries(params.map((p) => [p.name, $(`pb-v-${p.name}`).value]));
+    else body.args = JSON.parse($("pb-args").value || "[]");
     if ($("pb-instance")) body.instance = { args: JSON.parse($("pb-instance").value || "[]") };
   } catch {
     message.textContent = "The inputs must be valid JSON, for example [130] for the arguments.";
@@ -82,7 +83,12 @@ async function pbRecord() {
   const res = await post("/playback", body);
   const answer = await res.json().catch(() => ({ error: "The core sent an answer that could not be read." }));
   if (project !== current) return; // another Project was opened meanwhile
-  if (!res.ok) { message.textContent = answer.error; return; }
+  if (!res.ok) {
+    const fields = Object.entries(answer.fields ?? {}).filter(([name]) => $(`pb-err-${name}`));
+    for (const [name, text] of fields) $(`pb-err-${name}`).textContent = text; // shown on the field it belongs to
+    if (!fields.length) message.textContent = answer.error;
+    return;
+  }
   pbStop();
   pbRecording = answer;
   $("algorithm").classList.add("has-recording");
@@ -90,14 +96,28 @@ async function pbRecord() {
   pbGo(0);
 }
 
+// The open function's parameters when it is a plain function (methods keep the JSON arguments for now).
+const pbParameters = () => algoNodes.find((n) => n.id === pbGraph.node)?.parameters;
+
+// One labelled field per parameter, prefilled with the suggested example, plus a button that refills them all.
+function pbParameterFields(params) {
+  const fill = (p) => { $(`pb-v-${p.name}`).value = p.suggestion ?? ""; };
+  const field = (p) => pbEl("label", {},
+    p.annotation ? `${p.name}: ${p.annotation}` : p.name,
+    pbEl("input", { id: `pb-v-${p.name}`, value: p.suggestion ?? "", placeholder: p.default !== undefined ? `default: ${p.default}` : "a Python value, such as 3 or [1, 2]" }),
+    pbEl("span", { id: `pb-err-${p.name}`, className: "pb-error pb-field-error" }));
+  return [...params.map(field), pbEl("button", { textContent: "Use example", onclick: () => params.forEach(fill) })];
+}
+
 // Builds the panel: the inputs always, the controls once there is a recording.
 function pbRender() {
   const node = algoNodes.find((n) => n.id === pbGraph.node);
   const isMethod = algoNodes.find((n) => n.id === node?.parent)?.kind === "class";
+  const params = pbParameters();
   const field = (label, id, value) => pbEl("label", {}, label, pbEl("input", { id, value }));
   const parts = [
     pbEl("h2", { textContent: `Playback: ${pbGraph.node.split(".").pop()}` }),
-    field("Arguments (JSON list)", "pb-args", "[]"),
+    ...(params ? pbParameterFields(params) : [field("Arguments (JSON list)", "pb-args", "[]")]),
     ...(isMethod ? [field("Constructor arguments of the instance (JSON list)", "pb-instance", "[]")] : []),
     field("Fake data for effects (JSON object)", "pb-fakes", "{}"),
     pbEl("label", { className: "pb-check" }, pbEl("input", { id: "pb-own-python", type: "checkbox" }), "Use the Project's own Python (.venv, venv or env)"),
@@ -126,7 +146,11 @@ function pbRender() {
   if (pbRecording) {
     const inputs = pbRecording.input;
     $("pb-own-python").checked = pbRecording.interpreter !== "default";
-    $("pb-args").value = JSON.stringify(inputs.args);
+    if (params) {
+      for (const [name, text] of Object.entries(inputs.values ?? {})) if ($(`pb-v-${name}`)) $(`pb-v-${name}`).value = text;
+    } else {
+      $("pb-args").value = JSON.stringify(inputs.args);
+    }
     $("pb-fakes").value = JSON.stringify(inputs.fakes);
     if ($("pb-instance")) $("pb-instance").value = JSON.stringify(inputs.instance?.args ?? []);
   }

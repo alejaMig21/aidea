@@ -6,10 +6,16 @@
 
 **Status:** ready-for-agent
 
-- [ ] Through the core protocol: analysis of a function reports parameters in order with default and annotation.
-- [ ] Suggestions come from the default, then the annotation, else none.
-- [ ] Playback runs with valid literals of each basic type (int, float, str, bool, None, list, dict, tuple).
-- [ ] A malformed literal is reported naming its parameter.
-- [ ] A call such as `__import__("os")`, a bare name or an expression is refused and demonstrably not run.
-- [ ] Size limits and earlier Playback guarantees (static effect check, own-Python opt-in, timeouts) still hold.
+- [x] Through the core protocol: analysis of a function reports parameters in order with default and annotation.
+- [x] Suggestions come from the default, then the annotation, else none.
+- [x] Playback runs with valid literals of each basic type (int, float, str, bool, None, list, dict, tuple).
+- [x] A malformed literal is reported naming its parameter.
+- [x] A call such as `__import__("os")`, a bare name or an expression is refused and demonstrably not run.
+- [x] Size limits and earlier Playback guarantees (static effect check, own-Python opt-in, timeouts) still hold.
 - [ ] Checked live: fields labelled by parameter, prefilled, "Use example" works, errors show on the right field.
+
+## Review notes
+
+Tested automatically (test/params.test.ts, test/playback.test.ts): parameters in order with default and annotation; suggestions from default, then annotation, else none; literals of each basic type; malformed literal reported on its parameter; non-literals refused and shown not run (marker file never created); size limits, static effect check, own-Python opt-in and timeouts still hold.
+
+Needs live checking (left unticked): fields labelled by parameter, prefilled, "Use example" refills, errors show under the right field. Methods keep the JSON arguments input until tickets 07 and 08. The old JSON args path stays in the core because methods and existing tests use it.

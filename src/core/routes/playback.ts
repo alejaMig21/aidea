@@ -6,6 +6,7 @@ import type { Handler } from "../types.ts";
 
 const MAX_RECORDINGS = 200;
 const MAX_ARGS = 50;
+const MAX_VALUE_CHARS = 10_000;
 const FAKE_NAME = /^[A-Za-z_][\w.]{0,100}$/;
 const DEFAULT_RUN_TIMEOUT_MS = 20_000;
 
@@ -37,7 +38,12 @@ const handler: Handler = async (req, res, core) => {
   }
 
   // The inputs are JSON values, never code.
-  const { args = [], kwargs = {}, instance = null, fakes = {} } = body ?? {};
+  // `values` are Python literal texts per parameter; the Python side parses them and never runs them.
+  const { args = [], kwargs = {}, instance = null, fakes = {}, values = {} } = body ?? {};
+  if (!isObject(values) || Object.keys(values).length > MAX_ARGS || !Object.values(values).every((v) => typeof v === "string" && v.length <= MAX_VALUE_CHARS)) {
+    core.send(res, 400, { error: `values must be an object of texts, one per parameter (at most ${MAX_ARGS}, each at most ${MAX_VALUE_CHARS} characters)` });
+    return true;
+  }
   const instanceOk = instance === null || (isObject(instance) && (instance.args === undefined || isList(instance.args)) && (instance.kwargs === undefined || isObject(instance.kwargs)));
   if (!isList(args) || !isObject(kwargs) || !instanceOk) {
     core.send(res, 400, { error: `args must be a list (at most ${MAX_ARGS}), kwargs an object, and instance an object with optional args and kwargs` });
@@ -62,7 +68,7 @@ const handler: Handler = async (req, res, core) => {
   }
 
   const { module, qualifiedName } = moduleAndName(project, node);
-  const input = { args, kwargs, instance, fakes };
+  const input = { args, kwargs, instance, fakes, values };
   let outcome: Record<string, unknown>;
   try {
     outcome = JSON.parse(
@@ -84,6 +90,11 @@ const handler: Handler = async (req, res, core) => {
 
   if (typeof outcome.unsupported === "string") {
     core.send(res, 422, { error: outcome.unsupported });
+    return true;
+  }
+  const invalid = outcome.invalid as Record<string, string> | undefined;
+  if (invalid) {
+    core.send(res, 422, { error: Object.values(invalid).join("; "), fields: invalid });
     return true;
   }
   const refused = outcome.refused as { name: string; line: number }[] | undefined;

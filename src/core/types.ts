@@ -13,6 +13,8 @@ export type CoreNode = {
   line: number; // 1-based, inclusive
   endLine: number;
   attributes?: { name: string; line: number }[]; // classes only
+  // Plain functions only: named parameters in call order, with texts as written in the source.
+  parameters?: { name: string; default?: string; annotation?: string; suggestion?: string }[];
 };
 export type Project = { id: string; name: string; path: string; nodes: CoreNode[]; errors: { file: string; message: string }[] };
 

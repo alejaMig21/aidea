@@ -38,7 +38,44 @@ def attributes(cls):
     return [{"name": n, "line": l} for n, l in found.items()]
 
 
-def visit(body, parent, prefix, nodes, file):
+# A small plain example per basic annotation, written as a Python literal.
+EXAMPLES = {"int": "1", "float": "1.5", "str": '"text"', "bool": "True", "list": "[1, 2, 3]", "dict": '{"key": "value"}',
+            "tuple": "(1, 2)", "set": "{1, 2}"}
+
+
+def suggestion(default, annotation):
+    """An example value: the default when it is a plain literal, else a basic annotation's example, else none."""
+    if default is not None:
+        try:
+            ast.literal_eval(default)
+            return ast.unparse(default)
+        except Exception:  # not a plain literal
+            pass
+    if annotation is not None:
+        return EXAMPLES.get(ast.unparse(annotation).split("[")[0])
+    return None
+
+
+def parameters(function):
+    """Named parameters in call order with default and annotation text; `*args` and `**kwargs` are left out."""
+    a = function.args
+    positional = a.posonlyargs + a.args
+    defaults = [None] * (len(positional) - len(a.defaults)) + a.defaults + a.kw_defaults
+    found = []
+    for arg, default in zip(positional + a.kwonlyargs, defaults):
+        item = {"name": arg.arg}
+        if default is not None:
+            item["default"] = ast.unparse(default)
+        if arg.annotation is not None:
+            item["annotation"] = ast.unparse(arg.annotation)
+        example = suggestion(default, arg.annotation)
+        if example is not None:
+            item["suggestion"] = example
+        found.append(item)
+    return found
+
+
+def visit(body, parent, prefix, nodes, file, in_class=False):
     for stmt in body:
         if isinstance(stmt, ast.ClassDef):
             kind = "class"
@@ -52,10 +89,12 @@ def visit(body, parent, prefix, nodes, file):
                 "file": file, "line": first, "endLine": stmt.end_lineno}
         if kind == "class":
             node["attributes"] = attributes(stmt)
+        if kind == "function" and not in_class:  # methods get their form with the instance (a later ticket)
+            node["parameters"] = parameters(stmt)
         nodes.append(node)
         # ponytail: nested functions are not listed, only classes and their members
         if kind == "class":
-            visit(stmt.body, node_id, node_id, nodes, file)
+            visit(stmt.body, node_id, node_id, nodes, file, True)
 
 
 def analyze(root):
