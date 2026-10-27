@@ -115,3 +115,15 @@ _Avoid_: Argument, path
 **Practice session**:
 A separate session of generated problems, based on the user's own project, that checks recall of propositions without naming them.
 _Avoid_: Quiz, exercise
+
+## Window
+
+**Column**:
+A vertical area of the window that the person can resize or fold away. The window arranges the project list, the chat and the Canvas in columns, and adds two more only when they apply: the Tutor column and the Algorithm column.
+_Avoid_: Sidebar, panel, pane
+
+**Tutor column**:
+The column that belongs to the Tutor: explanations, questions and class mode. It holds nothing else.
+
+**Algorithm column**:
+The column for everything about the algorithms layer: the form for the data of a test and the Playback. It appears only while an algorithm is open.
