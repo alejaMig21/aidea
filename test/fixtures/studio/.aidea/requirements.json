@@ -1,0 +1,12 @@
+{
+  "nodes": [
+    {
+      "id": "us-request-quote",
+      "title": "Request a quote",
+      "as": "shop owner",
+      "want": "to request a quote from a form",
+      "so": "I get a price without calling",
+      "rationale": { "why": "The form is the cheapest first channel.", "rejected": [] }
+    }
+  ]
+}
