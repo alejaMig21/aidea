@@ -28,18 +28,9 @@ const handler: Handler = async (req, res, core) => {
     return true;
   }
   if (req.method === "POST" && req.url === "/projects") {
-    const body = await core.readBody(req);
-    if (body === null) {
-      core.send(res, 413, { error: "Body too large" }, { connection: "close" });
-      return true;
-    }
-    let path: unknown;
-    try {
-      path = JSON.parse(body).path;
-    } catch {
-      core.send(res, 400, { error: "Body must be JSON" });
-      return true;
-    }
+    const body = (await core.readJson(req, res)) as { path?: unknown } | null | undefined;
+    if (body === undefined) return true; // readJson already answered
+    const path = body?.path;
     if (typeof path !== "string" || !isDirectory(path)) {
       core.send(res, 400, { error: "path must be an existing directory" });
       return true;

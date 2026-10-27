@@ -10,3 +10,9 @@
 - [ ] Zooming to the Code layer shows the real source text for the selected Node.
 - [ ] "Open in my editor" opens the corresponding file at the right place.
 - [ ] Editing a file in the fixture Project and asking the core to refresh changes the Derived layers accordingly.
+
+## Notes from the review
+
+- Implemented and merged. Refresh after a hand edit works by reopening the Project (clicking its name in the list); there is no file watcher or Refresh button yet.
+- Selecting a Node shows its source; zooming into the Code layer arrives with ticket 04. The editor defaults to the real VS Code executable on Windows (a `.cmd` shim cannot be started without a shell); `AIDEA_EDITOR` overrides it. Not yet tried against a real editor window.
+- Known gaps: source line numbers come from the last analysis, so they are stale after an edit until refresh; `/source` has no file size cap.

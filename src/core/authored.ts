@@ -8,7 +8,7 @@
 //   "rationale": { "why": "...", "rejected": [ { "option": "...", "reason": "..." } ] }
 // `block` is one of the nine Business Model Canvas blocks (BLOCKS below); `parent` is an optional string.
 // Extra fields are kept as they are. A bad Node is dropped with an error; a bad file never stops other files.
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { lstatSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { AuthoredLayer, AuthoredNode } from "./types.ts";
 
@@ -20,26 +20,26 @@ const MAX_FILE_BYTES = 1024 * 1024;
 
 type Fields = Record<string, unknown>;
 const isObject = (v: unknown): v is Fields => typeof v === "object" && v !== null && !Array.isArray(v);
-const text = (v: unknown) => typeof v === "string" && v.trim() !== "";
+const isNonEmptyString = (v: unknown) => typeof v === "string" && v.trim() !== "";
 
 // Layer-specific required fields; each check returns the problem or null.
 const layerChecks: Record<string, (n: Fields) => string | null> = {
   business: (n) => (BLOCKS.includes(n.block as string) ? null : `"block" must be one of: ${BLOCKS.join(", ")}`),
-  requirements: (n) => ["as", "want", "so"].map((f) => (text(n[f]) ? null : `"${f}" must be a non-empty string`)).find(Boolean) ?? null,
+  requirements: (n) => ["as", "want", "so"].map((f) => (isNonEmptyString(n[f]) ? null : `"${f}" must be a non-empty string`)).find(Boolean) ?? null,
   architecture: (n) =>
-    !text(n.technology) ? '"technology" must be a non-empty string'
-    : n.parent !== undefined && !text(n.parent) ? '"parent" must be a non-empty string when present'
+    !isNonEmptyString(n.technology) ? '"technology" must be a non-empty string'
+    : n.parent !== undefined && !isNonEmptyString(n.parent) ? '"parent" must be a non-empty string when present'
     : null,
 };
 
 function rationaleProblem(r: unknown): string | null {
   if (!isObject(r)) return '"rationale" must be an object';
-  if (!text(r.why)) return '"rationale.why" must be a non-empty string';
+  if (!isNonEmptyString(r.why)) return '"rationale.why" must be a non-empty string';
   if (!Array.isArray(r.rejected)) return '"rationale.rejected" must be an array';
   for (const [i, alt] of r.rejected.entries()) {
     if (!isObject(alt)) return `"rationale.rejected[${i}]" must be an object`;
     for (const f of ["option", "reason"]) {
-      if (!text(alt[f])) return `"rationale.rejected[${i}].${f}" must be a non-empty string`;
+      if (!isNonEmptyString(alt[f])) return `"rationale.rejected[${i}].${f}" must be a non-empty string`;
     }
   }
   return null;
@@ -62,9 +62,9 @@ function parseLayer(layer: string, source: string, file: string): AuthoredLayer 
   const seen = new Set<string>();
   for (const [i, n] of doc.nodes.entries()) {
     const problem = !isObject(n) ? "must be an object"
-      : !text(n.id) ? '"id" must be a non-empty string'
+      : !isNonEmptyString(n.id) ? '"id" must be a non-empty string'
       : seen.has(n.id as string) ? `duplicate id "${n.id}"`
-      : !text(n.title) ? '"title" must be a non-empty string'
+      : !isNonEmptyString(n.title) ? '"title" must be a non-empty string'
       : layerChecks[layer](n) ?? rationaleProblem(n.rationale);
     if (problem) {
       fail(`nodes[${i}]: ${problem}`);
@@ -72,6 +72,13 @@ function parseLayer(layer: string, source: string, file: string): AuthoredLayer 
     }
     seen.add((n as Fields).id as string);
     out.nodes.push(n as AuthoredNode);
+  }
+  if (layer === "architecture") {
+    out.nodes = out.nodes.filter((n) => {
+      if (n.parent === undefined || seen.has(n.parent as string)) return true;
+      fail(`node "${n.id}": "parent" refers to unknown id "${n.parent}"`);
+      return false;
+    });
   }
   return out;
 }
@@ -85,6 +92,7 @@ export function loadAuthored(projectPath: string) {
   const dir = join(projectPath, ".aidea");
   let entries;
   try {
+    if (lstatSync(dir).isSymbolicLink()) return { layers, errors }; // a link could point outside the Project
     entries = readdirSync(dir, { withFileTypes: true });
   } catch {
     return { layers, errors }; // no .aidea folder: nothing authored yet

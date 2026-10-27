@@ -6,3 +6,4 @@ __pycache__/
 .codebase-memory/
 .playwright-mcp/
 .claude/worktrees/
+.atl/

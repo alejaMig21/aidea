@@ -26,6 +26,19 @@ export async function startCore({ port, adapter = createClaudeAdapter() }: { por
       res.writeHead(status, { "content-type": "application/json", ...headers });
       res.end(JSON.stringify(body));
     },
+    readJson: async (req, res) => {
+      const raw = await core.readBody(req);
+      if (raw === null) {
+        core.send(res, 413, { error: "Body too large" }, { connection: "close" });
+        return undefined;
+      }
+      try {
+        return JSON.parse(raw);
+      } catch {
+        core.send(res, 400, { error: "Body must be JSON" });
+        return undefined;
+      }
+    },
     readBody: async (req) => {
       const chunks: Buffer[] = [];
       let size = 0;
@@ -49,7 +62,10 @@ export async function startCore({ port, adapter = createClaudeAdapter() }: { por
       }
       core.send(res, 404, { error: "Not found" });
     } catch (e) {
-      core.send(res, 500, { error: e instanceof Error ? e.message : String(e) });
+      // The detail stays in the core's log: messages can contain local paths.
+      console.error(e);
+      if (res.headersSent) return void res.end();
+      core.send(res, 500, { error: "Internal error" });
     }
   });
 

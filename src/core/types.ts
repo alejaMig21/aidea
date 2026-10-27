@@ -36,6 +36,8 @@ export type Core = {
   send: (res: ServerResponse, status: number, body: unknown, headers?: Record<string, string>) => void;
   // Returns null when the body exceeds the size limit.
   readBody: (req: IncomingMessage) => Promise<string | null>;
+  // Parses a JSON body; on failure it has already sent the 413 or 400 response and returns undefined.
+  readJson: (req: IncomingMessage, res: ServerResponse) => Promise<unknown>;
 };
 
 // A route module's default export: returns true when it handled the request.

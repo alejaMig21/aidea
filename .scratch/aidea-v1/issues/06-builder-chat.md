@@ -11,3 +11,9 @@
 - [ ] Missing installation and missing sign-in each produce a distinct, clear error.
 - [ ] Tests use the fake Agent adapter replaying a stream recorded once from a real session.
 - [ ] Manual check with the real Claude Code confirms the reply works with the person's existing plugins and subscription login.
+
+## Notes from the review
+
+- Implemented and merged; verified live with the real Claude Code (reply streamed, cost shown). Real recordings cover a normal reply and a signed-out run; the sub-agent nesting fixture is hand-written.
+- Not-signed-in detection relies on the `authentication_failed` marker Claude Code emits today. Each message loads the person's plugins, so even a one-word reply costs roughly 12 cents of usage.
+- Known gaps: no limit on concurrent builder runs; on Windows stopping a run kills only the top process, not its children; permission requests are denied until ticket 07.

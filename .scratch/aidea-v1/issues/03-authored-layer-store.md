@@ -10,3 +10,8 @@
 - [ ] Selecting a Node shows its Rationale in the right-hand panel.
 - [ ] A malformed hand edit is reported with a clear message and does not crash the core.
 - [ ] Authored files are plain text and sit inside the Project repository.
+
+## Notes from the review
+
+- Implemented and merged. The Business Model Canvas blocks and the C4-style containers are drawn as plain cards in a grid, not in canvas or nested layouts; parents are validated but not drawn.
+- A hand-edited `.aidea` folder that is a link elsewhere is ignored, and an Architecture Node whose parent does not exist is dropped with an error.
