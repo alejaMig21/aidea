@@ -51,6 +51,13 @@ function rightUnregisterTab(id) {
   if (wasSelected) { for (const x of rightPanes.children) x.hidden = x.dataset.tab !== rightTabs.firstChild.dataset.tab; rightTabs.firstChild.setAttribute("aria-selected", "true"); }
 }
 
+// Enables or disables a tab; a disabled tab that was selected hands the selection back to the first tab.
+function rightSetTabEnabled(id, enabled) {
+  const b = rightTabs.querySelector(`[data-tab="${id}"]`);
+  b.disabled = !enabled;
+  if (!enabled && b.getAttribute("aria-selected") === "true") rightSelectTab(rightTabs.firstChild.dataset.tab);
+}
+
 // The Tutor tab is always present. Its entry point stays disabled until the Tutor exists.
 {
   const pane = document.createElement("div");

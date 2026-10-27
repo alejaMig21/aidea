@@ -168,6 +168,7 @@
   #right-tabs { display: flex; gap: 6px; padding: 0 8px; border-bottom: 1px solid var(--line); flex: none; }
   #right-tabs button { background: transparent; color: var(--muted); font-size: 13.5px; padding: 11px 10px 11px; border-radius: 0; border-bottom: 2px solid transparent; }
   #right-tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+  #right-tabs button:disabled { opacity: .45; cursor: default; }
   #right-panes { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
   #right-panes > div { flex: 1 0 auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 8px; }
   #right-panes > div[hidden] { display: none; }

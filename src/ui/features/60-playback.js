@@ -26,9 +26,11 @@ playbackStyle.textContent = `
 `;
 document.head.append(playbackStyle);
 
-// The Algorithm column: a tab in the right slot, present only while the Algorithms layer is shown.
+// The Algorithm column: a tab in the right slot, always there, enabled only while an Algorithm is open.
 // Proposals stay in #panel, outside this column, so deciding on them works from any tab.
 const pbPane = document.createElement("div");
+rightRegisterTab("algorithm", "Algorithms", pbPane); // always in the right slot, in the page so pbRender can find its fields by id
+rightSetTabEnabled("algorithm", false); // until an Algorithm is open
 let pbGraph = null;     // the open Algorithm graph
 let pbRecording = null; // the recording being replayed
 let pbIndex = 0;
@@ -135,7 +137,7 @@ function pbFields(node) {
 
 // Builds the panel: the inputs always, the controls once there is a recording.
 function pbRender() {
-  if (!pbNode()) { rightUnregisterTab("algorithm"); return; } // the function is gone (another Project): nothing to show
+  if (!pbNode()) { rightSetTabEnabled("algorithm", false); return; } // the function is gone (another Project): nothing to show
   pbRenderedFor = pbGraph;
   const node = pbNode();
   const useExample = () => {
@@ -198,7 +200,7 @@ draw = async (nodes) => {
   pbRecording = null;
   pbIndex = 0;
   pbRenderedFor = null;
-  rightUnregisterTab("algorithm");
+  rightSetTabEnabled("algorithm", false);
   await drawWithoutPlayback(nodes);
 };
 
@@ -206,9 +208,9 @@ draw = async (nodes) => {
 const showLayerWithoutPlayback = showLayer;
 showLayer = (which) => {
   showLayerWithoutPlayback(which);
-  if (which !== "algorithms" || !pbNode()) { pbStop(); rightUnregisterTab("algorithm"); }
+  if (which !== "algorithms" || !pbNode()) { pbStop(); rightSetTabEnabled("algorithm", false); }
   else {
-    if (!pbPane.isConnected) rightRegisterTab("algorithm", "Algorithms", pbPane); // in the page first: pbRender looks fields up by id
+    rightSetTabEnabled("algorithm", true);
     if (pbRenderedFor !== pbGraph) pbRender(); // keep what the person typed unless the graph changed
     rightShowTab("algorithm");
     if (pbRecording) { $("algorithm").classList.add("has-recording"); pbShowStep(); }
