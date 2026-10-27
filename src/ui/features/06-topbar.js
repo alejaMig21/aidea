@@ -21,8 +21,8 @@ async function refreshSwitcherLabel() {
   switcherButton.textContent = `Project: ${p ? p.name : "unknown"}`;
 }
 
-// Same as Home's instruction: type the folder path in the box and choose Open project.
-const switcherOpenFolder = () => { closeSwitcher(); $("path").focus(); };
+// Same action as Home's "Open folder" button.
+const switcherOpenFolder = () => { closeSwitcher(); homeOpenFolder(); };
 
 const switcherHome = () => {
   closeSwitcher();

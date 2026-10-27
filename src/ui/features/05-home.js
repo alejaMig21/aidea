@@ -30,10 +30,11 @@ async function refreshHome() {
   }));
 }
 // Open folder: the desktop shell's picker when present (window.aidea), else focus the typed path box.
-$("home-open").onclick = async () => {
+async function homeOpenFolder() {
   if (!window.aidea) return $("path").focus();
   const folder = await window.aidea.pickFolder();
   if (folder) open(folder);
-};
+}
+$("home-open").onclick = homeOpenFolder;
 const hideHome =() => { $("home").hidden = true; };
 refreshHome();
