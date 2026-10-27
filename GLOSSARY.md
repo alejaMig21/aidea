@@ -66,6 +66,10 @@ _Avoid_: Plugin, driver, connector
 A change the agent suggests to the canvas or code, shown highlighted and pending until the user accepts or rejects it.
 _Avoid_: Suggestion, draft
 
+**Permission card**:
+A card in the chat bar asking the person to approve or reject one action the agent wants to take, shown with what the action would do.
+_Avoid_: Prompt, confirmation, dialog
+
 ## Learning
 
 **Tutor**:

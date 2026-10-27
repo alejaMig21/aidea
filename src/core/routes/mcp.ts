@@ -1,5 +1,5 @@
 // aidea's own MCP server, as small as it can be: one tool, `approve`, which Claude Code calls (through
-// --permission-prompt-tool) when a tool call needs the person's permission. Plain JSON over HTTP, no streaming.
+// --permission-prompt-tool) when a tool call needs the person's permission. Plain JSON over HTTP, one message per request.
 // The address contains the token of a running conversation, so only the Claude Code process we started can use it.
 import type { Handler } from "../types.ts";
 
@@ -30,44 +30,44 @@ const handler: Handler = async (req, res, core) => {
     core.send(res, 404, { error: "Unknown conversation" });
     return true;
   }
-  const body = await core.readJson(req, res, MAX_MCP_BODY_BYTES);
-  if (body === undefined) return true; // readJson already answered
+  const message = await core.readJson(req, res, MAX_MCP_BODY_BYTES);
+  if (message === undefined) return true; // readJson already answered
 
-  const replies: object[] = [];
-  for (const message of Array.isArray(body) ? body : [body]) {
-    if (!isObject(message) || message.jsonrpc !== "2.0" || typeof message.method !== "string") {
-      replies.push(rpcError(isObject(message) ? message.id ?? null : null, -32600, "Not a JSON-RPC request"));
-      continue;
-    }
-    const { id, method } = message;
-    const params = isObject(message.params) ? message.params : {};
-    if (id === undefined) continue; // a notification: nothing to answer
-
-    if (method === "initialize") {
-      const version = typeof params.protocolVersion === "string" ? params.protocolVersion : "2025-06-18";
-      replies.push(rpcResult(id, { protocolVersion: version, capabilities: { tools: {} }, serverInfo: { name: "aidea", version: "0.0.0" } }));
-    } else if (method === "ping") {
-      replies.push(rpcResult(id, {}));
-    } else if (method === "tools/list") {
-      replies.push(rpcResult(id, { tools: [TOOL] }));
-    } else if (method === "tools/call") {
-      const args = isObject(params.arguments) ? params.arguments : {};
-      if (params.name !== TOOL.name || typeof args.tool_name !== "string") {
-        replies.push(rpcError(id, -32602, "Call approve with tool_name and input"));
-        continue;
-      }
-      const input = isObject(args.input) ? args.input : {};
-      const decision = (await core.permissions.ask(token, args.tool_name, input)) ?? { behavior: "deny" as const, message: "The conversation is not running" };
-      // Claude Code expects the decision as JSON text: { behavior: "allow", updatedInput } or { behavior: "deny", message }.
-      const text = JSON.stringify(decision.behavior === "allow" ? { behavior: "allow", updatedInput: input } : decision);
-      replies.push(rpcResult(id, { content: [{ type: "text", text }] }));
-    } else {
-      replies.push(rpcError(id, -32601, `Unknown method: ${method}`));
-    }
+  if (!isObject(message) || message.jsonrpc !== "2.0" || typeof message.method !== "string") {
+    core.send(res, 200, rpcError(null, -32600, "Send one JSON-RPC request (batches are not supported)"));
+    return true;
+  }
+  const { id, method } = message;
+  const params = isObject(message.params) ? message.params : {};
+  if (id === undefined) {
+    res.writeHead(202).end(); // a notification: nothing to answer
+    return true;
   }
 
-  if (replies.length === 0) res.writeHead(202).end();
-  else core.send(res, 200, Array.isArray(body) ? replies : replies[0]);
+  if (method === "initialize") {
+    const version = typeof params.protocolVersion === "string" ? params.protocolVersion : "2025-06-18";
+    core.send(res, 200, rpcResult(id, { protocolVersion: version, capabilities: { tools: {} }, serverInfo: { name: "aidea", version: "0.0.0" } }));
+  } else if (method === "ping") {
+    core.send(res, 200, rpcResult(id, {}));
+  } else if (method === "tools/list") {
+    core.send(res, 200, rpcResult(id, { tools: [TOOL] }));
+  } else if (method === "tools/call") {
+    const args = isObject(params.arguments) ? params.arguments : {};
+    // The person approves exactly what the card shows, so a request without a proper input is refused, never guessed.
+    if (params.name !== TOOL.name || typeof args.tool_name !== "string" || !isObject(args.input)) {
+      core.send(res, 200, rpcError(id, -32602, "Call approve with a tool_name and an input object"));
+      return true;
+    }
+    // If Claude Code drops this request before it is answered, the connection closes: that withdraws the card.
+    const gaveUp = new AbortController();
+    res.on("close", () => gaveUp.abort());
+    const decision = (await core.permissions.ask(token, args.tool_name, args.input, gaveUp.signal)) ?? { behavior: "deny" as const, message: "The conversation is not running" };
+    // Claude Code expects the decision as JSON text: { behavior: "allow", updatedInput } or { behavior: "deny", message }.
+    const text = JSON.stringify(decision.behavior === "allow" ? { behavior: "allow", updatedInput: args.input } : decision);
+    core.send(res, 200, rpcResult(id, { content: [{ type: "text", text }] }));
+  } else {
+    core.send(res, 200, rpcError(id, -32601, `Unknown method: ${method}`));
+  }
   return true;
 };
 

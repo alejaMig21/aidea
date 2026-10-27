@@ -5,7 +5,20 @@ import type { Adapter, AgentEvent, SpawnFn } from "../types.ts";
 // Real process source: the person's installed, unmodified Claude Code. No shell, so the message can never
 // be interpreted as a command. Never `--bare`: it ignores the subscription login and the person's plugins.
 // Credentials are never read here; Claude Code finds its own login.
-const realSpawn: SpawnFn = (args, cwd) => spawn("claude", args, { cwd, stdio: ["pipe", "pipe", "pipe"] });
+// A permission request waits for a person, who may take minutes. Measured with the real Claude Code: without these
+// two settings it stops waiting after about 61 seconds; with them a late answer still works. The person's own
+// values, if they set any, are kept.
+const WAIT_FOR_PERSON_MS = String(30 * 60 * 1000);
+const realSpawn: SpawnFn = (args, cwd) =>
+  spawn("claude", args, {
+    cwd,
+    stdio: ["pipe", "pipe", "pipe"],
+    env: {
+      ...process.env,
+      MCP_TOOL_TIMEOUT: process.env.MCP_TOOL_TIMEOUT ?? WAIT_FOR_PERSON_MS,
+      CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT: process.env.CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT ?? WAIT_FOR_PERSON_MS,
+    },
+  });
 
 // Turns stream-json lines into aidea events. Stateful because Claude Code reports a signed-out run twice
 // (an assistant message flagged with `error`, then an error result) and we want a single error event.
