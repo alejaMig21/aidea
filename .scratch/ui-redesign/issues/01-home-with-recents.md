@@ -21,3 +21,8 @@
 - Tested automatically (`test/recents.test.ts`, through the core protocol, store in a temp dir): first/reopen/cap-20 ordering, unavailable entries kept, forget leaves the folder, restart survival, refusal of missing or non-directory paths. `GLOSSARY.md` entries added.
 - NOT verified live (no running UI in this session): the "Checked live" criterion. Still to check by hand: Home lists name, path and last-opened time; clicking a recent opens it; unavailable entries are disabled with a Forget button; the empty state text shows with no recents; typed-path open still works and hides Home; existing canvas behaviour is unchanged.
 - The core only persists recents when started with `recentsFile` (`src/core/main.ts` passes `~/.aidea/recents.json`, overridable with `AIDEA_RECENTS_FILE`); `startCore` without it keeps them in memory, so other tests never touch the real per-user directory.
+
+## Review fixes
+
+- Recents now normalise paths in the core (`path.resolve`; case-folded comparison on Windows only, the stored display path keeps its spelling), so `X`, `X/` and other spellings list one entry. Covered by a protocol test in `test/recents.test.ts`.
+- Home text explains the two ways to start (Open folder, New project; typed path in a plain browser), and Forget shows on every recent entry (never touches the folder). UI changes are unverified live.
