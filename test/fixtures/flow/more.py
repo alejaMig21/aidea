@@ -9,3 +9,11 @@ def risky(path):
         if line == "#":
             continue
     return data
+
+
+def route(command):
+    match command:
+        case "go":
+            return 1
+        case _:
+            return 2

@@ -110,6 +110,23 @@ class Flow:
             # ponytail: an exception can come from any line of the try body; it is drawn from the `try` step only
             return self.block(stmt.finalbody, ends, loop) if stmt.finalbody else ends
 
+        if isinstance(stmt, ast.Match):
+            node = self.add("branch", f"match {ast.unparse(stmt.subject)}", stmt.lineno, stmt.lineno, [stmt.subject])
+            self.link(pending, node)
+            # The cases are tried in order: a case that does not match leads to the next one.
+            ends, previous = [], [(node, None)]
+            for case in stmt.cases:
+                label = f"case {ast.unparse(case.pattern)}" + (f" if {ast.unparse(case.guard)}" if case.guard else "")
+                first = case.pattern.lineno
+                parts = [case.pattern] + ([case.guard] if case.guard else [])
+                case_node = self.add("branch", label, first, max(first, case.body[0].lineno - 1), parts)
+                self.link(previous, case_node)
+                ends += self.block(case.body, [(case_node, "true")], loop)
+                previous = [(case_node, "false")]
+            last = stmt.cases[-1]
+            catch_all = isinstance(last.pattern, ast.MatchAs) and last.pattern.pattern is None and last.guard is None
+            return ends if catch_all else ends + previous
+
         if isinstance(stmt, (ast.Return, ast.Raise)):
             kind = "return" if isinstance(stmt, ast.Return) else "raise"
             node = self.add(kind, ast.unparse(stmt).split("\n")[0], stmt.lineno, stmt.end_lineno, [stmt])
@@ -176,8 +193,13 @@ def flow_of(source, qualified_name):
 
 
 if __name__ == "__main__":
-    with open(sys.argv[1], encoding="utf-8") as f:
-        result = flow_of(f.read(), sys.argv[2])
+    # Exit codes: 2 = the function is not in the file; 3 = the file cannot be read as Python.
+    try:
+        with open(sys.argv[1], encoding="utf-8") as f:
+            result = flow_of(f.read(), sys.argv[2])
+    except (OSError, SyntaxError, ValueError, RecursionError):
+        print(json.dumps({"error": "file cannot be read as Python"}))
+        sys.exit(3)
     if result is None:
         print(json.dumps({"error": "function not found"}))
         sys.exit(2)

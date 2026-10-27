@@ -26,8 +26,17 @@ const handler: Handler = async (req, res, core) => {
   try {
     flow = JSON.parse(await runPython("flow.py", [file, qualifiedName], 30_000));
   } catch (e) {
-    if ((e as { code?: number }).code === 2) {
+    const failure = e as { code?: number; killed?: boolean };
+    if (failure.code === 2) {
       core.send(res, 422, { error: "The function is no longer in its file: refresh the Project" });
+      return true;
+    }
+    if (failure.code === 3) {
+      core.send(res, 422, { error: "The file cannot be read as Python: fix it, then refresh the Project" });
+      return true;
+    }
+    if (failure.killed) {
+      core.send(res, 504, { error: "Building the Algorithm graph took too long" });
       return true;
     }
     throw e;

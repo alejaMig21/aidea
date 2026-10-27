@@ -43,7 +43,7 @@ export function layoutFlow(steps: { id: string }[], edges: FlowEdge[]): Rect[] {
   const row = new Map<string, number>();
   const placed = new Map<number, number>();
   return steps.map((step) => {
-    const above = edges.filter((e) => e.to === step.id && !e.back).map((e) => row.get(e.from)! + 1);
+    const above = edges.filter((e) => e.to === step.id && !e.back).map((e) => (row.get(e.from) ?? -1) + 1);
     const y = Math.max(0, ...above);
     row.set(step.id, y);
     const column = placed.get(y) ?? 0;

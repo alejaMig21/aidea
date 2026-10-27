@@ -1,13 +1,20 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
+import { cpSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fixture, startTestCore } from "./helpers.ts";
 
 let t: Awaited<ReturnType<typeof startTestCore>>;
+const scratch: string[] = [];
 before(async () => {
   t = await startTestCore();
   await t.post("/projects", { path: fixture("flow") });
 });
-after(() => t.core.close());
+after(() => {
+  t.core.close();
+  for (const dir of scratch) rmSync(dir, { recursive: true, force: true });
+});
 
 type Step = { id: string; kind: string; label: string; text: string; line: number; endLine: number; reads: string[]; writes: string[] };
 type Edge = { from: string; to: string; label?: string; back?: boolean };
@@ -110,6 +117,45 @@ test("try, except, break and continue are drawn as steps with the right ways in 
       "return data -> end",
     ].sort(),
   );
+});
+
+test("a match statement is drawn as the cases tried in order, each with its own way out", async () => {
+  const g = await (await algorithm("more.route")).json();
+  assert.deepEqual(
+    g.steps.map((s: Step) => `${s.kind} | ${s.label}`),
+    [
+      "start | route(command)",
+      "branch | match command",
+      "branch | case 'go'",
+      "return | return 1",
+      "branch | case _",
+      "return | return 2",
+      "end | end",
+    ],
+  );
+  assert.deepEqual(
+    describe(g.steps, g.edges),
+    [
+      "route(command) -> match command",
+      "match command -> case 'go'",
+      "case 'go' -> return 1 [true]",
+      "case 'go' -> case _ [false]",
+      "case _ -> return 2 [true]",
+      "return 1 -> end",
+      "return 2 -> end",
+    ].sort(),
+  );
+});
+
+test("a file that can no longer be read as Python is reported, not turned into an internal error", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "aidea-flow-"));
+  scratch.push(dir);
+  cpSync(fixture("flow"), dir, { recursive: true });
+  await t.post("/projects", { path: dir });
+  writeFileSync(join(dir, "shapes.py"), "def drain(total:\n    return total\n");
+  const res = await t.get(`/algorithm?project=${encodeURIComponent(dir)}&node=shapes.drain`);
+  assert.equal(res.status, 422);
+  assert.match((await res.json()).error, /cannot be read as Python/);
 });
 
 test("each step carries its exact source, its lines and the names it reads and writes", async () => {

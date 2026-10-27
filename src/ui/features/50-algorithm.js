@@ -3,6 +3,7 @@
 const algoStyle = document.createElement("style");
 algoStyle.textContent = `
   .flow-edge { stroke: var(--muted); fill: none; marker-end: url(#flow-arrow); }
+  .flow-arrow-head { fill: var(--muted); }
   .flow-label { fill: var(--muted); font-size: 11px; }
   .flow-step { cursor: pointer; }
   .flow-step rect { stroke-width: 1.5; }
@@ -16,7 +17,7 @@ document.head.append(algoStyle);
 // Arrow heads for the wires
 const defs = el("defs", {});
 defs.append(el("marker", { id: "flow-arrow", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }));
-defs.firstChild.append(el("path", { d: "M0 0 L10 5 L0 10 z", fill: "context-stroke" }));
+defs.firstChild.append(el("path", { d: "M0 0 L10 5 L0 10 z", class: "flow-arrow-head" }));
 svg.prepend(defs);
 
 const algoGroup = el("g", { id: "algorithm" });
@@ -63,6 +64,7 @@ function drawAlgorithm(graph) {
 
 let algoNodes = [];
 let algoGraph = null;
+let algoRequest = 0; // numbers the requests so a slow answer cannot replace a newer one
 const drawWithoutAlgorithms = draw;
 draw = async (nodes) => {
   algoNodes = nodes;
@@ -77,9 +79,10 @@ svg.addEventListener("dblclick", async (e) => {
   // A function on the Components layer opens its Algorithm graph.
   const id = authoredShown === "components" ? e.target.getAttribute?.("data-id") : null;
   if (id && algoNodes.find((n) => n.id === id)?.kind === "function") {
+    const request = ++algoRequest;
     const res = await fetch(`/algorithm?project=${encodeURIComponent(project)}&node=${encodeURIComponent(id)}`);
     const body = await res.json();
-    if (project !== current) return; // another Project was opened meanwhile: this answer is stale
+    if (project !== current || request !== algoRequest) return; // another Project or function was opened meanwhile
     $("error").textContent = res.ok ? "" : body.error;
     if (!res.ok) return;
     algoGraph = body;
