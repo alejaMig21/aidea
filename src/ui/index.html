@@ -8,15 +8,17 @@
   :root {
     --bg: #f6f6f4; --panel: #ffffff; --line: #d8d8d2; --text: #1d1d1b; --muted: #6b6b66;
     --module: #dbe7ff; --class: #e4f3df; --function: #fdf0d2; --accent: #2f5fd0;
+    --authored: #b86e00; --derived: #0f766e;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #161615; --panel: #1f1f1e; --line: #353532; --text: #ecece8; --muted: #9a9a94;
       --module: #27385f; --class: #2a4126; --function: #4a3d1c; --accent: #7aa2ff;
+      --authored: #f0a93b; --derived: #3fc1b0;
     }
   }
   * { box-sizing: border-box; }
-  body { margin: 0; height: 100vh; display: grid; grid-template-columns: 240px 1fr 320px; grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "side main panel" "side chat chat"; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, sans-serif; }
+  body { margin: 0; height: 100vh; display: grid; grid-template-columns: 240px 1fr 320px; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "top top top" "side main panel" "side chat chat"; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, sans-serif; }
   aside { background: var(--panel); border-right: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
   #side { grid-area: side; }
   #panel { grid-area: panel; border-right: 0; border-left: 1px solid var(--line); overflow-y: auto; }
@@ -31,13 +33,13 @@
   li button { width: 100%; text-align: left; background: transparent; color: var(--text); border: 1px solid transparent; }
   li button[aria-current="true"] { border-color: var(--accent); }
   #error { color: #c0392b; min-height: 1.4em; }
-  main { position: relative; overflow: hidden; }
+  main { position: relative; overflow: hidden; padding-top: 40px; /* reserved strip for the Layer tabs */ }
   svg { width: 100%; height: 100%; cursor: grab; touch-action: none; }
   svg.dragging { cursor: grabbing; }
   rect { stroke: var(--line); }
   text { fill: var(--text); font-size: 13px; pointer-events: none; }
   .edge { stroke: var(--line); fill: none; }
-  #home { position: absolute; inset: 0; background: var(--bg); padding: 32px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+  #home { position: absolute; inset: 0; z-index: 2; background: var(--bg); padding: 32px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
   #home[hidden] { display: none; }
   #home h1 { font-size: 22px; }
   #recents li { display: flex; gap: 6px; align-items: stretch; }
@@ -46,9 +48,26 @@
   #recents .path, #recents .when { color: var(--muted); font-size: 12px; }
   #recents .forget { width: auto; background: transparent; color: var(--text); border: 1px solid var(--line); }
   #hint { position: absolute; left: 16px; bottom: 12px; color: var(--muted); font-size: 12px; }
+  #topbar { grid-area: top; display: flex; align-items: center; gap: 16px; padding: 6px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+  #switcher { position: relative; }
+  #switcher-button { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  #switcher-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 10; min-width: 280px; max-height: 60vh; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px; }
+  #switcher-menu[hidden] { display: none; }
+  #switcher-menu button { width: 100%; text-align: left; background: transparent; color: var(--text); border: 1px solid transparent; }
+  #switcher-menu button[aria-current="true"] { border-color: var(--accent); }
+  #switcher-menu button[disabled] { opacity: .6; cursor: default; }
+  #switcher-menu .path { display: block; color: var(--muted); font-size: 12px; }
+  #switcher-menu hr { border: 0; border-top: 1px solid var(--line); margin: 6px 0; }
 </style>
 </head>
 <body>
+<header id="topbar">
+  <h1>aidea</h1>
+  <div id="switcher">
+    <button id="switcher-button" aria-haspopup="true" aria-expanded="false" aria-controls="switcher-menu">No project open</button>
+    <div id="switcher-menu" hidden></div>
+  </div>
+</header>
 <aside id="side">
   <h1>aidea</h1>
   <h2>Projects</h2>

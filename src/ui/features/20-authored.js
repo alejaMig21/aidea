@@ -11,10 +11,16 @@ let authoredLayouts = {};
 
 const authoredStyle = document.createElement("style");
 authoredStyle.textContent = `
-  #layers { position: absolute; left: 16px; top: 12px; display: flex; gap: 4px; }
-  #layers button { background: var(--panel); color: var(--text); border: 1px solid var(--line); }
-  #layers button[aria-pressed="true"] { border-color: var(--accent); }
-  #authored-errors { position: absolute; left: 16px; top: 48px; max-width: 60%; color: #c0392b; font-size: 12px; }
+  #layers { position: absolute; left: 0; right: 0; top: 0; height: 40px; padding: 0 12px; display: flex; align-items: flex-end; gap: 2px; background: var(--panel); border-bottom: 1px solid var(--line); z-index: 1; }
+  #layers button { --tab: var(--derived); background: transparent; color: var(--text); border: 0; border-bottom: 3px solid color-mix(in srgb, var(--tab) 45%, transparent); border-radius: 6px 6px 0 0; }
+  #layers :is([data-layer="business"], [data-layer="requirements"], [data-layer="architecture"]) { --tab: var(--authored); }
+  #layers button[aria-pressed="true"] { border-bottom-color: var(--tab); background: color-mix(in srgb, var(--tab) 18%, transparent); font-weight: 600; }
+  #layers button[disabled] { opacity: .55; cursor: default; }
+  /* Visual order: authored tabs, then derived tabs; other controls (Zoom out) last. Features append buttons in any order. */
+  #layers [data-layer="business"] { order: 1; } #layers [data-layer="requirements"] { order: 2; } #layers [data-layer="architecture"] { order: 3; }
+  #layers [data-layer="components"] { order: 4; margin-left: 12px; } #layers [data-layer="algorithms"] { order: 5; } #layers [data-layer="code"] { order: 6; }
+  #layers > :not([data-layer]) { order: 9; margin-left: auto; margin-bottom: 4px; }
+  #authored-errors { position: absolute; left: 16px; top: 52px; max-width: 60%; color: #c0392b; font-size: 12px; }
   .anode { cursor: pointer; }
   .anode rect { fill: var(--class); }
   .anode.selected rect { stroke: var(--accent); stroke-width: 2; }
@@ -107,6 +113,10 @@ layerBar.replaceChildren(...[{ key: "components", label: "Components" }, ...AUTH
   b.onclick = () => showLayer(key);
   return b;
 }));
+// "Code" has no view of its own: a Node's source opens in a box when it is selected on Components.
+const codeTab = Object.assign(document.createElement("button"), { textContent: "Code", disabled: true, title: "Select a Node on Components to read its code" });
+codeTab.dataset.layer = "code";
+layerBar.append(codeTab);
 
 // Each time a Project is drawn, fetch its authored files fresh and keep the chosen layer.
 const drawDerived = draw;
