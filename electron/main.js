@@ -14,7 +14,14 @@ function openWindow(url) {
     ? screen.getAllDisplays().find((d) => d.id !== primary.id) ?? primary
     : primary;
   const { x, y } = target.workArea;
-  new BrowserWindow({ x, y, width: 1280, height: 800 }).loadURL(url);
+  // Placing the window with setBounds is more reliable than x and y in the constructor when the screens have
+  // different scales (the second launch of the first test opened on the wrong screen).
+  const win = new BrowserWindow({ width: 1280, height: 800, show: false });
+  // Twice: the first call moves the window and the second fixes its size, which the first one reads at the old screen's scale.
+  win.setBounds({ x, y, width: 1280, height: 800 });
+  win.setBounds({ x, y, width: 1280, height: 800 });
+  win.once("ready-to-show", () => win.show());
+  win.loadURL(url);
 }
 
 core.stdout.on("data", (chunk) => {
