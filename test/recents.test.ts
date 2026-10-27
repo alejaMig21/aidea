@@ -2,7 +2,7 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 import { startCore } from "../src/core/server.ts";
 import { fixture } from "./helpers.ts";
 
@@ -92,6 +92,14 @@ test("a path that does not exist or is not a directory is refused and not rememb
   assert.equal((await t.post("/projects", { path: file })).status, 400);
   const paths = (await t.recents()).map((r) => r.path);
   assert.ok(!paths.includes(missing) && !paths.includes(file));
+});
+
+test("the same folder spelled differently is listed once", async () => {
+  const [a] = dirs(1);
+  const spellings = [a, a + sep, ...(process.platform === "win32" ? [a.toUpperCase(), a.replaceAll("\\", "/")] : [])];
+  for (const s of spellings) await t.post("/projects", { path: s });
+  const hits = (await t.recents()).filter((r) => r.path.toLowerCase() === a.toLowerCase());
+  assert.equal(hits.length, 1);
 });
 
 test("entries survive a core restart", async () => {

@@ -1,5 +1,5 @@
 import { mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
-import { basename, dirname } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 
 const MAX_RECENTS = 20;
 
@@ -10,6 +10,9 @@ export type Recents = {
 };
 
 type Entry = { path: string; openedAt: string };
+
+// Comparison key: Windows paths ignore letter case, so fold it there only; the stored path keeps its spelling.
+const keyOf = (p: string) => (process.platform === "win32" ? p.toLowerCase() : p);
 
 // Remembers the Projects the person opened, newest first. Without a file the list lives in memory only.
 export function createRecents(file?: string): Recents {
@@ -41,12 +44,14 @@ export function createRecents(file?: string): Recents {
         name: basename(e.path),
         available: statSync(e.path, { throwIfNoEntry: false })?.isDirectory() === true,
       })),
-    add: (path) => {
-      entries = [{ path, openedAt: new Date().toISOString() }, ...entries.filter((e) => e.path !== path)].slice(0, MAX_RECENTS);
+    add: (raw) => {
+      const path = resolve(raw);
+      entries = [{ path, openedAt: new Date().toISOString() }, ...entries.filter((e) => keyOf(e.path) !== keyOf(path))].slice(0, MAX_RECENTS);
       save();
     },
-    forget: (path) => {
-      entries = entries.filter((e) => e.path !== path);
+    forget: (raw) => {
+      const key = keyOf(resolve(raw));
+      entries = entries.filter((e) => keyOf(e.path) !== key);
       save();
     },
   };
