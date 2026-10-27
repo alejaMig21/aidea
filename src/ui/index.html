@@ -18,12 +18,15 @@
     }
   }
   * { box-sizing: border-box; }
-  body { margin: 0; height: 100vh; display: grid; grid-template-columns: 240px 1fr 320px; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "top top top" "side main panel" "side chat chat"; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, sans-serif; }
+  /* Columns: side | chat | separator | Canvas | separator | right slot. The Canvas track has a hard minimum (--canvas-min), so the
+     other tracks, which are minmax(0, wanted), are the ones that shrink when the window is small. 07-layout.js sets the widths. */
+  body { --canvas-min: 320px; --chat-w: 320px; --right-w: 320px; margin: 0; height: 100vh; overflow: hidden; display: grid; grid-template-columns: minmax(0, 200px) minmax(0, var(--chat-w)) auto minmax(var(--canvas-min), 1fr) auto minmax(0, var(--right-w)); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "top top top top top top" "side chat sepc main sepr right"; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, sans-serif; }
   aside { background: var(--panel); border-right: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-  #side { grid-area: side; }
-  #panel { grid-area: panel; border-right: 0; border-left: 1px solid var(--line); overflow-y: auto; }
-  #chat { grid-area: chat; background: var(--panel); border-top: 1px solid var(--line); padding: 12px 16px; }
-  main { grid-area: main; }
+  #side { grid-area: side; overflow: hidden; }
+  #right { grid-area: right; min-width: 0; overflow: hidden; background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; }
+  #panel { flex: 1; min-height: 0; border: 0; overflow-y: auto; }
+  #chat { grid-area: chat; min-width: 0; overflow: hidden; background: var(--panel); border-right: 1px solid var(--line); padding: 12px 16px; display: flex; flex-direction: column; }
+  main { grid-area: main; min-width: 0; }
   h1 { font-size: 15px; margin: 0; letter-spacing: .04em; }
   h2 { font-size: 12px; margin: 0; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
   form { display: flex; flex-direction: column; gap: 6px; }
@@ -67,6 +70,10 @@
     <button id="switcher-button" aria-haspopup="true" aria-expanded="false" aria-controls="switcher-menu">No project open</button>
     <div id="switcher-menu" hidden></div>
   </div>
+  <div id="fold-buttons">
+    <button type="button" id="fold-chat" aria-pressed="true">Chat</button>
+    <button type="button" id="fold-right" aria-pressed="true">Right panel</button>
+  </div>
 </header>
 <aside id="side">
   <h1>aidea</h1>
@@ -97,8 +104,14 @@
   </section>
   <div id="hint">Drag to pan, scroll to zoom</div>
 </main>
-<aside id="panel" aria-label="Tutor panel"></aside>
-<footer id="chat"></footer>
+<div id="sepc" role="separator" aria-orientation="vertical" aria-label="Resize chat" tabindex="0"></div>
+<div id="sepr" role="separator" aria-orientation="vertical" aria-label="Resize right panel" tabindex="0"></div>
+<div id="right" aria-label="Right panel">
+  <div id="right-tabs" role="tablist"></div>
+  <div id="right-panes"></div>
+  <aside id="panel" aria-label="Details"></aside>
+</div>
+<section id="chat" aria-label="Chat"></section>
 <!--features-->
 </body>
 </html>
