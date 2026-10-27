@@ -66,6 +66,10 @@ _Avoid_: Plugin, driver, connector
 A change the agent suggests to the canvas or code, shown highlighted and pending until the user accepts or rejects it.
 _Avoid_: Suggestion, draft
 
+**Permission mode**:
+The setting that decides how much the builder may do without asking the person, such as manual, accept edits, plan or auto. It is different from Class mode and Direct mode, which are about the Tutor.
+_Avoid_: Agent mode, approval level
+
 **Permission card**:
 A card in the chat bar asking the person to approve or reject one action the agent wants to take, shown with what the action would do.
 _Avoid_: Prompt, confirmation, dialog

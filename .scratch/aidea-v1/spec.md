@@ -116,6 +116,7 @@ Screen layout: Projects on the left, the Canvas in the center, the Tutor panel o
 - Tutor providers other than Claude Code (the Agent adapter interface allows it later).
 - A monitor for Anthropic policy news (recorded as a separate future tool).
 - Publishing or distributing aidea to other users.
+- Choosing the builder's Permission mode and model from the chat bar, filled from the active Agent adapter (ticket 17, later).
 
 ## Further Notes
 
