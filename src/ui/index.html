@@ -48,14 +48,44 @@
   rect { stroke: var(--line); }
   text { fill: var(--text); font-size: 13px; pointer-events: none; }
   .edge { stroke: var(--line); fill: none; }
-  #home { position: absolute; inset: 0; z-index: 2; background: var(--bg); padding: 32px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+  /* ---- Home (mockup C): own tokens, nothing here depends on :root ---- */
+  #home { --h-bg: #0f1116; --h-card: #151a23; --h-line: #252b37; --h-text: #e9ebf0; --h-muted: #9aa1af; --h-accent: #8fa3ff; --h-ink: #10131a;
+    position: fixed; inset: 0; z-index: 10; background: var(--h-bg); color: var(--h-text); font: 14px/1.3 Inter, system-ui, sans-serif; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 32px 0; }
   #home[hidden] { display: none; }
-  #home h1 { font-size: 22px; }
-  #recents li { display: flex; gap: 6px; align-items: stretch; }
-  #recents li .open { display: flex; flex-direction: column; gap: 2px; background: var(--panel); border: 1px solid var(--line); }
-  #recents li .open[disabled] { opacity: .6; cursor: default; }
-  #recents .path, #recents .when { color: var(--muted); font-size: 12px; }
-  #recents .forget { width: auto; background: transparent; color: var(--text); border: 1px solid var(--control); }
+  body:has(#home:not([hidden])) > :not(#home) { display: none; }
+  #home .h-col { width: 592px; max-width: calc(100% - 32px); margin: auto 0; }
+  #home .h-head { display: flex; align-items: flex-start; gap: 14px; }
+  #home .h-logo { width: 44px; height: 44px; border-radius: 12px; background: var(--h-accent); color: var(--h-ink); display: grid; place-items: center; font-size: 26px; font-weight: 600; }
+  #home h1 { margin: 0 0 2px; font-size: 26px; font-weight: 600; line-height: 1.1; letter-spacing: -.01em; }
+  #home .h-tag { margin: 0; color: var(--h-muted); font-size: 13px; }
+  #home .h-actions { display: flex; gap: 10px; margin-top: 31px; }
+  #home button { font: inherit; font-weight: 500; height: 40px; padding: 0 18px; border-radius: 10px; border: 1px solid var(--h-line); background: transparent; color: var(--h-text); cursor: pointer; width: auto; }
+  #home button:focus-visible, #home input:focus-visible { outline: 2px solid var(--h-accent); outline-offset: 2px; }
+  #home #home-open { background: var(--h-accent); border-color: var(--h-accent); color: var(--h-ink); font-weight: 600; }
+  #home #home-new-form { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--h-card); border: 1px solid var(--h-line); border-radius: 13px; padding: 16px 14px; }
+  #home #home-new-form[hidden] { display: none; }
+  #home #home-new-form label { display: flex; flex-direction: column; gap: 4px; color: var(--h-muted); font-size: 11px; }
+  #home #home-new-form input { font: 13px "JetBrains Mono", monospace; color: var(--h-text); background: var(--h-bg); border: 1px solid var(--h-line); border-radius: 7px; padding: 5px 8px; }
+  #home #home-new-form button { align-self: flex-start; }
+  #home #home-new-error:empty { display: none; }
+  #home #home-new-error { margin: 0; color: #f08a8a; font-size: 12px; min-height: 1.3em; }
+  #home h2 { margin: 27px 0 8px; font-size: 11px; font-weight: 400; letter-spacing: .06em; text-transform: uppercase; color: var(--h-muted); }
+  #home #recents { gap: 0; background: var(--h-card); border: 1px solid var(--h-line); border-radius: 13px; overflow: hidden; }
+  #home #recents:empty { display: none; }
+  #home #recents li { position: relative; border-top: 1px solid var(--h-line); }
+  #home #recents li:first-child { border-top: 0; }
+  #home #recents .open { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; height: auto; min-height: 56px; padding: 0 14px; border: 0; border-radius: 0; text-align: left; font-weight: 400; }
+  #home #recents .open[disabled] { opacity: .5; cursor: default; }
+  #home #recents .info { display: flex; flex-direction: column; min-width: 0; }
+  #home #recents strong { font-size: 13.5px; font-weight: 500; line-height: 1.25; }
+  #home #recents .path { font: 11px/1.3 "JetBrains Mono", monospace; color: var(--h-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #home #recents .when { color: var(--h-muted); font-size: 12px; white-space: nowrap; }
+  #home #recents .forget { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); height: auto; padding: 2px 6px; border: 0; color: var(--h-muted); font-size: 13px; font-weight: 400; opacity: 0; }
+  #home #recents li:hover .forget, #home #recents .forget:focus-visible { opacity: 1; }
+  #home #recents li:hover .when, #home #recents li:has(.forget:focus-visible) .when { visibility: hidden; }
+  #home #recents .forget:hover { color: var(--h-text); text-decoration: underline; }
+  #home #home-empty { color: var(--h-muted); font-size: 13px; line-height: 1.5; margin: 0; }
+  /* ---- end Home ---- */
   #hint { position: absolute; left: 16px; bottom: 12px; color: var(--muted); font-size: 12px; }
   #topbar { grid-area: top; display: flex; align-items: center; gap: 16px; padding: 6px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
   #switcher { position: relative; }
@@ -96,21 +126,6 @@
 <div id="sepc" role="separator" aria-orientation="vertical" aria-label="Resize chat" tabindex="0"></div>
 <main>
   <svg id="canvas" role="img" aria-label="Canvas"><g id="world"></g></svg>
-  <section id="home" aria-label="Home">
-    <h1>aidea</h1>
-    <button id="home-open">Open folder</button>
-    <button id="home-new">New project</button>
-    <form id="home-new-form" hidden>
-      <label>Parent folder <input id="home-new-parent" placeholder="C:\Users\you\projects" autocomplete="off"></label>
-      <button type="button" id="home-new-pick" hidden>Choose...</button>
-      <label>Name <input id="home-new-name" autocomplete="off"></label>
-      <button type="submit">Create</button>
-      <p id="home-new-error" role="alert"></p>
-    </form>
-    <h2>Recent projects</h2>
-    <ul id="recents"></ul>
-    <p id="home-empty" hidden>No projects yet. Choose "Open folder" to pick an existing Python project, or "New project" to create an empty one. In a plain browser, "Open folder" uses the path typed in the box on the left. Opened projects are listed here next time.</p>
-  </section>
   <div id="hint">Drag to pan, scroll to zoom</div>
 </main>
 <div id="sepr" role="separator" aria-orientation="vertical" aria-label="Resize right panel" tabindex="0"></div>
@@ -119,6 +134,26 @@
   <div id="right-panes"></div>
   <aside id="panel" aria-label="Details"></aside>
 </div>
+<section id="home" aria-label="Home"><div class="h-col">
+  <div class="h-head">
+    <div class="h-logo" aria-hidden="true">a</div>
+    <div><h1>aidea</h1><p class="h-tag">Build software on a canvas of layers, and understand every decision.</p></div>
+  </div>
+  <div class="h-actions">
+    <button id="home-open">Open folder...</button>
+    <button id="home-new">New project</button>
+  </div>
+  <form id="home-new-form" hidden>
+    <label>Parent folder <input id="home-new-parent" placeholder="C:\Users\you\projects" autocomplete="off"></label>
+    <button type="button" id="home-new-pick" hidden>Choose...</button>
+    <label>Name <input id="home-new-name" autocomplete="off"></label>
+    <button type="submit">Create</button>
+    <p id="home-new-error" role="alert"></p>
+  </form>
+  <h2>Recent projects</h2>
+  <ul id="recents"></ul>
+  <p id="home-empty" hidden>No projects yet. Choose "Open folder..." to pick an existing Python project, or "New project" to create an empty one. In a plain browser, "Open folder..." uses the path typed in the box on the left. Opened projects are listed here next time.</p>
+</div></section>
 <!--features-->
 </body>
 </html>

@@ -2,6 +2,17 @@
 // Names here are prefixed "home" because every feature file shares one global scope.
 const homeText = (tag, cls, content) => Object.assign(document.createElement(tag), { className: cls, textContent: content });
 
+// "10 min ago", "2 hours ago", "yesterday", "3 days ago", then a date.
+function homeAgo(iso) {
+  const min = Math.floor((Date.now() - new Date(iso)) / 60000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min} min ago`;
+  if (min < 1440) { const h = Math.floor(min / 60); return `${h} ${h === 1 ? "hour" : "hours"} ago`; }
+  const d = Math.floor(min / 1440);
+  if (d === 1) return "yesterday";
+  return d < 7 ? `${d} days ago` : new Date(iso).toLocaleDateString();
+}
+
 async function refreshHome() {
   const recents = await (await fetch("/recents")).json();
   $("home-empty").hidden = recents.length > 0;
@@ -10,11 +21,9 @@ async function refreshHome() {
     const b = document.createElement("button");
     b.className = "open";
     b.disabled = !r.available;
-    b.append(
-      homeText("strong", "", r.name),
-      homeText("span", "path", r.available ? r.path : `${r.path} (folder not found)`),
-      homeText("span", "when", `Last opened ${new Date(r.openedAt).toLocaleString()}`),
-    );
+    const info = homeText("span", "info", "");
+    info.append(homeText("strong", "", r.name), homeText("span", "path", r.path));
+    b.append(info, homeText("span", "when", r.available ? `Opened ${homeAgo(r.openedAt)}` : "Folder not found"));
     b.onclick = () => open(r.path);
     li.append(b);
     const f = homeText("button", "forget", "Forget");
