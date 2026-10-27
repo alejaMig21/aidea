@@ -111,7 +111,7 @@ export function withPlaces(store: ProposalStore, project: Project) {
     .map((p) => {
       const existing = nodesOf(project, p.layer);
       const adds = pendingOf(store, project.id, p.layer).filter((q) => q.kind === "add");
-      const places = layoutAuthored([...existing.map((n) => ({ id: String(n.id) })), ...adds.map((q) => ({ id: q.nodeId }))]);
+      const places = layoutAuthored([...existing.map((n) => ({ id: String(n.id), parent: n.parent })), ...adds.map((q) => ({ id: q.nodeId, parent: q.node?.parent }))]);
       const rect = places.find((r) => r.id === p.nodeId) ?? null;
       return { ...publicView(p), rect, frame: rect && frameOf([rect]) };
     });

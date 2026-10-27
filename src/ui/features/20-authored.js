@@ -42,12 +42,25 @@ function showRationale(n) {
   $("panel").replaceChildren(...parts);
 }
 
+// A connector from the bottom-centre of the parent card to the top-centre of the child: straight, or one elbow when they are not aligned.
+function authoredLink(parent, child, className) {
+  const x1 = parent.x + parent.width / 2, y1 = parent.y + parent.height;
+  const x2 = child.x + child.width / 2, y2 = child.y;
+  const mid = (y1 + y2) / 2;
+  return el("path", { class: className, d: x1 === x2 ? `M${x1} ${y1}V${y2}` : `M${x1} ${y1}V${mid}H${x2}V${y2}` });
+}
+
 function drawAuthored() {
   authoredGroup.replaceChildren();
   authoredErrors.replaceChildren();
   if (!authoredData) return;
   AUTHORED_LAYERS.forEach(({ key, detail }) => {
     const g = el("g", { "data-layer": key });
+    // Connectors go first, so they sit behind the cards.
+    authoredData.layers[key].nodes.forEach((n) => {
+      const parent = authoredLayouts[key].find((r) => r.id === n.parent);
+      if (parent) g.append(authoredLink(parent, authoredLayouts[key].find((r) => r.id === n.id), "edge"));
+    });
     authoredData.layers[key].nodes.forEach((n) => {
       // The core decides where each card sits.
       const { x, y, width, height } = authoredLayouts[key].find((r) => r.id === n.id);

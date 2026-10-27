@@ -29,9 +29,43 @@ export function layoutComponents(nodes: CoreNode[]): Rect[] {
   return rects;
 }
 
-// Authored layers: cards in a grid, four to a row.
-export function layoutAuthored(nodes: { id: string }[]): Rect[] {
-  return nodes.map((n, i) => ({ id: n.id, x: (i % 4) * COLUMN, y: Math.floor(i / 4) * 80, width: 240, height: 64 }));
+// Authored layers: root cards in a grid, four to a row. A Node with a `parent` on the layer sits one row below it,
+// siblings side by side and centred under it. A missing parent, or a parent chain that loops, makes a root.
+// Each root takes the width of its whole subtree and each grid row the height of its deepest one, so nothing overlaps.
+const CARD = 240;
+const GAP = COLUMN - CARD;
+const CHILD_ROW = 64 + 100;
+export function layoutAuthored(nodes: { id: string; parent?: unknown }[]): Rect[] {
+  const ids = new Set(nodes.map((n) => n.id));
+  const parentOf = new Map(nodes.map((n) => [n.id, ids.has(n.parent as string) ? (n.parent as string) : undefined]));
+  const inLoop = (id: string) => {
+    let at = parentOf.get(id);
+    for (let i = 0; at !== undefined && i < nodes.length; i++, at = parentOf.get(at)) if (at === id) return true;
+    return false;
+  };
+  const kids = new Map<string, string[]>();
+  const roots: string[] = [];
+  for (const { id } of nodes) {
+    const parent = parentOf.get(id);
+    if (parent === undefined || inLoop(id)) roots.push(id);
+    else kids.set(parent, [...(kids.get(parent) ?? []), id]);
+  }
+  const widthOf = (id: string): number => Math.max(CARD, (kids.get(id) ?? []).reduce((sum, k) => sum + widthOf(k) + GAP, -GAP));
+  const depthOf = (id: string): number => Math.max(-1, ...(kids.get(id) ?? []).map(depthOf)) + 1;
+  const at = new Map<string, Rect>();
+  const place = (id: string, left: number, y: number) => {
+    const width = widthOf(id);
+    at.set(id, { id, x: left + (width - CARD) / 2, y, width: CARD, height: 64 });
+    let x = left;
+    for (const k of kids.get(id) ?? []) { place(k, x, y + CHILD_ROW); x += widthOf(k) + GAP; }
+  };
+  for (let row = 0, y = 0; row < roots.length; row += 4) {
+    const inRow = roots.slice(row, row + 4);
+    let x = 0;
+    for (const id of inRow) { place(id, x, y); x += widthOf(id) + GAP; }
+    y += Math.max(...inRow.map(depthOf)) * CHILD_ROW + 80;
+  }
+  return nodes.map((n) => at.get(n.id)!);
 }
 
 export type FlowEdge = { from: string; to: string; label?: string; back?: boolean };

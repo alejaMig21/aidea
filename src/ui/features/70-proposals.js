@@ -4,6 +4,7 @@ const proposalStyle = document.createElement("style");
 proposalStyle.textContent = `
   .proposal { cursor: pointer; }
   .proposal rect { fill: var(--proposal); stroke: var(--accent); stroke-width: 1.3; stroke-dasharray: 5 4; }
+  .proposal-edge { stroke: var(--accent); stroke-width: 1.3; stroke-dasharray: 5 4; }
   .proposal.update rect, .proposal.remove rect { fill: none; }
   .proposal.remove rect { stroke: var(--danger); }
   .proposal .tag { fill: var(--accent); font: 500 12px var(--sans); letter-spacing: .06em; text-anchor: end; }
@@ -36,7 +37,7 @@ function markTabs() {
 }
 
 function drawProposals() {
-  authoredGroup.querySelectorAll(".proposal").forEach((g) => g.remove());
+  authoredGroup.querySelectorAll(".proposal, .proposal-edge").forEach((g) => g.remove());
   for (const p of pendingProposals) {
     const layerGroup = authoredGroup.querySelector(`[data-layer="${p.layer}"]`);
     if (!layerGroup || !p.rect) continue;
@@ -58,6 +59,8 @@ function drawProposals() {
     g.addEventListener("click", open);
     g.addEventListener("keydown", (e) => { if (e.key === "Enter") open(); });
     layerGroup.append(g);
+    const parent = p.kind === "add" && authoredLayouts[p.layer]?.find((r) => r.id === p.node?.parent);
+    if (parent) layerGroup.prepend(authoredLink(parent, p.rect, "edge proposal-edge")); // behind the cards
   }
   markTabs();
 }

@@ -108,10 +108,17 @@ test("adding a Node produces a pending Proposal and changes no file", async () =
   const list = await pending(dir);
   assert.equal(list.length, 1);
   assert.equal(list[0].secret, undefined); // the answer secret never leaves the stream
-  // The third card of the Architecture layer: after two existing Nodes, 280 apart.
-  assert.deepEqual(list[0].rect, { id: "cache", x: 560, y: 0, width: 240, height: 64 });
+  // A new root: the second card of the first row, after the root "web-app" (its child sits below it, not in the row).
+  assert.deepEqual(list[0].rect, { id: "cache", x: 280, y: 0, width: 240, height: 64 });
   // The core also says how to frame it, so the interface can bring it into view (24 of margin on every side).
-  assert.deepEqual(list[0].frame, { x: 536, y: -24, width: 288, height: 112 });
+  assert.deepEqual(list[0].frame, { x: 256, y: -24, width: 288, height: 112 });
+});
+
+test("a Proposal that adds a child Node is placed under its parent", async () => {
+  const dir = await freshProject();
+  await builderCalls(dir, [{ name: "propose_add_node", arguments: { layer: "architecture", node: { ...cache, parent: "web-app" } } }]);
+  // "quote-db" already sits under "web-app": the new sibling goes beside it (280 apart), one row down, and the parent centres over the pair.
+  assert.deepEqual((await pending(dir))[0].rect, { id: "cache", x: 280, y: 164, width: 240, height: 64 });
 });
 
 test("accepting writes the Node to the authored file and it shows up on the layer; rejecting leaves everything as it was", async () => {
