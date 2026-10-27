@@ -5,7 +5,8 @@ const layoutKey = "aidea.layout";
 const layoutCanvasMin = 320; // keep equal to --canvas-min in index.html
 const layoutPaneMin = 160;
 const layoutStep = 20;
-const layoutSeparatorWidth = 6;
+const layoutSeparatorWidth = 8; // the gap between two cards
+const layoutOuterMargins = 16; // 8px of the window's edge on each side of the cards
 
 {
   const style = document.createElement("style");
@@ -14,21 +15,6 @@ const layoutSeparatorWidth = 6;
     #sepr { grid-area: sepr; }
     #sepc:hover, #sepr:hover, #sepc:focus-visible, #sepr:focus-visible, #sepc.dragging, #sepr.dragging { background: var(--accent); outline: none; }
     body.chat-folded #chat, body.chat-folded #sepc, body.right-folded #right, body.right-folded #sepr { display: none; }
-    #chat #chat-log { flex: 1; min-height: 0; max-height: none; }
-    #chat form { margin-top: auto; }
-    #fold-buttons { margin-left: auto; display: flex; gap: 6px; }
-    #fold-buttons button { background: transparent; color: var(--text); border: 1px solid var(--control); }
-    #fold-buttons button[aria-pressed="true"] { border-color: var(--accent); }
-    #right-tabs { display: flex; border-bottom: 1px solid var(--line); }
-    #right-tabs button { background: transparent; color: var(--muted); border: 0; border-bottom: 2px solid transparent; border-radius: 0; }
-    #right-tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
-    #right-panes { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
-    #right-panes > div { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
-    #right-panes > div[hidden] { display: none; }
-    #right-panes p { margin: 0; color: var(--muted); }
-    #right-panes form { flex-direction: row; }
-    #right-panes form input { flex: 1; min-width: 0; }
-    #right-panes :disabled { opacity: .5; cursor: not-allowed; }
   `;
   document.head.append(style);
 }
@@ -68,22 +54,19 @@ function rightUnregisterTab(id) {
 // The Tutor tab is always present. Its entry point stays disabled until the Tutor exists.
 {
   const pane = document.createElement("div");
-  const title = Object.assign(document.createElement("h2"), { textContent: "Tutor" });
+  const tile = Object.assign(document.createElement("div"), { className: "tile", textContent: "?" });
+  tile.setAttribute("aria-hidden", "true");
+  const title = Object.assign(document.createElement("h2"), { textContent: "The Tutor is not available yet" });
   const text = Object.assign(document.createElement("p"), {
-    textContent: "The Tutor is not available yet. When it arrives it will explain concepts from your own project and quiz you on them, reading the glossary and the Nodes that already exist.",
+    textContent: "When it is, it will explain why each decision was made and ask you questions about your project.",
   });
-  const form = document.createElement("form");
-  const input = Object.assign(document.createElement("input"), { placeholder: "Ask the Tutor", disabled: true });
-  input.setAttribute("aria-label", "Ask the Tutor");
-  const send = Object.assign(document.createElement("button"), { textContent: "Ask", disabled: true });
-  form.onsubmit = (e) => e.preventDefault();
-  form.append(input, send);
-  pane.append(title, text, form);
+  const start = Object.assign(document.createElement("button"), { type: "button", textContent: "Start a class", disabled: true });
+  pane.append(tile, title, text, start);
   rightRegisterTab("tutor", "Tutor", pane);
 }
 
 // ---- Sizes and folded state.
-const layoutState = { chat: 320, right: 320, chatFolded: false, rightFolded: false };
+const layoutState = { chat: 340, right: 320, chatFolded: false, rightFolded: false };
 try { Object.assign(layoutState, JSON.parse(localStorage.getItem(layoutKey) || "{}")); } catch {}
 const layoutSave = () => { try { localStorage.setItem(layoutKey, JSON.stringify(layoutState)); } catch {} };
 
@@ -95,7 +78,7 @@ const layoutPanes = {
 // Most a pane may take: everything except the Canvas minimum, the side list's current width, the other pane and the separators.
 function layoutMax(name) {
   const o = layoutPanes[layoutPanes[name].other];
-  const used = $("side").getBoundingClientRect().width + (layoutState[o.fold] ? 0 : layoutState[layoutPanes[name].other]) + 2 * layoutSeparatorWidth;
+  const used = layoutOuterMargins + (layoutState[o.fold] ? 0 : layoutState[layoutPanes[name].other]) + 2 * layoutSeparatorWidth;
   return Math.max(layoutPaneMin, window.innerWidth - layoutCanvasMin - used);
 }
 const layoutClamp = (name, w) => Math.round(Math.min(layoutMax(name), Math.max(layoutPaneMin, w)));

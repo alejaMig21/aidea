@@ -3,15 +3,16 @@
 const proposalStyle = document.createElement("style");
 proposalStyle.textContent = `
   .proposal { cursor: pointer; }
-  .proposal rect { fill: var(--accent); fill-opacity: .08; stroke: var(--accent); stroke-width: 2.5; stroke-dasharray: 6 4; }
-  .proposal.update rect { fill-opacity: 0; stroke-width: 4; }
-  .proposal.remove rect { fill: var(--danger); fill-opacity: .15; stroke: var(--danger); }
-  .proposal text { font-weight: 600; }
-  #panel .proposal-box h2 { margin: 0; }
+  .proposal rect { fill: var(--proposal); stroke: var(--accent); stroke-width: 1.3; stroke-dasharray: 5 4; }
+  .proposal.update rect, .proposal.remove rect { fill: none; }
+  .proposal.remove rect { stroke: var(--danger); }
+  .proposal .tag { fill: var(--accent); font: 500 12px var(--sans); letter-spacing: .06em; text-anchor: end; }
+  .proposal.remove .tag { fill: var(--danger); }
+  .proposal .node-sub { fill: var(--accent-soft); }
+  #panel .proposal-box h2 { margin: 0; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--text); font-weight: 600; }
   #panel .proposal-box .field { font-size: 12px; margin: 4px 0; }
   #panel .proposal-box .old { color: var(--muted); text-decoration: line-through; }
   #panel .proposal-box .row { display: flex; gap: 8px; margin-top: 10px; }
-  #panel .proposal-box .reject { background: transparent; color: var(--text); border: 1px solid var(--control); }
 `;
 document.head.append(proposalStyle);
 
@@ -23,18 +24,14 @@ const proposalSecrets = (() => {
 })();
 const saveProposalSecrets = () => { try { sessionStorage.setItem("aidea-proposal-secrets", JSON.stringify([...proposalSecrets])); } catch { /* storage is optional */ } };
 
-const proposalLabel = (p) => {
-  const title = p.node?.title ?? p.nodeId;
-  return p.kind === "add" ? `+ ${title}` : p.kind === "update" ? `~ ${title}` : `− ${title}`;
-};
-
 // Layer tabs show how many Proposals wait on each.
 function markTabs() {
   layerBar.querySelectorAll("button[data-layer]").forEach((b) => {
     const layer = AUTHORED_LAYERS.find((l) => l.key === b.dataset.layer);
     if (!layer) return;
     const n = pendingProposals.filter((p) => p.layer === layer.key).length;
-    b.textContent = n ? `${layer.label} (${n})` : layer.label;
+    b.textContent = layer.label;
+    if (n) b.append(Object.assign(document.createElement("span"), { className: "badge", textContent: n }));
   });
 }
 
@@ -45,10 +42,18 @@ function drawProposals() {
     if (!layerGroup || !p.rect) continue;
     const g = el("g", { class: `proposal ${p.kind}`, tabindex: 0, "data-proposal": p.id, "data-ref": p.id });
     const pad = p.kind === "add" ? 0 : 5;
-    g.append(
-      el("rect", { x: p.rect.x - pad, y: p.rect.y - pad, width: p.rect.width + 2 * pad, height: p.rect.height + 2 * pad, rx: 8 }),
-      el("text", { x: p.rect.x + 10, y: p.rect.y + p.rect.height / 2 + 4 }, p.kind === "add" ? proposalLabel(p) : `${p.kind === "update" ? "changed" : "to remove"}`),
-    );
+    const { x, y, width, height } = p.rect;
+    g.append(el("rect", { x: x - pad, y: y - pad, width: width + 2 * pad, height: height + 2 * pad, rx: 10 }));
+    if (p.kind === "add") {
+      const layer = AUTHORED_LAYERS.find((l) => l.key === p.layer);
+      g.append(
+        el("text", { x: x + width - 14, y: y + 25, class: "tag" }, "PROPOSAL"),
+        el("text", { x: x + 16, y: y + 29 }, p.node?.title ?? p.nodeId),
+        el("text", { x: x + 16, y: y + 49, class: "node-sub" }, authoredShort(layer?.detail(p.node) ?? "")),
+      );
+    } else {
+      g.append(el("text", { x: x + width + pad - 4, y: y - pad - 6, class: "tag" }, p.kind === "update" ? "PROPOSED CHANGE" : "PROPOSED REMOVAL"));
+    }
     const open = () => showProposal(p);
     g.addEventListener("click", open);
     g.addEventListener("keydown", (e) => { if (e.key === "Enter") open(); });

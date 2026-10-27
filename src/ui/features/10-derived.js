@@ -3,7 +3,7 @@
 const codeBox = document.createElement("section");
 codeBox.setAttribute("aria-label", "Code layer");
 codeBox.hidden = true;
-codeBox.style.cssText = "position:absolute;right:16px;bottom:40px;max-width:min(560px,90%);max-height:50%;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px";
+codeBox.style.cssText = "position:absolute;right:15px;bottom:68px;z-index:1;max-width:min(560px,90%);max-height:50%;overflow:auto;background:var(--raised);border:1px solid var(--control);border-radius:12px;padding:10px 12px";
 document.querySelector("main").append(codeBox);
 
 // Shows source text in the box. With a Node id it also offers to open that Node in the person's editor.

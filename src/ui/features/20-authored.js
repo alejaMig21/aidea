@@ -9,27 +9,6 @@ let authoredShown = "components"; // "components" is the derived view
 let authoredData = null;
 let authoredLayouts = {};
 
-const authoredStyle = document.createElement("style");
-authoredStyle.textContent = `
-  #layers { position: absolute; left: 0; right: 0; top: 0; height: 40px; padding: 0 12px; display: flex; align-items: flex-end; gap: 2px; background: var(--panel); border-bottom: 1px solid var(--line); z-index: 1; overflow-x: auto; overflow-y: hidden; }
-  #layers button { --tab: var(--derived); background: transparent; color: var(--text); border: 0; border-bottom: 3px solid color-mix(in srgb, var(--tab) 45%, transparent); border-radius: 6px 6px 0 0; flex: none; white-space: nowrap; }
-  #layers :is([data-layer="business"], [data-layer="requirements"], [data-layer="architecture"]) { --tab: var(--authored); }
-  #layers button[aria-pressed="true"] { border-bottom-color: var(--tab); background: color-mix(in srgb, var(--tab) 18%, transparent); font-weight: 600; }
-  #layers button[disabled] { opacity: .55; cursor: default; }
-  /* Visual order: authored tabs, then derived tabs; other controls (Zoom out) last. Features append buttons in any order. */
-  #layers [data-layer="business"] { order: 1; } #layers [data-layer="requirements"] { order: 2; } #layers [data-layer="architecture"] { order: 3; }
-  #layers [data-layer="components"] { order: 4; margin-left: 12px; } #layers [data-layer="algorithms"] { order: 5; } #layers [data-layer="code"] { order: 6; }
-  #layers > :not([data-layer]) { order: 9; margin-left: auto; margin-bottom: 4px; }
-  #authored-errors { position: absolute; left: 16px; top: 52px; max-width: 60%; color: var(--danger); font-size: 12px; }
-  .anode { cursor: pointer; }
-  .anode rect { fill: var(--class); }
-  .anode.selected rect { stroke: var(--accent); stroke-width: 2; }
-  .anode .sub { fill: var(--muted); font-size: 11px; }
-  #panel dl { margin: 0; } #panel dt { color: var(--muted); font-size: 12px; margin-top: 8px; }
-  #panel dd { margin: 0; } #panel li { display: block; }
-`;
-document.head.append(authoredStyle);
-
 const authoredGroup = el("g", { id: "authored" });
 const layerBar = document.createElement("div");
 layerBar.id = "layers";
@@ -39,6 +18,9 @@ const authoredErrors = document.createElement("div");
 authoredErrors.id = "authored-errors";
 authoredErrors.setAttribute("role", "alert");
 document.querySelector("main").append(layerBar, authoredErrors);
+
+// The card is 240 wide: a longer line is cut, and the whole text stays available as the tooltip of the card.
+const authoredShort = (t) => (t.length > 28 ? t.slice(0, 27) + "…" : t);
 
 function showRationale(n) {
   const h = document.createElement("h2");
@@ -71,9 +53,11 @@ function drawAuthored() {
       const { x, y, width, height } = authoredLayouts[key].find((r) => r.id === n.id);
       const node = el("g", { class: "anode", tabindex: 0, "data-node": n.id, "data-ref": n.id });
       node.append(
-        el("rect", { x, y, width, height, rx: 6 }),
-        el("text", { x: x + 10, y: y + 26 }, n.title),
-        el("text", { x: x + 10, y: y + 47, class: "sub" }, detail(n) ?? ""),
+        el("title", {}, `${n.title}: ${detail(n) ?? ""}`),
+        el("rect", { x, y, width, height, rx: 10 }),
+        el("circle", { cx: x + 20, cy: y + 24, r: 4, class: "dot-authored" }),
+        el("text", { x: x + 34, y: y + 29 }, n.title),
+        el("text", { x: x + 16, y: y + 49, class: "node-sub" }, authoredShort(detail(n) ?? "")),
       );
       const select = () => {
         authoredGroup.querySelectorAll(".selected").forEach((s) => s.classList.remove("selected"));

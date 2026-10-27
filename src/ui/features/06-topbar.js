@@ -1,28 +1,62 @@
-// Top bar: the Project switcher (current Project, recents, "Open folder…", a way back to Home).
+// Top bar: the Project switcher (current Project, recents, "Open folder...", a way back to Home).
 // Names here are prefixed "switcher" because every feature file shares one global scope.
 // Opening a Project reuses open() from the Canvas file; the recents come from the core (GET /recents).
 const switcherButton = $("switcher-button");
 const switcherMenu = $("switcher-menu");
+const switcherList = $("switcher-list");
 
-const switcherItem = (label, onclick, extra = {}) => {
-  const b = Object.assign(document.createElement("button"), { textContent: label, onclick, ...extra });
-  b.type = "button";
-  return b;
-};
 const closeSwitcher = () => { switcherMenu.hidden = true; switcherButton.setAttribute("aria-expanded", "false"); };
 
-// The button names the current Project, or says none is open.
+// The button says "Project <name>", or that none is open.
+function setSwitcherName(name) {
+  $("switcher-label").hidden = name === null;
+  $("switcher-name").textContent = name ?? "No project open";
+}
 async function refreshSwitcherLabel() {
-  if (!current || !$("home").hidden) { switcherButton.textContent = "No project open"; return; } // Home covers the Project
+  if (!current || !$("home").hidden) { setSwitcherName(null); return; } // Home covers the Project
   const project = current;
   const list = await (await fetch("/projects")).json();
   if (project !== current || !$("home").hidden) return;
   const p = list.find((q) => q.id === project);
-  switcherButton.textContent = `Project: ${p ? p.name : "unknown"}`;
+  setSwitcherName(p ? p.name : "unknown");
 }
 
-// Same action as Home's "Open folder" button.
-const switcherOpenFolder = () => { closeSwitcher(); homeOpenFolder(); };
+// "2 h ago", "Yesterday", "3 days ago": by calendar day once it is older than a day's worth of hours.
+function switcherAgo(iso) {
+  const then = new Date(iso), now = new Date();
+  const minutes = Math.max(0, Math.round((now - then) / 60000));
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  const days = Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(then.getFullYear(), then.getMonth(), then.getDate())) / 86400000);
+  if (days < 1) return `${Math.floor(minutes / 60)} h ago`;
+  return days === 1 ? "Yesterday" : `${days} days ago`;
+}
+
+// One row of the popover: name over path, and a trailing detail (the dot for the current Project, the time for a recent one).
+function switcherRow(name, path, onclick, { current: isHere, when, disabled } = {}) {
+  const b = Object.assign(document.createElement("button"), { type: "button", className: "row", onclick, disabled: !!disabled });
+  const text = Object.assign(document.createElement("span"), { className: "text" });
+  text.append(Object.assign(document.createElement("strong"), { textContent: name }), Object.assign(document.createElement("span"), { className: "path", textContent: path }));
+  if (isHere) {
+    b.setAttribute("aria-current", "true");
+    b.append(Object.assign(document.createElement("span"), { className: "dot" }), text);
+  } else {
+    b.append(text, Object.assign(document.createElement("span"), { className: "when", textContent: when }));
+  }
+  return b;
+}
+const switcherLabel = (text) => Object.assign(document.createElement("h2"), { textContent: text });
+
+// Typed path: only in a plain browser. With the desktop shell, "Open folder..." shows its picker instead.
+const switcherOpenFolder = async () => {
+  if (window.aidea) { closeSwitcher(); homeOpenFolder(); return; }
+  $("open").hidden = false;
+  $("path").focus();
+};
+$("switcher-open").onclick = switcherOpenFolder;
+$("open").addEventListener("submit", closeSwitcher);
+// Home's "Open folder" button has no box of its own in a plain browser: it opens the switcher on the typed path.
+if ($("home-open") && !window.aidea) $("home-open").onclick = async () => { if (switcherMenu.hidden) await openSwitcher(); switcherOpenFolder(); };
 
 const switcherHome = () => {
   closeSwitcher();
@@ -30,6 +64,7 @@ const switcherHome = () => {
   refreshHome();
   refreshSwitcherLabel();
 };
+$("switcher-home").onclick = switcherHome;
 
 // Choosing the Project already open while Home is shown goes back to the work session.
 const switcherCurrent = () => { closeSwitcher(); hideHome(); refreshSwitcherLabel(); };
@@ -37,20 +72,15 @@ const switcherCurrent = () => { closeSwitcher(); hideHome(); refreshSwitcherLabe
 async function openSwitcher() {
   const [recents, projects] = await Promise.all([fetch("/recents").then((r) => r.json()), fetch("/projects").then((r) => r.json())]);
   const here = projects.find((p) => p.id === current);
-  const items = recents.map((r) => {
-    const isHere = here && r.path === here.path;
-    const b = switcherItem("", isHere ? switcherCurrent : () => { closeSwitcher(); open(r.path); }, { disabled: !r.available });
-    b.append(r.name, Object.assign(document.createElement("span"), { className: "path", textContent: r.available ? r.path : `${r.path} (folder not found)` }));
-    if (isHere) b.setAttribute("aria-current", "true");
-    return b;
-  });
-  // The current Project is always listed, even if the recents do not hold it.
-  if (here && !items.some((b) => b.getAttribute("aria-current"))) {
-    const b = switcherItem(here.name, switcherCurrent);
-    b.setAttribute("aria-current", "true");
-    items.unshift(b);
+  const others = recents.filter((r) => !(here && r.path === here.path));
+  const parts = [];
+  if (here) parts.push(switcherLabel("Current"), switcherRow(here.name, here.path, switcherCurrent, { current: true }));
+  if (others.length) {
+    parts.push(switcherLabel("Recent"));
+    for (const r of others) parts.push(switcherRow(r.name, r.available ? r.path : `${r.path} (folder not found)`, () => { closeSwitcher(); open(r.path); }, { when: switcherAgo(r.openedAt), disabled: !r.available }));
   }
-  switcherMenu.replaceChildren(...items, document.createElement("hr"), switcherItem("Open folder…", switcherOpenFolder), switcherItem("Home", switcherHome));
+  switcherList.replaceChildren(...parts);
+  $("open").hidden = true;
   switcherMenu.hidden = false;
   switcherButton.setAttribute("aria-expanded", "true");
 }

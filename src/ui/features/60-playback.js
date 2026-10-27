@@ -3,15 +3,26 @@
 const playbackStyle = document.createElement("style");
 playbackStyle.textContent = `
   #algorithm.has-recording .flow-step:not(.visited) { opacity: .4; }
-  #algorithm .flow-step.now rect { stroke: var(--accent); stroke-width: 4; }
-  #pane-algorithm label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
-  #pane-algorithm .pb-row { display: flex; gap: 6px; align-items: center; }
-  #pane-algorithm .pb-values { font: 12px/1.5 var(--mono); margin: 8px 0; }
+  #algorithm .flow-step.now rect { stroke: var(--accent); stroke-width: 2; fill: var(--proposal); }
+  #pane-algorithm { padding: 0; gap: 0; }
+  #pane-algorithm > header { display: flex; justify-content: space-between; align-items: center; height: 40px; padding: 0 14px; border-bottom: 1px solid var(--line); font-weight: 600; font-size: 13px; flex: none; }
+  #pane-algorithm > header span { font: 400 12px var(--mono); color: var(--muted); }
+  #pane-algorithm .body { padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  #pane-algorithm h3 { margin: 6px 0 0; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  #pane-algorithm hr { border: 0; border-top: 1px solid #202531; margin: 8px 0 2px; width: 100%; }
+  #pane-algorithm label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--label); }
+  #pane-algorithm input:not([type]), #pane-algorithm input[type="text"] { padding: 6px 10px; font-size: 13px; }
+  #pane-algorithm .pb-row { display: flex; gap: 8px; align-items: center; }
+  #pane-algorithm .pb-row > button { flex: 1; padding: 5px 10px; font-size: 13px; }
+  #pane-algorithm .pb-row > button.step { flex: none; width: 29px; padding: 4px 0; }
+  #pane-algorithm .pb-values, #pane-algorithm #pb-output { font: 12.5px/1.7 var(--mono); margin: 4px 0 0; padding: 10px 12px; background: var(--raised); border-radius: 8px; color: var(--text); white-space: pre-wrap; }
+  #pane-algorithm #pb-output:empty { display: none; }
   #pane-algorithm .pb-values div { display: flex; justify-content: space-between; gap: 8px; }
   #pane-algorithm .pb-error { color: var(--danger); font-size: 12px; }
-  #pane-algorithm .pb-warning { color: var(--muted); font-size: 12px; margin: 4px 0; }
+  #pane-algorithm .pb-warning, #pane-algorithm .pb-hint { color: var(--muted); font-size: 12px; margin: 4px 0; }
   #pane-algorithm .pb-check { flex-direction: row; align-items: center; gap: 6px; }
-  #pane-algorithm input[type="range"] { flex: 1; }
+  #pane-algorithm input[type="range"] { flex: 1; min-width: 0; padding: 0; accent-color: var(--accent); }
+  #pane-algorithm #pb-position { font-size: 12px; color: var(--muted); }
 `;
 document.head.append(playbackStyle);
 
@@ -110,7 +121,7 @@ function pbFieldGroup(title, items, prefix, errorKey, label, hint) {
     label(p),
     pbEl("input", { id: `${prefix}${p.name}`, value: p.suggestion ?? "", placeholder: p.default !== undefined ? `default: ${p.default}` : hint }),
     pbEl("span", { id: `pb-err-${errorKey(p.name)}`, className: "pb-error pb-field-error" }));
-  return [pbEl("h3", { textContent: title }), ...items.map(field)];
+  return [...(title === "Arguments" ? [] : [pbEl("h3", { textContent: title })]), ...items.map(field)]; // "Test data" already heads the plain case
 }
 
 function pbFields(node) {
@@ -119,11 +130,6 @@ function pbFields(node) {
     ...pbFieldGroup("Instance (constructor)", node.constructorParameters, "pb-c-", (n) => `constructor.${n}`, typed, "a Python value, such as 3 or [1, 2]"),
     ...pbFieldGroup(node.constructorParameters ? "Arguments of the method" : "Arguments", node.parameters, "pb-v-", (n) => n, typed, "a Python value, such as 3 or [1, 2]"),
     ...pbFieldGroup("Data for external effects", node.effects, "pb-e-", (n) => `effect:${n}`, (p) => `${p.name} gives back`, "a Python value, such as \"text\""),
-    pbEl("button", { textContent: "Use example", onclick: () => {
-      for (const [items, prefix] of [[node.constructorParameters, "pb-c-"], [node.parameters, "pb-v-"], [node.effects, "pb-e-"]]) {
-        for (const p of items ?? []) $(`${prefix}${p.name}`).value = p.suggestion ?? "";
-      }
-    } }),
   ];
 }
 
@@ -131,24 +137,33 @@ function pbFields(node) {
 function pbRender() {
   if (!pbNode()) { rightUnregisterTab("algorithm"); return; } // the function is gone (another Project): nothing to show
   pbRenderedFor = pbGraph;
+  const node = pbNode();
+  const useExample = () => {
+    for (const [items, prefix] of [[node.constructorParameters, "pb-c-"], [node.parameters, "pb-v-"], [node.effects, "pb-e-"]]) {
+      for (const p of items ?? []) $(`${prefix}${p.name}`).value = p.suggestion ?? "";
+    }
+  };
   const parts = [
-    pbEl("h2", { textContent: `Playback: ${pbGraph.node.split(".").pop()}` }),
-    ...pbFields(pbNode()),
+    pbEl("h3", { textContent: "Test data" }),
+    ...pbFields(node),
+    pbEl("p", { className: "pb-hint", textContent: "Numbers, text in quotes like \"hi\", or lists like [1, 2, 3]." }),
+    pbEl("div", { className: "pb-row" }, pbEl("button", { textContent: "Use example", onclick: useExample }), pbEl("button", { id: "pb-record", className: "primary", textContent: "Record a run", onclick: pbRecord })),
     pbEl("label", { className: "pb-check" }, pbEl("input", { id: "pb-own-python", type: "checkbox" }), "Use the Project's own Python (.venv, venv or env)"),
     pbEl("p", { className: "pb-warning", textContent: "Recording runs this function for real, on your computer, with the Project's own code. Writing files, network access and new programs are blocked as a safety net, not as a guarantee: only play code you trust." }),
-    pbEl("button", { id: "pb-record", textContent: "Record a run", onclick: pbRecord }),
     pbEl("div", { id: "pb-message", className: "pb-error" }),
   ];
   if (pbRecording) {
     parts.push(
+      pbEl("hr"),
+      pbEl("h3", { textContent: "Playback" }),
       pbEl("div", { className: "pb-row" },
-        pbEl("button", { textContent: "⏮", title: "Back to the start", onclick: () => { pbStop(); pbGo(0); } }),
-        pbEl("button", { textContent: "◀", title: "Step back", onclick: () => { pbStop(); pbGo(pbIndex - 1); } }),
-        pbEl("button", { id: "pb-play", textContent: "Play", onclick: pbPlayPause }),
-        pbEl("button", { textContent: "▶", title: "Step forward", onclick: () => { pbStop(); pbGo(pbIndex + 1); } }),
+        pbEl("button", { className: "step", textContent: "‹", title: "Step back", onclick: () => { pbStop(); pbGo(pbIndex - 1); } }),
+        pbEl("input", { id: "pb-slider", type: "range", min: 0, max: pbRecording.visits.length - 1, value: pbIndex, oninput: (e) => { pbStop(); pbGo(Number(e.target.value)); } }),
+        pbEl("button", { className: "step", textContent: "›", title: "Step forward", onclick: () => { pbStop(); pbGo(pbIndex + 1); } }),
       ),
       pbEl("div", { className: "pb-row" },
-        pbEl("input", { id: "pb-slider", type: "range", min: 0, max: pbRecording.visits.length - 1, value: pbIndex, oninput: (e) => { pbStop(); pbGo(Number(e.target.value)); } }),
+        pbEl("button", { textContent: "⏮", title: "Back to the start", onclick: () => { pbStop(); pbGo(0); } }),
+        pbEl("button", { id: "pb-play", className: "primary", textContent: "Play", onclick: pbPlayPause }),
         pbEl("span", { id: "pb-position" }),
       ),
       pbEl("div", { id: "pb-values", className: "pb-values" }),
@@ -156,7 +171,7 @@ function pbRender() {
       pbEl("p", { className: "pb-warning", textContent: `Python used: ${pbRecording.interpreter}` }),
     );
   }
-  pbPane.replaceChildren(...parts);
+  pbPane.replaceChildren(pbEl("header", {}, "Algorithm", pbEl("span", { textContent: pbGraph.node.split(".").pop() })), pbEl("div", { className: "body" }, ...parts));
   if (pbRecording) {
     const inputs = pbRecording.input;
     $("pb-own-python").checked = pbRecording.interpreter !== "default";
@@ -193,7 +208,7 @@ showLayer = (which) => {
   showLayerWithoutPlayback(which);
   if (which !== "algorithms" || !pbNode()) { pbStop(); rightUnregisterTab("algorithm"); }
   else {
-    if (!pbPane.isConnected) rightRegisterTab("algorithm", "Algorithm", pbPane); // in the page first: pbRender looks fields up by id
+    if (!pbPane.isConnected) rightRegisterTab("algorithm", "Algorithms", pbPane); // in the page first: pbRender looks fields up by id
     if (pbRenderedFor !== pbGraph) pbRender(); // keep what the person typed unless the graph changed
     rightShowTab("algorithm");
     if (pbRecording) { $("algorithm").classList.add("has-recording"); pbShowStep(); }

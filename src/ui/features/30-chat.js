@@ -1,39 +1,21 @@
 // Chat bar: renders the events the core streams from POST /chat. No domain logic lives here.
 // When the builder needs permission, a card with Approve and Reject appears; the answer goes back through POST /permission.
 {
-  const style = document.createElement("style");
-  style.textContent = `
-    #chat form { flex-direction: row; gap: 8px; }
-    #chat input { flex: 1; }
-    #chat button:disabled { opacity: .5; cursor: default; }
-    #chat-log { max-height: 40vh; overflow-y: auto; margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px; }
-    #chat-log:empty { display: none; }
-    #chat-log .text { white-space: pre-wrap; }
-    #chat-log .you { color: var(--muted); }
-    #chat-log .tool { color: var(--muted); font: 12px var(--mono); }
-    #chat-log .nested { margin-left: 18px; border-left: 2px solid var(--line); padding-left: 8px; }
-    #chat-log .error { color: var(--danger); }
-    #chat-log .meta { color: var(--muted); font-size: 12px; }
-    #chat-log .permission { border: 1px solid var(--accent); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
-    #chat-log .permission pre { margin: 0; max-height: 160px; overflow: auto; font: 12px/1.4 var(--mono); white-space: pre-wrap; word-break: break-all; }
-    #chat-log .permission .row input { flex: 1; min-width: 0; }
-    #chat-log .permission .row { display: flex; gap: 8px; align-items: center; }
-    #chat-log .permission .reject { background: transparent; color: var(--text); border: 1px solid var(--control); }
-  `;
-  document.head.append(style);
-
   const log = document.createElement("div");
   log.id = "chat-log";
   log.setAttribute("role", "log");
   const form = document.createElement("form");
+  const label = Object.assign(document.createElement("label"), { htmlFor: "chat-input", textContent: "Ask the builder" });
   const input = document.createElement("input");
-  input.placeholder = "Ask the builder";
-  input.setAttribute("aria-label", "Message to the builder");
+  input.id = "chat-input";
+  input.placeholder = "Describe what to build or change";
   input.required = true;
   const send = document.createElement("button");
   send.textContent = "Send";
-  form.append(input, send);
-  $("chat").append(log, form);
+  form.append(label, input, send);
+  const foot = Object.assign(document.createElement("div"), { id: "chat-foot" });
+  foot.append(form);
+  $("chat").append(log, foot);
 
   const sessions = new Map(); // project id -> Claude Code session id, so follow-ups continue the conversation
   const cards = new Map(); // permission request id -> its card, so a card can be withdrawn
@@ -142,7 +124,7 @@
     else if (event.type === "permission_expired") expireCard(event.id);
     else if (event.type === "proposal") {
       // The Canvas shows it highlighted on its layer; the chat says it happened and offers to take the person there.
-      const line = add("meta", `Proposal: ${event.kind} "${event.nodeId}" on the ${event.layer} layer. `);
+      const line = add("proposal-line", `Proposal: ${event.kind} "${event.nodeId}" on the ${event.layer} layer. `);
       const review = document.createElement("button");
       review.textContent = "Review";
       review.onclick = () => document.dispatchEvent(new CustomEvent("proposal-open", { detail: { id: event.id } }));
@@ -168,7 +150,7 @@
     const project = current;
     input.value = "";
     send.disabled = true;
-    add("you", `You: ${message}`);
+    add("you", message);
     try {
       const res = await fetch("/chat", {
         method: "POST",

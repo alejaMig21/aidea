@@ -2,15 +2,12 @@
 // double-click a step to see its source text. The core builds and lays out the graph; this only draws it.
 const algoStyle = document.createElement("style");
 algoStyle.textContent = `
-  .flow-edge { stroke: var(--muted); fill: none; marker-end: url(#flow-arrow); }
-  .flow-arrow-head { fill: var(--muted); }
-  .flow-label { fill: var(--muted); font-size: 11px; }
+  .flow-edge { stroke: #4a546c; fill: none; marker-end: url(#flow-arrow); }
+  .flow-arrow-head { fill: #4a546c; }
+  .flow-label { fill: var(--muted); font-size: 11px; font-weight: 400; }
   .flow-step { cursor: pointer; }
-  .flow-step rect { stroke-width: 1.5; }
-  .flow-start rect, .flow-end rect, .flow-return rect, .flow-raise rect { fill: var(--module); }
-  .flow-branch rect, .flow-loop rect { fill: var(--class); stroke: var(--accent); }
-  .flow-step.flow-step-step rect { fill: var(--function); }
-  .flow-end text, .flow-start text { font-weight: 600; }
+  .flow-step text { font: 500 12.5px var(--mono); }
+  .flow-branch rect, .flow-loop rect { stroke: var(--accent); }
 `;
 document.head.append(algoStyle);
 

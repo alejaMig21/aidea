@@ -8,46 +8,48 @@
   /* Fonts ship with the application (src/ui/fonts/, served by the core): no network needed. */
   @font-face { font-family: "Inter"; font-style: normal; font-weight: 100 900; font-display: swap; src: url("/fonts/inter-latin-wght-normal.woff2") format("woff2"); }
   @font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 100 800; font-display: swap; src: url("/fonts/jetbrains-mono-latin-wght-normal.woff2") format("woff2"); }
-  /* Dark theme only. Contrast ratios (WCAG, computed with a small script, see ticket 09 review notes):
-     text on bg 15.9, text on panel 14.7, muted on bg 7.6, muted on panel 7.0, accent on bg 7.3, accent on panel 6.7,
-     white on accent-strong 5.7, authored on panel 8.6, derived on panel 7.8, danger on bg 8.2, text on module/class/function fills 9.8/9.5/9.0.
-     --line is a quiet divider (2.1 on bg); --control is the border of inputs and buttons (4.1 on bg, 3.8 on panel). */
+  /* Dark theme only; every value below is sampled from the chosen mockups (.scratch/ui-redesign/mockups/).
+     Surfaces, darkest to lightest: --bg (gaps between cards) < --canvas < --bar (top bar) < --panel (cards) < --raised (nodes, inputs, popover) < --selected.
+     Text contrast on --panel: text 14.6, muted 6.9, accent 7.0, authored 9.3, derived 8.5; --on-accent on --accent 8.2. */
   :root {
     color-scheme: dark;
-    --bg: #121214; --panel: #1a1a1d; --line: #4a4a52; --control: #74747f; --text: #ececf0; --muted: #a4a4ae;
-    --module: #27385f; --class: #2a4126; --function: #4a3d1c;
-    --accent: #6ea0ff; --accent-strong: #2f5fd0; --authored: #f0a93b; --derived: #3fc1b0; --danger: #ff8a80;
+    --bg: #0e1014; --bar: #12151b; --canvas: #11141a; --panel: #151921; --raised: #1b2030; --selected: #252c40;
+    --line: #1d222c; --control: #2c3345; --text: #e6e8ee; --muted: #9aa3b2; --label: #c9cfdb;
+    --accent: #8aa4ff; --accent-soft: #b3c4ff; --on-accent: #0e1014; --proposal: #1a2140;
+    --authored: #f2b45a; --derived: #4fd1b5; --danger: #ff8a80;
+    --module: var(--raised); --class: var(--raised); --function: var(--raised);
     --sans: "Inter", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, monospace;
   }
   * { box-sizing: border-box; }
-  /* Columns: side | chat | separator | Canvas | separator | right slot. The Canvas track has a hard minimum (--canvas-min), so the
-     other tracks, which are minmax(0, wanted), are the ones that shrink when the window is small. 07-layout.js sets the widths. */
-  body { --canvas-min: 320px; --chat-w: 320px; --right-w: 320px; margin: 0; height: 100vh; overflow: hidden; display: grid; grid-template-columns: minmax(0, 200px) minmax(0, var(--chat-w)) auto minmax(var(--canvas-min), 1fr) auto minmax(0, var(--right-w)); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "top top top top top top" "side chat sepc main sepr right"; background: var(--bg); color: var(--text); font: 14px/1.4 var(--sans); }
-  aside { background: var(--panel); border-right: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-  #side { grid-area: side; overflow: hidden; }
-  #right { grid-area: right; min-width: 0; overflow: hidden; background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; }
-  #panel { flex: 1; min-height: 0; border: 0; overflow-y: auto; }
-  #chat { grid-area: chat; min-width: 0; overflow: hidden; background: var(--panel); border-right: 1px solid var(--line); padding: 12px 16px; display: flex; flex-direction: column; }
-  main { grid-area: main; min-width: 0; }
-  h1 { font-size: 15px; margin: 0; letter-spacing: .04em; }
-  h2 { font-size: 12px; margin: 0; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  /* Columns: chat | separator | Canvas | separator | right slot, as three rounded cards under the top bar. The separators are the gaps between cards.
+     The Canvas track has a hard minimum (--canvas-min), so the other tracks, which are minmax(0, wanted), are the ones that shrink. 07-layout.js sets the widths. */
+  body { --canvas-min: 320px; --chat-w: 340px; --right-w: 320px; margin: 0; height: 100vh; overflow: hidden; display: grid; grid-template-columns: minmax(0, var(--chat-w)) auto minmax(var(--canvas-min), 1fr) auto minmax(0, var(--right-w)); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "top top top top top" "chat sepc main sepr right"; background: var(--bg); color: var(--text); font: 13px/1.4 var(--sans); }
+  #chat, main, #right { margin-bottom: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  #chat { grid-area: chat; margin-left: 8px; min-width: 0; display: flex; flex-direction: column; }
+  #right { grid-area: right; margin-right: 8px; min-width: 0; display: flex; flex-direction: column; }
+  main { grid-area: main; min-width: 0; position: relative; background-color: var(--canvas); background-image: radial-gradient(circle, #283044 1px, transparent 1.3px); background-size: 18px 18px; }
+  h1 { font-size: 15px; margin: 0; }
+  h2 { font-size: 11px; margin: 0; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 500; }
   form { display: flex; flex-direction: column; gap: 6px; }
   [hidden] { display: none !important; }
-  input, button { font: inherit; padding: 6px 8px; border: 1px solid var(--control); border-radius: 6px; background: var(--bg); color: var(--text); }
-  button { cursor: pointer; background: var(--accent-strong); color: #fff; border: 0; }
-  button:hover:not(:disabled) { filter: brightness(1.15); }
+  input { font: inherit; padding: 6px 10px; border: 1px solid #262d3f; border-radius: 8px; background: var(--raised); color: var(--text); }
+  input::placeholder { color: #757b8a; }
+  button { font: inherit; font-weight: 500; padding: 6px 12px; border: 0; border-radius: 8px; background: var(--accent); color: var(--on-accent); cursor: pointer; }
+  button:hover:not(:disabled) { filter: brightness(1.1); }
+  button:disabled { cursor: default; }
+  /* Quiet buttons: outlined, no fill. */
+  #chat-log .permission .reject, #chat-log .proposal-line button, #recents .forget, #layers > :not([data-layer]), #pane-algorithm .pb-row button:not(.primary), #pane-algorithm .pb-ghost, #panel .proposal-box .reject { background: transparent; color: var(--text); border: 1px solid var(--control); }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   svg :focus-visible { outline-offset: 0; }
   ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
   li button { width: 100%; text-align: left; background: transparent; color: var(--text); border: 1px solid transparent; }
-  li button[aria-current="true"] { border-color: var(--accent); }
-  #error { color: var(--danger); min-height: 1.4em; }
-  main { position: relative; overflow: hidden; padding-top: 40px; /* reserved strip for the Layer tabs */ }
-  svg { width: 100%; height: 100%; cursor: grab; touch-action: none; }
+  #error { position: absolute; left: 15px; bottom: 12px; max-width: 60%; z-index: 1; color: var(--danger); font-size: 13px; }
+  #error:empty { display: none; }
+  svg#canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; touch-action: none; }
   svg.dragging { cursor: grabbing; }
-  rect { stroke: var(--line); }
-  text { fill: var(--text); font-size: 13px; pointer-events: none; }
-  .edge { stroke: var(--line); fill: none; }
+  rect { stroke: var(--control); }
+  text { fill: var(--text); font-size: 13px; font-weight: 500; pointer-events: none; }
+  .edge { stroke: #4a546c; fill: none; }
   /* ---- Home (mockup C): own tokens, nothing here depends on :root ---- */
   #home { --h-bg: #0e1014; --h-card: #151921; --h-line: #1d222c; --h-text: #e9ebf0; --h-muted: #9aa1af; --h-accent: #8aa4ff; --h-ink: #10131a;
     position: fixed; inset: 0; z-index: 10; background: var(--h-bg); color: var(--h-text); font: 14px/1.3 Inter, system-ui, sans-serif; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 32px 0; }
@@ -86,47 +88,137 @@
   #home #recents .forget:hover { color: var(--h-text); text-decoration: underline; }
   #home #home-empty { color: var(--h-muted); font-size: 13px; line-height: 1.5; margin: 0; }
   /* ---- end Home ---- */
-  #hint { position: absolute; left: 16px; bottom: 12px; color: var(--muted); font-size: 12px; }
-  #topbar { grid-area: top; display: flex; align-items: center; gap: 16px; padding: 6px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+  .card-head { margin: 0; padding: 0 14px; height: 40px; display: flex; align-items: center; font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text); border-bottom: 1px solid var(--line); flex: none; }
+  /* Top bar */
+  #topbar { grid-area: top; display: flex; align-items: center; gap: 10px; height: 43px; padding: 0 12px; margin-bottom: 8px; background: var(--bar); border-bottom: 1px solid #1c202a; }
+  .logo { width: 22px; height: 22px; border-radius: 6px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-weight: 700; font-size: 13px; }
+  #topbar h1 { font-size: 14px; font-weight: 700; margin-right: 6px; }
   #switcher { position: relative; }
-  #switcher-button { background: transparent; color: var(--text); border: 1px solid var(--line); }
-  #switcher-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 10; min-width: 280px; max-height: 60vh; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px; }
-  #switcher-menu[hidden] { display: none; }
-  #switcher-menu button { width: 100%; text-align: left; background: transparent; color: var(--text); border: 1px solid transparent; }
-  #switcher-menu button[aria-current="true"] { border-color: var(--accent); }
-  #switcher-menu button[disabled] { opacity: .6; cursor: default; }
-  #switcher-menu .path { display: block; color: var(--muted); font-size: 12px; }
-  #switcher-menu hr { border: 0; border-top: 1px solid var(--line); margin: 6px 0; }
+  #switcher-button { display: flex; align-items: center; gap: 8px; padding: 4px 12px; background: var(--raised); color: var(--text); border: 1px solid var(--control); font-weight: 400; }
+  #switcher-button b { font-weight: 600; font-size: 13.5px; }
+  #switcher-button .muted { color: var(--muted); }
+  #switcher-button .caret { font-size: 9px; color: var(--muted); }
+  #fold-buttons { margin-left: auto; display: flex; gap: 12px; }
+  #fold-buttons button { width: 30px; height: 30px; padding: 0; display: grid; place-items: center; background: transparent; color: var(--text); border: 1px solid var(--control); }
+  #fold-buttons button[aria-pressed="false"] { color: var(--muted); }
+  #fold-buttons rect { stroke: currentColor; }
+  #fold-buttons svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; cursor: inherit; }
+  /* Project switcher popover */
+  #switcher-menu { position: absolute; top: calc(100% + 6px); left: 19px; z-index: 10; width: 338px; max-height: calc(100vh - 60px); overflow-y: auto; background: #101319; border: 1px solid var(--control); border-radius: 12px; padding: 8px; box-shadow: 0 14px 36px rgba(0, 0, 0, .5); }
+  #switcher-menu h2 { padding: 6px 10px 4px; }
+  #switcher-menu button { width: 100%; text-align: left; background: transparent; color: var(--text); border: 0; font-weight: 400; }
+  #switcher-menu button:hover:not(:disabled), #switcher-menu button[aria-current="true"] { background: var(--selected); filter: none; }
+  #switcher-menu button[disabled] { opacity: .6; }
+  #switcher-menu .row { display: flex; align-items: center; gap: 10px; padding: 7px 10px; }
+  #switcher-menu .row > .text { flex: 1; min-width: 0; }
+  #switcher-menu .row strong { display: block; font-size: 13px; font-weight: 500; }
+  #switcher-menu .path { display: block; color: var(--muted); font: 11px var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #switcher-menu .when { color: var(--muted); font-size: 11.5px; }
+  #switcher-menu .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--derived); flex: none; }
+  #switcher-menu hr { border: 0; border-top: 1px solid var(--control); margin: 8px 2px; }
+  #switcher-menu #switcher-open { color: var(--accent); font-size: 13.5px; padding: 7px 10px; }
+  #switcher-menu #switcher-home { color: var(--muted); font-size: 12px; padding: 5px 10px; }
+  #switcher-menu #open { padding: 4px 10px 8px; flex-direction: row; }
+  #switcher-menu #open input { flex: 1; min-width: 0; }
+  #switcher-menu #open button { width: auto; background: var(--accent); color: var(--on-accent); }
+  /* Chat card */
+  #chat-log { flex: 1; min-height: 0; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; font-size: 13.5px; }
+  #chat-log .text { white-space: pre-wrap; line-height: 1.45; }
+  #chat-log .you { align-self: flex-end; max-width: 88%; background: var(--selected); border-radius: 12px; padding: 7px 14px; white-space: pre-wrap; }
+  #chat-log .tool { color: var(--muted); font: 12px var(--mono); overflow-wrap: anywhere; }
+  #chat-log .nested { margin-left: 18px; border-left: 2px solid var(--line); padding-left: 8px; }
+  #chat-log .error { color: var(--danger); }
+  #chat-log .meta { color: var(--muted); font-size: 12px; }
+  #chat-log .proposal-line { border: 1px dashed var(--accent); border-radius: 10px; padding: 8px 12px; font-size: 13.5px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+  #chat-log .proposal-line button { padding: 2px 10px; font-size: 13px; color: var(--accent); }
+  #chat-log .permission { border: 1px solid var(--control); background: var(--raised); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+  #chat-log .permission pre { margin: 0; max-height: 160px; overflow: auto; font: 12px/1.4 var(--mono); white-space: pre-wrap; word-break: break-all; }
+  #chat-log .permission .row { display: flex; gap: 8px; align-items: center; }
+  #chat-log .permission .row input { flex: 1; min-width: 0; }
+  #chat-foot { flex: none; border-top: 1px solid var(--line); padding: 14px 11px 11px; }
+  #chat-foot form { gap: 6px; background: var(--raised); border: 1px solid #262d3f; border-radius: 12px; padding: 10px 12px; }
+  #chat-foot label { color: var(--muted); font-size: 12px; }
+  #chat-foot input { border: 0; background: transparent; padding: 4px 0; font-size: 13px; width: 100%; }
+  #chat-foot input:focus-visible { outline-offset: 4px; }
+  #chat-foot button { align-self: flex-end; font-weight: 600; font-size: 13.5px; padding: 4px 14px; }
+  #chat button:disabled { opacity: .5; }
+  /* Canvas card */
+  #layers { position: absolute; left: 15px; top: 15px; max-width: calc(100% - 30px); z-index: 1; display: flex; align-items: center; gap: 2px; padding: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow-x: auto; scrollbar-width: none; }
+  #layers button { --tab: var(--derived); background: transparent; color: var(--tab); font-size: 13.5px; font-weight: 400; padding: 4px 12px; border: 0; border-radius: 8px; flex: none; white-space: nowrap; }
+  #layers :is([data-layer="business"], [data-layer="requirements"], [data-layer="architecture"]) { --tab: var(--authored); }
+  #layers button[aria-pressed="true"] { background: var(--selected); color: #fff; font-weight: 500; }
+  #layers button[disabled] { opacity: .6; }
+  #layers .badge { margin-left: 6px; padding: 0 6px; border-radius: 9px; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 700; }
+  /* Visual order: authored tabs, then derived tabs; other controls (Zoom out) last. Features append buttons in any order. */
+  #layers [data-layer="business"] { order: 1; } #layers [data-layer="requirements"] { order: 2; } #layers [data-layer="architecture"] { order: 3; }
+  #layers [data-layer="components"] { order: 4; } #layers [data-layer="algorithms"] { order: 5; } #layers [data-layer="code"] { order: 6; }
+  #layers > :not([data-layer]) { order: 9; margin-left: 8px; padding: 3px 10px; font-size: 13px; flex: none; }
+  #authored-errors { position: absolute; left: 15px; top: 62px; max-width: 60%; color: var(--danger); font-size: 12px; }
+  #zoom { position: absolute; right: 15px; bottom: 15px; z-index: 1; display: flex; align-items: center; gap: 2px; padding: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; color: var(--muted); }
+  #zoom button { background: transparent; border: 0; padding: 3px 9px; font-size: 14px; font-weight: 400; color: var(--muted); }
+  #zoom #zoom-fit { color: var(--text); font-weight: 500; }
+  #zoom #zoom-pct { min-width: 44px; text-align: center; font-size: 12px; }
+  /* Nodes */
+  .anode { cursor: pointer; }
+  .anode rect, .flow-step rect, rect[data-id] { fill: var(--raised); stroke: var(--control); }
+  .anode.selected rect { stroke: var(--accent); stroke-width: 1.5; }
+  .node-sub { fill: var(--muted); font: 400 12px var(--mono); }
+  .dot-authored { fill: var(--authored); } .dot-derived { fill: var(--derived); }
+  /* Right card */
+  #right-tabs { display: flex; gap: 6px; padding: 0 8px; border-bottom: 1px solid var(--line); flex: none; }
+  #right-tabs button { background: transparent; color: var(--muted); font-size: 13.5px; padding: 11px 10px 11px; border-radius: 0; border-bottom: 2px solid transparent; }
+  #right-tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+  #right-panes { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
+  #right-panes > div { flex: 1 0 auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 8px; }
+  #right-panes > div[hidden] { display: none; }
+  #right-panes p { margin: 0; color: var(--muted); }
+  #right-panes :disabled { cursor: not-allowed; }
+  #pane-tutor { align-items: center; justify-content: center; text-align: center; gap: 10px; }
+  #pane-tutor .tile { width: 44px; height: 44px; border-radius: 12px; background: var(--raised); color: var(--accent); display: grid; place-items: center; font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  #pane-tutor h2 { font-size: 14px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text); }
+  #pane-tutor p { max-width: 262px; line-height: 1.5; font-size: 13px; }
+  #pane-tutor button { margin-top: 4px; padding: 6px 20px; background: transparent; border: 1px solid var(--control); color: #6f788a; font-weight: 400; font-size: 13px; }
+  #panel { flex: 0 1 auto; max-height: 50%; overflow-y: auto; padding: 14px; border-top: 1px solid var(--line); }
+  #panel:empty { display: none; }
+  #panel dl { margin: 0; } #panel dt { color: var(--muted); font-size: 12px; margin-top: 8px; }
+  #panel dd { margin: 0; } #panel li { display: block; }
+  #panel p { margin: 6px 0; }
 </style>
 </head>
 <body>
 <header id="topbar">
+  <span class="logo" aria-hidden="true">a</span>
   <h1>aidea</h1>
   <div id="switcher">
-    <button id="switcher-button" aria-haspopup="true" aria-expanded="false" aria-controls="switcher-menu">No project open</button>
-    <div id="switcher-menu" hidden></div>
+    <button id="switcher-button" aria-haspopup="true" aria-expanded="false" aria-controls="switcher-menu"><span class="muted" id="switcher-label">Project</span><b id="switcher-name">No project open</b><span class="caret" aria-hidden="true">&#9660;</span></button>
+    <div id="switcher-menu" hidden>
+      <div id="switcher-list"></div>
+      <hr>
+      <button type="button" id="switcher-open">Open folder...</button>
+      <form id="open" hidden>
+        <input id="path" placeholder="Path to a Python project" aria-label="Path to a Python project" required>
+        <button>Open</button>
+      </form>
+      <button type="button" id="switcher-home">Home</button>
+    </div>
   </div>
   <div id="fold-buttons" role="group" aria-label="Show or hide panels">
-    <button type="button" id="fold-chat" aria-pressed="true">Chat</button>
-    <button type="button" id="fold-right" aria-pressed="true">Right panel</button>
+    <button type="button" id="fold-chat" aria-pressed="true" aria-label="Chat" title="Show or hide the chat"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M6 3v10"/></svg></button>
+    <button type="button" id="fold-right" aria-pressed="true" aria-label="Right panel" title="Show or hide the right panel"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M10 3v10"/></svg></button>
   </div>
 </header>
-<aside id="side" aria-label="Projects">
-  <h1>aidea</h1>
-  <h2>Projects</h2>
-  <ul id="projects"></ul>
-  <form id="open">
-    <input id="path" placeholder="Path to a Python project" aria-label="Path to a Python project" required>
-    <button>Open project</button>
-  </form>
-  <div id="error" role="alert"></div>
-</aside>
-<!-- DOM order is the keyboard order and matches the visual order: side, chat, separator, Canvas, separator, right slot. -->
-<section id="chat" aria-label="Chat"></section>
+<!-- DOM order is the keyboard order and matches the visual order: chat, separator, Canvas, separator, right slot. -->
+<section id="chat" aria-label="Chat"><h2 class="card-head">Builder</h2></section>
 <div id="sepc" role="separator" aria-orientation="vertical" aria-label="Resize chat" tabindex="0"></div>
 <main>
   <svg id="canvas" role="img" aria-label="Canvas"><g id="world"></g></svg>
-  <div id="hint">Drag to pan, scroll to zoom</div>
+  <div id="error" role="alert"></div>
+  <div id="zoom" role="group" aria-label="Zoom">
+    <button type="button" id="zoom-out" aria-label="Zoom the Canvas out">&minus;</button>
+    <span id="zoom-pct">100%</span>
+    <button type="button" id="zoom-in" aria-label="Zoom the Canvas in">+</button>
+    <button type="button" id="zoom-fit" aria-label="Fit the Canvas to its content">Fit</button>
+  </div>
 </main>
 <div id="sepr" role="separator" aria-orientation="vertical" aria-label="Resize right panel" tabindex="0"></div>
 <div id="right" role="region" aria-label="Right panel">

@@ -1,7 +1,11 @@
 const NS = "http://www.w3.org/2000/svg";
 const $ = (id) => document.getElementById(id);
-const view = { x: 40, y: 40, k: 1 };
-const apply = () => $("world").setAttribute("transform", `translate(${view.x} ${view.y}) scale(${view.k})`);
+const viewStart = { x: 100, y: 140, k: 1 }; // clear of the floating Layer tabs
+const view = { ...viewStart };
+const apply = () => {
+  $("world").setAttribute("transform", `translate(${view.x} ${view.y}) scale(${view.k})`);
+  $("zoom-pct").textContent = `${Math.round(view.k * 100)}%`;
+};
 
 // Pan and zoom
 const svg = $("canvas");
@@ -15,6 +19,27 @@ svg.addEventListener("wheel", (e) => {
   view.k = k;
   apply();
 }, { passive: false });
+// Zoom control: buttons zoom about the centre of the Canvas; Fit frames what is drawn on the visible layer.
+const zoomBy = (f) => {
+  const r = svg.getBoundingClientRect();
+  const k = Math.min(4, Math.max(0.2, view.k * f));
+  view.x = r.width / 2 - ((r.width / 2 - view.x) / view.k) * k;
+  view.y = r.height / 2 - ((r.height / 2 - view.y) / view.k) * k;
+  view.k = k;
+  apply();
+};
+$("zoom-in").onclick = () => zoomBy(1.2);
+$("zoom-out").onclick = () => zoomBy(1 / 1.2);
+$("zoom-fit").onclick = () => {
+  const b = $("world").getBBox(); // elements that are not displayed (other layers) are left out
+  if (!b.width || !b.height) { Object.assign(view, viewStart); return apply(); }
+  const r = svg.getBoundingClientRect();
+  const w = r.width - 48, h = r.height - 140; // clear of the floating Layer tabs (top) and the zoom control (bottom)
+  view.k = Math.min(1, Math.max(0.2, Math.min(w / b.width, h / b.height)));
+  view.x = (r.width - b.width * view.k) / 2 - b.x * view.k;
+  view.y = 70 + (h - b.height * view.k) / 2 - b.y * view.k;
+  apply();
+};
 let downAt = null;
 // The pointer is captured only once the gesture is a drag: capturing on press would
 // redirect the click to the Canvas and Nodes would never receive it.
@@ -62,12 +87,13 @@ async function draw(nodes) {
   }
   for (const n of nodes) {
     const r = at.get(n.id);
-    world.append(el("rect", { x: r.x, y: r.y, width: r.width, height: r.height, rx: 6, fill: `var(--${n.kind})`, "data-id": n.id, "data-ref": n.id }));
-    world.append(el("text", { x: r.x + 10, y: r.y + 19, "data-ref": n.id }, `${n.kind === "function" ? "ƒ " : ""}${n.name.split(".").pop()}`));
+    world.append(el("rect", { x: r.x, y: r.y, width: r.width, height: r.height, rx: 8, "data-id": n.id, "data-ref": n.id }));
+    world.append(el("circle", { cx: r.x + 13, cy: r.y + r.height / 2, r: 3.5, class: "dot-derived", "data-ref": n.id }));
+    world.append(el("text", { x: r.x + 24, y: r.y + 19, "data-ref": n.id }, `${n.kind === "function" ? "ƒ " : ""}${n.name.split(".").pop()}`));
     // Attributes are members of a class Node, drawn as slim rows above its methods.
     for (const a of n.attributes ?? []) {
       const ref = `${n.id}#${a.name}`, ar = at.get(ref);
-      world.append(el("rect", { x: ar.x, y: ar.y, width: ar.width, height: ar.height, rx: 6, fill: "none", "stroke-dasharray": "3 3", "data-ref": ref }));
+      world.append(el("rect", { x: ar.x, y: ar.y, width: ar.width, height: ar.height, rx: 8, fill: "none", "stroke-dasharray": "3 3", "data-ref": ref }));
       world.append(el("text", { x: ar.x + 10, y: ar.y + 17, "data-ref": ref }, `• ${a.name}`));
     }
   }
@@ -75,19 +101,6 @@ async function draw(nodes) {
 
 // Projects
 let current = null;
-async function refreshList() {
-  const list = await (await fetch("/projects")).json();
-  $("projects").replaceChildren(...list.map((p) => {
-    const li = document.createElement("li");
-    const b = document.createElement("button");
-    b.textContent = p.name;
-    b.title = p.path;
-    if (p.id === current) b.setAttribute("aria-current", "true");
-    b.onclick = () => open(p.path);
-    li.append(b);
-    return li;
-  }));
-}
 async function open(path) {
   $("error").textContent = "";
   const res = await fetch("/projects", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ path }) });
@@ -95,11 +108,9 @@ async function open(path) {
   if (!res.ok) { $("error").textContent = body.error; return; }
   current = body.id;
   if (typeof hideHome === "function") hideHome();
-  Object.assign(view, { x: 40, y: 40, k: 1 });
+  Object.assign(view, viewStart);
   apply();
   draw(body.nodes);
-  refreshList();
 }
 $("open").onsubmit = (e) => { e.preventDefault(); open($("path").value.trim()); };
 apply();
-refreshList();

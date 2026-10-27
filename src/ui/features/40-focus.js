@@ -4,7 +4,7 @@ const focusStyle = document.createElement("style");
 focusStyle.textContent = `
   [data-ref] { transition: opacity .2s; }
   .dim { opacity: .2; }
-  .anode.has-broken rect { stroke: var(--danger); stroke-width: 2; }
+  .anode.has-broken rect { stroke: var(--danger); stroke-width: 1.5; }
 `;
 document.head.append(focusStyle);
 
