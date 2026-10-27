@@ -22,6 +22,7 @@ const layoutSeparatorWidth = 6;
     #right-tabs { display: flex; border-bottom: 1px solid var(--line); }
     #right-tabs button { background: transparent; color: var(--muted); border: 0; border-bottom: 2px solid transparent; border-radius: 0; }
     #right-tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+    #right-panes { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
     #right-panes > div { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
     #right-panes > div[hidden] { display: none; }
     #right-panes p { margin: 0; color: var(--muted); }
@@ -52,6 +53,16 @@ function rightRegisterTab(id, label, pane) {
   rightTabs.append(b);
   rightPanes.append(pane);
   rightSelectTab(rightTabs.children.length === 1 ? id : rightTabs.querySelector('[aria-selected="true"]').dataset.tab);
+}
+
+// Removes a tab and its pane; if it was selected, the first tab left (the Tutor) is selected.
+function rightUnregisterTab(id) {
+  const b = rightTabs.querySelector(`[data-tab="${id}"]`);
+  if (!b) return;
+  const wasSelected = b.getAttribute("aria-selected") === "true";
+  b.remove();
+  rightPanes.querySelector(`[data-tab="${id}"]`)?.remove();
+  if (wasSelected) { for (const x of rightPanes.children) x.hidden = x.dataset.tab !== rightTabs.firstChild.dataset.tab; rightTabs.firstChild.setAttribute("aria-selected", "true"); }
 }
 
 // The Tutor tab is always present. Its entry point stays disabled until the Tutor exists.
@@ -98,6 +109,13 @@ function layoutApply() {
     p.sep.setAttribute("aria-valuemax", String(Math.round(layoutMax(name))));
     p.sep.setAttribute("aria-valuenow", String(Math.round(layoutState[name])));
   }
+}
+// Selects a tab and makes sure the right slot is open to show it.
+function rightShowTab(id) {
+  layoutState.rightFolded = false;
+  layoutApply();
+  layoutSave();
+  rightSelectTab(id);
 }
 function layoutSet(name, w) { layoutState[name] = layoutClamp(name, w); layoutApply(); layoutSave(); }
 

@@ -11,3 +11,11 @@
 - [ ] The own-Python choice and its warning behave as before.
 - [ ] The Tutor tab is still one click away.
 - [ ] Checked live on narrow and wide windows; result noted in the ticket.
+
+## Review notes
+
+Verified (none live): `npm run typecheck` and `npm test` pass (see commit). No core change, so no new automated test; the interface is plain browser code with no test seam.
+
+What changed: `07-layout.js` gains `rightUnregisterTab(id)` (removes tab and pane; if it was selected the Tutor is selected) and `rightShowTab(id)` (unfolds the right slot, then selects). `60-playback.js` now renders the test-data form, the own-Python switch with its unchanged warning, and the Playback controls into its own pane, registered as the "Algorithm" tab while the Algorithms layer is shown and removed on any other layer. Proposals and Rationale still render in `#panel`, below the tabs, so they stay visible on every tab.
+
+Needs live checking (left unticked): the Algorithm tab appears and is selected on opening an Algorithm (also with the slot folded); it disappears and the Tutor returns when leaving the Algorithms layer; form, own-Python switch, warning and Playback work inside the column; Tutor is one click away; a Proposal can still be decided while the Algorithm tab is open; narrow and wide windows (tall column scrolls in `#right-panes`, which shares height with `#panel`).

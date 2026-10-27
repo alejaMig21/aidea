@@ -4,17 +4,20 @@ const playbackStyle = document.createElement("style");
 playbackStyle.textContent = `
   #algorithm.has-recording .flow-step:not(.visited) { opacity: .4; }
   #algorithm .flow-step.now rect { stroke: var(--accent); stroke-width: 4; }
-  #panel label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
-  #panel .pb-row { display: flex; gap: 6px; align-items: center; }
-  #panel .pb-values { font: 12px/1.5 ui-monospace, monospace; margin: 8px 0; }
-  #panel .pb-values div { display: flex; justify-content: space-between; gap: 8px; }
-  #panel .pb-error { color: #c0392b; font-size: 12px; }
-  #panel .pb-warning { color: var(--muted); font-size: 12px; margin: 4px 0; }
-  #panel .pb-check { flex-direction: row; align-items: center; gap: 6px; }
-  #panel input[type="range"] { flex: 1; }
+  #pane-algorithm label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
+  #pane-algorithm .pb-row { display: flex; gap: 6px; align-items: center; }
+  #pane-algorithm .pb-values { font: 12px/1.5 ui-monospace, monospace; margin: 8px 0; }
+  #pane-algorithm .pb-values div { display: flex; justify-content: space-between; gap: 8px; }
+  #pane-algorithm .pb-error { color: #c0392b; font-size: 12px; }
+  #pane-algorithm .pb-warning { color: var(--muted); font-size: 12px; margin: 4px 0; }
+  #pane-algorithm .pb-check { flex-direction: row; align-items: center; gap: 6px; }
+  #pane-algorithm input[type="range"] { flex: 1; }
 `;
 document.head.append(playbackStyle);
 
+// The Algorithm column: a tab in the right slot, present only while the Algorithms layer is shown.
+// Proposals stay in #panel, outside this column, so deciding on them works from any tab.
+const pbPane = document.createElement("div");
 let pbGraph = null;     // the open Algorithm graph
 let pbRecording = null; // the recording being replayed
 let pbIndex = 0;
@@ -67,7 +70,7 @@ async function pbRecord() {
   const message = $("pb-message");
   message.textContent = "";
   message.className = "pb-error";
-  document.querySelectorAll("#panel .pb-field-error").forEach((n) => { n.textContent = ""; });
+  document.querySelectorAll("#pane-algorithm .pb-field-error").forEach((n) => { n.textContent = ""; });
   const body = { project: current, node: pbGraph.node, useProjectPython: $("pb-own-python").checked };
   const read = (items, prefix) => Object.fromEntries(items.map((p) => [p.name, $(`${prefix}${p.name}`).value]));
   body.values = read(pbNode().parameters ?? [], "pb-v-");
@@ -144,7 +147,7 @@ function pbRender() {
       pbEl("p", { className: "pb-warning", textContent: `Python used: ${pbRecording.interpreter}` }),
     );
   }
-  $("panel").replaceChildren(...parts);
+  pbPane.replaceChildren(...parts);
   if (pbRecording) {
     const inputs = pbRecording.input;
     $("pb-own-python").checked = pbRecording.interpreter !== "default";
@@ -162,10 +165,15 @@ document.addEventListener("algorithm-opened", (e) => {
   pbIndex = 0;
 });
 
-// The panel belongs to the Algorithms layer; leaving it pauses the replay.
+// The column belongs to the Algorithms layer: opening it adds and selects the tab, leaving removes it and pauses the replay.
 const showLayerWithoutPlayback = showLayer;
 showLayer = (which) => {
   showLayerWithoutPlayback(which);
-  if (which !== "algorithms") pbStop();
-  else if (pbGraph) { pbRender(); if (pbRecording) { $("algorithm").classList.add("has-recording"); pbShowStep(); } }
+  if (which !== "algorithms" || !pbGraph) { pbStop(); rightUnregisterTab("algorithm"); }
+  else {
+    if (!pbPane.isConnected) rightRegisterTab("algorithm", "Algorithm", pbPane); // in the page first: pbRender looks fields up by id
+    pbRender();
+    rightShowTab("algorithm");
+    if (pbRecording) { $("algorithm").classList.add("has-recording"); pbShowStep(); }
+  }
 };
