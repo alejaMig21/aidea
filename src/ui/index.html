@@ -37,6 +37,14 @@
   rect { stroke: var(--line); }
   text { fill: var(--text); font-size: 13px; pointer-events: none; }
   .edge { stroke: var(--line); fill: none; }
+  #home { position: absolute; inset: 0; background: var(--bg); padding: 32px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+  #home[hidden] { display: none; }
+  #home h1 { font-size: 22px; }
+  #recents li { display: flex; gap: 6px; align-items: stretch; }
+  #recents li .open { display: flex; flex-direction: column; gap: 2px; background: var(--panel); border: 1px solid var(--line); }
+  #recents li .open[disabled] { opacity: .6; cursor: default; }
+  #recents .path, #recents .when { color: var(--muted); font-size: 12px; }
+  #recents .forget { width: auto; background: transparent; color: var(--text); border: 1px solid var(--line); }
   #hint { position: absolute; left: 16px; bottom: 12px; color: var(--muted); font-size: 12px; }
 </style>
 </head>
@@ -53,6 +61,12 @@
 </aside>
 <main>
   <svg id="canvas" role="img" aria-label="Canvas"><g id="world"></g></svg>
+  <section id="home" aria-label="Home">
+    <h1>aidea</h1>
+    <h2>Recent projects</h2>
+    <ul id="recents"></ul>
+    <p id="home-empty" hidden>No projects yet. Type the path to a Python project folder in the box on the left and choose Open project; it will be listed here next time.</p>
+  </section>
   <div id="hint">Drag to pan, scroll to zoom</div>
 </main>
 <aside id="panel" aria-label="Tutor panel"></aside>

@@ -27,6 +27,7 @@ const handler: Handler = async (req, res, core) => {
     }
     const project = await openProject(path);
     core.projects.set(project.id, project);
+    core.recents.add(path);
     core.send(res, 201, project);
     return true;
   }

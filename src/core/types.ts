@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { ChildProcess } from "node:child_process";
 import type { Broker } from "./permissions.ts";
 import type { ProposalStore } from "./proposals.ts";
+import type { Recents } from "./recents.ts";
 
 export type CoreNode = {
   id: string;
@@ -43,6 +44,8 @@ export type Core = {
   permissions: Broker;
   // Changes the builder proposed to the authored layers; nothing is written until the person accepts.
   proposals: ProposalStore;
+  // The Projects the person opened before, newest first.
+  recents: Recents;
   // Returns null when the body exceeds the size limit (64 KB unless a route asks for more).
   readBody: (req: IncomingMessage, maxBytes?: number) => Promise<string | null>;
   // Parses a JSON body; on failure it has already sent the 413 or 400 response and returns undefined.

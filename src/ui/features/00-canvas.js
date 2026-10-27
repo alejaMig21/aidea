@@ -94,6 +94,7 @@ async function open(path) {
   const body = await res.json();
   if (!res.ok) { $("error").textContent = body.error; return; }
   current = body.id;
+  if (typeof hideHome === "function") hideHome();
   Object.assign(view, { x: 40, y: 40, k: 1 });
   apply();
   draw(body.nodes);

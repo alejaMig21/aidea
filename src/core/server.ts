@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import type { Adapter, Core, Handler, Project } from "./types.ts";
 import { createClaudeAdapter } from "./adapter/claude.ts";
 import { createBroker } from "./permissions.ts";
+import { createRecents } from "./recents.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
 const routesDir = fileURLToPath(new URL("./routes/", import.meta.url));
@@ -15,7 +16,8 @@ async function loadRoutes(): Promise<Handler[]> {
   return Promise.all(files.map(async (f) => (await import(pathToFileURL(routesDir + f).href)).default as Handler));
 }
 
-export async function startCore({ port, adapter = createClaudeAdapter() }: { port: number; adapter?: Adapter }) {
+// `recentsFile` is where the recent Projects are kept between runs; without it they stay in memory.
+export async function startCore({ port, adapter = createClaudeAdapter(), recentsFile }: { port: number; adapter?: Adapter; recentsFile?: string }) {
   const routes = await loadRoutes();
   // Only the core's own address may talk to it: stops web pages from reaching it (CSRF, DNS rebinding).
   let allowedHosts = new Set<string>();
@@ -26,6 +28,7 @@ export async function startCore({ port, adapter = createClaudeAdapter() }: { por
     recordings: new Map<string, unknown>(),
     permissions: createBroker(),
     proposals: new Map(),
+    recents: createRecents(recentsFile),
     send: (res, status, body, headers = {}) => {
       res.writeHead(status, { "content-type": "application/json", ...headers });
       res.end(JSON.stringify(body));

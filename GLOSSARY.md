@@ -96,6 +96,14 @@ _Avoid_: Gate, checkpoint
 A code repository opened in aidea together with the authored layers kept inside it.
 _Avoid_: Workspace, app
 
+**Recent project**:
+A Project the person opened before, remembered by its folder path outside any Project so it can be opened again from Home. Forgetting one removes only the entry, never the folder.
+_Avoid_: History, bookmark, favourite
+
+**Home**:
+The screen shown when no Project is open. It lists the Recent projects and explains how to start when there are none.
+_Avoid_: Start page, dashboard, launcher
+
 **Probe**:
 The tutor's initial assessment of what the user already understands, scoped to what a new project's goal depends on.
 _Avoid_: Entrance exam, placement test

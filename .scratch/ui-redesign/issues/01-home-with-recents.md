@@ -6,12 +6,18 @@
 
 **Status:** ready-for-agent
 
-- [ ] Through the core protocol: opening a Project makes it appear first in the recents list.
-- [ ] Reopening the same path moves it to the top without duplicating it.
-- [ ] Order is last opened first; the 21st distinct Project drops the oldest.
-- [ ] A recent whose folder no longer exists is listed as unavailable, not removed.
-- [ ] Forgetting an entry removes only the entry; the folder on disk is untouched.
-- [ ] Entries survive a core restart.
-- [ ] A path that does not exist or is not a directory is refused when opened.
+- [x] Through the core protocol: opening a Project makes it appear first in the recents list.
+- [x] Reopening the same path moves it to the top without duplicating it.
+- [x] Order is last opened first; the 21st distinct Project drops the oldest.
+- [x] A recent whose folder no longer exists is listed as unavailable, not removed.
+- [x] Forgetting an entry removes only the entry; the folder on disk is untouched.
+- [x] Entries survive a core restart.
+- [x] A path that does not exist or is not a directory is refused when opened.
 - [ ] Checked live: Home lists recents with name, path and last-opened time; choosing one opens it; empty state explains how to start.
-- [ ] `GLOSSARY.md` defines "Recent project" and "Home".
+- [x] `GLOSSARY.md` defines "Recent project" and "Home".
+
+## Review notes
+
+- Tested automatically (`test/recents.test.ts`, through the core protocol, store in a temp dir): first/reopen/cap-20 ordering, unavailable entries kept, forget leaves the folder, restart survival, refusal of missing or non-directory paths. `GLOSSARY.md` entries added.
+- NOT verified live (no running UI in this session): the "Checked live" criterion. Still to check by hand: Home lists name, path and last-opened time; clicking a recent opens it; unavailable entries are disabled with a Forget button; the empty state text shows with no recents; typed-path open still works and hides Home; existing canvas behaviour is unchanged.
+- The core only persists recents when started with `recentsFile` (`src/core/main.ts` passes `~/.aidea/recents.json`, overridable with `AIDEA_RECENTS_FILE`); `startCore` without it keeps them in memory, so other tests never touch the real per-user directory.
