@@ -56,9 +56,13 @@ const handler: Handler = async (req, res, core) => {
       return true;
     }
     const links = traceLinks(project, authored).filter((l) => l.layer === layer && l.from === body?.node);
-    const parts = [...new Set(links.filter((l) => !l.broken).map((l) => l.to))].sort();
-    if (parts.length === 0) {
-      core.send(res, 422, { error: "Node has no Trace links to follow" });
+    // The Footprint: what realises this Node in the layer below. Broken links have nothing left to show.
+    const footprint = [...new Set(links.filter((l) => !l.broken).map((l) => l.to))].sort();
+    const broken = [...new Set(links.filter((l) => l.broken).map((l) => l.to))];
+    if (footprint.length === 0) {
+      core.send(res, 422, {
+        error: broken.length ? `All Trace links of this Node are broken: ${broken.join(", ")}` : "Node has no Trace links to follow",
+      });
       return true;
     }
     const target = layerBelow[layer];
@@ -67,10 +71,10 @@ const handler: Handler = async (req, res, core) => {
     core.send(res, 200, {
       layer: target,
       origin: { layer, node: body!.node },
-      parts,
-      frame: frameOf(rects.filter((r) => parts.includes(r.id))),
-      dimmed: rects.filter((r) => !parts.includes(r.id)).map((r) => r.id),
-      broken: [...new Set(links.filter((l) => l.broken).map((l) => l.to))],
+      footprint,
+      frame: frameOf(rects.filter((r) => footprint.includes(r.id))),
+      dimmed: rects.filter((r) => !footprint.includes(r.id)).map((r) => r.id),
+      broken,
     });
     return true;
   }

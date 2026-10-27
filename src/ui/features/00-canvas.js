@@ -49,8 +49,10 @@ const el = (name, attrs, text) => {
 };
 async function draw(nodes) {
   const project = current;
-  const { rects } = await (await fetch(`/layout?project=${encodeURIComponent(project)}&layer=components`)).json();
+  const res = await fetch(`/layout?project=${encodeURIComponent(project)}&layer=components`);
+  const { rects, error } = await res.json();
   if (project !== current) return;
+  if (!res.ok) { $("error").textContent = error; return; }
   const at = new Map(rects.map((r) => [r.id, r]));
   const world = $("world");
   world.replaceChildren();

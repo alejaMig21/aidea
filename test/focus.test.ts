@@ -56,7 +56,7 @@ test("zooming into a Node returns a framing centered on its Footprint", async ()
   const body = await res.json();
   assert.equal(body.layer, "components");
   assert.deepEqual(body.origin, { layer: "architecture", node: "ledger" });
-  assert.deepEqual(body.parts, ["billing.charge"]);
+  assert.deepEqual(body.footprint, ["billing.charge"]);
   // billing.charge sits at x=18, y=36 and is 222 wide and 28 high; the framing adds 24 of margin on every side.
   assert.deepEqual(body.frame, { x: -6, y: 12, width: 270, height: 76 });
 });
@@ -64,7 +64,7 @@ test("zooming into a Node returns a framing centered on its Footprint", async ()
 test("a Footprint with several separate parts is framed as a whole and the rest is dimmed", async () => {
   await t.post("/projects", { path: traced });
   const body = await (await focus(traced, "architecture", "checkout")).json();
-  assert.deepEqual(body.parts, ["billing.charge", "orders.place"]);
+  assert.deepEqual(body.footprint, ["billing.charge", "orders.place"]);
   // billing.charge ends at x=240; orders.place starts at x=298 and ends at x=520.
   assert.deepEqual(body.frame, { x: -6, y: 12, width: 550, height: 76 });
   assert.ok(body.dimmed.includes("billing") && body.dimmed.includes("orders"));
@@ -81,7 +81,7 @@ test("zooming out returns to the Node the person came from", async () => {
   assert.equal(body.node, "checkout");
   // checkout is the first Node of its layer: x=0, y=0, 240 by 64, plus 24 of margin.
   assert.deepEqual(body.frame, { x: -24, y: -24, width: 288, height: 112 });
-  // The interface hides its zoom-out control when no earlier Node is left to return to.
+  // How many earlier Nodes the person can still return to.
   assert.equal(body.remaining, 0);
   // Nothing is left to zoom out from.
   assert.equal((await t.post("/focus/out", { project: traced })).status, 409);
@@ -97,7 +97,7 @@ test("deleting a function and refreshing marks the Trace links that pointed to i
   assert.deepEqual(broken, ["checkout->billing.charge", "ledger->billing.charge"]);
 
   const body = await (await focus(dir, "architecture", "checkout")).json();
-  assert.deepEqual(body.parts, ["orders.place"]);
+  assert.deepEqual(body.footprint, ["orders.place"]);
   assert.deepEqual(body.broken, ["billing.charge"]);
 });
 
@@ -110,6 +110,23 @@ test("zooming in is refused with a clear message when there is nothing to follow
   assert.equal((await focus(traced, "components", "orders")).status, 400);
   assert.equal((await focus(traced + "-never-opened", "architecture", "checkout")).status, 404);
   assert.equal((await t.post("/focus", { project: traced })).status, 400);
+});
+
+test("a Node whose Trace links are all broken says so instead of refusing silently", async () => {
+  const dir = copyOfTraced();
+  writeFileSync(join(dir, "billing.py"), "def refund():\n    return 3\n");
+  await t.post("/projects", { path: dir });
+  const res = await focus(dir, "architecture", "ledger");
+  assert.equal(res.status, 422);
+  assert.match((await res.json()).error, /all Trace links of this Node are broken: billing\.charge/i);
+});
+
+test("layout, traces and zoom out answer clearly for a bad layer or an unknown project", async () => {
+  await t.post("/projects", { path: traced });
+  assert.equal((await t.get(`/layout?${q(traced, "&layer=nope")}`)).status, 400);
+  assert.equal((await t.get(`/layout?${q(traced + "-never-opened", "&layer=architecture")}`)).status, 404);
+  assert.equal((await t.get(`/traces?${q(traced + "-never-opened")}`)).status, 404);
+  assert.equal((await t.post("/focus/out", { project: traced + "-never-opened" })).status, 404);
 });
 
 test("a Trace links field that is not a list of ids is reported as a mistake in the file", async () => {

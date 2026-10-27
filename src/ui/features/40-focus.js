@@ -33,8 +33,10 @@ showLayer = (which) => { showLayerPlain(which); dim([]); };
 svg.addEventListener("dblclick", async (e) => {
   const node = e.target.closest("[data-node]");
   if (!node) return;
-  const res = await post("/focus", { project: current, layer: authoredShown, node: node.dataset.node });
+  const project = current;
+  const res = await post("/focus", { project, layer: authoredShown, node: node.dataset.node });
   const body = await res.json();
+  if (project !== current) return; // another Project was opened meanwhile: this answer is stale
   $("error").textContent = res.ok ? "" : body.error;
   if (!res.ok) return;
   showLayer(body.layer);
@@ -45,8 +47,10 @@ svg.addEventListener("dblclick", async (e) => {
 });
 
 zoomOut.onclick = async () => {
-  const res = await post("/focus/out", { project: current });
+  const project = current;
+  const res = await post("/focus/out", { project });
   const body = await res.json();
+  if (project !== current) return;
   if (!res.ok) { zoomOut.hidden = true; $("error").textContent = body.error; return; }
   $("error").textContent = "";
   showLayer(body.layer);
@@ -59,7 +63,10 @@ const drawWithoutBroken = draw;
 draw = async (nodes) => {
   await drawWithoutBroken(nodes);
   zoomOut.hidden = true;
-  const { links } = await (await fetch(`/traces?project=${encodeURIComponent(current)}`)).json();
+  const project = current;
+  const res = await fetch(`/traces?project=${encodeURIComponent(project)}`);
+  if (!res.ok || project !== current) return;
+  const { links } = await res.json();
   const broken = new Set(links.filter((l) => l.broken).map((l) => l.from));
   document.querySelectorAll(".anode").forEach((n) => n.classList.toggle("has-broken", broken.has(n.dataset.node)));
 };

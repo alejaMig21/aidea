@@ -115,10 +115,10 @@ draw = async (nodes) => {
   const project = current;
   const id = encodeURIComponent(project);
   const data = await fetch(`/authored?project=${id}`).then((r) => (r.ok ? r.json() : null));
+  const responses = await Promise.all(AUTHORED_LAYERS.map(({ key }) => fetch(`/layout?project=${id}&layer=${key}`)));
+  if (project !== current || !data || responses.some((r) => !r.ok)) return;
   const layouts = {};
-  for (const { key } of AUTHORED_LAYERS) {
-    layouts[key] = (await (await fetch(`/layout?project=${id}&layer=${key}`)).json()).rects;
-  }
+  (await Promise.all(responses.map((r) => r.json()))).forEach((body, i) => { layouts[AUTHORED_LAYERS[i].key] = body.rects; });
   if (project !== current) return;
   authoredData = data;
   authoredLayouts = layouts;

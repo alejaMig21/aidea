@@ -9,7 +9,7 @@ The single zoomable, pannable surface where all layers of a project are shown as
 _Avoid_: Whiteboard, diagram, board
 
 **Layer**:
-One level of abstraction of a project (for example business, requirements, architecture, code) that becomes visible at a given zoom depth.
+One level of abstraction of a project (business, requirements, architecture, components and data, algorithms, code) that becomes visible at a given zoom depth.
 _Avoid_: Level, tier, view
 
 **Authored layer**:
