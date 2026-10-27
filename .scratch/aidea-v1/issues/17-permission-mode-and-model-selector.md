@@ -2,11 +2,11 @@
 
 **What to build:** Next to the text input of the chat bar, the person can choose the Permission mode of the builder (for Claude Code: manual, accept edits, plan, auto) and the model it uses. The choices are not written into aidea: the active Agent adapter reports what its provider offers, so connecting another agent later (OpenCode, Codex) shows that agent's own modes and models.
 
-**Not part of v1.** Recorded at the person's request as a later point. v1 runs the builder in Claude Code's default (manual) mode with its default model.
+**Part of this version (decided by the person on 2026-10-27: "crucial para trabajar").** Supersedes the earlier "not part of v1" note.
 
 **Blocked by:** 06, 07
 
-**Status:** needs-triage
+**Status:** ready-for-agent
 
 - [ ] The Agent adapter interface can describe what its provider offers: a list of Permission modes (id, label, one-line meaning, whether it is available and, if not, why) and a list of models (id, label).
 - [ ] The Claude Code adapter fills that description from Claude Code itself where Claude Code exposes it (models), and declares what Claude Code documents but does not list (modes) inside the adapter, never in the core or the interface.
@@ -33,3 +33,11 @@
 
 - Permission cards (ticket 07) become rarer in accept edits and auto mode, and plan mode adds a request to approve the plan (the `ExitPlanMode` tool), whose card should show the plan as readable text.
 - The word "mode" already means Class mode and Direct mode (the Tutor). The glossary calls this one **Permission mode**.
+
+## Decisions for this version (2026-10-27)
+
+- Selectors live in the chat input card of mockup A (`.scratch/ui-redesign/mockups/A-session-top-bar-switcher.png`): a model chip bottom-left (as "Sonnet 5.5" there) and, beside it, the Permission mode selector; Send bottom-right.
+- The Tutor column also gets a **model** selector (never a mode) next to its input; the Tutor does not exist yet, so the choice is only stored per Project and used when the Tutor arrives.
+- The adapter describes what its provider offers. The Claude Code adapter declares, inside the adapter, the modes manual (`default`), accept edits (`acceptEdits`), plan (`plan`) and auto (`auto`, with its availability caveat in the description), and the models as the aliases `default`, `sonnet`, `opus`, `haiku` (no SDK package, no probing). `dontAsk` and `bypassPermissions` are not offered.
+- The choice is remembered per Project in the per-user store (outside any Project, like recents), applies to the next message, and is passed to Claude Code as `--permission-mode` and `--model` flags on each turn.
+- Known gap, not in scope: in plan mode the plan arrives through the `ExitPlanMode` tool and is not yet shown as a readable card.
