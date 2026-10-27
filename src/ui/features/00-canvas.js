@@ -15,12 +15,21 @@ svg.addEventListener("wheel", (e) => {
   view.k = k;
   apply();
 }, { passive: false });
-svg.addEventListener("pointerdown", (e) => { svg.setPointerCapture(e.pointerId); svg.classList.add("dragging"); });
+let downAt = null;
+svg.addEventListener("pointerdown", (e) => { downAt = [e.clientX, e.clientY]; svg.setPointerCapture(e.pointerId); svg.classList.add("dragging"); });
 svg.addEventListener("pointermove", (e) => {
   if (!svg.hasPointerCapture(e.pointerId)) return;
   view.x += e.movementX; view.y += e.movementY; apply();
 });
-svg.addEventListener("pointerup", (e) => { svg.releasePointerCapture(e.pointerId); svg.classList.remove("dragging"); });
+svg.addEventListener("pointerup", (e) => {
+  svg.releasePointerCapture(e.pointerId);
+  svg.classList.remove("dragging");
+  // A press that barely moved is a click: select the Node under the pointer.
+  if (downAt && Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) < 4) {
+    const id = document.elementFromPoint(e.clientX, e.clientY)?.getAttribute("data-id");
+    if (id && typeof onSelect === "function") onSelect(id);
+  }
+});
 
 // Drawing: one column per module, members stacked below, indented by depth
 const el = (name, attrs, text) => {
@@ -41,8 +50,14 @@ function draw(nodes) {
         const mx = parentPos.x + 9;
         world.append(el("path", { class: "edge", d: `M${mx} ${parentPos.y + parentPos.h} V${pos.y + 14} H${pos.x}` }));
       }
-      world.append(el("rect", { x: pos.x, y: pos.y, width: pos.w, height: pos.h, rx: 6, fill: `var(--${n.kind})` }));
+      world.append(el("rect", { x: pos.x, y: pos.y, width: pos.w, height: pos.h, rx: 6, fill: `var(--${n.kind})`, "data-id": n.id }));
       world.append(el("text", { x: pos.x + 10, y: pos.y + 19 }, `${n.kind === "function" ? "ƒ " : ""}${n.name.split(".").pop()}`));
+      // Attributes are members of a class Node, drawn as slim rows above its methods.
+      (n.attributes ?? []).forEach((a) => {
+        const apos = { x: pos.x + 18, y: row++ * 36, w: pos.w - 18, h: 24 };
+        world.append(el("rect", { x: apos.x, y: apos.y, width: apos.w, height: apos.h, rx: 6, fill: "none", "stroke-dasharray": "3 3" }));
+        world.append(el("text", { x: apos.x + 10, y: apos.y + 17 }, `• ${a.name}`));
+      });
       kids(n.id).forEach((c) => place(c, depth + 1, pos));
     };
     place(mod, 0, null);

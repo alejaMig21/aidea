@@ -1,6 +1,15 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 
-export type CoreNode = { id: string; kind: "module" | "class" | "function"; name: string; parent: string | null };
+export type CoreNode = {
+  id: string;
+  kind: "module" | "class" | "function";
+  name: string;
+  parent: string | null;
+  file: string; // path relative to the Project folder, with "/" separators
+  line: number; // 1-based, inclusive
+  endLine: number;
+  attributes?: { name: string; line: number }[]; // classes only
+};
 export type Project = { id: string; name: string; path: string; nodes: CoreNode[]; errors: { file: string; message: string }[] };
 
 // Shared state and helpers handed to every route module.
