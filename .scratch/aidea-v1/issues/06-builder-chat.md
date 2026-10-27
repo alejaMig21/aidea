@@ -6,11 +6,11 @@
 
 **Status:** ready-for-agent
 
-- [ ] A message sent through the protocol produces streamed reply events in order.
-- [ ] Sub-agent messages are reported as nested under the call that started them.
-- [ ] Missing installation and missing sign-in each produce a distinct, clear error.
-- [ ] Tests use the fake Agent adapter replaying a stream recorded once from a real session.
-- [ ] Manual check with the real Claude Code confirms the reply works with the person's existing plugins and subscription login.
+- [x] A message sent through the protocol produces streamed reply events in order.
+- [x] Sub-agent messages are reported as nested under the call that started them.
+- [x] Missing installation and missing sign-in each produce a distinct, clear error.
+- [x] Tests use the fake Agent adapter replaying a stream recorded once from a real session.
+- [x] Manual check with the real Claude Code confirms the reply works with the person's existing plugins and subscription login.
 
 ## Notes from the review
 

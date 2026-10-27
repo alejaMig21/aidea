@@ -6,10 +6,10 @@
 
 **Status:** ready-for-agent
 
-- [ ] Authored files in a Project appear as Nodes on the first three Layers.
-- [ ] Selecting a Node shows its Rationale in the right-hand panel.
-- [ ] A malformed hand edit is reported with a clear message and does not crash the core.
-- [ ] Authored files are plain text and sit inside the Project repository.
+- [x] Authored files in a Project appear as Nodes on the first three Layers.
+- [x] Selecting a Node shows its Rationale in the right-hand panel.
+- [x] A malformed hand edit is reported with a clear message and does not crash the core.
+- [x] Authored files are plain text and sit inside the Project repository.
 
 ## Notes from the review
 

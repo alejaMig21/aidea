@@ -6,10 +6,10 @@
 
 **Status:** ready-for-agent
 
-- [ ] A class appears as a Node with its methods and attributes as members.
+- [x] A class appears as a Node with its methods and attributes as members.
 - [ ] Zooming to the Code layer shows the real source text for the selected Node.
-- [ ] "Open in my editor" opens the corresponding file at the right place.
-- [ ] Editing a file in the fixture Project and asking the core to refresh changes the Derived layers accordingly.
+- [x] "Open in my editor" opens the corresponding file at the right place.
+- [x] Editing a file in the fixture Project and asking the core to refresh changes the Derived layers accordingly.
 
 ## Notes from the review
 
