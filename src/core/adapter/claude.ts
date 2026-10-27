@@ -53,9 +53,11 @@ export function createParser() {
 
 export function createClaudeAdapter(spawnFn: SpawnFn = realSpawn): Adapter {
   return {
-    async *run({ cwd, message, sessionId, signal }) {
+    async *run({ cwd, message, sessionId, signal, permission }) {
       const args = ["-p", "--output-format", "stream-json", "--verbose"];
       if (sessionId) args.push("--resume", sessionId);
+      // Permission requests that the person's own rules do not settle go to aidea's tool instead of being denied.
+      if (permission) args.push("--mcp-config", permission.mcpConfig, "--permission-prompt-tool", permission.tool);
       const child = spawnFn(args, cwd);
 
       const lines = createInterface({ input: child.stdout! });

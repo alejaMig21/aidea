@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { ChildProcess } from "node:child_process";
+import type { Broker } from "./permissions.ts";
 
 export type CoreNode = {
   id: string;
@@ -23,7 +24,8 @@ export type AgentEvent =
 
 // An Agent adapter drives one agent product (Claude Code first) and reports aidea events.
 export type Adapter = {
-  run: (opts: { cwd: string; message: string; sessionId?: string; signal?: AbortSignal }) => AsyncIterable<AgentEvent>;
+  // `permission` is how the agent can ask aidea for permission: an MCP configuration (JSON text) and the name of its tool.
+  run: (opts: { cwd: string; message: string; sessionId?: string; signal?: AbortSignal; permission?: { mcpConfig: string; tool: string } }) => AsyncIterable<AgentEvent>;
 };
 
 // A spawn-like process source; the real one launches `claude`, tests replay recorded streams.
@@ -36,10 +38,12 @@ export type Core = {
   // Playback recordings by id. A recording is replayed from here and never re-run.
   recordings: Map<string, unknown>;
   send: (res: ServerResponse, status: number, body: unknown, headers?: Record<string, string>) => void;
-  // Returns null when the body exceeds the size limit.
-  readBody: (req: IncomingMessage) => Promise<string | null>;
+  // The builder's permission requests, waiting for the person's answer.
+  permissions: Broker;
+  // Returns null when the body exceeds the size limit (64 KB unless a route asks for more).
+  readBody: (req: IncomingMessage, maxBytes?: number) => Promise<string | null>;
   // Parses a JSON body; on failure it has already sent the 413 or 400 response and returns undefined.
-  readJson: (req: IncomingMessage, res: ServerResponse) => Promise<unknown>;
+  readJson: (req: IncomingMessage, res: ServerResponse, maxBytes?: number) => Promise<unknown>;
 };
 
 // A route module's default export: returns true when it handled the request.

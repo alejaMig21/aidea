@@ -87,12 +87,27 @@ test("tool calls are reported and sub-agent activity is nested under the call th
 test("Claude Code is launched unmodified, in the Project folder, with the message on stdin and no shell", async () => {
   const message = "-p; rm -rf $(whoami) `id`";
   await chat({ project: shop, message }, "real-ok.jsonl");
-  assert.deepEqual(calls[0].args, ["-p", "--output-format", "stream-json", "--verbose"]);
+  const first = calls[0].args;
+  assert.deepEqual(first.slice(0, 4), ["-p", "--output-format", "stream-json", "--verbose"]);
   assert.equal(calls[0].cwd, shop);
   assert.equal(calls[0].stdin, message);
 
   await chat({ project: shop, message: "next", sessionId: "session-0001" }, "real-ok.jsonl");
-  assert.deepEqual(calls[0].args, ["-p", "--output-format", "stream-json", "--verbose", "--resume", "session-0001"]);
+  assert.deepEqual(calls[0].args.slice(0, 6), ["-p", "--output-format", "stream-json", "--verbose", "--resume", "session-0001"]);
+});
+
+test("permission requests are routed to aidea's own tool, whose address belongs to this conversation only", async () => {
+  await chat({ project: shop, message: "one" }, "real-ok.jsonl");
+  const args = calls[0].args;
+  assert.equal(args[args.indexOf("--permission-prompt-tool") + 1], "mcp__aidea__approve");
+  const config = JSON.parse(args[args.indexOf("--mcp-config") + 1]);
+  assert.equal(config.mcpServers.aidea.type, "http");
+  const url: string = config.mcpServers.aidea.url;
+  assert.match(url, /^http:\/\/127\.0\.0\.1:\d+\/mcp\/[0-9a-f]{32}$/);
+  assert.ok(!args.includes("--bare") && !args.includes("--strict-mcp-config")); // the person's own servers and login stay in use
+
+  await chat({ project: shop, message: "two" }, "real-ok.jsonl");
+  assert.notEqual(JSON.parse(calls[0].args[calls[0].args.indexOf("--mcp-config") + 1]).mcpServers.aidea.url, url);
 });
 
 test("a missing Claude Code installation is reported as its own error", async () => {

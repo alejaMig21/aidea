@@ -24,17 +24,34 @@ const handler: Handler = async (req, res, core) => {
 
   // Streams newline-delimited JSON: one aidea event per line, in order.
   res.writeHead(200, { "content-type": "application/x-ndjson" });
-  // If the interface goes away mid-reply, stop the agent.
+  const send = (event: object) => {
+    if (!res.writableEnded) res.write(JSON.stringify(event) + "\n");
+  };
+
+  // The builder may ask the person for permission during this conversation: it reaches Claude Code as an MCP tool whose
+  // address holds this conversation's secret token, and the requests come back to the person as events in this stream.
+  const conversation = core.permissions.open(send);
+  const permission = {
+    mcpConfig: JSON.stringify({ mcpServers: { aidea: { type: "http", url: `http://${req.headers.host}/mcp/${conversation.token}` } } }),
+    tool: "mcp__aidea__approve",
+  };
+
+  // If the interface goes away mid-reply, stop the agent and deny whatever is waiting.
   const abort = new AbortController();
-  res.on("close", () => abort.abort());
+  res.on("close", () => {
+    abort.abort();
+    conversation.close();
+  });
   try {
-    for await (const event of core.adapter.run({ cwd: project.path, message, sessionId, signal: abort.signal })) {
-      res.write(JSON.stringify(event) + "\n");
+    for await (const event of core.adapter.run({ cwd: project.path, message, sessionId, signal: abort.signal, permission })) {
+      send(event);
     }
   } catch (e) {
     // Headers are already sent, so the failure travels as an event; the detail stays in the core's log.
     console.error(e);
-    res.write(JSON.stringify({ type: "error", code: "failed", message: "The builder stopped unexpectedly" }) + "\n");
+    send({ type: "error", code: "failed", message: "The builder stopped unexpectedly" });
+  } finally {
+    conversation.close();
   }
   res.end();
   return true;

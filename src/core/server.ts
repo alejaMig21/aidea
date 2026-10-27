@@ -4,6 +4,7 @@ import { readdirSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import type { Adapter, Core, Handler, Project } from "./types.ts";
 import { createClaudeAdapter } from "./adapter/claude.ts";
+import { createBroker } from "./permissions.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
 const routesDir = fileURLToPath(new URL("./routes/", import.meta.url));
@@ -23,12 +24,13 @@ export async function startCore({ port, adapter = createClaudeAdapter() }: { por
     adapter,
     projects: new Map<string, Project>(),
     recordings: new Map<string, unknown>(),
+    permissions: createBroker(),
     send: (res, status, body, headers = {}) => {
       res.writeHead(status, { "content-type": "application/json", ...headers });
       res.end(JSON.stringify(body));
     },
-    readJson: async (req, res) => {
-      const raw = await core.readBody(req);
+    readJson: async (req, res, maxBytes) => {
+      const raw = await core.readBody(req, maxBytes);
       if (raw === null) {
         core.send(res, 413, { error: "Body too large" }, { connection: "close" });
         return undefined;
@@ -40,12 +42,12 @@ export async function startCore({ port, adapter = createClaudeAdapter() }: { por
         return undefined;
       }
     },
-    readBody: async (req) => {
+    readBody: async (req, maxBytes = MAX_BODY_BYTES) => {
       const chunks: Buffer[] = [];
       let size = 0;
       for await (const chunk of req) {
         size += chunk.length;
-        if (size > MAX_BODY_BYTES) return null;
+        if (size > maxBytes) return null;
         chunks.push(chunk);
       }
       return Buffer.concat(chunks).toString();

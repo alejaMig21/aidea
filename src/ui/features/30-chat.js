@@ -1,5 +1,5 @@
 // Chat bar: renders the events the core streams from POST /chat. No domain logic lives here.
-// Permission requests are not handled yet (ticket 07): until then Claude Code denies them on its own.
+// When the builder needs permission, a card with Approve and Reject appears; the answer goes back through POST /permission.
 {
   const style = document.createElement("style");
   style.textContent = `
@@ -14,6 +14,10 @@
     #chat-log .nested { margin-left: 18px; border-left: 2px solid var(--line); padding-left: 8px; }
     #chat-log .error { color: #c0392b; }
     #chat-log .meta { color: var(--muted); font-size: 12px; }
+    #chat-log .permission { border: 1px solid var(--accent); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+    #chat-log .permission pre { margin: 0; max-height: 120px; overflow: auto; font: 12px/1.4 ui-monospace, monospace; white-space: pre-wrap; }
+    #chat-log .permission .row { display: flex; gap: 8px; align-items: center; }
+    #chat-log .permission .reject { background: transparent; color: var(--text); border: 1px solid var(--line); }
   `;
   document.head.append(style);
 
@@ -46,8 +50,51 @@
     return typeof v === "string" ? v.slice(0, 80) : "";
   };
 
+  // What the person needs to see to decide: the command, or the file and a preview of the change.
+  const describe = (tool, input) => {
+    const cut = (s, n = 300) => (typeof s === "string" && s.length > n ? s.slice(0, n) + "…" : s);
+    if (tool === "Bash") return [input.description, input.command].filter(Boolean).join("\n");
+    if (tool === "Write") return `${input.file_path}\n${cut(input.content)}`;
+    if (tool === "Edit") return `${input.file_path}\n- ${cut(input.old_string, 150)}\n+ ${cut(input.new_string, 150)}`;
+    return cut(JSON.stringify(input, null, 2), 600);
+  };
+
+  function permissionCard(event) {
+    const box = document.createElement("div");
+    box.className = "permission";
+    const title = document.createElement("strong");
+    title.textContent = `Claude wants to use ${event.tool}`;
+    const detail = document.createElement("pre");
+    detail.textContent = describe(event.tool, event.input ?? {});
+    const row = document.createElement("div");
+    row.className = "row";
+    const status = document.createElement("span");
+    const approve = document.createElement("button");
+    approve.textContent = "Approve";
+    const reject = document.createElement("button");
+    reject.textContent = "Reject";
+    reject.className = "reject";
+    const answer = async (decision) => {
+      approve.disabled = reject.disabled = true;
+      const res = await fetch("/permission", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: event.id, decision }),
+      });
+      box.classList.add("answered");
+      status.textContent = res.ok ? (decision === "allow" ? "Approved" : "Rejected") : (await res.json().catch(() => ({}))).error ?? "Could not send the answer";
+    };
+    approve.onclick = () => answer("allow");
+    reject.onclick = () => answer("deny");
+    row.append(approve, reject, status);
+    box.append(title, detail, row);
+    log.append(box);
+    log.scrollTop = log.scrollHeight;
+  }
+
   function render(event, project) {
     if (event.type === "session") sessions.set(project, event.sessionId);
+    else if (event.type === "permission") permissionCard(event);
     else if (event.type === "text") add("text", event.text, event.parent);
     else if (event.type === "tool") add("tool", `> ${event.name} ${hint(event.input)}`.trim(), event.parent);
     else if (event.type === "error") add("error", event.message);
@@ -89,6 +136,8 @@
     } catch (err) {
       add("error", `Could not reach the core: ${err.message}`);
     } finally {
+      // A card still waiting when the conversation ends can no longer be answered.
+      log.querySelectorAll(".permission:not(.answered) button").forEach((b) => { b.disabled = true; });
       send.disabled = false;
       input.focus();
     }
