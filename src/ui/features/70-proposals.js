@@ -4,14 +4,14 @@ const proposalStyle = document.createElement("style");
 proposalStyle.textContent = `
   .proposal { cursor: pointer; }
   .proposal rect { fill: var(--accent); fill-opacity: .08; stroke: var(--accent); stroke-width: 2.5; stroke-dasharray: 6 4; }
-  .proposal.update rect { fill-opacity: 0; stroke-dasharray: none; stroke-width: 4; }
-  .proposal.remove rect { fill: #c0392b; stroke: #c0392b; }
+  .proposal.update rect { fill-opacity: 0; stroke-width: 4; }
+  .proposal.remove rect { fill: var(--danger); fill-opacity: .15; stroke: var(--danger); }
   .proposal text { font-weight: 600; }
   #panel .proposal-box h2 { margin: 0; }
   #panel .proposal-box .field { font-size: 12px; margin: 4px 0; }
   #panel .proposal-box .old { color: var(--muted); text-decoration: line-through; }
   #panel .proposal-box .row { display: flex; gap: 8px; margin-top: 10px; }
-  #panel .proposal-box .reject { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  #panel .proposal-box .reject { background: transparent; color: var(--text); border: 1px solid var(--control); }
 `;
 document.head.append(proposalStyle);
 

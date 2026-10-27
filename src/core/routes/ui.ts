@@ -7,6 +7,13 @@ const ui = fileURLToPath(new URL("../../ui/", import.meta.url));
 // Serves the page with every file in ui/features/ inlined as a script, in filename order,
 // so each feature adds its own file instead of editing a shared one.
 const handler: Handler = async (req, res) => {
+  // Fonts shipped with the application (no network needed). Only plain *.woff2 names that exist in ui/fonts/ are served.
+  const font = req.method === "GET" ? /^\/fonts\/([\w-]+\.woff2)$/.exec(req.url ?? "")?.[1] : undefined;
+  if (font && readdirSync(ui + "fonts").includes(font)) {
+    res.writeHead(200, { "content-type": "font/woff2", "cache-control": "public, max-age=31536000, immutable" });
+    res.end(readFileSync(ui + "fonts/" + font));
+    return true;
+  }
   if (req.method !== "GET" || req.url !== "/") return false;
   const scripts = readdirSync(ui + "features")
     .sort()

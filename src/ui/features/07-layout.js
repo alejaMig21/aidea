@@ -17,7 +17,7 @@ const layoutSeparatorWidth = 6;
     #chat #chat-log { flex: 1; min-height: 0; max-height: none; }
     #chat form { margin-top: auto; }
     #fold-buttons { margin-left: auto; display: flex; gap: 6px; }
-    #fold-buttons button { background: transparent; color: var(--text); border: 1px solid var(--line); }
+    #fold-buttons button { background: transparent; color: var(--text); border: 1px solid var(--control); }
     #fold-buttons button[aria-pressed="true"] { border-color: var(--accent); }
     #right-tabs { display: flex; border-bottom: 1px solid var(--line); }
     #right-tabs button { background: transparent; color: var(--muted); border: 0; border-bottom: 2px solid transparent; border-radius: 0; }

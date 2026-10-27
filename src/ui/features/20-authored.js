@@ -20,7 +20,7 @@ authoredStyle.textContent = `
   #layers [data-layer="business"] { order: 1; } #layers [data-layer="requirements"] { order: 2; } #layers [data-layer="architecture"] { order: 3; }
   #layers [data-layer="components"] { order: 4; margin-left: 12px; } #layers [data-layer="algorithms"] { order: 5; } #layers [data-layer="code"] { order: 6; }
   #layers > :not([data-layer]) { order: 9; margin-left: auto; margin-bottom: 4px; }
-  #authored-errors { position: absolute; left: 16px; top: 52px; max-width: 60%; color: #c0392b; font-size: 12px; }
+  #authored-errors { position: absolute; left: 16px; top: 52px; max-width: 60%; color: var(--danger); font-size: 12px; }
   .anode { cursor: pointer; }
   .anode rect { fill: var(--class); }
   .anode.selected rect { stroke: var(--accent); stroke-width: 2; }
@@ -33,6 +33,8 @@ document.head.append(authoredStyle);
 const authoredGroup = el("g", { id: "authored" });
 const layerBar = document.createElement("div");
 layerBar.id = "layers";
+layerBar.setAttribute("role", "group"); // the buttons are toggles (aria-pressed), not tabs: they switch what the Canvas draws
+layerBar.setAttribute("aria-label", "Layers");
 const authoredErrors = document.createElement("div");
 authoredErrors.id = "authored-errors";
 authoredErrors.setAttribute("role", "alert");

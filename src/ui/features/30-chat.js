@@ -10,15 +10,15 @@
     #chat-log:empty { display: none; }
     #chat-log .text { white-space: pre-wrap; }
     #chat-log .you { color: var(--muted); }
-    #chat-log .tool { color: var(--muted); font: 12px ui-monospace, monospace; }
+    #chat-log .tool { color: var(--muted); font: 12px var(--mono); }
     #chat-log .nested { margin-left: 18px; border-left: 2px solid var(--line); padding-left: 8px; }
-    #chat-log .error { color: #c0392b; }
+    #chat-log .error { color: var(--danger); }
     #chat-log .meta { color: var(--muted); font-size: 12px; }
     #chat-log .permission { border: 1px solid var(--accent); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
-    #chat-log .permission pre { margin: 0; max-height: 160px; overflow: auto; font: 12px/1.4 ui-monospace, monospace; white-space: pre-wrap; word-break: break-all; }
+    #chat-log .permission pre { margin: 0; max-height: 160px; overflow: auto; font: 12px/1.4 var(--mono); white-space: pre-wrap; word-break: break-all; }
     #chat-log .permission .row input { flex: 1; min-width: 0; }
     #chat-log .permission .row { display: flex; gap: 8px; align-items: center; }
-    #chat-log .permission .reject { background: transparent; color: var(--text); border: 1px solid var(--line); }
+    #chat-log .permission .reject { background: transparent; color: var(--text); border: 1px solid var(--control); }
   `;
   document.head.append(style);
 

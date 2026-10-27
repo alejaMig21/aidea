@@ -6,9 +6,9 @@ playbackStyle.textContent = `
   #algorithm .flow-step.now rect { stroke: var(--accent); stroke-width: 4; }
   #pane-algorithm label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
   #pane-algorithm .pb-row { display: flex; gap: 6px; align-items: center; }
-  #pane-algorithm .pb-values { font: 12px/1.5 ui-monospace, monospace; margin: 8px 0; }
+  #pane-algorithm .pb-values { font: 12px/1.5 var(--mono); margin: 8px 0; }
   #pane-algorithm .pb-values div { display: flex; justify-content: space-between; gap: 8px; }
-  #pane-algorithm .pb-error { color: #c0392b; font-size: 12px; }
+  #pane-algorithm .pb-error { color: var(--danger); font-size: 12px; }
   #pane-algorithm .pb-warning { color: var(--muted); font-size: 12px; margin: 4px 0; }
   #pane-algorithm .pb-check { flex-direction: row; align-items: center; gap: 6px; }
   #pane-algorithm input[type="range"] { flex: 1; }

@@ -23,7 +23,7 @@ function showCodeBox(titleText, text, nodeId) {
     head.append(btn);
   }
   const pre = document.createElement("pre");
-  pre.style.cssText = "margin:0;font:12px/1.4 ui-monospace,monospace;white-space:pre";
+  pre.style.cssText = "margin:0;font:12px/1.4 var(--mono);white-space:pre";
   pre.textContent = text;
   codeBox.replaceChildren(head, pre);
   codeBox.hidden = false;

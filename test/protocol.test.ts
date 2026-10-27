@@ -85,3 +85,13 @@ test("the page is served with the interface features inlined", async () => {
   assert.ok(!html.includes("<!--features-->"));
   assert.match(html, /<script>/);
 });
+
+test("the interface fonts are served from the core with the font content type, and only those files", async () => {
+  const font = await t.get("/fonts/inter-latin-wght-normal.woff2");
+  assert.equal(font.status, 200);
+  assert.equal(font.headers.get("content-type"), "font/woff2");
+  assert.ok((await font.arrayBuffer()).byteLength > 10_000);
+
+  assert.equal((await t.get("/fonts/OFL-Inter.txt")).status, 404);
+  assert.equal((await t.get("/fonts/..%2Findex.html")).status, 404);
+});
