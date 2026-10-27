@@ -1,21 +1,11 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { statSync } from "node:fs";
 import { basename } from "node:path";
-import { fileURLToPath } from "node:url";
+import { runPython } from "../python.ts";
 import type { Handler, Project } from "../types.ts";
 
-const execFileAsync = promisify(execFile);
-const analyzer = fileURLToPath(new URL("../analyze.py", import.meta.url));
-const python = process.env.AIDEA_PYTHON ?? "python";
-const ANALYSIS_TIMEOUT_MS = 60_000;
 
 async function openProject(path: string): Promise<Project> {
-  const { stdout } = await execFileAsync(python, [analyzer, path], {
-    maxBuffer: 64 * 1024 * 1024,
-    timeout: ANALYSIS_TIMEOUT_MS,
-  });
-  const { nodes, errors } = JSON.parse(stdout) as Pick<Project, "nodes" | "errors">;
+  const { nodes, errors } = JSON.parse(await runPython("analyze.py", [path])) as Pick<Project, "nodes" | "errors">;
   // The full path is the id: two folders can share a name.
   return { id: path, name: basename(path), path, nodes, errors };
 }

@@ -34,6 +34,24 @@ export function layoutAuthored(nodes: { id: string }[]): Rect[] {
   return nodes.map((n, i) => ({ id: n.id, x: (i % 4) * COLUMN, y: Math.floor(i / 4) * 80, width: 240, height: 64 }));
 }
 
+export type FlowEdge = { from: string; to: string; label?: string; back?: boolean };
+
+// An Algorithm graph runs top to bottom: a step sits one row below the lowest step that leads to it.
+// Steps are numbered in program order, so every edge that is not a way back goes from an earlier step to a later one.
+// Steps on the same row sit side by side, in that order (the "true" side first).
+export function layoutFlow(steps: { id: string }[], edges: FlowEdge[]): Rect[] {
+  const row = new Map<string, number>();
+  const placed = new Map<number, number>();
+  return steps.map((step) => {
+    const above = edges.filter((e) => e.to === step.id && !e.back).map((e) => row.get(e.from)! + 1);
+    const y = Math.max(0, ...above);
+    row.set(step.id, y);
+    const column = placed.get(y) ?? 0;
+    placed.set(y, column + 1);
+    return { id: step.id, x: column * COLUMN, y: y * 84, width: 240, height: 44 };
+  });
+}
+
 // The smallest rectangle that holds all the given ones, with a margin on every side.
 export function frameOf(rects: Rect[], margin = 24) {
   const left = Math.min(...rects.map((r) => r.x));
