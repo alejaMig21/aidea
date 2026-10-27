@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.log
+.claude/settings.local.json
+__pycache__/
+.codebase-memory/
+.playwright-mcp/
