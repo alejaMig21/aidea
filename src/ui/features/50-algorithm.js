@@ -89,7 +89,7 @@ svg.addEventListener("dblclick", async (e) => {
     algoTab.textContent = `Algorithm: ${id.split(".").pop()}`;
     document.dispatchEvent(new CustomEvent("algorithm-opened", { detail: body }));
     showLayer("algorithms");
-    fit(body.frame);
+    fit(body.frame, 1); // a flow graph is never blown up past its natural size
     return;
   }
   // A step of the graph opens its source text.

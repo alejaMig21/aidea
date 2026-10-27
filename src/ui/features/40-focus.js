@@ -17,9 +17,9 @@ const post = (path, body) =>
   fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 
 // Fits a frame (in layer coordinates) into the visible Canvas.
-function fit(frame) {
+function fit(frame, maxZoom = 4) {
   const r = svg.getBoundingClientRect();
-  view.k = Math.min(4, Math.max(0.2, Math.min(r.width / frame.width, r.height / frame.height)));
+  view.k = Math.min(maxZoom, Math.max(0.2, Math.min(r.width / frame.width, r.height / frame.height)));
   view.x = (r.width - frame.width * view.k) / 2 - frame.x * view.k;
   view.y = (r.height - frame.height * view.k) / 2 - frame.y * view.k;
   apply();

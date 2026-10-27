@@ -20,7 +20,7 @@ export function createRecents(file?: string): Recents {
   try {
     if (file) {
       const saved = JSON.parse(readFileSync(file, "utf8"));
-      if (Array.isArray(saved)) entries = saved.filter((e) => typeof e?.path === "string" && typeof e?.openedAt === "string");
+      if (Array.isArray(saved)) entries = saved.filter((e) => typeof e?.path === "string" && typeof e?.openedAt === "string").map((e) => ({ path: resolve(e.path), openedAt: e.openedAt }));
     }
   } catch {
     // Missing or unreadable file: start empty; the next change rewrites it.
