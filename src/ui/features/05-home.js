@@ -17,15 +17,13 @@ async function refreshHome() {
     );
     b.onclick = () => open(r.path);
     li.append(b);
-    if (!r.available) {
-      const f = homeText("button", "forget", "Forget");
-      f.title = "Remove from this list; the folder is not touched";
-      f.onclick = async () => {
-        await fetch("/recents/forget", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ path: r.path }) });
-        refreshHome();
-      };
-      li.append(f);
-    }
+    const f = homeText("button", "forget", "Forget");
+    f.title = "Remove from this list; the folder is not touched";
+    f.onclick = async () => {
+      await fetch("/recents/forget", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ path: r.path }) });
+      refreshHome();
+    };
+    li.append(f);
     return li;
   }));
 }
