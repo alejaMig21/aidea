@@ -1,0 +1,1 @@
+{ "nodes": [ { "id": "us-1", "title": "Ok story", "as": "user", "want": "x", "so": "y", "rationale": { "why": "because", "rejected": [] } } ] }

@@ -1,0 +1,9 @@
+{
+  "nodes": [
+    { "id": "db", "title": "DB", "technology": "SQLite", "rationale": { "why": "simple", "rejected": [] } },
+    { "id": "db", "title": "DB again", "technology": "Postgres", "rationale": { "why": "dup", "rejected": [] } },
+    { "id": "cache", "title": "Cache", "technology": 42, "rationale": { "why": "fast", "rejected": [] } },
+    { "id": "api", "title": "API", "technology": "Flask", "rationale": { "why": "fine", "rejected": [{ "option": "Django" }] } },
+    { "id": "ok", "title": "Fine one", "technology": "Redis", "rationale": { "why": "fine", "rejected": [] } }
+  ]
+}

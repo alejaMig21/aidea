@@ -1,0 +1,20 @@
+{
+  "nodes": [
+    {
+      "id": "web-app",
+      "title": "Web app",
+      "technology": "Python + Flask",
+      "rationale": {
+        "why": "The team already knows Python.",
+        "rejected": [{ "option": "Node + Express", "reason": "Would split the team across two languages." }]
+      }
+    },
+    {
+      "id": "quote-db",
+      "title": "Quote database",
+      "technology": "SQLite",
+      "parent": "web-app",
+      "rationale": { "why": "One file, no server to run.", "rejected": [] }
+    }
+  ]
+}
