@@ -83,6 +83,14 @@
   <section id="home" aria-label="Home">
     <h1>aidea</h1>
     <button id="home-open">Open folder</button>
+    <button id="home-new">New project</button>
+    <form id="home-new-form" hidden>
+      <label>Parent folder <input id="home-new-parent" placeholder="C:\Users\you\projects" autocomplete="off"></label>
+      <button type="button" id="home-new-pick" hidden>Choose...</button>
+      <label>Name <input id="home-new-name" autocomplete="off"></label>
+      <button type="submit">Create</button>
+      <p id="home-new-error" role="alert"></p>
+    </form>
     <h2>Recent projects</h2>
     <ul id="recents"></ul>
     <p id="home-empty" hidden>No projects yet. Type the path to a Python project folder in the box on the left and choose Open project; it will be listed here next time.</p>

@@ -37,4 +37,18 @@ async function homeOpenFolder() {
 }
 $("home-open").onclick = homeOpenFolder;
 const hideHome =() => { $("home").hidden = true; };
+// New project: parent folder + name; the core creates the folder, refuses bad names and opens it.
+$("home-new").onclick = () => { $("home-new-form").hidden = !$("home-new-form").hidden; };
+if (window.aidea) {
+  $("home-new-pick").hidden = false;
+  $("home-new-pick").onclick = async () => { $("home-new-parent").value = (await window.aidea.pickFolder()) || $("home-new-parent").value; };
+}
+$("home-new-form").onsubmit = async (e) => {
+  e.preventDefault();
+  $("home-new-error").textContent = "";
+  const res = await fetch("/projects/new", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ parent: $("home-new-parent").value.trim(), name: $("home-new-name").value }) });
+  if (!res.ok) { $("home-new-error").textContent = (await res.json()).error; return; }
+  $("home-new-form").hidden = true;
+  open((await res.json()).path); // Reopening is idempotent and runs the normal draw path.
+};
 refreshHome();
