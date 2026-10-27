@@ -1,5 +1,6 @@
 // Proposals: changes the builder suggests to the authored layers. Nothing is written until the person accepts.
 // The builder never touches the files: it only calls tools that create a pending Proposal here.
+import { randomBytes } from "node:crypto";
 import { lstatSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadAuthored, nodeProblem } from "./authored.ts";
@@ -29,6 +30,11 @@ export type ProposalStore = Map<string, StoredProposal>;
 
 export type ProposalRequest = { layer: unknown; id?: unknown; node?: unknown; changes?: unknown };
 
+// Architecture only: "parent" must be another Node of the layer, and a Node that is somebody's parent cannot go away.
+const parentProblem = (layer: string, node: Fields, otherIds: Set<unknown>) =>
+  layer === "architecture" && node.parent !== undefined && !otherIds.has(node.parent) ? `"parent" refers to unknown id "${node.parent}"` : null;
+const childOf = (nodes: { id?: unknown; parent?: unknown }[], id: string) => nodes.find((n) => n.parent === id)?.id;
+
 let counter = 0;
 const nodesOf = (project: Project, layer: AuthoredLayerKey) => loadAuthored(project.path).layers[layer].nodes as Fields[];
 const pendingOf = (store: ProposalStore, project: string, layer: AuthoredLayerKey) =>
@@ -51,6 +57,8 @@ export function propose(
   const existing = nodesOf(project, key);
   const pending = pendingOf(store, project.id, key);
   const taken = (id: string) => pending.some((p) => p.nodeId === id);
+  const adds = pending.filter((p) => p.kind === "add");
+  const ids = new Set<unknown>([...existing.map((n) => n.id), ...adds.map((p) => p.nodeId)]); // what a parent may point at
 
   let nodeId: string;
   let node: Fields | undefined;
@@ -64,10 +72,8 @@ export function propose(
     if (pending.some((p) => p.kind === "add" && p.nodeId === nodeId)) return { error: `A proposal to add "${nodeId}" is already pending` };
     const problem = nodeProblem(key, request.node, new Set());
     if (problem) return { error: `Invalid node: ${problem}` };
-    const known = new Set([...existing.map((n) => n.id), ...pending.filter((p) => p.kind === "add").map((p) => p.nodeId)]);
-    if (key === "architecture" && request.node.parent !== undefined && !known.has(request.node.parent as string)) {
-      return { error: `Invalid node: "parent" refers to unknown id "${request.node.parent}"` };
-    }
+    const parent = parentProblem(key, request.node, ids);
+    if (parent) return { error: `Invalid node: ${parent}` };
     node = request.node;
   } else {
     if (typeof request.id !== "string" || !request.id) return { error: "id must be the id of an existing Node" };
@@ -81,8 +87,11 @@ export function propose(
       if (request.changes.id !== undefined && request.changes.id !== nodeId) return { error: 'The "id" of a Node cannot be changed: remove it and add a new one' };
       changes = request.changes;
       node = { ...current, ...changes };
-      const problem = nodeProblem(key, node, new Set());
+      const problem = nodeProblem(key, node, new Set()) ?? parentProblem(key, node, new Set([...ids].filter((i) => i !== nodeId)));
       if (problem) return { error: `Invalid change: ${problem}` };
+    } else {
+      const child = childOf([...existing, ...adds.map((p) => ({ id: p.nodeId, ...p.node }))], nodeId);
+      if (child) return { error: `Node "${nodeId}" is the parent of "${child}": remove or move that Node first` };
     }
   }
 
@@ -114,8 +123,8 @@ export function apply(project: Project, p: Proposal): string | null {
   const file = join(dir, `${p.layer}.json`);
   try {
     if (lstatSync(dir).isSymbolicLink()) return "The .aidea folder is a link that leaves the Project: nothing was written";
-  } catch {
-    // no folder yet: it is created below
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== "ENOENT") return "The .aidea folder cannot be read: nothing was written"; // no folder yet is fine: it is created below
   }
   let doc: Fields = { nodes: [] };
   try {
@@ -131,17 +140,20 @@ export function apply(project: Project, p: Proposal): string | null {
 
   if (p.kind === "add") {
     if (at !== -1) return `A Node with id "${p.nodeId}" already exists on the ${p.layer} layer (the file changed since the proposal)`;
-    const problem = nodeProblem(p.layer, p.node, new Set(nodes.map((n) => n.id as string)));
+    const problem = nodeProblem(p.layer, p.node, new Set(nodes.map((n) => n.id as string))) ?? parentProblem(p.layer, p.node!, new Set(nodes.map((n) => n.id)));
     if (problem) return `The Node no longer fits the file: ${problem}`;
     nodes.push(p.node!);
   } else if (at === -1) {
     return `Node "${p.nodeId}" is no longer on the ${p.layer} layer (the file changed since the proposal)`;
   } else if (p.kind === "update") {
     const merged = { ...nodes[at], ...p.changes };
-    const problem = nodeProblem(p.layer, merged, new Set(nodes.filter((_, i) => i !== at).map((n) => n.id as string)));
+    const others = nodes.filter((_, i) => i !== at);
+    const problem = nodeProblem(p.layer, merged, new Set(others.map((n) => n.id as string))) ?? parentProblem(p.layer, merged, new Set(others.map((n) => n.id)));
     if (problem) return `The change no longer fits the file: ${problem}`;
     nodes[at] = merged;
   } else {
+    const child = childOf(nodes, p.nodeId);
+    if (child) return `Node "${p.nodeId}" is now the parent of "${child}" (the file changed since the proposal)`;
     nodes.splice(at, 1);
   }
 

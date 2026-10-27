@@ -88,7 +88,7 @@ test("Claude Code is launched unmodified, in the Project folder, with the messag
   const message = "-p; rm -rf $(whoami) `id`";
   await chat({ project: shop, message }, "real-ok.jsonl");
   // Everything but the pair of flags that routes permission requests to aidea (checked in the next test).
-  const aideaFlags = ["--mcp-config", "--permission-prompt-tool", "--allowedTools"];
+  const aideaFlags = ["--mcp-config", "--permission-prompt-tool", "--allowedTools", "--disallowedTools"];
   const withoutPermissionFlags = (args: string[]) => args.filter((a, i) => !aideaFlags.includes(a) && !aideaFlags.includes(args[i - 1]));
   assert.deepEqual(withoutPermissionFlags(calls[0].args), ["-p", "--output-format", "stream-json", "--verbose"]);
   assert.equal(calls[0].cwd, shop);
@@ -110,6 +110,8 @@ test("permission requests are routed to aidea's own tool, whose address belongs 
 
   // aidea's own tools that only create Proposals need no permission card; nothing else is pre-approved.
   const allowed = args[args.indexOf("--allowedTools") + 1].split(",");
+  // The authored files change only through Proposals: the builder's own file tools are denied there, card or no card.
+  assert.deepEqual(args[args.indexOf("--disallowedTools") + 1].split(",").sort(), ["Edit(.aidea/**)", "MultiEdit(.aidea/**)", "Write(.aidea/**)"]);
   assert.deepEqual(allowed.sort(), ["mcp__aidea__list_proposals", "mcp__aidea__propose_add_node", "mcp__aidea__propose_remove_node", "mcp__aidea__propose_update_node"]);
 
   await chat({ project: shop, message: "two" }, "real-ok.jsonl");

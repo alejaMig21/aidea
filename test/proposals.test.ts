@@ -240,3 +240,41 @@ test("a Proposal is never written through a link that leaves the Project", async
 
 import { readdirSync } from "node:fs";
 const readdirNames = (dir: string) => readdirSync(dir);
+
+test("a Node's parent cannot be left dangling by a proposal, whatever order they are decided in", async () => {
+  const dir = await freshProject();
+  const refused: [Call, RegExp][] = [
+    [{ name: "propose_update_node", arguments: { layer: "architecture", id: "quote-db", changes: { parent: "ghost" } } }, /parent/],
+    [{ name: "propose_update_node", arguments: { layer: "architecture", id: "web-app", changes: { parent: "web-app" } } }, /parent/],
+    [{ name: "propose_remove_node", arguments: { layer: "architecture", id: "web-app" } }, /parent of/],
+  ];
+  const { proposals, told } = await builderCalls(dir, refused.map(([call]) => call));
+  assert.equal(proposals.length, 0);
+  told.forEach((t, i) => {
+    assert.equal(t.isError, true, JSON.stringify(refused[i][0]));
+    assert.match(t.text, refused[i][1]);
+  });
+
+  // A child proposed under a pending parent: if the parent is rejected, accepting the child is refused.
+  const [parent, child] = (await builderCalls(dir, [addCache, { name: "propose_add_node", arguments: { layer: "architecture", node: { ...cache, id: "cache-tls", parent: "cache" } } }])).proposals;
+  await answer(parent, "reject");
+  assert.equal((await answer(child, "accept")).status, 409);
+  assert.deepEqual(nodesOf(dir, "architecture").map((n) => n.id), ["web-app", "quote-db"]);
+});
+
+test("a file already sitting where the temporary copy would go does not redirect the write", async (t) => {
+  const dir = await freshProject();
+  const outside = mkdtempSync(join(tmpdir(), "aidea-outside-"));
+  scratch.push(outside);
+  const target = join(outside, "victim.txt");
+  writeFileSync(target, "untouched");
+  try {
+    symlinkSync(target, join(dir, ".aidea", "architecture.json.tmp"), "file");
+  } catch {
+    return t.skip("this machine does not allow creating file links");
+  }
+  const proposal = (await builderCalls(dir, [addCache])).proposals[0];
+  assert.equal((await answer(proposal, "accept")).status, 200);
+  assert.equal(readFileSync(target, "utf8"), "untouched");
+  assert.equal(nodesOf(dir, "architecture").length, 3);
+});

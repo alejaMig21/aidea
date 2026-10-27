@@ -35,6 +35,7 @@ const handler: Handler = async (req, res, core) => {
     mcpConfig: JSON.stringify({ mcpServers: { aidea: { type: "http", url: `http://${req.headers.host}/mcp/${conversation.token}` } } }),
     tool: "mcp__aidea__approve",
     allowedTools: ["propose_add_node", "propose_update_node", "propose_remove_node", "list_proposals"].map((t) => `mcp__aidea__${t}`),
+    deniedTools: ["Write", "Edit", "MultiEdit"].map((t) => `${t}(.aidea/**)`), // the authored files change only through Proposals
   };
 
   // If the interface goes away mid-reply, stop the agent and deny whatever is waiting.

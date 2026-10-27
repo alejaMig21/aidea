@@ -12,7 +12,7 @@ const MAX_PENDING = 20; // requests one conversation may have waiting at once
 type Conversation = { project: string; secret: string; emit: (event: object) => void; pending: Set<string> };
 type Request = { conversation: Conversation; resolve: (decision: Decision) => void };
 
-const sameSecret = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
+export const sameSecret = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
 export function createBroker() {
   const conversations = new Map<string, Conversation>(); // token -> conversation

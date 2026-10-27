@@ -26,7 +26,7 @@ export type AgentEvent =
 // An Agent adapter drives one agent product (Claude Code first) and reports aidea events.
 export type Adapter = {
   // `permission` is how the agent can ask aidea for permission: an MCP configuration (JSON text) and the name of its tool.
-  run: (opts: { cwd: string; message: string; sessionId?: string; signal?: AbortSignal; permission?: { mcpConfig: string; tool: string; allowedTools: string[] } }) => AsyncIterable<AgentEvent>;
+  run: (opts: { cwd: string; message: string; sessionId?: string; signal?: AbortSignal; permission?: { mcpConfig: string; tool: string; allowedTools: string[]; deniedTools: string[] } }) => AsyncIterable<AgentEvent>;
 };
 
 // A spawn-like process source; the real one launches `claude`, tests replay recorded streams.

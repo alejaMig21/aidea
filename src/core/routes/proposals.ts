@@ -1,4 +1,5 @@
 // The person's side of Proposals: see what is pending, accept or reject it.
+import { sameSecret } from "../permissions.ts";
 import { apply, withPlaces } from "../proposals.ts";
 import type { Handler } from "../types.ts";
 
@@ -28,7 +29,7 @@ const handler: Handler = async (req, res, core) => {
       core.send(res, 404, { error: "Unknown proposal, or it was already decided" });
       return true;
     }
-    if (secret !== proposal.secret) {
+    if (!sameSecret(secret, proposal.secret)) {
       core.send(res, 403, { error: "That secret does not belong to this proposal" });
       return true;
     }
