@@ -13,10 +13,10 @@ const closeSwitcher = () => { switcherMenu.hidden = true; switcherButton.setAttr
 
 // The button names the current Project, or says none is open.
 async function refreshSwitcherLabel() {
-  if (!current) { switcherButton.textContent = "No project open"; return; }
+  if (!current || !$("home").hidden) { switcherButton.textContent = "No project open"; return; } // Home covers the Project
   const project = current;
   const list = await (await fetch("/projects")).json();
-  if (project !== current) return;
+  if (project !== current || !$("home").hidden) return;
   const p = list.find((q) => q.id === project);
   switcherButton.textContent = `Project: ${p ? p.name : "unknown"}`;
 }
@@ -28,20 +28,25 @@ const switcherHome = () => {
   closeSwitcher();
   $("home").hidden = false;
   refreshHome();
+  refreshSwitcherLabel();
 };
+
+// Choosing the Project already open while Home is shown goes back to the work session.
+const switcherCurrent = () => { closeSwitcher(); hideHome(); refreshSwitcherLabel(); };
 
 async function openSwitcher() {
   const [recents, projects] = await Promise.all([fetch("/recents").then((r) => r.json()), fetch("/projects").then((r) => r.json())]);
   const here = projects.find((p) => p.id === current);
   const items = recents.map((r) => {
-    const b = switcherItem("", () => { closeSwitcher(); open(r.path); }, { disabled: !r.available });
+    const isHere = here && r.path === here.path;
+    const b = switcherItem("", isHere ? switcherCurrent : () => { closeSwitcher(); open(r.path); }, { disabled: !r.available });
     b.append(r.name, Object.assign(document.createElement("span"), { className: "path", textContent: r.available ? r.path : `${r.path} (folder not found)` }));
-    if (here && r.path === here.path) b.setAttribute("aria-current", "true");
+    if (isHere) b.setAttribute("aria-current", "true");
     return b;
   });
   // The current Project is always listed, even if the recents do not hold it.
   if (here && !items.some((b) => b.getAttribute("aria-current"))) {
-    const b = switcherItem(here.name, closeSwitcher);
+    const b = switcherItem(here.name, switcherCurrent);
     b.setAttribute("aria-current", "true");
     items.unshift(b);
   }
