@@ -68,17 +68,11 @@ async function pbRecord() {
   message.textContent = "";
   message.className = "pb-error";
   document.querySelectorAll("#panel .pb-field-error").forEach((n) => { n.textContent = ""; });
-  const params = pbParameters();
-  let body;
-  try {
-    body = { project: current, node: pbGraph.node, fakes: JSON.parse($("pb-fakes").value || "{}"), useProjectPython: $("pb-own-python").checked };
-    if (params) body.values = Object.fromEntries(params.map((p) => [p.name, $(`pb-v-${p.name}`).value]));
-    else body.args = JSON.parse($("pb-args").value || "[]");
-    if ($("pb-instance")) body.instance = { args: JSON.parse($("pb-instance").value || "[]") };
-  } catch {
-    message.textContent = "The inputs must be valid JSON, for example [130] for the arguments.";
-    return;
-  }
+  const body = { project: current, node: pbGraph.node, useProjectPython: $("pb-own-python").checked };
+  const read = (items, prefix) => Object.fromEntries(items.map((p) => [p.name, $(`${prefix}${p.name}`).value]));
+  body.values = read(pbNode().parameters ?? [], "pb-v-");
+  if (pbNode().constructorParameters) body.instanceValues = read(pbNode().constructorParameters, "pb-c-");
+  if (pbNode().effects) body.effects = read(pbNode().effects, "pb-e-");
   const project = current;
   const res = await post("/playback", body);
   const answer = await res.json().catch(() => ({ error: "The core sent an answer that could not be read." }));
@@ -96,30 +90,38 @@ async function pbRecord() {
   pbGo(0);
 }
 
-// The open function's parameters when it is a plain function (methods keep the JSON arguments for now).
-const pbParameters = () => algoNodes.find((n) => n.id === pbGraph.node)?.parameters;
+const pbNode = () => algoNodes.find((n) => n.id === pbGraph.node);
 
-// One labelled field per parameter, prefilled with the suggested example, plus a button that refills them all.
-function pbParameterFields(params) {
-  const fill = (p) => { $(`pb-v-${p.name}`).value = p.suggestion ?? ""; };
+// One labelled field per item (a parameter, or an effect row), prefilled with its suggested example.
+// Its error shows right under it, under the key the core reports (`name`, `constructor.name` or `effect:name`).
+function pbFieldGroup(title, items, prefix, errorKey, label, hint) {
+  if (!items?.length) return [];
   const field = (p) => pbEl("label", {},
-    p.annotation ? `${p.name}: ${p.annotation}` : p.name,
-    pbEl("input", { id: `pb-v-${p.name}`, value: p.suggestion ?? "", placeholder: p.default !== undefined ? `default: ${p.default}` : "a Python value, such as 3 or [1, 2]" }),
-    pbEl("span", { id: `pb-err-${p.name}`, className: "pb-error pb-field-error" }));
-  return [...params.map(field), pbEl("button", { textContent: "Use example", onclick: () => params.forEach(fill) })];
+    label(p),
+    pbEl("input", { id: `${prefix}${p.name}`, value: p.suggestion ?? "", placeholder: p.default !== undefined ? `default: ${p.default}` : hint }),
+    pbEl("span", { id: `pb-err-${errorKey(p.name)}`, className: "pb-error pb-field-error" }));
+  return [pbEl("h3", { textContent: title }), ...items.map(field)];
+}
+
+function pbFields(node) {
+  const typed = (p) => (p.annotation ? `${p.name}: ${p.annotation}` : p.name);
+  return [
+    ...pbFieldGroup("Instance (constructor)", node.constructorParameters, "pb-c-", (n) => `constructor.${n}`, typed, "a Python value, such as 3 or [1, 2]"),
+    ...pbFieldGroup(node.constructorParameters ? "Arguments of the method" : "Arguments", node.parameters, "pb-v-", (n) => n, typed, "a Python value, such as 3 or [1, 2]"),
+    ...pbFieldGroup("Data for external effects", node.effects, "pb-e-", (n) => `effect:${n}`, (p) => `${p.name} gives back`, "a Python value, such as \"text\""),
+    pbEl("button", { textContent: "Use example", onclick: () => {
+      for (const [items, prefix] of [[node.constructorParameters, "pb-c-"], [node.parameters, "pb-v-"], [node.effects, "pb-e-"]]) {
+        for (const p of items ?? []) $(`${prefix}${p.name}`).value = p.suggestion ?? "";
+      }
+    } }),
+  ];
 }
 
 // Builds the panel: the inputs always, the controls once there is a recording.
 function pbRender() {
-  const node = algoNodes.find((n) => n.id === pbGraph.node);
-  const isMethod = algoNodes.find((n) => n.id === node?.parent)?.kind === "class";
-  const params = pbParameters();
-  const field = (label, id, value) => pbEl("label", {}, label, pbEl("input", { id, value }));
   const parts = [
     pbEl("h2", { textContent: `Playback: ${pbGraph.node.split(".").pop()}` }),
-    ...(params ? pbParameterFields(params) : [field("Arguments (JSON list)", "pb-args", "[]")]),
-    ...(isMethod ? [field("Constructor arguments of the instance (JSON list)", "pb-instance", "[]")] : []),
-    field("Fake data for effects (JSON object)", "pb-fakes", "{}"),
+    ...pbFields(pbNode()),
     pbEl("label", { className: "pb-check" }, pbEl("input", { id: "pb-own-python", type: "checkbox" }), "Use the Project's own Python (.venv, venv or env)"),
     pbEl("p", { className: "pb-warning", textContent: "Recording runs this function for real, on your computer, with the Project's own code. Writing files, network access and new programs are blocked as a safety net, not as a guarantee: only play code you trust." }),
     pbEl("button", { id: "pb-record", textContent: "Record a run", onclick: pbRecord }),
@@ -146,13 +148,9 @@ function pbRender() {
   if (pbRecording) {
     const inputs = pbRecording.input;
     $("pb-own-python").checked = pbRecording.interpreter !== "default";
-    if (params) {
-      for (const [name, text] of Object.entries(inputs.values ?? {})) if ($(`pb-v-${name}`)) $(`pb-v-${name}`).value = text;
-    } else {
-      $("pb-args").value = JSON.stringify(inputs.args);
+    for (const [texts, prefix] of [[inputs.values, "pb-v-"], [inputs.instanceValues, "pb-c-"], [inputs.effects, "pb-e-"]]) {
+      for (const [name, text] of Object.entries(texts ?? {})) if ($(`${prefix}${name}`)) $(`${prefix}${name}`).value = text;
     }
-    $("pb-fakes").value = JSON.stringify(inputs.fakes);
-    if ($("pb-instance")) $("pb-instance").value = JSON.stringify(inputs.instance?.args ?? []);
   }
 }
 

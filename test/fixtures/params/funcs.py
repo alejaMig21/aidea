@@ -22,3 +22,26 @@ def save(name):
 class Box:
     def put(self, item: int = 1):
         return item
+
+
+class Counter:
+    def __init__(self, start: int, step=1, *, tag: str = "t"):
+        self.value = start
+        self.step = step
+
+    def bump(self, times: int = 1):
+        return self.value + self.step * times
+
+
+class Bare:
+    def run(self):
+        return 1
+
+
+def load(name):
+    with open(name) as f:
+        return f.read()
+
+
+def fetch(url):
+    return requests.get(url)

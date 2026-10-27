@@ -13,8 +13,12 @@ export type CoreNode = {
   line: number; // 1-based, inclusive
   endLine: number;
   attributes?: { name: string; line: number }[]; // classes only
-  // Plain functions only: named parameters in call order, with texts as written in the source.
+  // Named parameters in call order, with texts as written in the source.
   parameters?: { name: string; default?: string; annotation?: string; suggestion?: string }[];
+  // Methods only: the parameters of the class's constructor, which builds the instance.
+  constructorParameters?: { name: string; default?: string; annotation?: string; suggestion?: string }[];
+  // External calls in the function's body that need fake data to play, each with a sample literal.
+  effects?: { name: string; suggestion: string }[];
 };
 export type Project = { id: string; name: string; path: string; nodes: CoreNode[]; errors: { file: string; message: string }[] };
 

@@ -31,7 +31,7 @@ test("analysis reports a function's parameters in order with default and annotat
     { name: "c", default: "1.5", annotation: "float", suggestion: "1.5" },
   ]);
   assert.deepEqual(await parametersOf("funcs.echo"), [{ name: "x" }]);
-  assert.equal(await parametersOf("funcs.Box.put"), undefined, "methods are not part of this form");
+  assert.deepEqual(await parametersOf("funcs.Box.put"), [{ name: "item", default: "1", annotation: "int", suggestion: "1" }], "a method's own parameters leave out self");
 });
 
 test("suggestions come from the default, then the annotation, else none", async () => {
@@ -107,4 +107,71 @@ test("limits and earlier guarantees still hold with values", async () => {
   const own = await t.post("/playback", { project, node: "funcs.echo", values: { x: "1" }, useProjectPython: true });
   assert.equal(own.status, 422);
   assert.match((await own.json()).error, /virtual environment/);
+});
+
+const nodeOf = async (id: string) => {
+  const opened = await (await t.post("/projects", { path: project })).json();
+  return opened.nodes.find((n: { id: string }) => n.id === id);
+};
+const playMethod = (body: Record<string, unknown>) => t.post("/playback", { project, node: "funcs.Counter.bump", ...body });
+const playLoad = (effects: Record<string, unknown>) => t.post("/playback", { project, node: "funcs.load", values: { name: '"any.txt"' }, effects });
+
+test("analysis of a method also reports the constructor's parameters", async () => {
+  assert.deepEqual((await nodeOf("funcs.Counter.bump")).constructorParameters, [
+    { name: "start", annotation: "int", suggestion: "1" },
+    { name: "step", default: "1", suggestion: "1" },
+    { name: "tag", default: "'t'", annotation: "str", suggestion: "'t'" },
+  ]);
+  assert.deepEqual((await nodeOf("funcs.Bare.run")).constructorParameters, [], "no __init__ means no fields");
+  assert.equal((await nodeOf("funcs.echo")).constructorParameters, undefined, "plain functions have none");
+});
+
+test("a method is played on an instance built from constructor literals", async () => {
+  const rec = await (await playMethod({ instanceValues: { start: "10", step: "3" }, values: { times: "2" } })).json();
+  assert.equal(rec.result, "16");
+  const blank = await (await playMethod({ instanceValues: { start: "5", step: "" } })).json();
+  assert.equal(blank.result, "6", "a blank constructor value uses its default");
+});
+
+test("a bad constructor value is reported on its own field and a non-literal is never run", async () => {
+  const bad = await playMethod({ instanceValues: { start: "[1," } });
+  assert.equal(bad.status, 422);
+  assert.deepEqual(Object.keys((await bad.json()).fields), ["constructor.start"]);
+  const attempt = await playMethod({ instanceValues: { start: `__import__("pathlib").Path("marker.txt").write_text("x")` } });
+  assert.equal(attempt.status, 422);
+  const body = await attempt.json();
+  assert.deepEqual(Object.keys(body.fields), ["constructor.start"]);
+  assert.match(body.error, /\bstart\b/);
+  assert.equal(existsSync(marker), false);
+  assert.equal((await playMethod({ instanceValues: { nope: "1" } })).status, 422);
+});
+
+test("analysis offers effect rows with a sample for each external call", async () => {
+  assert.deepEqual((await nodeOf("funcs.load")).effects, [{ name: "open", suggestion: '"line one\\nline two"' }]);
+  assert.deepEqual((await nodeOf("funcs.fetch")).effects, [{ name: "requests.get", suggestion: '{"status": 200}' }]);
+  assert.equal((await nodeOf("funcs.echo")).effects, undefined);
+});
+
+test("effects data arrives as named rows of literals and is applied", async () => {
+  const res = await playLoad({ open: '"a\\nb"' });
+  assert.equal(res.status, 201);
+  assert.equal((await res.json()).result, "'a\\nb'");
+});
+
+test("a non-literal effect row is refused on its own row and never run", async () => {
+  for (const row of [`__import__("pathlib").Path("marker.txt").write_text("x")`, "marker", "'a' + 'b'", '"unterminated']) {
+    const res = await playLoad({ open: row });
+    assert.equal(res.status, 422, row);
+    assert.deepEqual(Object.keys((await res.json()).fields), ["effect:open"], row);
+  }
+  assert.equal(existsSync(marker), false);
+});
+
+test("limits still hold for the new inputs", async () => {
+  assert.equal((await playMethod({ instanceValues: [1] })).status, 400);
+  assert.equal((await playMethod({ instanceValues: { start: 1 } })).status, 400);
+  assert.equal((await playMethod({ instanceValues: { start: "1".repeat(20_000) } })).status, 400);
+  assert.equal((await playMethod({ effects: { "not a name!": "1" } })).status, 400);
+  assert.equal((await playMethod({ effects: { open: 1 } })).status, 400);
+  assert.equal((await playMethod({ effects: { open: "1".repeat(20_000) } })).status, 400);
 });

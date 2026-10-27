@@ -1,7 +1,8 @@
 """Run one Python function under a tracer and print what happened as JSON.
 
 Usage: playback.py <project folder> <module id> <qualified name> <file>
-Standard input: {"values": {parameter: Python literal text}} or {"args": [...], "kwargs": {...}}, plus {"instance": {"args": [...], "kwargs": {...}} or null, "fakes": {name: value}}
+Standard input: {"values": {parameter: Python literal text}, "instanceValues": {constructor parameter: literal text},
+  "effects": {call name: literal text}} or {"args": [...], "kwargs": {...}}, plus {"instance": {"args": [...], "kwargs": {...}} or null, "fakes": {name: value}}
 Standard output: {"invalid": {parameter: message}} when a value is not a plain literal (it is parsed, never run),
   {"refused": [{"name", "line"}]} when the function has external effects that are not replaced,
   {"unsupported": "..."} for generators and async functions, or
@@ -172,23 +173,35 @@ def resolve(module, parts, instance):
     return getattr(owner, parts[-1])
 
 
-def evaluate_values(function, values):
-    """Turn {parameter: Python literal text} into call arguments. Text is parsed, never run: only literals pass.
-    Returns (args, kwargs, problems) where problems maps a parameter name to what is wrong with its text."""
+def literal(text):
+    """The value of a Python literal text, or the reason it is not one. Text is parsed, never run."""
+    try:
+        return ast.literal_eval(text.strip()), None
+    except (ValueError, SyntaxError, TypeError, MemoryError, RecursionError) as e:
+        what = "is not valid Python" if isinstance(e, SyntaxError) else "is not a plain value (calls, names and expressions are not run)"
+        return None, f"{text.strip()[:60]} {what}"
+
+
+def evaluate_values(function, values, key="", method=False):
+    """Turn {parameter: Python literal text} into call arguments. Only literals pass.
+    Returns (args, kwargs, problems) where problems maps a field key (`key` + parameter name) to what is wrong.
+    A method's first parameter (self) is not one the person fills in."""
     a = function.args
-    names = [x.arg for x in a.posonlyargs + a.args + a.kwonlyargs]
+    positional = (a.posonlyargs + a.args)[1 if method else 0:]
+    posonly = a.posonlyargs[1 if method else 0:]
+    names = [x.arg for x in positional + a.kwonlyargs]
     problems, evaluated = {}, {}
     for name, text in values.items():
         if name not in names:
-            problems[name] = f"{name} is not a parameter of this function"
+            problems[key + name] = f"{name} is not a parameter of this function"
         elif text.strip():  # a blank value leaves the default in place
-            try:
-                evaluated[name] = ast.literal_eval(text.strip())
-            except (ValueError, SyntaxError, TypeError, MemoryError, RecursionError) as e:
-                what = "is not valid Python" if isinstance(e, SyntaxError) else "is not a plain value (calls, names and expressions are not run)"
-                problems[name] = f"{name}: {text.strip()[:60]} {what}"
+            value, why = literal(text)
+            if why:
+                problems[key + name] = f"{name}: {why}"
+            else:
+                evaluated[name] = value
     args = []
-    for x in a.posonlyargs:  # these cannot be given by name, so they go first, in order
+    for x in posonly:  # these cannot be given by name, so they go first, in order
         if x.arg not in evaluated:
             break
         args.append(evaluated.pop(x.arg))
@@ -221,11 +234,27 @@ def main():
         json.dump({"unsupported": "Generators and async functions cannot be played yet"}, sys.stdout)
         return
 
+    problems = {}
     if request.get("values"):
-        args, kwargs, problems = evaluate_values(function, request["values"])
-        if problems:
-            json.dump({"invalid": problems}, sys.stdout)
-            return
+        args, kwargs, found = evaluate_values(function, request["values"], method=len(parts) > 1)
+        problems.update(found)
+    if request.get("instanceValues"):  # the constructor's values, for a method
+        init = flow.find_function(tree, parts[:-1] + ["__init__"]) if len(parts) > 1 else None
+        if init is None:
+            problems["constructor"] = "This class has no constructor to give values to"
+        else:
+            instance_args, instance_kwargs, found = evaluate_values(init, request["instanceValues"], "constructor.", True)
+            instance = {"args": instance_args, "kwargs": instance_kwargs}
+            problems.update(found)
+    for name, text in (request.get("effects") or {}).items():  # data for the effects, as literals
+        value, why = literal(text)
+        if why:
+            problems[f"effect:{name}"] = f"{name}: {why}"
+        else:
+            fakes[name] = value
+    if problems:
+        json.dump({"invalid": problems}, sys.stdout)
+        return
 
     found = effects_of(function, fakes, import_aliases(tree))
     if found:

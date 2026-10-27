@@ -37,11 +37,17 @@ const handler: Handler = async (req, res, core) => {
     return true;
   }
 
-  // The inputs are JSON values, never code.
+  // The inputs are JSON values or Python literal texts, never code.
   // `values` are Python literal texts per parameter; the Python side parses them and never runs them.
-  const { args = [], kwargs = {}, instance = null, fakes = {}, values = {} } = body ?? {};
-  if (!isObject(values) || Object.keys(values).length > MAX_ARGS || !Object.values(values).every((v) => typeof v === "string" && v.length <= MAX_VALUE_CHARS)) {
-    core.send(res, 400, { error: `values must be an object of texts, one per parameter (at most ${MAX_ARGS}, each at most ${MAX_VALUE_CHARS} characters)` });
+  const { args = [], kwargs = {}, instance = null, fakes = {}, values = {}, instanceValues = {}, effects = {} } = body ?? {};
+  for (const [what, texts] of Object.entries({ values, instanceValues, effects })) {
+    if (!isObject(texts) || Object.keys(texts).length > MAX_ARGS || !Object.values(texts).every((v) => typeof v === "string" && v.length <= MAX_VALUE_CHARS)) {
+      core.send(res, 400, { error: `${what} must be an object of Python literal texts (at most ${MAX_ARGS}, each at most ${MAX_VALUE_CHARS} characters)` });
+      return true;
+    }
+  }
+  if (!Object.keys(effects as object).every((name) => FAKE_NAME.test(name))) {
+    core.send(res, 400, { error: "effects must be named by the call they replace, such as open or requests.get" });
     return true;
   }
   const instanceOk = instance === null || (isObject(instance) && (instance.args === undefined || isList(instance.args)) && (instance.kwargs === undefined || isObject(instance.kwargs)));
@@ -68,7 +74,7 @@ const handler: Handler = async (req, res, core) => {
   }
 
   const { module, qualifiedName } = moduleAndName(project, node);
-  const input = { args, kwargs, instance, fakes, values };
+  const input = { args, kwargs, instance, fakes, values, instanceValues, effects };
   let outcome: Record<string, unknown>;
   try {
     outcome = JSON.parse(

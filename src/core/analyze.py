@@ -7,6 +7,8 @@ import json
 import os
 import sys
 
+import playback  # sits next to this file; importing it runs nothing
+
 SKIP_DIRS = {"__pycache__", "venv", "node_modules"}
 
 
@@ -56,13 +58,15 @@ def suggestion(default, annotation):
     return None
 
 
-def parameters(function):
-    """Named parameters in call order with default and annotation text; `*args` and `**kwargs` are left out."""
+def parameters(function, method=False):
+    """Named parameters in call order with default and annotation text; `*args` and `**kwargs` are left out.
+    A method's first parameter (self) is left out too."""
     a = function.args
     positional = a.posonlyargs + a.args
+    skip = 1 if method and positional else 0
     defaults = [None] * (len(positional) - len(a.defaults)) + a.defaults + a.kw_defaults
     found = []
-    for arg, default in zip(positional + a.kwonlyargs, defaults):
+    for arg, default in list(zip(positional + a.kwonlyargs, defaults))[skip:]:
         item = {"name": arg.arg}
         if default is not None:
             item["default"] = ast.unparse(default)
@@ -75,7 +79,18 @@ def parameters(function):
     return found
 
 
-def visit(body, parent, prefix, nodes, file, in_class=False):
+# A sample for the data an external call would give back, written as a Python literal.
+EFFECT_SAMPLES = {"open": '"line one\\nline two"'}
+DEFAULT_EFFECT_SAMPLE = '{"status": 200}'
+
+
+def effects(function, aliases):
+    """External calls in the function's own body, each with a sample of the data to fake it with."""
+    names = sorted({e["name"] for e in playback.effects_of(function, {}, aliases)})
+    return [{"name": n, "suggestion": EFFECT_SAMPLES.get(n, DEFAULT_EFFECT_SAMPLE)} for n in names]
+
+
+def visit(body, parent, prefix, nodes, file, aliases, owner=None):
     for stmt in body:
         if isinstance(stmt, ast.ClassDef):
             kind = "class"
@@ -89,12 +104,18 @@ def visit(body, parent, prefix, nodes, file, in_class=False):
                 "file": file, "line": first, "endLine": stmt.end_lineno}
         if kind == "class":
             node["attributes"] = attributes(stmt)
-        if kind == "function" and not in_class:  # methods get their form with the instance (a later ticket)
-            node["parameters"] = parameters(stmt)
+        if kind == "function":
+            node["parameters"] = parameters(stmt, owner is not None)
+            if owner is not None:  # the instance is built from the constructor's parameters
+                init = next((s for s in owner.body if isinstance(s, (ast.FunctionDef, ast.AsyncFunctionDef)) and s.name == "__init__"), None)
+                node["constructorParameters"] = parameters(init, True) if init else []
+            found = effects(stmt, aliases)
+            if found:
+                node["effects"] = found
         nodes.append(node)
         # ponytail: nested functions are not listed, only classes and their members
         if kind == "class":
-            visit(stmt.body, node_id, node_id, nodes, file, True)
+            visit(stmt.body, node_id, node_id, nodes, file, aliases, stmt)
 
 
 def analyze(root):
@@ -118,7 +139,7 @@ def analyze(root):
             end = max(len(text.splitlines()), 1)
             nodes.append({"id": module, "kind": "module", "name": module, "parent": None,
                           "file": file, "line": 1, "endLine": end})
-            visit(tree.body, module, module, nodes, file)
+            visit(tree.body, module, module, nodes, file, playback.import_aliases(tree))
     return {"nodes": nodes, "errors": errors}
 
 
