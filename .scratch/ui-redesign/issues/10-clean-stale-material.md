@@ -4,10 +4,10 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 The person confirmed the cleanup is wanted (the interface is defined by the chosen mockups, not by OpenCode). Default: rewrite ADR 0003 as a short ADR keeping the real decision (plain JavaScript and CSS, no framework, revisit if smoothness fails), with no OpenCode reference.
 
-- [ ] ADR 0003 is rewritten with no OpenCode reference, and its title and filename no longer mention OpenCode.
+- [x] ADR 0003 is rewritten with no OpenCode reference, and its title and filename no longer mention OpenCode.
 - [ ] The OpenCode research note is deleted.
-- [ ] `GLOSSARY.md` and other docs do not point at either removed item.
+- [x] `GLOSSARY.md` and other docs do not point at either removed item.
