@@ -4,7 +4,7 @@
 
 **Blocked by:** 12
 
-**Status:** ready-for-agent
+**Status:** superseded (see .scratch/tutor/spec.md and .scratch/tutor/issues)
 
 - [ ] Creating a Project starts a Probe whose questions relate to the Project's stated goal.
 - [ ] The Probe is short and can be skipped.

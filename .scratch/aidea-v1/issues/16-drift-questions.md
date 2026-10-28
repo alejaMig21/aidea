@@ -4,7 +4,7 @@
 
 **Blocked by:** 11, 15
 
-**Status:** ready-for-agent
+**Status:** superseded (see .scratch/tutor/spec.md and .scratch/tutor/issues)
 
 - [ ] A Broken link in the fixture Project produces a Tutor question that names the requirement and what changed.
 - [ ] A Pattern group violation produces a Tutor question that names the violated rule.

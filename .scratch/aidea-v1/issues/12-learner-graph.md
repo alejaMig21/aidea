@@ -4,7 +4,7 @@
 
 **Blocked by:** 11
 
-**Status:** ready-for-agent
+**Status:** superseded (see .scratch/tutor/spec.md and .scratch/tutor/issues)
 
 - [ ] A correct answer in a Tutor session adds Propositions and a Reasoning chain linked to that session.
 - [ ] Repeating the same concept does not create duplicates.

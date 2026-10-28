@@ -4,7 +4,7 @@
 
 **Blocked by:** 08, 10
 
-**Status:** ready-for-agent
+**Status:** superseded (see .scratch/tutor/spec.md and .scratch/tutor/issues)
 
 - [ ] In Class mode, a Proposal for a first-three-layers Node pauses the builder until the Tutor question is answered.
 - [ ] The Rationale is shown only after the person answers.

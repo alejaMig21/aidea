@@ -4,7 +4,7 @@
 
 **Blocked by:** 04, 08
 
-**Status:** ready-for-agent
+**Status:** superseded (see .scratch/tutor/spec.md and .scratch/tutor/issues)
 
 - [ ] A Pattern group with role-labelled Nodes can be declared and appears on the Canvas.
 - [ ] A violation in the fixture Project is reported against the group and the offending Nodes.

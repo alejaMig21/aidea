@@ -4,7 +4,7 @@
 
 **Blocked by:** 11
 
-**Status:** ready-for-agent
+**Status:** superseded (see .scratch/tutor/spec.md and .scratch/tutor/issues)
 
 - [ ] Selecting text offers both choices.
 - [ ] "Just define" shows a short explanation and records nothing in the Learner graph.
