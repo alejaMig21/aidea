@@ -64,13 +64,14 @@ export const TUTOR_TOOLS = [
 ];
 
 // Where a question sits in the class: the step, whether it is the prediction or the check, and the attempt number (set by the core).
-type Where = { stepId?: string; phase?: "predict" | "check"; attempt?: number };
+// A probe question (ticket 06) has no step: it names the idea it measures, can be skipped, and knows its place in the Probe.
+type Where = { stepId?: string; phase?: "predict" | "check"; attempt?: number; idea?: string; skippable?: true; probe?: { n: number; of: number } };
 // What stays in the core. `correct` is the committed answer (choice: the index of the right option).
 export type Question =
   | ({ kind: "choice"; prompt: string; options: string[]; correct: number; allowDontKnow: boolean } & Where)
   | ({ kind: "text"; prompt: string; expected?: string; allowDontKnow: boolean } & Where);
 
-export type Answer = { option?: number; text?: string; confidence?: number; thought?: string; dontKnow?: boolean };
+export type Answer = { option?: number; text?: string; confidence?: number; thought?: string; dontKnow?: boolean; skip?: boolean };
 
 const nonEmpty = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
 
@@ -97,15 +98,16 @@ export function parseQuestion(args: Record<string, unknown>): { question: Questi
 
 // What the interface is told about a question: never the committed answer.
 export const publicQuestion = (q: Question) => {
-  const where = q.stepId ? { stepId: q.stepId, phase: q.phase } : {};
+  const where = { ...(q.stepId ? { stepId: q.stepId, phase: q.phase } : {}), ...(q.skippable ? { skippable: true, probe: q.probe } : {}) };
   return q.kind === "choice" ? { kind: q.kind, prompt: q.prompt, options: q.options, allowDontKnow: q.allowDontKnow, ...where } : { kind: q.kind, prompt: q.prompt, allowDontKnow: q.allowDontKnow, ...where };
 };
 
 // Checks the person's answer against the question it belongs to (the interface sends it, so it is checked, not trusted).
 export function parseAnswer(q: Question, raw: Record<string, unknown>): { answer: Answer } | { error: string } {
-  const { option, text, confidence, thought, dontKnow } = raw;
+  const { option, text, confidence, thought, dontKnow, skip } = raw;
   if (thought !== undefined && (typeof thought !== "string" || thought.length > MAX_TEXT)) return { error: `thought must be text of at most ${MAX_TEXT} characters` };
   const t = typeof thought === "string" && thought.trim() ? { thought: thought.trim() } : {};
+  if (skip === true && q.skippable) return { answer: { skip: true, ...t } };
   if (dontKnow === true) {
     if (!q.allowDontKnow) return { error: "This question does not offer \"I don't know\"" };
     return { answer: { dontKnow: true, ...t } };
@@ -123,6 +125,7 @@ export function parseAnswer(q: Question, raw: Record<string, unknown>): { answer
 // What the waiting `ask` call returns to the Tutor.
 export function answerForTutor(q: Question, a: Answer) {
   const thought = a.thought ? { thought: a.thought } : {};
+  if (a.skip) return { skipped: true, known: true, note: "The person says they already know this. Report it as known in probe_done.", ...thought };
   if (q.kind === "text") return a.dontKnow ? { kind: "text", dontKnow: true, ...(q.expected ? { expected: q.expected } : {}), ...thought } : { kind: "text", answer: a.text, ...(q.expected ? { expected: q.expected } : {}), ...thought };
   const correctAnswer = q.options[q.correct];
   return a.dontKnow

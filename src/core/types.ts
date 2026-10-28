@@ -6,6 +6,7 @@ import type { Recents } from "./recents.ts";
 import type { Preferences } from "./preferences.ts";
 import type { Learner } from "./learner-pipeline.ts";
 import type { Lesson } from "./teach.ts";
+import type { Probes } from "./probe.ts";
 
 export type CoreNode = {
   id: string;
@@ -69,9 +70,10 @@ export type Adapter = {
   // `instructions` are added to the agent's own system prompt.
   // `role` is "builder" (the default) or "tutor": the Tutor runs isolated, with its own instructions as the whole system prompt
   // and only `tools` (an MCP configuration and the tools it may use), never the person's plugins or settings.
+  // "prober" runs the Probe: the Tutor's isolated recipe with its own tools (ask, known_ideas, probe_done, the read tools).
   // "extractor", "auditor" and "grader" (which grades one free-text answer) are one-shot roles; the first two build the Learner graph. They have no tools, `instructions` as the whole system prompt, and `schema`
   // (a JSON Schema) constrains the answer, which comes back as `structured` on the result event.
-  run: (opts: { role?: "builder" | "tutor" | "extractor" | "auditor" | "grader"; schema?: object; tools?: { mcpConfig: string; allowedTools: string[] }; cwd: string; message: string; sessionId?: string; mode?: string; model?: string; signal?: AbortSignal; instructions?: string; permission?: { mcpConfig: string; tool: string; allowedTools: string[]; deniedTools: string[] } }) => AsyncIterable<AgentEvent>;
+  run: (opts: { role?: "builder" | "tutor" | "prober" | "extractor" | "auditor" | "grader"; schema?: object; tools?: { mcpConfig: string; allowedTools: string[] }; cwd: string; message: string; sessionId?: string; mode?: string; model?: string; signal?: AbortSignal; instructions?: string; permission?: { mcpConfig: string; tool: string; allowedTools: string[]; deniedTools: string[] } }) => AsyncIterable<AgentEvent>;
 };
 
 // A spawn-like process source; the real one launches `claude`, tests replay recorded streams.
@@ -96,6 +98,8 @@ export type Core = {
   learner: Learner;
   // The order of each running class, by class id (removed when the class ends).
   lessons: Map<string, Lesson>;
+  // The Probes: the stored result of each Project and layer, and the ones running now.
+  probes: Probes;
   // Returns null when the body exceeds the size limit (64 KB unless a route asks for more).
   readBody: (req: IncomingMessage, maxBytes?: number) => Promise<string | null>;
   // Parses a JSON body; on failure it has already sent the 413 or 400 response and returns undefined.

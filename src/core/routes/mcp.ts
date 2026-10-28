@@ -10,6 +10,7 @@ import type { Proposal } from "../proposals.ts";
 import { TUTOR_TOOLS } from "../tutor.ts";
 import { runTeachTool } from "../teach.ts";
 import { READ_TOOLS, runReadTool } from "../tutor-reads.ts";
+import { PROBE_TOOLS, runProbeTool } from "../probe.ts";
 import type { Handler } from "../types.ts";
 
 const MAX_MCP_BODY_BYTES = 4 * 1024 * 1024; // a request to write a file carries the whole content
@@ -112,11 +113,20 @@ const handler: Handler = async (req, res, core) => {
   } else if (method === "ping") {
     core.send(res, 200, rpcResult(id, {}));
   } else if (method === "tools/list") {
-    core.send(res, 200, rpcResult(id, { tools: tutor ? [...TUTOR_TOOLS, ...READ_TOOLS] : TOOLS }));
+    const prober = core.permissions.conversationOf(token)?.role === "prober";
+    core.send(res, 200, rpcResult(id, { tools: tutor ? [...TUTOR_TOOLS, ...READ_TOOLS] : prober ? [...PROBE_TOOLS, ...READ_TOOLS] : TOOLS }));
   } else if (method === "tools/call") {
     const args = isObject(params.arguments) ? params.arguments : {};
     const name = params.name;
 
+    if (core.permissions.conversationOf(token)?.role === "prober") {
+      // A Probe has its own tool set; its question is withdrawn if Claude Code drops this request before it is answered.
+      const gaveUp = new AbortController();
+      res.on("close", () => gaveUp.abort());
+      const result = await runProbeTool(String(name), args, { core, token, gaveUp: gaveUp.signal });
+      core.send(res, 200, result ? toolText(id, result.text, result.isError) : rpcError(id, -32602, `Unknown tool: ${String(name)}`));
+      return true;
+    }
     if (tutor) {
       // A class has its own tool set. The question is withdrawn if Claude Code drops this request before it is answered.
       if (READ_TOOLS.some((t) => t.name === name)) {

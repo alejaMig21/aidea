@@ -117,7 +117,13 @@
       dontKnow = el("button", { type: "button", className: "tutor-dontknow", textContent: "Don't know" });
       buttons.append(dontKnow);
     }
+    if (q.skippable) { // a probe question (ticket 06): the person may say they already know it
+      const known = el("button", { type: "button", className: "tutor-dontknow", textContent: "I already know this" });
+      known.onclick = () => submit({ skip: true }, "You said: I already know this");
+      buttons.append(known);
+    }
     if (q.phase === "predict") form.prepend(el("p", { className: "tutor-label", textContent: "Predict" }));
+    if (q.probe) form.prepend(el("p", { className: "tutor-label", textContent: `Question ${q.probe.n} of ${q.probe.of}` }));
     form.append(...body, thoughtLabel, thought, buttons, status);
 
     const submit = async (reply, summaryText) => {
@@ -170,6 +176,8 @@
     else if (event.type === "tutor_question_expired") expire(event.id);
     else if (event.type === "error") { const p = el("p", { className: "tutor-error", textContent: event.message }); p.setAttribute("role", "alert"); log.append(p); }
     else if (event.type === "learner") learnerLine(event);
+    else if (event.type === "probe_done") line("tutor-meta", `Known: ${event.counts.known}, partly: ${event.counts.partial}, new to you: ${event.counts.unknown}`);
+    else if (event.type === "probe_skipped") line("tutor-meta", "Probe skipped. You can start a class anyway.");
   }
 
   // After a class: one plain line about the Learner graph. If the pipeline failed, a Retry button asks the core again.
@@ -189,20 +197,22 @@
   }
 
   // Back from a class: the conversation stays on screen, with the way to begin another one below it.
-  function finish() {
+  function finish(opts = {}) {
     for (const id of [...cards.keys()]) expire(id);
     running = null;
-    line("tutor-meta", "The class has ended.");
+    line("tutor-meta", opts.ended ?? "The class has ended.");
     pane.classList.replace("tutor-live", "tutor-over");
     end.hidden = true;
     start.disabled = !current;
-    start.textContent = "Start another class";
+    start.textContent = opts.ended ? "Start a class" : "Start another class";
   }
 
-  async function startClass() {
+  // `opts` lets another feature (the Probe, 51-probe.js) use the same column: its endpoint and body, the label of the stop button, what stop does, and the closing line.
+  async function startClass(opts = {}) {
     if (!current || running) return;
     const project = current;
-    running = { abort: new AbortController(), project };
+    running = { abort: new AbortController(), project, skip: opts.skip };
+    end.textContent = opts.endLabel ?? "End class";
     log.replaceChildren();
     log.hidden = false;
     pane.classList.remove("tutor-over");
@@ -211,7 +221,7 @@
     start.disabled = true;
     end.focus();
     try {
-      const res = await fetch("/tutor/classes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ project, topic: topic.value.trim() || undefined }), signal: running.abort.signal });
+      const res = await fetch(opts.path ?? "/tutor/classes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(opts.payload ?? { project, topic: topic.value.trim() || undefined }), signal: running.abort.signal });
       if (!res.ok) {
         const p = el("p", { className: "tutor-error", textContent: (await res.json().catch(() => ({}))).error ?? "The class could not start" });
         p.setAttribute("role", "alert");
@@ -232,12 +242,14 @@
     } catch (err) {
       if (err.name !== "AbortError") { const p = el("p", { className: "tutor-error", textContent: `Could not reach the core: ${err.message}` }); p.setAttribute("role", "alert"); log.append(p); }
     } finally {
-      finish();
+      finish(opts);
+      opts.after?.();
     }
   }
 
-  start.onclick = startClass;
-  end.onclick = () => running?.abort.abort(); // closing the stream ends the class in the core
+  start.onclick = () => startClass();
+  end.onclick = () => (running?.skip ? running.skip() : running?.abort.abort()); // closing the stream ends the class in the core
+  window.tutorUi = { startClass, abort: () => running?.abort.abort() };
   document.addEventListener("project-opened", (e) => {
     if (running && running.project !== e.detail.id) running.abort.abort();
     if (!running) { log.replaceChildren(); log.hidden = true; pane.classList.remove("tutor-live", "tutor-over"); start.textContent = "Start a class"; }
