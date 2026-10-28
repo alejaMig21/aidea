@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>aidea notation prototype</title>
+<style>
+@font-face { font-family: "Inter"; src: url("../../../src/ui/fonts/inter-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("../../../src/ui/fonts/jetbrains-mono-latin-wght-normal.woff2") format("woff2"); font-weight: 100 800; font-display: swap; }
+:root { --bg:#0e1014; --bar:#12151b; --canvas:#11141a; --panel:#151921; --raised:#1b2030; --selected:#252c40; --line:#1d222c; --control:#2c3345;
+  --text:#e6e8ee; --muted:#9aa3b2; --label:#c9cfdb; --accent:#8aa4ff; --accent-soft:#b3c4ff; --on-accent:#0e1014; --proposal:#1a2140;
+  --authored:#f2b45a; --derived:#4fd1b5; --danger:#ff8a80; --grey:#5b6578;
+  --sans:"Inter", system-ui, sans-serif; --mono:"JetBrains Mono", ui-monospace, Consolas, monospace; }
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { margin:0; background:var(--bg); color:var(--text); font:13px/1.45 var(--sans); }
+.mono { font-family: var(--mono); }
+button { font:inherit; color:inherit; }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.wrap { max-width:1360px; margin:0 auto; padding:14px 20px 28px; }
+header { display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; padding:4px 0 12px; }
+.logo { width:30px; height:30px; border-radius:8px; background:var(--accent); color:var(--on-accent); display:grid; place-items:center; font-weight:700; }
+header h1 { margin:0; font-size:16px; font-weight:600; }
+.pill { font:600 10.5px var(--mono); letter-spacing:.08em; color:var(--authored); border:1px dashed var(--authored); border-radius:999px; padding:2px 9px; }
+.note { flex:1 1 420px; margin:0; color:var(--muted); font-size:12.5px; }
+.key { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:12px; color:var(--muted); align-items:center; }
+.key i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px; }
+.toggle { display:flex; gap:6px; align-items:center; color:var(--label); font-size:12.5px; margin-left:auto; cursor:pointer; }
+.toggle input { accent-color: var(--accent); width:15px; height:15px; }
+#tabs { display:flex; gap:2px; padding:4px; background:var(--bar); border:1px solid var(--line); border-radius:12px; width:max-content; max-width:100%; overflow:auto; margin:6px 0 12px; }
+#tabs button { background:transparent; border:0; border-radius:8px; padding:5px 14px; font-size:13.5px; cursor:pointer; white-space:nowrap; color:var(--derived); }
+#tabs button.auth { color:var(--authored); }
+#tabs button[aria-selected="true"] { background:var(--selected); color:var(--text); }
+.panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px 12px; }
+.ptop { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px; }
+.ptop h2 { margin:0; font-size:17px; font-weight:600; }
+.sub { margin:2px 0 0; color:var(--muted); font-size:11.5px; }
+.legendwrap { position:relative; }
+.btn { background:var(--raised); border:1px solid var(--control); border-radius:8px; padding:5px 12px; cursor:pointer; color:var(--label); }
+.btn:hover:not(:disabled) { border-color:var(--accent); color:var(--text); }
+.btn:disabled { opacity:.4; cursor:default; }
+.btn.primary { background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:600; }
+.btn.primary:disabled { background:var(--selected); color:var(--muted); border-color:var(--control); }
+.pop { position:absolute; right:0; top:36px; z-index:20; width:min(420px, 88vw); background:var(--raised); border:1px solid var(--control); border-radius:12px; padding:12px 14px; box-shadow:0 12px 32px #0009; }
+.pop[hidden] { display:none; }
+.pop h3 { margin:0 0 6px; font:600 10.5px var(--mono); letter-spacing:.1em; color:var(--muted); text-transform:uppercase; }
+.pop ul { list-style:none; margin:0 0 12px; padding:0; display:grid; gap:5px; }
+.pop li { display:flex; gap:10px; align-items:center; font-size:12.5px; color:var(--label); }
+.pop li svg { flex:none; }
+.pop ul.not li { display:list-item; list-style:"– "; margin-left:14px; color:var(--muted); }
+.stage { background:var(--canvas) radial-gradient(#252b37 1px, transparent 1.3px) 0 0/18px 18px; border:1px solid var(--line); border-radius:12px; padding:14px; min-height:200px; }
+.predict { margin-top:10px; background:var(--proposal); border:1px dashed var(--accent); border-radius:12px; padding:10px 14px; }
+.predict[hidden] { display:none; }
+.predict .q { font-size:14px; }
+.tag { font:700 10px var(--mono); letter-spacing:.1em; color:var(--accent); margin-right:8px; }
+.opts { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; align-items:center; }
+.opts .btn.ok { border-color:var(--derived); color:var(--derived); }
+.opts .btn.bad { border-color:var(--danger); color:var(--danger); }
+.opts .skip { margin-left:auto; background:transparent; border-color:transparent; color:var(--muted); text-decoration:underline; }
+.rev { margin:8px 0 0; font-size:13px; color:var(--label); }
+.narr { margin-top:10px; min-height:44px; padding:9px 14px; background:var(--bar); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; font-size:14px; }
+.ctl { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:10px; }
+.ctl .cnt { margin-left:auto; color:var(--muted); font:12px var(--mono); }
+.cov { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:12px; padding-top:10px; border-top:1px solid var(--line); font-size:12px; color:var(--muted); align-items:center; }
+.cov b { font:600 10.5px var(--mono); letter-spacing:.1em; text-transform:uppercase; }
+.cov span.y::before { content:"● "; color:var(--derived); }
+.cov span.n::before { content:"○ "; color:var(--grey); }
+.credit { margin-top:8px; font-size:12px; color:var(--muted); }
+.foot { display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:14px; font-size:12.5px; color:var(--muted); align-items:center; }
+.foot button { background:none; border:0; color:var(--accent); cursor:pointer; padding:2px 0; text-decoration:underline; text-underline-offset:3px; }
+.foot .sp { margin-left:auto; }
+
+/* shared svg */
+svg text { font-family:var(--sans); fill:var(--text); }
+svg .mono, svg text.m { font-family:var(--mono); }
+.sw { display:block; }
+.edge { fill:none; stroke:var(--grey); stroke-width:1.6; }
+.edge.done { stroke:var(--derived); } .edge.act { stroke:var(--accent); stroke-width:2.4; } .edge.err { stroke:var(--danger); }
+.flow.act { stroke-dasharray:7 5; animation:flow .7s linear infinite; }
+@keyframes flow { to { stroke-dashoffset:-12; } }
+@media (prefers-reduced-motion: reduce) { .flow.act { animation:none; } * { transition:none !important; } }
+.lbl { font-size:11px; fill:var(--muted); } .lbl.m { font-size:10.5px; }
+.badge circle { fill:var(--bar); stroke:var(--grey); stroke-width:1.5; } .badge text { font:700 11px var(--mono); text-anchor:middle; fill:var(--muted); }
+.badge.done circle { stroke:var(--derived); } .badge.done text { fill:var(--derived); }
+.badge.act circle { stroke:var(--accent); fill:var(--accent); } .badge.act text { fill:var(--on-accent); }
+.badge { opacity:0; transition:opacity .3s; } .badge.done, .badge.act { opacity:1; }
+.tok { fill:var(--accent); stroke:var(--on-accent); stroke-width:2; filter:drop-shadow(0 0 6px #8aa4ffaa); }
+
+/* ambient motion */
+@keyframes breathe { 0%,100% { filter:drop-shadow(0 0 0 transparent); } 50% { filter:drop-shadow(0 0 9px var(--g,#8aa4ff88)); } }
+@keyframes redflash { 0%,100% { background:var(--raised); } 50% { background:#ff8a8040; } }
+@keyframes blink { 0%,100% { opacity:1; } 50% { opacity:.25; } }
+.live .edge:not(.noflow) { stroke-dasharray:7 5; animation:flow .9s linear infinite; }
+.live .blk { --g:#f2b45a66; animation:breathe 2.8s ease-in-out infinite; } .live .blk:nth-child(2n) { animation-delay:-1.3s; } .live .blk:nth-child(3n) { animation-delay:-.6s; }
+.live .pulse, .live .nd.act { --g:#8aa4ffaa; animation:breathe 2.4s ease-in-out infinite; }
+.live .crit li.fail.act { animation:redflash .6s ease 2; }
+.edge.blink { animation:blink .5s ease 3; }
+.hl-on .edge:not(.hl) { opacity:.18; } .hl-on .edge.hl { stroke:#b3c4ff; stroke-width:3.2; }
+.noanim *, .noanim *::before { animation:none !important; }
+[data-id] { cursor:pointer; outline-offset:3px; }
+.bmc-wrap { position:relative; } .bmc-wrap svg.ov { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+.bkey { display:flex; gap:16px; font-size:12px; color:var(--muted); margin-top:8px; } .bkey i { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; }
+/* business */
+.bmc { display:grid; grid-template-columns:repeat(5,1fr); grid-template-rows:1fr 1fr auto; gap:8px;
+  grid-template-areas:"kp ka vp cr cs" "kp kr vp ch cs" "cost cost cost rev rev"; min-height:400px; }
+.blk { background:var(--raised); border:1px solid var(--control); border-radius:12px; padding:10px 11px; position:relative; transition:opacity .35s, border-color .35s, box-shadow .35s; display:flex; flex-direction:column; gap:7px; }
+.blk h4 { margin:0; font-size:12.5px; font-weight:600; color:var(--authored); padding-right:22px; }
+.blk .chips { display:flex; flex-direction:column; gap:6px; }
+.chipn { background:#f2b45a22; border:1px solid #f2b45a66; color:#ffe0ae; border-radius:6px; padding:6px 8px; font-size:12.5px; transform:rotate(-.6deg); box-shadow:0 2px 0 #0006; }
+.chipn:nth-child(2) { transform:rotate(.7deg); }
+.blk.hid { opacity:.28; } .blk.hid .chips { visibility:hidden; }
+.blk.act { border-color:var(--accent); box-shadow:0 0 0 2px #8aa4ff55; }
+.blk .num { position:absolute; right:8px; top:8px; width:20px; height:20px; border-radius:50%; font:700 11px/20px var(--mono); text-align:center; background:var(--selected); color:var(--muted); opacity:0; transition:opacity .3s; }
+.blk.act .num { background:var(--accent); color:var(--on-accent); opacity:1; } .blk.done .num { opacity:1; color:var(--derived); }
+.blk.done .chips .chipn, .blk.act .chips .chipn { animation:pop .35s ease-out; }
+@keyframes pop { from { opacity:0; transform:translateY(6px) scale(.96); } }
+@media (prefers-reduced-motion: reduce) { .chipn { animation:none !important; } }
+
+/* requirements */
+.rq svg.ov { z-index:2; }
+.rq { position:relative; display:grid; grid-template-columns:minmax(0,1fr) 270px; gap:80px; align-items:start; min-height:420px; }
+.story { background:var(--raised); border:1px solid var(--control); border-radius:12px; padding:14px 16px; font-size:16px; transition:opacity .4s, border-color .4s; }
+.story b { color:var(--authored); font-weight:600; }
+.kicker { font:600 10.5px var(--mono); letter-spacing:.1em; color:var(--muted); text-transform:uppercase; margin:0 0 6px; }
+.rq .kicker.h { margin-top:16px; }
+.rq .dim { opacity:.25; }
+.crit { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+.crit li { display:grid; grid-template-columns:30px 1fr; gap:10px; background:var(--raised); border:1px solid var(--control); border-radius:10px; padding:9px 12px; transition:border-color .3s; }
+.crit li .ic { width:26px; height:26px; border-radius:7px; background:var(--bar); border:1px solid var(--control); display:grid; place-items:center; font-weight:700; color:var(--muted); }
+.crit li.pass .ic { color:var(--derived); border-color:var(--derived); } .crit li.fail .ic { color:var(--danger); border-color:var(--danger); }
+.crit li.fail { border-color:#ff8a8066; } .crit li.act { box-shadow:0 0 0 2px #8aa4ff55; border-color:var(--accent); }
+.crit li div { font-size:13px; } .crit li span.k { font:600 11px var(--mono); color:var(--muted); display:inline-block; width:46px; }
+.crit .why { color:var(--danger); font-size:12.5px; margin-top:3px; }
+.chipc { background:var(--raised); border:1px solid var(--control); border-radius:12px; padding:12px 14px; margin-top:26px; transition:opacity .4s, border-color .4s; }
+.chipc .big { font-size:17px; color:var(--derived); margin:2px 0; } .chipc p { margin:6px 0 0; color:var(--muted); font-size:12.5px; }
+.chipc.lit { border-color:var(--accent); }
+.rq svg.ov { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+
+/* split stages */
+.split { display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:14px; align-items:start; }
+.split svg.dia { width:100%; height:auto; max-height:560px; display:block; }
+.side { display:grid; gap:10px; }
+.card { background:var(--raised); border:1px solid var(--control); border-radius:10px; padding:9px 11px; }
+.code { font:11.5px/1.65 var(--mono); margin:0; color:var(--label); overflow:auto; }
+.code div { padding:0 6px; border-radius:4px; white-space:pre; } .code div.on { background:var(--selected); box-shadow:inset 2px 0 var(--accent); color:var(--text); }
+table.tr { width:100%; border-collapse:collapse; font:11.5px var(--mono); }
+.tr th { text-align:left; color:var(--muted); font-weight:600; padding:2px 6px; border-bottom:1px solid var(--control); }
+.tr td { padding:2px 6px; border-bottom:1px solid var(--line); color:var(--label); }
+.tr tr.cur td { background:var(--selected); color:var(--text); } .tr td.e { color:var(--danger); }
+.card select { background:var(--bar); color:var(--text); border:1px solid var(--control); border-radius:6px; padding:3px 6px; font:inherit; }
+/* svg shapes */
+.n { fill:var(--raised); stroke:var(--control); stroke-width:1.6; transition:fill .3s, stroke .3s; }
+.nd.vis .n { stroke:var(--derived); fill:#4fd1b51a; } .nd.act .n { stroke:var(--accent); fill:var(--selected); stroke-width:2.4; }
+.nd.red .n { stroke:var(--danger); fill:#ff8a8018; } .nd.red.act .n { fill:#ff8a8040; }
+.nd text { font:12px var(--mono); text-anchor:middle; dominant-baseline:central; }
+@media (max-width:1100px) { .split { grid-template-columns:1fr; } .rq { gap:40px; grid-template-columns:minmax(0,1fr) 210px; } }
+@media (max-width:900px) { .bmc { grid-template-columns:repeat(3,1fr); grid-template-areas:"cs vp ch" "cr kr ka" "kp cost rev"; grid-template-rows:auto; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <marker id="a-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9z" fill="#5b6578"/></marker>
+  <marker id="a-y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9z" fill="#f2b45a"/></marker>
+  <marker id="a-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9z" fill="#8aa4ff"/></marker>
+  <marker id="a-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9z" fill="#4fd1b5"/></marker>
+  <marker id="a-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9z" fill="#ff8a80"/></marker>
+  <marker id="v-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path d="M1,1 L9,5 L1,9" fill="none" stroke="#5b6578" stroke-width="1.5"/></marker>
+  <marker id="v-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11" markerUnits="userSpaceOnUse" orient="auto"><path d="M1,1 L9,5 L1,9" fill="none" stroke="#8aa4ff" stroke-width="1.8"/></marker>
+  <marker id="v-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path d="M1,1 L9,5 L1,9" fill="none" stroke="#4fd1b5" stroke-width="1.5"/></marker>
+  <marker id="tri" viewBox="0 0 14 12" refX="13" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto"><path d="M1,1 L13,6 L1,11z" fill="#151921" stroke="#c9cfdb" stroke-width="1.4"/></marker>
+</defs></svg>
+
+<div class="wrap">
+<header>
+  <div class="logo" aria-hidden="true">a</div><h1>aidea <span class="mono" style="color:var(--muted);font-weight:400">/ notation prototype</span></h1><span class="pill">THROWAWAY PROTOTYPE</span>
+  <label class="toggle"><input type="checkbox" id="animOn" checked> Animations: <b id="animLbl">on</b></label><label class="toggle" style="margin-left:0"><input type="checkbox" id="predictOn"> Quiz me (in step mode)</label>
+  <p class="note">Invented data from the example project “studio”. It only answers two questions: does each layer look right, and does the live motion on it help? Nothing here analyses real code. Tell me per tab: “se ve bien” or “esto no”.</p>
+  <div class="key" aria-label="Colour meanings"><b style="color:var(--label)">One colour, one meaning:</b>
+    <span><i style="background:var(--accent)"></i>active now</span><span><i style="background:var(--derived)"></i>already visited / derived</span><span><i style="background:var(--authored)"></i>authored</span><span><i style="background:var(--danger)"></i>error / exception</span><span><i style="background:none;border:1px dashed var(--muted)"></i>grey dashed = unresolved / inferred</span></div>
+</header>
+<nav id="tabs" role="tablist" aria-label="Layers"></nav>
+<main id="panels"></main>
+<nav class="foot" id="foot" aria-label="Move between layers"></nav>
+</div>
+
+<script>
+"use strict";
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const RM = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+const P = { on: false }, A_ = { on: !matchMedia('(prefers-reduced-motion: reduce)').matches };
+const tabs = {};
+
+/* ---------- helpers ---------- */
+const sw = (inner, w = 44) => `<svg class="sw" width="${w}" height="24" viewBox="0 0 ${w} 24" aria-hidden="true">${inner}</svg>`;
+const S = { stroke: "#9aa3b2", fill: "none", sw: 'stroke-width="1.5"' };
+const rect = (x, y, w, h, extra = "") => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="#1b2030" stroke="#9aa3b2" stroke-width="1.5" ${extra}/>`;
+const line = (d, col = "#9aa3b2", extra = "") => `<path d="${d}" fill="none" stroke="${col}" stroke-width="1.6" ${extra}/>`;
+const head = (x, y, col = "#9aa3b2") => `<path d="M${x - 7},${y - 4} L${x},${y} L${x - 7},${y + 4}z" fill="${col}"/>`;
+const openHead = (x, y, col = "#9aa3b2") => `<path d="M${x - 7},${y - 4} L${x},${y} L${x - 7},${y + 4}" fill="none" stroke="${col}" stroke-width="1.5"/>`;
+function setEdge(el, st, kind = "a") { // st: g (idle) b (active) t (done) r (error)
+  el.classList.toggle("act", st === "b"); el.classList.toggle("done", st === "t"); el.classList.toggle("err", st === "r");
+  el.setAttribute("marker-end", `url(#${kind}-${st})`);
+}
+let tokCancel = null;
+function tween(path, dur, cb, done) {
+  if (tokCancel) tokCancel();
+  const L = path.getTotalLength();
+  if (RM() || dur === 0) { cb(path.getPointAtLength(L)); done && done(); return; }
+  const t0 = performance.now(); let id;
+  const f = (t) => { const k = Math.min(1, (t - t0) / dur), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; cb(path.getPointAtLength(L * e)); if (k < 1) id = requestAnimationFrame(f); else done && done(); };
+  id = requestAnimationFrame(f); tokCancel = () => cancelAnimationFrame(id);
+}
+
+/* ---------- tab engine ---------- */
+function makeTab(c) {
+  const root = document.createElement("section");
+  root.className = "panel"; root.id = "p-" + c.id; root.setAttribute("role", "tabpanel"); root.setAttribute("aria-label", c.title); root.hidden = true;
+  const legend = `<h3>Shapes and arrows used</h3><ul>${c.legend.map(([s, t]) => `<li>${s}<span>${t}</span></li>`).join("")}</ul><h3>What this layer deliberately does not show</h3><ul class="not">${c.not.map(t => `<li>${t}</li>`).join("")}</ul>`;
+  root.innerHTML = `<div class="ptop"><div><h2>${c.title}</h2><p class="mono sub">${c.sub}</p></div>
+    <div class="legendwrap"><button class="btn lg" aria-haspopup="dialog" aria-expanded="false" aria-label="Legend for ${c.title}">Legend</button><div class="pop" role="dialog" aria-label="${c.title} legend" hidden>${legend}</div></div></div>
+    <div class="stage">${c.stage}</div>
+    <div class="predict" hidden></div>
+    <div class="narr" aria-live="polite"></div>
+    <div class="ctl"><button class="btn" data-a="restart" aria-label="Restart from the beginning">⟲ Restart</button><button class="btn" data-a="back" aria-label="Step back">◀ Step back</button><button class="btn primary" data-a="fwd" aria-label="Step forward">Step forward ▶</button><button class="btn" data-a="live" aria-label="Pause the live loop and step by hand">❚❚ Pause and step</button><span class="cnt"></span></div>
+    <div class="cov"><b>Notation coverage</b>${c.cov.map(([t, y]) => `<span class="${y ? "y" : "n"}">${t}</span>`).join("")}</div>${c.credit ? `<p class="credit">${c.credit}</p>` : ""}`;
+  $("#panels").append(root);
+  const T = { c, root, step: 0, answered: false, pending: false, lt: null, live: false };
+  const $b = a => $(`[data-a=${a}]`, root);
+  const pcard = $(".predict", root), narr = $(".narr", root);
+  function ui() {
+    $b("back").disabled = T.step === 0 && !T.live; $b("fwd").disabled = T.step >= c.n && !T.pending && !T.live;
+    $b("live").textContent = T.live ? "❚❚ Pause and step" : "▶ Resume live"; $b("live").disabled = !A_.on && !T.live && false; $(".cnt", root).textContent = T.live ? "Live loop" : `Step ${T.step} / ${c.n}`;
+    root.querySelector(".stage").classList.toggle("live", T.live && A_.on);
+    narr.innerHTML = c.narr(T.step, T);
+  }
+  function draw(prev, anim) { c.render(T.step, prev, anim, T); ui(); }
+  function hideP() { pcard.hidden = true; T.pending = false; }
+  function showP() {
+    const p = c.predict; T.pending = true; pcard.hidden = false;
+    pcard.innerHTML = `<div class="q"><span class="tag">PREDICT</span>${p.q}</div><div class="opts">${p.opts.map((o, i) => `<button class="btn" data-i="${i}">${o}</button>`).join("")}<button class="btn skip" data-skip>Skip, I know this</button></div><p class="rev" hidden></p>`;
+    $$("[data-i]", pcard).forEach(b => b.onclick = () => {
+      const i = +b.dataset.i, ok = i === p.ans; T.answered = true; T.pending = false;
+      $$("[data-i]", pcard).forEach(x => { x.disabled = true; if (+x.dataset.i === p.ans) x.classList.add("ok"); });
+      if (!ok) b.classList.add("bad");
+      const r = $(".rev", pcard); r.hidden = false; r.innerHTML = `<b style="color:${ok ? "var(--derived)" : "var(--danger)"}">${ok ? "Yes." : "Not quite."}</b> ${p.why} Press Step forward to see it.`;
+      $b("fwd").focus(); ui();
+    });
+    $("[data-skip]", pcard).onclick = () => { P.on = false; $("#predictOn").checked = false; Object.values(tabs).forEach(t => t.syncP()); if (T.pending) { T.pending = false; T.fwd(); } };
+    $("[data-i]", pcard).focus(); ui();
+  }
+  T.fwd = () => {
+    if (T.step >= c.n) return false;
+    const nx = T.step + 1;
+    if (P.on && !T.answered && c.predict && nx === c.predict.at) { if (!T.pending) showP(); return false; }
+    if (!P.on || T.answered) { if (T.step + 1 > (c.predict ? c.predict.at : 99)) pcard.hidden = true; }
+    T.pending = false; const prev = T.step; T.step = nx; draw(prev, true); return true;
+  };
+  T.back = () => { if (T.step > 0) { hideP(); const prev = T.step; T.step--; draw(prev, false); } };
+  T.restart = () => { hideP(); T.answered = false; const prev = T.step; T.step = c.auto || !T.live ? 0 : c.n; draw(prev, false); };
+  T.stopLoop = () => { clearTimeout(T.lt); T.root.querySelectorAll("svg").forEach(v => v.pauseAnimations && v.pauseAnimations()); };
+  T.runLoop = () => {
+    clearTimeout(T.lt); T.root.querySelectorAll("svg").forEach(v => v.unpauseAnimations && v.unpauseAnimations());
+    if (!T.live || !A_.on || document.hidden || root.hidden || !c.auto) return;
+    const tick = () => {
+      if (!T.live || root.hidden || document.hidden) return;
+      if (T.step >= c.n) { T.lt = setTimeout(() => { const prev = T.step; T.step = 0; draw(prev, false); T.lt = setTimeout(tick, 700); }, 2200); return; }
+      const prev = T.step; T.step++; draw(prev, true); T.lt = setTimeout(tick, c.dwell || 1600);
+    };
+    T.lt = setTimeout(tick, 600);
+  };
+  T.setLive = (on) => {
+    T.live = on && A_.on; clearTimeout(T.lt); hideP(); T.answered = false;
+    const prev = T.step; T.step = T.live && !c.auto ? c.n : (T.live ? 0 : (c.auto ? T.step : 0)); draw(prev, false);
+    T.runLoop();
+  };
+  T.toStep = () => { if (T.live) T.setLive(false); };
+  T.syncP = () => { if (!P.on) { pcard.hidden = true; T.pending = false; ui(); } };
+  T.refresh = () => draw(T.step, false);
+  $b("fwd").onclick = () => { T.toStep(); T.fwd(); }; $b("back").onclick = () => { T.toStep(); T.back(); }; $b("restart").onclick = () => { T.toStep(); T.restart(); }; $b("live").onclick = () => T.setLive(!T.live);
+  const lg = $(".lg", root), pop = $(".pop", root);
+  lg.onclick = (e) => { e.stopPropagation(); pop.hidden = !pop.hidden; lg.setAttribute("aria-expanded", String(!pop.hidden)); };
+  pop.onclick = e => e.stopPropagation();
+  T.closeLegend = () => { pop.hidden = true; lg.setAttribute("aria-expanded", "false"); };
+  c.init && c.init(root, T);
+  tabs[c.id] = T; T.live = A_.on; T.setLive(A_.on);
+  return T;
+}
+document.addEventListener("click", () => Object.values(tabs).forEach(t => t.closeLegend()));
+document.addEventListener("keydown", e => { if (e.key === "Escape") Object.values(tabs).forEach(t => t.closeLegend()); });
+$("#predictOn").onchange = e => { P.on = e.target.checked; Object.values(tabs).forEach(t => t.syncP()); if (P.on) { const t = tabs[curTab]; t.toStep(); t.restart(); } };
+$("#animOn").onchange = e => { A_.on = e.target.checked; $("#animLbl").textContent = A_.on ? "on" : "off"; document.body.classList.toggle("noanim", !A_.on); Object.values(tabs).forEach(t => t.setLive(A_.on)); };
+if (!A_.on) { $("#animOn").checked = false; $("#animLbl").textContent = "off"; document.body.classList.add("noanim"); }
+document.addEventListener("visibilitychange", () => { const t = tabs[curTab]; if (!t) return; document.hidden ? t.stopLoop() : t.runLoop(); });
+function hover(svg, ends) { // ends: element -> ids; hovering/focusing a [data-id] lights its paths
+  const on = (id) => { svg.classList.add("hl-on"); $$("[data-ends]", svg).forEach(p => p.classList.toggle("hl", p.dataset.ends.split(" ").includes(id))); }, off = () => { svg.classList.remove("hl-on"); $$("[data-ends]", svg).forEach(p => p.classList.remove("hl")); };
+  $$("[data-id]", svg).forEach(g => { g.tabIndex = 0; g.onmouseenter = g.onfocus = () => on(g.dataset.id); g.onmouseleave = g.onblur = off; });
+}
+
+/* ================= 1. BUSINESS ================= */
+const BL = [
+  { k: "cs", n: "Customer Segments", chips: ["Freelance designers", "Small design studios"], t: "Who is this for? Freelance designers and small studios who send quotes every week." },
+  { k: "vp", n: "Value Propositions", chips: ["Instant, branded quotes", "No spreadsheet fiddling"], t: "What do we promise them? Instant quotes in their own branding." },
+  { k: "ch", n: "Channels", chips: ["Web app", "Designer communities"], t: "How do they find and use it? Through the web app and designer communities." },
+  { k: "cr", n: "Customer Relationships", chips: ["Self-service", "Friendly email follow-ups"], t: "What is the relationship like? Mostly self-service, with friendly email follow-ups." },
+  { k: "rev", n: "Revenue Streams", chips: ["Monthly subscription", "Pay per PDF export"], t: "How does money come in? A monthly subscription plus pay-per-PDF." },
+  { k: "kr", n: "Key Resources", chips: ["Brand-kit library", "Developer time"], t: "What must we own? A brand-kit library and developer time." },
+  { k: "ka", n: "Key Activities", chips: ["Maintain quote templates", "Generate quotes"], t: "What must we do well? Maintain templates and generate quotes." },
+  { k: "kp", n: "Key Partners", chips: ["Print-on-demand partner", "Email provider"], t: "Who helps us? A print partner and an email provider." },
+  { k: "cost", n: "Cost Structure", chips: ["Hosting", "Developer time"], t: "What does it cost? Hosting and developer time. The story is told." }];
+const BLINKS = [ // [from-block, to-block, row-block for y, kind, ends]
+  { id: "v1", a: "vp", b: "cs", via: "ch", kind: "value", ends: "vp ch cs" }, { id: "v2", a: "vp", b: "cs", via: "cr", kind: "value", ends: "vp cr cs" }, { id: "m1", kind: "money", ends: "cs rev" }];
+function bLinks() {
+  const ov = $("#bov"), host = $("#bmcw"); if (!ov) return; ov.innerHTML = ""; if (!tabs.business || !tabs.business.live) return;
+  const H = host.getBoundingClientRect(), R = k => { const r = $(`[data-k=${k}]`).getBoundingClientRect(); return { l: r.left - H.left, r: r.right - H.left, t: r.top - H.top, b: r.bottom - H.top, cx: (r.left + r.right) / 2 - H.left, cy: (r.top + r.bottom) / 2 - H.top }; };
+  const vp = R("vp"), cs = R("cs"), rev = R("rev"), paths = [];
+  for (const [via] of [["ch"], ["cr"]]) { const m = R(via); paths.push({ ends: `vp ${via} cs`, d: `M${vp.r},${m.b - 6} H${cs.l - 2}`, kind: "value" }); }
+  paths.push({ ends: "cs rev", d: `M${cs.cx},${cs.b - 28} V${rev.t - 2}`, kind: "money" });
+  ov.innerHTML = paths.map((p, i) => { const col = p.kind === "value" ? "#8aa4ff" : "#f2b45a", dur = p.kind === "value" ? 3.2 : 2.4;
+    return `<path class="edge" data-ends="${p.ends}" id="bl${i}" d="${p.d}" style="stroke:${col}" marker-end="url(#a-${p.kind === "value" ? "b" : "y"})"/>` + [0, 1].map(j => `<circle r="6" fill="${col}" style="filter:drop-shadow(0 0 6px ${col})"><animateMotion dur="${dur}s" begin="${-j * dur / 2}s" repeatCount="indefinite" path="${p.d}"/></circle>`).join(""); }).join("");
+}
+makeTab({
+  id: "business", title: "Business", sub: "authored layer · nine-block canvas · value flows out, money flows back", n: 9, auto: false,
+  stage: `<div class="bmc-wrap" id="bmcw"><div class="bmc">${BL.map(b => `<div class="blk" data-k="${b.k}" style="grid-area:${b.k}"><span class="num" aria-hidden="true">${BL.indexOf(b) + 1}</span><h4>${b.n}</h4><div class="chips">${b.chips.map(c => `<div class="chipn">${c}</div>`).join("")}</div></div>`).join("")}</div><svg class="ov" id="bov" aria-hidden="true"></svg></div><div class="bkey"><span><i style="background:#8aa4ff"></i>value travels to customers</span><span><i style="background:#f2b45a"></i>money travels back to revenue</span><span>Hover a block to light its paths</span></div>`,
+  init(root, T) { addEventListener("resize", () => bLinks()); $$("[data-k]", root).forEach(b => { b.tabIndex = 0; const on = () => { $("#bov").classList.add("hl-on"); $$("#bov [data-ends]").forEach(p => p.classList.toggle("hl", p.dataset.ends.split(" ").includes(b.dataset.k))); }, off = () => { $("#bov").classList.remove("hl-on"); $$("#bov .hl").forEach(p => p.classList.remove("hl")); }; b.onmouseenter = b.onfocus = on; b.onmouseleave = b.onblur = off; }); },
+  credit: "Business Model Canvas by Strategyzer AG, licensed CC BY-SA 3.0 (creativecommons.org/licenses/by-sa/3.0/). Layout adapted for aidea.",
+  predict: { at: 2, q: "Customer Segments is on the table. Which block do we usually tell next?", opts: ["Value Propositions", "Cost Structure", "Key Partners"], ans: 0, why: "We start with who we serve, then what we promise them. Money and partners come later." },
+  render(step, prev, anim, T) { BL.forEach((b, i) => { const e = $(`[data-k=${b.k}]`); const order = i + 1; e.classList.toggle("hid", order > step); e.classList.toggle("act", order === step && !T.live); e.classList.toggle("done", order < step || (T.live && order === step)); }); bLinks(); },
+  narr: (s, T) => T.live ? "Live: the value proposition travels to customer segments through channels and relationships (blue); money travels back from customers to revenue streams (amber). Pause and step to hear the story block by block." : s === 0 ? "The canvas is empty. Step forward and we tell the story of studio one block at a time." : `<b>${s}.</b> ${BL[s - 1].t}`,
+  legend: [[sw(rect(4, 4, 36, 16)), "One of the nine blocks (the grid position is part of the meaning)"], [sw(`<rect x="6" y="6" width="32" height="12" rx="3" fill="#f2b45a22" stroke="#f2b45a99"/>`), "A sticky note: one idea, in plain words"], [sw(`<circle cx="22" cy="12" r="9" fill="#8aa4ff"/><text x="22" y="16" font-size="11" font-weight="700" text-anchor="middle" fill="#0e1014" class="m">1</text>`), "Order in which the story is told"], [sw(rect(4, 4, 36, 16, 'style="stroke:#8aa4ff;stroke-width:2.5"')), "Block being told now"]],
+  not: ["Numbers, priorities or risk for any idea", "How blocks influence each other, beyond the two illustrative flows (blue value, amber money)", "Whether any of it has been tested; this is the team's opinion, not a measurement"],
+  cov: [["Nine blocks", 1], ["Canonical layout", 1], ["Sticky notes", 1], ["Telling order", 1], ["Value / money flows", 1], ["Other links", 0], ["Evidence", 0]]
+});
+
+/* ================= 2. REQUIREMENTS ================= */
+const CR = [
+  ["a saved quote", "I choose “Save as PDF”", "a PDF file is created", null, "the PDF file is created."],
+  ["a quote with a logo", "the PDF is created", "the logo appears on page 1", "save_pdf never reads the logo field.", "the logo is missing from the PDF."],
+  ["a quote with 3 line items", "the PDF is created", "the total equals the sum plus tax", null, "the totals match."]];
+makeTab({
+  id: "requirements", title: "Requirements", sub: "authored layer · user story, acceptance criteria, trace link", n: 5,
+  stage: `<div class="rq"><div><div class="kicker" style="margin-top:0">USER STORY · US-12</div><article class="story dim" id="rq-story">As a <b>freelance designer</b>, I want to <b>save a quote as a PDF</b>, so that <b>I can send it to my client</b>.</article>
+    <div class="kicker h">ACCEPTANCE CRITERIA · Given / When / Then</div><ol class="crit">${CR.map((c, i) => `<li data-i="${i}" class="dim"><span class="ic" aria-hidden="true">○</span><div><span class="k">Given</span>${c[0]}<br><span class="k">When</span>${c[1]}<br><span class="k">Then</span>${c[2]}<div class="why" hidden>${c[3] || ""}</div></div></li>`).join("")}</ol></div>
+    <div><div class="kicker" style="margin-top:0">TRACE LINK</div><div class="chipc dim" id="rq-chip"><div class="kicker" style="margin:0">CODE · function</div><div class="big mono">quotes.save_pdf</div><div class="mono" style="color:var(--muted);font-size:11.5px">src/quotes.py</div><p>Derived from the code. The story points at it.</p></div></div>
+    <svg class="ov" aria-hidden="true"></svg></div>`,
+  predict: { at: 2, q: "Three criteria will be checked against the code. Which one will fail?", opts: ["1. a PDF file is created", "2. the logo appears on page 1", "3. the total equals sum plus tax"], ans: 1, why: "Criterion 2 fails: the code never reads the logo field, so nothing is drawn." },
+  init(root, T) { addEventListener("resize", () => T.step >= 1 && !root.hidden && T.refresh()); },
+  auto: true, dwell: 1700,
+  render(step, prev, anim) {
+    $("#rq-story").classList.toggle("dim", step < 1);
+    $$(".crit li").forEach((li, i) => {
+      const done = step >= i + 2, act = step === i + 2; li.classList.remove("pass", "fail"); li.classList.toggle("dim", step < 1);
+      li.classList.toggle("act", act); const bad = !!CR[i][3]; if (done) li.classList.add(bad ? "fail" : "pass");
+      $(".ic", li).textContent = done ? (bad ? "✗" : "✓") : "○"; $(".why", li).hidden = !(done && bad);
+    });
+    const chip = $("#rq-chip"); chip.classList.toggle("dim", step < 5); chip.classList.toggle("lit", step >= 5);
+    const ov = $(".rq .ov"), host = ov.parentElement; ov.innerHTML = "";
+    const h0 = host.getBoundingClientRect(), pt = (e, fx, fy) => { const r = e.getBoundingClientRect(); return [r.left - h0.left + r.width * fx, r.top - h0.top + r.height * fy]; };
+    const lis = $$(".crit li"), targets = [null, pt($("#rq-story"), .5, .5), ...lis.map(li => pt($(".ic", li), .5, .5)), pt(chip, 0, .3)];
+    if (step >= 1) {
+      const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle"); dot.setAttribute("r", 8); dot.setAttribute("class", "tok"); if (step === 3) dot.style.fill = "#ff8a80"; ov.append(dot);
+      const to = targets[step], from = targets[step - 1] && anim ? targets[step - 1] : to, tmp = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      const last = $$(".crit li")[2].getBoundingClientRect(), lx = last.right - h0.left, ly = last.top + last.height / 2 - h0.top;
+      tmp.setAttribute("d", step === 5 ? `M${lx - 14},${ly} H${lx + 30} V${to[1]} H${to[0]}` : `M${from[0]},${from[1]} L${to[0]},${to[1]}`); ov.append(tmp); tmp.setAttribute("fill", "none");
+      tween(tmp, anim ? 800 : 0, p => { dot.setAttribute("cx", p.x); dot.setAttribute("cy", p.y); });
+    }
+    if (step >= 5) {
+      const h = host.getBoundingClientRect(), a = $("#rq-story").getBoundingClientRect(), b = chip.getBoundingClientRect();
+      const x1 = a.right - h.left, y1 = a.top + a.height / 2 - h.top, x2 = b.left - h.left, y2 = b.top + 40 - h.top, mx = (x1 + x2) / 2;
+      ov.insertAdjacentHTML("afterbegin", `<path id="rq-line" d="M${x1},${y1} H${mx} V${y2} H${x2 - 2}" fill="none" stroke="#8aa4ff" stroke-width="2.4" stroke-dasharray="7 5" marker-end="url(#a-b)"/>`);
+      const p = $("#rq-line"); if (anim && prev < 5 && !RM()) { const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = L; p.getBoundingClientRect(); p.style.transition = "stroke-dashoffset .9s ease"; p.style.strokeDashoffset = 0; setTimeout(() => p.style.strokeDasharray = "7 5", 950); }
+    }
+  },
+  narr: s => ["The story waits. Step forward to read it.", "The story says who wants what, and why. It describes value, not screens.", ...CR.map((c, i) => `Check ${i + 1}: <b style="color:var(--${c[3] ? "danger" : "derived"})">${c[3] ? "fails" : "passes"}</b>. ${c[4]}${c[3] ? " " + c[3] : ""}`), "The trace link ties the story to <span class=mono>quotes.save_pdf</span>, so the failing check points at real code."][s],
+  legend: [[sw(rect(4, 4, 36, 16)), "The story card: who, what, why"], [sw(`<rect x="4" y="3" width="18" height="18" rx="4" fill="none" stroke="#4fd1b5"/><path d="M8,12 l4,4 l6,-8" stroke="#4fd1b5" fill="none" stroke-width="2"/>`), "Criterion checked and passing"], [sw(`<rect x="4" y="3" width="18" height="18" rx="4" fill="none" stroke="#ff8a80"/><path d="M9,8 l8,8 M17,8 l-8,8" stroke="#ff8a80" stroke-width="2"/>`), "Criterion failing, with the reason below it"], [sw(line("M2,12 H36", "#8aa4ff", 'stroke-dasharray="5 4"') + openHead(42, 12, "#8aa4ff")), "Trace link from the story to the code it relies on"]],
+  not: ["Priority (no Must/Should labels here)", "Who tested it, or when", "Whether the list of criteria is complete", "Anything about how the PDF is drawn"],
+  cov: [["User story", 1], ["Given / When / Then", 1], ["Pass / fail", 1], ["Trace to code", 1], ["Priority", 0], ["Story map", 0]]
+});
+
+/* ================= 3. ARCHITECTURE ================= */
+const A = {
+  person: { x: 20, y: 190, w: 150, h: 110 }, web: { x: 320, y: 190, w: 220, h: 110 }, db: { x: 320, y: 390, w: 220, h: 100 }, cache: { x: 660, y: 190, w: 190, h: 110 }, mail: { x: 980, y: 190, w: 180, h: 110 }
+};
+const AE = [
+  { d: "M170,225 H316", l: ["Submits quote", "[HTTPS]"], lx: 245, ly: 186, bx: 245, by: 225, n: 1, ends: "person web", t: "The designer submits the quote to the Web app over HTTPS." },
+  { d: "M430,300 V386", l: ["Writes quote", "[SQL]"], lx: 446, ly: 336, bx: 430, by: 343, n: 2, ends: "web db", left: 1, t: "The Web app writes it to the Quote database using SQL. Saving comes first, so nothing is lost." },
+  { d: "M540,245 H656", l: ["Invalidates list", "[Redis protocol]"], lx: 598, ly: 206, bx: 598, by: 245, n: 3, ends: "web cache", t: "It clears the quote list in the Cache. The Cache is only proposed, not built yet (dashed blue)." },
+  { d: "M430,190 V108 H1070 V186", l: ["Sends confirmation email [SMTP]"], lx: 750, ly: 90, bx: 750, by: 108, n: 4, ends: "web mail", t: "It asks the Email service to send a confirmation over SMTP. This leaves the system boundary." },
+  { d: "M320,275 H174", l: ["Confirms “Saved”", "[HTTPS]"], lx: 247, ly: 296, bx: 247, by: 275, n: 5, ends: "web person", t: "It answers the designer: Saved." }];
+const bx = (o, cls = "") => `<rect class="${cls}" x="${o.x}" y="${o.y}" width="${o.w}" height="${o.h}" rx="12"`;
+function cont(o, name, tech, d1, d2, o2 = {}) { // o2.id -> hover id
+  const gid = o2.id ? ` data-id="${o2.id}" role="group" aria-label="${name}"` : "";
+  const f = o2.ext ? "#151921" : o2.prop ? "#1a2140" : "#1b2030", st = o2.prop ? "#8aa4ff" : "#2c3345", da = o2.prop || o2.ext ? 'stroke-dasharray="6 4"' : "";
+  return `<g${gid} class="${o2.prop ? "pulse" : ""}">${bx(o)} fill="${f}" stroke="${o2.ext ? "#4b5365" : st}" stroke-width="${o2.prop ? 1.8 : 1.4}" ${da}/>` +
+    (o2.ext ? "" : `<circle cx="${o.x + 17}" cy="${o.y + 26}" r="4.5" fill="${o2.prop ? "#8aa4ff" : "#f2b45a"}"/>`) +
+    `<text x="${o.x + (o2.ext ? 14 : 29)}" y="${o.y + 30}" font-size="14" font-weight="600">${name}</text><text class="m" x="${o.x + 14}" y="${o.y + 50}" font-size="11" style="fill:#9aa3b2">${tech}</text>` +
+    `<text x="${o.x + 14}" y="${o.y + 73}" font-size="11.5" style="fill:#c9cfdb">${d1}</text><text x="${o.x + 14}" y="${o.y + 88}" font-size="11.5" style="fill:#c9cfdb">${d2}</text>` +
+    (o2.prop ? `<text x="${o.x + o.w - 14}" y="${o.y + 26}" text-anchor="end" font-size="10" font-weight="700" letter-spacing="1" style="fill:#8aa4ff">PROPOSAL</text>` : "") + `</g>`;
+}
+makeTab({
+  id: "architecture", title: "Architecture", sub: "authored layer · C4-style containers · scenario: designer saves a quote", n: 5,
+  stage: `<svg class="dia" viewBox="0 0 1180 540" role="img" aria-label="Container diagram of studio">
+    <rect x="290" y="50" width="590" height="480" rx="16" fill="none" stroke="#4b5365" stroke-width="1.5" stroke-dasharray="8 6"/>
+    <text class="m" x="306" y="74" font-size="12" style="fill:#9aa3b2">studio  [Software System]</text>
+    <g data-id="person" role="group" aria-label="Designer"><rect x="${A.person.x}" y="${A.person.y}" width="150" height="110" rx="12" fill="#1b2030" stroke="#2c3345" stroke-width="1.4"/><circle cx="95" cy="214" r="9" fill="none" stroke="#f2b45a" stroke-width="1.6"/><path d="M80,240 q0,-16 15,-16 q15,0 15,16z" fill="none" stroke="#f2b45a" stroke-width="1.6"/>
+      <text x="95" y="262" font-size="14" font-weight="600" text-anchor="middle">Designer</text><text class="m" x="95" y="277" font-size="10.5" text-anchor="middle" style="fill:#9aa3b2">[Person]</text><text x="95" y="292" font-size="10.5" text-anchor="middle" style="fill:#c9cfdb">Quotes for clients</text></g>
+    ${cont(A.web, "Web app", "[Container: Python + Flask]", "Lets designers build, save", "and export quotes", { id: "web" })}
+    ${cont(A.db, "Quote database", "[Container: SQLite]", "Stores quotes and", "line items", { id: "db" })}
+    ${cont(A.cache, "Cache", "[Container: Redis]", "Keeps the quote list", "fast to load", { prop: 1, id: "cache" })}
+    ${cont(A.mail, "Email service", "[External system]", "Delivers messages", "to clients", { ext: 1, id: "mail" })}
+    <g id="ae">${AE.map((e, i) => `<path class="edge" id="ae${i}" data-ends="${e.ends}" d="${e.d}"/>${e.l.map((t, j) => `<text class="lbl${j && e.l.length > 1 ? " m" : ""}" x="${e.lx}" y="${e.ly + j * 13}" text-anchor="${e.left ? "start" : "middle"}">${t}</text>`).join("")}<g class="badge" id="ab${i}" transform="translate(${e.bx},${e.by})"><circle r="10"/><text y="4">${e.n}</text></g>`).join("")}</g><circle class="tok" id="atk" r="8" cx="-30" cy="-30"/></svg>`,
+  auto: true, dwell: 1900,
+  init(root) { hover($(".dia", root)); },
+  predict: { at: 2, q: "Step 1 delivered the quote to the Web app. What does the Web app call next?", opts: ["Quote database", "Email service", "Cache"], ans: 0, why: "It stores the quote first. Emailing a client about a quote that was never saved would be a bug." },
+  render(step, prev, anim) { AE.forEach((e, i) => { const st = step === i + 1 ? "b" : step > i + 1 ? "t" : "g"; setEdge($("#ae" + i), st); $("#ab" + i).setAttribute("class", "badge" + (st === "b" ? " act" : st === "t" ? " done" : "")); });
+    const tk = $("#atk"); if (step === 0) { tk.setAttribute("opacity", 0); if (tokCancel) tokCancel(); return; } tk.setAttribute("opacity", 1);
+    const p = $("#ae" + (step - 1)), set = pt => { tk.setAttribute("cx", pt.x); tk.setAttribute("cy", pt.y); };
+    if (anim) tween(p, 1000, set); else set(p.getPointAtLength(p.getTotalLength())); },
+  narr: s => s === 0 ? "Static view first: who uses the system, what it is made of, what it talks to. Step forward to replay one scenario." : `<b>${s}.</b> ${AE[s - 1].t}`,
+  legend: [[sw(`<circle cx="22" cy="7" r="4" fill="none" stroke="#f2b45a"/><path d="M13,21 q0,-9 9,-9 q9,0 9,9z" fill="none" stroke="#f2b45a"/>`), "Person who uses the system"], [sw(rect(4, 4, 36, 16) + `<circle cx="10" cy="9" r="2" fill="#f2b45a"/>`), "Container: something that runs. Name, [technology], one line"], [sw(`<rect x="3" y="3" width="38" height="18" rx="4" fill="none" stroke="#4b5365" stroke-dasharray="5 3"/>`), "Dashed boundary: the system, everything inside is ours"], [sw(`<rect x="4" y="4" width="36" height="16" rx="4" fill="#1a2140" stroke="#8aa4ff" stroke-dasharray="4 3"/>`), "Proposal: suggested, not built (PROPOSAL tag)"], [sw(`<rect x="4" y="4" width="36" height="16" rx="4" fill="#151921" stroke="#4b5365" stroke-dasharray="4 3"/>`), "External system outside the boundary"], [sw(line("M2,12 H36", "#9aa3b2") + head(42, 12)), "One-way relationship with a verb and the technology"], [sw(`<circle cx="22" cy="12" r="9" fill="#8aa4ff"/><text x="22" y="16" class="m" font-size="11" font-weight="700" text-anchor="middle" fill="#0e1014">2</text>`), "Order in the scenario"]],
+  not: ["Code inside each container (see Components)", "Servers, regions or deployment", "Failures, retries or how often calls happen", "Authentication details"],
+  cov: [["Person", 1], ["Container + technology", 1], ["System boundary", 1], ["External system", 1], ["Labelled one-way arrows", 1], ["Numbered scenario", 1], ["Component level", 0], ["Deployment", 0]]
+});
+
+/* ================= 4. COMPONENTS ================= */
+const CH = 7, RH = 20;
+function classBox(x, y, w, name, attrs, meths, abs) {
+  const ah = attrs.length * RH + 12, mh = meths.length * RH + 12, h = 32 + ah + mh;
+  let s = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="#1b2030" stroke="#3a4254" stroke-width="1.5"/><text x="${x + w / 2}" y="${y + 21}" text-anchor="middle" font-size="13.5" font-weight="600" ${abs ? 'font-style="italic"' : ""}>${name}</text>
+    <path d="M${x},${y + 32} H${x + w} M${x},${y + 32 + ah} H${x + w}" stroke="#3a4254"/>`;
+  attrs.forEach((a, i) => s += `<text class="m" x="${x + 12}" y="${y + 32 + 18 + i * RH - 3}" font-size="11.5" style="fill:#c9cfdb" id="${a.id || ""}">${a.pre}<tspan class="v" id="${a.id ? a.id + "v" : ""}">${a.v || ""}</tspan></text>`);
+  meths.forEach((m, i) => s += `<text class="m" x="${x + 12}" y="${y + 32 + ah + 18 + i * RH - 3}" font-size="11.5" style="fill:#c9cfdb" ${m.i ? 'font-style="italic"' : ""}>${m.t}</text>`);
+  return { s, x, y, w, h };
+}
+const cEx = classBox(50, 70, 250, "Exporter", [{ pre: "# template: str" }], [{ t: "+ render(q) : bytes", i: 1 }], 1);
+const cPdf = classBox(50, 330, 250, "PdfExporter", [{ pre: "- pages: int = ", v: "0", id: "pg" }], [{ t: "+ render(q) : bytes" }]);
+const cSvc = classBox(410, 70, 230, "QuoteService", [{ pre: "- status: str = ", v: "'draft'", id: "st" }], [{ t: "+ save_pdf(q)" }, { t: "+ notify(q)" }]);
+const cQ = classBox(410, 450, 230, "Quote", [{ pre: "- total: float = ", v: "0.0", id: "tt" }], [{ t: "+ total_due() : float" }]);
+const cRt = classBox(760, 160, 210, "Routes", [{ pre: "- app: Flask" }], [{ t: "+ post_quote()" }]);
+const CM = [
+  { d: "M760,170 H640", l: "save_pdf(q)", lx: 700, ly: 163, ends: "rt svc", who: "QuoteService.save_pdf(q)", from: "Routes", st: "", t: "Routes calls <span class=mono>QuoteService.save_pdf(q)</span> across the package boundary, using the «import»." },
+  { d: "M525,186 V350 H300", l: "render(q)", lx: 412, ly: 343, ends: "svc pdf", who: "PdfExporter.render(q)", from: "QuoteService", st: "pages 0 → 1", t: "QuoteService asks the PdfExporter to render. Its <span class=mono>pages</span> attribute changes to 1." },
+  { d: "M300,405 H360 V498 H410", l: "total_due()", lx: 372, ly: 440, ends: "pdf q", who: "Quote.total_due()", from: "PdfExporter", st: "total 0.0 → 120.0", t: "PdfExporter asks the Quote for its total. The Quote's <span class=mono>total</span> becomes 120.0." },
+  { d: "M0,0", self: 1, who: "(self)", from: "QuoteService", st: "status 'draft' → 'exported'", t: "Back in QuoteService, its own <span class=mono>status</span> changes to 'exported'. No call needed, only a state change." },
+  { d: "M640,82 H760", l: "notify(q)", lx: 700, ly: 75, ends: "svc ghost", who: "? unresolved", from: "QuoteService", st: "not followed", unres: 1, t: "QuoteService now calls <span class=mono>notify(q)</span>, but the receiver is picked at run time (dynamic dispatch). aidea cannot tell who gets it, so the arrow stays grey, does not move, and the trace stops. No motion means no certainty." }];
+makeTab({
+  id: "components", title: "Components", sub: "derived layer · UML-style classes and packages · scenario: save a PDF", n: 5,
+  stage: `<div class="split"><svg class="dia" viewBox="0 0 1000 620" role="img" aria-label="Class and package diagram of studio">
+    <rect x="20" y="34" width="640" height="560" rx="6" fill="none" stroke="#4b5365" stroke-width="1.5"/><path d="M20,34 V16 H100 V34" fill="#151921" stroke="#4b5365" stroke-width="1.5"/><text class="m" x="60" y="29" font-size="11" text-anchor="middle" style="fill:#c9cfdb">quotes</text>
+    <rect x="740" y="140" width="250" height="150" rx="6" fill="none" stroke="#4b5365" stroke-width="1.5"/><path d="M740,140 V122 H800 V140" fill="#151921" stroke="#4b5365" stroke-width="1.5"/><text class="m" x="770" y="135" font-size="11" text-anchor="middle" style="fill:#c9cfdb">web</text>
+    <path d="M740,268 H664" fill="none" stroke="#9aa3b2" stroke-width="1.4" stroke-dasharray="6 4" marker-end="url(#v-g)"/><text class="m lbl" x="702" y="260" text-anchor="middle">«import»</text>
+    <g data-id="ghost"><rect x="760" y="60" width="220" height="44" rx="8" fill="#151921" stroke="#5b6578" stroke-dasharray="5 4"/><text x="870" y="79" font-size="12.5" text-anchor="middle" style="fill:#9aa3b2">? receiver unknown</text><text class="m" x="870" y="95" font-size="10.5" text-anchor="middle" style="fill:#5b6578">dynamic dispatch</text></g>
+    <path d="M175,330 V${cEx.y + cEx.h}" fill="none" stroke="#c9cfdb" stroke-width="1.5" marker-end="url(#tri)"/>
+    <g id="flash"></g><g data-id="ex">${cEx.s}</g><g data-id="pdf">${cPdf.s}</g><g data-id="svc">${cSvc.s}</g><g data-id="q">${cQ.s}</g><g data-id="rt">${cRt.s}</g>
+    <g>${CM.filter(m => !m.self).map((m, i) => { const k = CM.indexOf(m); return `<path class="edge${m.unres ? " noflow" : ""}" id="cm${k}" data-ends="${m.ends}" d="${m.d}" ${m.unres ? 'stroke-dasharray="6 4"' : ""}/><text class="lbl m" x="${m.lx}" y="${m.ly}" text-anchor="middle">${m.l}</text>`; }).join("")}
+      <g transform="translate(700,82)" opacity=".95"><circle r="9" fill="#151921" stroke="#5b6578"/><text y="4" text-anchor="middle" class="m" font-size="12" font-weight="700" style="fill:#9aa3b2">?</text></g></g>
+    <circle class="tok" id="ctok" r="8" cx="-20" cy="-20"/></svg>
+    <div class="side"><div class="card"><div class="kicker" style="margin-bottom:4px">Trace table</div><table class="tr"><thead><tr><th>#</th><th>Call</th><th>State change</th></tr></thead><tbody id="ctr"></tbody></table></div>
+    <div class="card" style="font-size:12px;color:var(--muted)">The token follows one scenario. Class names in <i>italic</i> are abstract. Grey dashed = unresolved.</div></div></div>`,
+  predict: { at: 2, q: "Routes just called QuoteService.save_pdf(q). Which object receives the next call?", opts: ["PdfExporter", "Exporter", "Quote"], ans: 0, why: "Exporter is abstract (italic), nothing can be created from it. Its subclass PdfExporter does the work." },
+  auto: true, dwell: 1900,
+  init(root) { hover($(".dia", root)); },
+  render(step, prev, anim) {
+    CM.forEach((m, k) => { if (m.self) return; const st = step === k + 1 ? "b" : step > k + 1 ? (m.unres ? "g" : "t") : "g"; const p = $("#cm" + k); setEdge(p, st, "v"); if (m.unres) { p.style.stroke = step >= 5 ? "#9aa3b2" : ""; } });
+    const vals = { pg: step >= 2 ? "1" : "0", tt: step >= 3 ? "120.0" : "0.0", st: step >= 4 ? "'exported'" : "'draft'" }, chg = { pg: 2, tt: 3, st: 4 };
+    $$("#flash rect").forEach(r => r.remove());
+    for (const id in vals) { const t = $("#" + id + "v"); t.textContent = vals[id]; t.style.fill = step === chg[id] ? "#8aa4ff" : ""; t.style.fontWeight = step === chg[id] ? "700" : ""; if (step === chg[id]) { const b = t.getBBox(), r = document.createElementNS("http://www.w3.org/2000/svg", "rect"); r.setAttribute("x", b.x - 3); r.setAttribute("y", b.y - 1); r.setAttribute("width", b.width + 6); r.setAttribute("height", b.height + 2); r.setAttribute("rx", 3); r.setAttribute("fill", "#8aa4ff33"); r.setAttribute("stroke", "#8aa4ff"); $("#flash").append(r); } }
+    const tok = $("#ctok"), m = CM[step - 1];
+    if (step === 0 || !m || m.self) { tok.setAttribute("opacity", step === 0 || !m ? 0 : 0); if (step === 4) { tok.setAttribute("cx", 525); tok.setAttribute("cy", 150); tok.setAttribute("opacity", 1); } if (tokCancel) tokCancel(); }
+    else { const p = $("#cm" + (step - 1)); tok.setAttribute("opacity", 1); const set = pt => { tok.setAttribute("cx", pt.x); tok.setAttribute("cy", pt.y); }; if (m.unres) { tok.setAttribute("opacity", .45); tok.style.fill = "#5b6578"; set({ x: 640, y: 82 }); if (tokCancel) tokCancel(); } else { tok.style.fill = ""; if (anim) tween(p, 900, set); else { const L = p.getTotalLength(); set(p.getPointAtLength(L)); } } }
+    $("#ctr").innerHTML = CM.slice(0, step).map((m, i) => `<tr class="${i === step - 1 ? "cur" : ""}"><td>${i + 1}</td><td>${m.from}${m.self ? "" : " → "}${m.self ? "" : m.who}</td><td class="${m.unres ? "e" : ""}" style="${m.unres ? "color:var(--muted)" : ""}">${m.st || "–"}</td></tr>`).join("") || `<tr><td colspan="3" style="color:var(--muted)">empty, nothing has run yet</td></tr>`;
+  },
+  narr: s => s === 0 ? "Static view first: packages, classes and who depends on whom. Step forward to send one message through it." : `<b>${s}.</b> ${CM[s - 1].t}`,
+  legend: [[sw(`<path d="M3,22 V6 H15 V9 H41 V22z" fill="#1b2030" stroke="#9aa3b2"/>`), "Package: a folder of related classes (a Python module)"], [sw(`<rect x="3" y="2" width="38" height="20" rx="3" fill="#1b2030" stroke="#9aa3b2"/><path d="M3,9 H41 M3,15 H41" stroke="#9aa3b2"/>`), "Class: name / attributes / methods"], [sw(`<text x="2" y="16" class="m" font-size="12" style="fill:#c9cfdb">+ - #</text>`), "Visibility: + public, - private, # protected (inferred from underscores)"], [sw(`<text x="2" y="16" font-size="13" font-style="italic" style="fill:#c9cfdb">Name</text>`), "Italic = abstract class or method"], [sw(line("M2,12 H30", "#c9cfdb") + `<path d="M30,6 L42,12 L30,18z" fill="#151921" stroke="#c9cfdb"/>`), "Inheritance: hollow triangle points to the parent"], [sw(line("M2,12 H36", "#9aa3b2", 'stroke-dasharray="5 4"') + openHead(42, 12)), "Dependency between packages, «import»"], [sw(line("M2,12 H36", "#9aa3b2") + openHead(42, 12)), "A call from one class to another"], [sw(line("M2,12 H36", "#5b6578", 'stroke-dasharray="5 4"') + openHead(42, 12, "#5b6578")), "Grey dashed with “?”: a call aidea cannot resolve. The receiver is chosen at run time (dynamic dispatch)"]],
+  not: ["Calls that depend on run-time choice: they are listed as “?”, never guessed", "Attributes added dynamically or by decorators", "Types that are not annotated (shown as written, or left out)"],
+  cov: [["Package", 1], ["Class: 3 compartments", 1], ["Visibility", 1], ["Abstract (italic)", 1], ["Inheritance", 1], ["«import» dependency", 1], ["Unresolved call", 1], ["Multiplicity", 0], ["Composition", 0]]
+});
+
+/* ================= 5. ALGORITHMS ================= */
+const NODES = {
+  start: { x: 300, y: 22, w: 230, h: 36, k: "stadium", t: "total(prices, tax_rate)" }, init: { x: 300, y: 78, w: 170, h: 36, k: "rect", t: "s = 0" },
+  loop: { x: 300, y: 160, w: 170, h: 72, k: "dia", t: "for p in prices" }, conv: { x: 300, y: 250, w: 140, h: 40, k: "rect", t: "x = float(p)" },
+  dec: { x: 300, y: 330, w: 120, h: 72, k: "dia", t: "x &lt; 0 ?" }, add: { x: 300, y: 410, w: 150, h: 36, k: "rect", t: "s += x" },
+  hand: { x: 520, y: 250, w: 150, h: 40, k: "para", t: "print('skip', p)" }, raise: { x: 110, y: 330, w: 130, h: 36, k: "stadium", t: "raise ValueError", red: 1 },
+  ret: { x: 300, y: 540, w: 250, h: 40, k: "stadium", t: "return s * (1 + tax_rate)" }
+};
+const FE = {
+  e01: "M300,40 V60", e12: "M300,96 V124", eY: "M300,196 V230", e53: "M300,270 V294", eN: "M300,366 V392", eR: "M240,330 H175",
+  eX: "M370,250 H452", eB1: "M300,428 V470 H620 V160 H385", eB2: "M520,270 V470 H620 V160 H385", eEx: "M215,160 H20 V540 H175"
+};
+const FEND = { e01: "start init", e12: "init loop", eY: "loop conv", e53: "conv dec", eN: "dec add", eR: "dec raise", eX: "conv hand", eB1: "add loop", eB2: "hand loop", eEx: "loop ret" };
+function shape(n) {
+  const { x, y, w, h, k } = n, l = x - w / 2, r = x + w / 2, t = y - h / 2, b = y + h / 2;
+  if (k === "rect") return `<rect class="n" x="${l}" y="${t}" width="${w}" height="${h}" rx="4"/>`;
+  if (k === "stadium") return `<rect class="n" x="${l}" y="${t}" width="${w}" height="${h}" rx="${h / 2}"/>`;
+  if (k === "dia") return `<polygon class="n" points="${x},${t} ${r},${y} ${x},${b} ${l},${y}"/>`;
+  return `<polygon class="n" points="${l + 14},${t} ${r},${t} ${r - 14},${b} ${l},${b}"/>`;
+}
+const CODE = ["def total(prices, tax_rate):", "    s = 0", "    for p in prices:", "        try:", "            x = float(p)", "        except ValueError:", "            print('skip', p)", "            continue", "        if x < 0:", "            raise ValueError('negative')", "        s += x", "    return s * (1 + tax_rate)"];
+const V = (s, p, x) => ({ s, p, x });
+const head6 = [
+  { n: "start", l: 1, v: V("–", "–", "–"), t: "Call <span class=mono>total(['10','abc','5'], 0.1)</span>. The token starts here." },
+  { n: "init", e: "e01", l: 2, v: V("0", "–", "–"), t: "The running sum starts at 0." },
+  { n: "loop", e: "e12", l: 3, v: V("0", "'10'", "–"), t: "The loop takes the next price: p = '10'." },
+  { n: "conv", e: "eY", l: 5, v: V("0", "'10'", "10.0"), t: "Convert the text to a number: x = 10.0." },
+  { n: "dec", e: "e53", l: 9, v: V("0", "'10'", "10.0"), t: "Decision: is x below 0? Two exits leave this diamond." },
+  { n: "add", e: "eN", l: 11, v: V("10.0", "'10'", "10.0"), t: "<b>No</b> exit: 10.0 is fine, so add it. s = 10.0." }];
+const TR = {
+  normal: [...head6,
+    { n: "loop", e: "eB1", l: 3, v: V("10.0", "'abc'", "10.0"), t: "The arrow going back up returns to the loop. Next price: p = 'abc'." },
+    { n: "conv", e: "eY", l: 5, v: V("10.0", "'abc'", "error"), err: 1, t: "float('abc') fails: it raises a ValueError. Watch for the red dashed exit." },
+    { n: "hand", e: "eX", l: 7, v: V("10.0", "'abc'", "error"), out: "skip abc", t: "The exception is caught: print “skip abc”, then continue with the next price." },
+    { n: "loop", e: "eB2", l: 3, v: V("10.0", "'5'", "error"), t: "Back to the loop. Next price: p = '5'." },
+    { n: "conv", e: "eY", l: 5, v: V("10.0", "'5'", "5.0"), t: "x = 5.0." },
+    { n: "dec", e: "e53", l: 9, v: V("10.0", "'5'", "5.0"), t: "Is x below 0? No again." },
+    { n: "add", e: "eN", l: 11, v: V("15.0", "'5'", "5.0"), t: "s = 15.0." },
+    { n: "loop", e: "eB1", l: 3, v: V("15.0", "'5'", "5.0"), t: "Back to the loop: no prices left, so the loop takes its No exit." },
+    { n: "ret", e: "eEx", l: 12, v: V("15.0", "'5'", "5.0"), out: "returns 16.5", t: "return 15.0 × (1 + 0.1) = 16.5. The function ends normally." }],
+  negative: [...head6,
+    { n: "loop", e: "eB1", l: 3, v: V("10.0", "'-5'", "10.0"), t: "Back to the loop. Next price: p = '-5'." },
+    { n: "conv", e: "eY", l: 5, v: V("10.0", "'-5'", "-5.0"), t: "x = -5.0." },
+    { n: "dec", e: "e53", l: 9, v: V("10.0", "'-5'", "-5.0"), t: "Is x below 0? Yes this time." },
+    { n: "raise", e: "eR", l: 10, v: V("10.0", "'-5'", "-5.0"), out: "ValueError: negative", err: 1, t: "<b>Yes</b> exit: raise ValueError. The function stops here; the return is never reached." }]
+};
+let inp = "normal";
+makeTab({
+  id: "algorithms", title: "Algorithms", sub: "derived layer · flowchart notation · one function, one input, one trace", n: 14,
+  stage: `<div class="split"><svg class="dia" viewBox="0 0 640 575" role="img" aria-label="Flowchart of total()">
+    <g id="fe">${Object.entries(FE).map(([k, d]) => `<path class="edge${k === "eX" || k === "eR" ? " noflow" : ""}" id="${k}" data-ends="${FEND[k]}" d="${d}" ${k === "eX" || k === "eR" ? 'stroke-dasharray="6 4"' : ""}/>`).join("")}</g>
+    <text class="lbl m" x="411" y="243" text-anchor="middle" style="fill:#ff8a80">ValueError</text><text class="lbl m" x="520" y="224" text-anchor="middle" style="fill:#ff8a80">except ValueError</text><text class="lbl m" x="232" y="224">try</text>
+    <text class="lbl" x="312" y="214">Yes</text><text class="lbl" x="312" y="384">No</text><text class="lbl" x="208" y="152" text-anchor="end">No</text><text class="lbl" x="207" y="322" text-anchor="middle">Yes</text>
+    <text class="lbl m" x="110" y="358" text-anchor="middle">ends the function</text>
+    ${Object.entries(NODES).map(([k, n]) => `<g class="nd${n.red ? " red" : ""}" id="n-${k}" data-id="${k}">${shape(n)}<text x="${n.x}" y="${n.y}">${n.t}</text></g>`).join("")}
+    <circle class="tok" id="atok" r="8" cx="300" cy="22"/></svg>
+    <div class="side"><div class="card" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label for="inp">Input to trace</label><select id="inp" aria-label="Input to trace"><option value="normal">prices = ['10', 'abc', '5']</option><option value="negative">prices = ['10', '-5']</option></select></div>
+    <div class="card"><div class="kicker" style="margin-bottom:4px">The code, line by line</div><div class="code" id="acode">${CODE.map((c, i) => `<div data-l="${i + 1}">${c.replace(/</g, "&lt;")}</div>`).join("")}</div></div>
+    <div class="card"><div class="kicker" style="margin-bottom:4px">Trace table</div><div style="max-height:190px;overflow:auto"><table class="tr"><thead><tr><th>#</th><th>Step</th><th>s</th><th>p</th><th>x</th><th>Output</th></tr></thead><tbody id="atr"></tbody></table></div></div></div></div>`,
+  auto: true, dwell: 1250,
+  init(root, T) { hover($(".dia", root)); $("#inp").onchange = e => { inp = e.target.value; T.c.n = TR[inp].length - 1; T.restart(); }; },
+  predict: { at: 5, q: "The token is at the decision “x &lt; 0 ?” with x = 10.0. Which exit will it take?", opts: ["Yes", "No"], ans: 1, why: "10.0 is not below 0, so the No exit leads on to s += x. Yes would lead to the raise." },
+  render(step, prev, anim) {
+    const tr = TR[inp], cur = tr[step], seen = new Set(tr.slice(0, step).map(t => t.n)), seenE = new Set(tr.slice(1, step).map(t => t.e));
+    for (const k in NODES) { const g = $("#n-" + k), a = cur.n === k; g.classList.toggle("act", a); g.classList.toggle("vis", !a && seen.has(k)); }
+    for (const k in FE) { const el = $("#" + k); const act = cur.e === k, done = !act && seenE.has(k); const exc = k === "eX" || k === "eR"; setEdge(el, exc && act ? "r" : act ? "b" : done ? (exc ? "r" : "t") : "g"); el.classList.toggle("blink", exc && act); el.style.stroke = exc && !act && !done ? "#7a4a49" : ""; if (exc && !act && !done) el.setAttribute("marker-end", "url(#a-g)"); }
+    const tok = $("#atok"), n = NODES[cur.n]; tok.style.fill = cur.err ? "#ff8a80" : "";
+    if (anim && cur.e) tween($("#" + cur.e), 700, p => { tok.setAttribute("cx", p.x); tok.setAttribute("cy", p.y); }, () => { tok.setAttribute("cx", n.x); tok.setAttribute("cy", n.y); }); else { if (tokCancel) tokCancel(); tok.setAttribute("cx", n.x); tok.setAttribute("cy", n.y); }
+    $$("#acode div").forEach(d => d.classList.toggle("on", +d.dataset.l === cur.l));
+    $("#atr").innerHTML = tr.slice(0, step + 1).map((r, i) => `<tr class="${i === step ? "cur" : ""}"><td>${i}</td><td>${r.n}</td><td>${r.v.s}</td><td>${r.v.p}</td><td class="${r.v.x === "error" ? "e" : ""}">${r.v.x}</td><td class="${r.err ? "e" : ""}">${r.out || ""}</td></tr>`).join(""); const w = $("#atr").parentElement.parentElement; w.scrollTop = w.scrollHeight;
+  },
+  narr: s => `<b>${s}.</b> ${TR[inp][s].t}`,
+  legend: [[sw(`<rect x="3" y="4" width="38" height="16" rx="8" fill="#1b2030" stroke="#9aa3b2"/>`), "Rounded: start and end (return)"], [sw(rect(4, 4, 36, 16)), "Rectangle: one step that does something"], [sw(`<polygon points="22,2 40,12 22,22 4,12" fill="#1b2030" stroke="#9aa3b2"/>`), "Diamond: a question with Yes / No exits, or a loop test"], [sw(`<polygon points="9,4 41,4 35,20 3,20" fill="#1b2030" stroke="#9aa3b2"/>`), "Slanted box: input or output (print)"], [sw(`<rect x="3" y="4" width="38" height="16" rx="8" fill="#ff8a8018" stroke="#ff8a80"/>`), "Red tint: raise, the function stops with an error"], [sw(line("M2,12 H36", "#ff8a80", 'stroke-dasharray="5 4"') + head(42, 12, "#ff8a80")), "Red dashed arrow: an exception, labelled with its type"], [sw(line("M30,20 H40 V6 H8", "#9aa3b2") + head(8, 6)), "Arrow going back up: the loop repeats"], [sw(`<circle cx="22" cy="12" r="7" fill="#8aa4ff"/>`), "Token: where execution is now (accent). Teal = already visited"]],
+  not: ["Other functions it calls (each has its own chart)", "The values of any other input: a trace follows ONE input", "Speed or memory", "Errors that Python raises silently inside library code"],
+  cov: [["Start / end", 1], ["Process", 1], ["Decision Yes / No", 1], ["Loop with back arrow", 1], ["Input / output", 1], ["Exception path", 1], ["Trace table", 1], ["Sub-process call", 0], ["Swimlanes", 0]]
+});
+
+/* ---------- shell: tabs + footer ---------- */
+const ORDER = [["business", "Business", 1], ["requirements", "Requirements", 1], ["architecture", "Architecture", 1], ["components", "Components", 0], ["algorithms", "Algorithms", 0]];
+let curTab = "business";
+function show(id) {
+  Object.values(tabs).forEach(t => t.stopLoop());
+  curTab = id; ORDER.forEach(([k]) => { tabs[k].root.hidden = k !== id; tabs[k].closeLegend(); });
+  $$("#tabs button").forEach(b => { b.setAttribute("aria-selected", String(b.dataset.id === id)); b.tabIndex = b.dataset.id === id ? 0 : -1; });
+  tabs[id].refresh(); tabs[id].runLoop();
+  const i = ORDER.findIndex(o => o[0] === id), pv = ORDER[i - 1], nx = ORDER[i + 1];
+  $("#foot").innerHTML = (pv ? `<button data-go="${pv[0]}">← ${pv[1]}</button>` : "") + (nx ? `<button data-go="${nx[0]}">${nx[1]} →</button>` : "") + `<span class="sp">Jump to:</span>` + ORDER.map(o => `<button data-go="${o[0]}">${o[1]}</button>`).join("");
+  $$("[data-go]").forEach(b => b.onclick = () => { show(b.dataset.go); scrollTo(0, 0); });
+}
+$("#tabs").innerHTML = ORDER.map(([k, n, a]) => `<button role="tab" data-id="${k}" class="${a ? "auth" : ""}" id="tab-${k}" aria-controls="p-${k}">${n}</button>`).join("");
+$$("#tabs button").forEach(b => { b.onclick = () => show(b.dataset.id); b.onkeydown = e => { const i = ORDER.findIndex(o => o[0] === b.dataset.id); if (e.key === "ArrowRight" || e.key === "ArrowLeft") { const j = (i + (e.key === "ArrowRight" ? 1 : ORDER.length - 1)) % ORDER.length; show(ORDER[j][0]); $("#tab-" + ORDER[j][0]).focus(); } }; });
+show("business");
+</script>
+</body>
+</html>
