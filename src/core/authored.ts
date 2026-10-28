@@ -25,10 +25,24 @@ type Fields = Record<string, unknown>;
 const isObject = (v: unknown): v is Fields => typeof v === "object" && v !== null && !Array.isArray(v);
 const isNonEmptyString = (v: unknown) => typeof v === "string" && v.trim() !== "";
 
+// Requirements: `kind` is "functional" (default) or "non-functional".
+//   functional:     as, want, so; optional criteria (Given/When/Then lines)
+//   non-functional: statement, quality (one of QUALITIES), measure
+export const QUALITIES = ["performance", "security", "usability", "reliability", "maintainability", "compatibility", "portability", "safety"];
+const required = (n: Fields, fields: string[]) => fields.map((f) => (isNonEmptyString(n[f]) ? null : `"${f}" must be a non-empty string`)).find(Boolean) ?? null;
+function requirementProblem(n: Fields): string | null {
+  if (n.kind === "non-functional") {
+    return required(n, ["statement"]) ?? (QUALITIES.includes(n.quality as string) ? null : `"quality" must be one of: ${QUALITIES.join(", ")}`) ?? required(n, ["measure"]);
+  }
+  if (n.kind !== undefined && n.kind !== "functional") return '"kind" must be "functional" or "non-functional"';
+  if (n.criteria !== undefined && !(Array.isArray(n.criteria) && n.criteria.every(isNonEmptyString))) return '"criteria" must be an array of non-empty strings';
+  return required(n, ["as", "want", "so"]);
+}
+
 // Layer-specific required fields; each check returns the problem or null.
 const layerChecks: Record<string, (n: Fields) => string | null> = {
   business: (n) => (BLOCKS.includes(n.block as string) ? null : `"block" must be one of: ${BLOCKS.join(", ")}`),
-  requirements: (n) => ["as", "want", "so"].map((f) => (isNonEmptyString(n[f]) ? null : `"${f}" must be a non-empty string`)).find(Boolean) ?? null,
+  requirements: requirementProblem,
   architecture: (n) =>
     !isNonEmptyString(n.technology) ? '"technology" must be a non-empty string'
     : n.parent !== undefined && !isNonEmptyString(n.parent) ? '"parent" must be a non-empty string when present'

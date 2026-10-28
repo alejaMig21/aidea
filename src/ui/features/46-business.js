@@ -91,7 +91,7 @@ function drawBusiness(g, nodes, layout, select) {
     const lines = businessWrap(n.title);
     note.append(el("title", {}, n.title), el("rect", { x: r.x, y: r.y, width: r.width, height: r.height, rx: 6 }));
     lines.forEach((line, i) => note.append(el("text", { x: r.x + 10, y: r.y + (lines.length === 1 ? 26 : 19 + i * 15) }, line)));
-    const open = () => select(note, n);
+    const open = () => select(n, note);
     note.addEventListener("click", open);
     note.addEventListener("keydown", (e) => { if (e.key === "Enter") open(); });
     // A note picked up by the pointer goes on top of its neighbours (SVG has no z-index); it goes back when the pointer leaves.

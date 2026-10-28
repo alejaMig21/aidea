@@ -116,6 +116,29 @@ export function layoutBusiness(nodes: { id: string; block?: unknown }[]) {
   return { blocks, rects: rects.sort((a, b) => order.get(a.id)! - order.get(b.id)!) };
 }
 
+// Requirements: two columns, functional on the left and non-functional on the right, each stacked in file order.
+// A functional card grows by one row per acceptance criterion. The room between the columns holds the trace chips.
+const REQUIREMENT_CARD = 300;
+const REQUIREMENT_RIGHT = 620;
+export function layoutRequirements(nodes: { id: string; kind?: unknown; criteria?: unknown }[]): Rect[] {
+  const bottom = { left: 0, right: 0 };
+  const at = new Map<string, Rect>();
+  for (const n of nodes) {
+    const right = n.kind === "non-functional";
+    const side = right ? "right" : "left";
+    const criteria = Array.isArray(n.criteria) ? n.criteria.length : 0;
+    const height = right ? 120 : criteria ? 114 + 22 * criteria : 100;
+    at.set(n.id, { id: n.id, x: right ? REQUIREMENT_RIGHT : 0, y: bottom[side], width: REQUIREMENT_CARD, height });
+    bottom[side] += height + 28;
+  }
+  return nodes.map((n) => at.get(n.id)!);
+}
+
+// What a layer's Nodes are laid out with: Requirements has its own two columns, the other authored layers the grid.
+export const layoutLayer = (layer: string, nodes: { id: string; parent?: unknown }[]): Rect[] =>
+  layer === "requirements" ? layoutRequirements(nodes) : layoutAuthored(nodes);
+
+
 export type FlowEdge ={ from: string; to: string; label?: string; back?: boolean };
 
 // An Algorithm graph runs top to bottom, laid out by the layered engine: a straight run stays in one column,

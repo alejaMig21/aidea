@@ -72,6 +72,14 @@ _Avoid_: Reference, relation
 A trace link whose target no longer exists in the code.
 _Avoid_: Stale link, dead link
 
+**Functional requirement**:
+A requirement that says what the system does for someone, written as "As a..., I want..., so that..." and optionally checked by acceptance criteria written Given/When/Then.
+_Avoid_: Feature, user story (the story is its wording, not the kind)
+
+**Non-functional requirement**:
+A requirement that says how well the system must do something, naming a quality (such as performance or security) and a measure that can be checked.
+_Avoid_: Constraint, quality attribute
+
 ## Working with agents
 
 **Agent adapter**:

@@ -66,7 +66,9 @@ const handler: Handler = async (req, res, core) => {
       });
       return true;
     }
-    const target = layerBelow[layer];
+    // A functional requirement whose links all lead to code zooms to Components, not to Architecture.
+    const below = layerBelow[layer];
+    const target = layoutOf(below, project, authored).some((r) => footprint.includes(r.id)) ? below : "components";
     const rects = layoutOf(target, project, authored);
     trails.set(project, [...(trails.get(project) ?? []), { layer, node: body!.node as string }]);
     core.send(res, 200, {

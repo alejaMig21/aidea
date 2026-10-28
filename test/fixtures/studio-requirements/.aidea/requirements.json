@@ -1,0 +1,42 @@
+{
+  "nodes": [
+    {
+      "id": "us-save-pdf",
+      "title": "Save a quote as a PDF",
+      "kind": "functional",
+      "as": "freelance designer",
+      "want": "to save a quote as a PDF",
+      "so": "I can send it to my client",
+      "criteria": [
+        "Given a finished quote, When I press Save, Then a PDF file is created",
+        "Given a quote with a logo, When the PDF is made, Then the logo appears on page 1"
+      ],
+      "traces": ["app.run"],
+      "rationale": { "why": "Clients expect a file they can forward.", "rejected": [] }
+    },
+    {
+      "id": "us-old",
+      "title": "Old style story",
+      "as": "shop owner",
+      "want": "to see my quotes",
+      "so": "I know what is open",
+      "rationale": { "why": "Written before kinds existed.", "rejected": [] }
+    },
+    {
+      "id": "nfr-fast",
+      "title": "Quotes feel instant",
+      "kind": "non-functional",
+      "statement": "Building a quote does not make the person wait.",
+      "quality": "performance",
+      "measure": "95 percent of quotes are built in under 300 ms",
+      "traces": ["web-app", "app.run"],
+      "rationale": { "why": "Waiting loses the sale.", "rejected": [] }
+    },
+    { "id": "bad-no-statement", "title": "x", "kind": "non-functional", "quality": "security", "measure": "none", "rationale": { "why": "w", "rejected": [] } },
+    { "id": "bad-quality", "title": "x", "kind": "non-functional", "statement": "s", "quality": "speed", "measure": "m", "rationale": { "why": "w", "rejected": [] } },
+    { "id": "bad-measure", "title": "x", "kind": "non-functional", "statement": "s", "quality": "safety", "measure": " ", "rationale": { "why": "w", "rejected": [] } },
+    { "id": "bad-kind", "title": "x", "kind": "wishful", "as": "a", "want": "b", "so": "c", "rationale": { "why": "w", "rejected": [] } },
+    { "id": "bad-criteria", "title": "x", "as": "a", "want": "b", "so": "c", "criteria": ["ok", ""], "rationale": { "why": "w", "rejected": [] } },
+    { "id": "bad-functional", "title": "x", "kind": "functional", "statement": "s", "rationale": { "why": "w", "rejected": [] } }
+  ]
+}

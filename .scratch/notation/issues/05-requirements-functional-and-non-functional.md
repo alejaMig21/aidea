@@ -12,3 +12,16 @@
 - [ ] Trace links from a non-functional requirement to Architecture Nodes and from a functional one to code are drawn and carry packets.
 - [ ] Glossary: functional requirement and non-functional requirement are added to `GLOSSARY.md`.
 - [ ] Verified headless: screenshots next to the prototype's Requirements tab, differences listed in the review notes; no console errors.
+
+## Review notes
+
+Verified through the protocol (`test/requirements-kinds.test.ts`, 7 tests, fixture `test/fixtures/studio-requirements`) and with a headless Chrome script at 1440x900 against the core:
+
+- [x] Functional with and without `criteria`, non-functional without `as`/`want`/`so`, old files without `kind` load; missing `statement`, unknown `quality`, empty `measure`, bad `kind`, bad `criteria` are dropped with an error naming the field.
+- [x] Proposals (add and update) use the same `nodeProblem` rules; changing a requirement to non-functional without its fields is refused; the builder's tool description names `kind`, `criteria`, `statement`, `quality`, `measure`.
+- [x] The core lays out Requirements in two columns (functional left, non-functional right, file order, card height grows with criteria); the UI draws both card types, the criteria checklist, quality tag and measure (`src/ui/features/46-requirements.js`).
+- [x] Trace links: functional to code (also valid in `/traces` and `/focus`, which then zooms to Components), non-functional to Architecture only (a code target is reported broken). Packets sampled 700 ms apart moved ((573,480),(771,420) then (374,437),(776,456)); the broken link is grey dashed with no packet. No console errors besides the pre-existing `/favicon.ico` 404.
+- [x] Legend registered (not shown: priorities, story maps, pass/fail, more than three trace targets). Glossary terms added.
+- [x] `npm run typecheck` and `npm test` pass (170 pass, 1 skipped).
+
+Differences from the prototype: the packet runs along a rail down the card's left edge, not through each criterion one by one; criteria show no pass/fail state; the story is a card with the criteria as a checklist inside it, not separate criterion cards; at most three trace chips per card; chips show the target id only (no file path or "derived" note); no step mode or quiz.

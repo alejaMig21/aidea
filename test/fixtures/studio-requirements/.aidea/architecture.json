@@ -1,0 +1,10 @@
+{
+  "nodes": [
+    {
+      "id": "web-app",
+      "title": "Web app",
+      "technology": "Python + Flask",
+      "rationale": { "why": "One small service is enough.", "rejected": [] }
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 // The core validates and shapes everything; this file only draws what GET /authored returns.
 const AUTHORED_LAYERS = [
   { key: "business", label: "Business", detail: (n) => n.block },
-  { key: "requirements", label: "Requirements", detail: (n) => `As ${n.as}, I want ${n.want}` },
+  { key: "requirements", label: "Requirements", detail: (n) => n.kind === "non-functional" ? n.statement : `As ${n.as}, I want ${n.want}` },
   { key: "architecture", label: "Architecture", detail: (n) => n.technology },
 ];
 let authoredShown = "components"; // "components" is the derived view
@@ -66,10 +66,11 @@ function drawAuthored() {
   if (!authoredData) return;
   AUTHORED_LAYERS.forEach(({ key, detail }) => {
     const g = el("g", { "data-layer": key });
-    if (key === "business") { // the canvas of nine blocks draws itself (46-business.js)
-      drawBusiness(g, authoredData.layers.business.nodes, authoredLayouts.business, (node, n) => {
+    if (key === "business" || key === "requirements") { // these layers draw themselves (46-business.js, 46-requirements.js)
+      const draw = key === "business" ? drawBusiness : drawRequirements;
+      draw(g, authoredData.layers[key].nodes, authoredLayouts[key], (n, card) => {
         authoredGroup.querySelectorAll(".selected").forEach((s) => s.classList.remove("selected"));
-        node.classList.add("selected");
+        card.classList.add("selected");
         showRationale(n);
       });
       authoredGroup.append(g);
