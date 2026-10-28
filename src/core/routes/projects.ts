@@ -6,9 +6,9 @@ import type { Core, Handler, Project } from "../types.ts";
 
 
 async function openProject(path: string): Promise<Project> {
-  const { nodes, errors } = JSON.parse(await runPython("analyze.py", [path])) as Pick<Project, "nodes" | "errors">;
+  const { nodes, errors, relationships, unresolved } = JSON.parse(await runPython("analyze.py", [path])) as Pick<Project, "nodes" | "errors" | "relationships" | "unresolved">;
   // The full path is the id: two folders can share a name.
-  return { id: path, name: basename(path), path, nodes, errors };
+  return { id: path, name: basename(path), path, nodes, errors, relationships, unresolved };
 }
 
 const isDirectory = (path: string) => statSync(path, { throwIfNoEntry: false })?.isDirectory() === true;

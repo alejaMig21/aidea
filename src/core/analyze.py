@@ -8,6 +8,7 @@ import os
 import sys
 
 import playback  # sits next to this file; importing it runs nothing
+import relations  # likewise
 
 SKIP_DIRS = {"__pycache__", "venv", "node_modules"}
 
@@ -90,7 +91,42 @@ def effects(function, aliases):
     return [{"name": n, "suggestion": EFFECT_SAMPLES.get(n, DEFAULT_EFFECT_SAMPLE)} for n in names]
 
 
-def visit(body, parent, prefix, nodes, file, aliases, owner=None):
+def decorator_names(stmt):
+    """Last name of each decorator: `abc.abstractmethod` and `abstractmethod` both give `abstractmethod`."""
+    names = []
+    for d in stmt.decorator_list:
+        d = d.func if isinstance(d, ast.Call) else d
+        names.append(d.attr if isinstance(d, ast.Attribute) else d.id if isinstance(d, ast.Name) else "")
+    return names
+
+
+def visibility(name):
+    if name.startswith("__") and name.endswith("__"):
+        return "special"
+    return "private" if name.startswith("_") else "public"
+
+
+def markers(stmt, kind):
+    """Visibility from the name; static, abstract and property from decorators (abstract classes: see `mark_abstract_classes`)."""
+    found = {"visibility": visibility(stmt.name)}
+    if kind == "function":
+        decorators = decorator_names(stmt)
+        if "staticmethod" in decorators:
+            found["static"] = True
+        if "abstractmethod" in decorators:
+            found["abstract"] = True
+        if "property" in decorators or "cached_property" in decorators or {"setter", "getter", "deleter"} & set(decorators):
+            found["property"] = True
+    return found
+
+
+def has_abc_base(cls):
+    """Derives `ABC` or names `ABCMeta` as its metaclass."""
+    bases = [b for b in cls.bases] + [k.value for k in cls.keywords if k.arg == "metaclass"]
+    return any(ast.unparse(b).split(".")[-1] in ("ABC", "ABCMeta") for b in bases)
+
+
+def visit(body, parent, prefix, nodes, file, aliases, owner=None, defs=None):
     for stmt in body:
         if isinstance(stmt, ast.ClassDef):
             kind = "class"
@@ -112,14 +148,21 @@ def visit(body, parent, prefix, nodes, file, aliases, owner=None):
             found = effects(stmt, aliases)
             if found:
                 node["effects"] = found
+        node["markers"] = markers(stmt, kind)
+        if kind == "class":
+            node["attributeVisibility"] = {a["name"]: visibility(a["name"]) for a in node["attributes"]}
+            if has_abc_base(stmt) or any(isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef)) and "abstractmethod" in decorator_names(m) for m in stmt.body):
+                node["markers"]["abstract"] = True
+        if defs is not None:
+            defs[node_id] = (stmt, owner)
         nodes.append(node)
         # ponytail: nested functions are not listed, only classes and their members
         if kind == "class":
-            visit(stmt.body, node_id, node_id, nodes, file, aliases, stmt)
+            visit(stmt.body, node_id, node_id, nodes, file, aliases, stmt, defs)
 
 
 def analyze(root):
-    nodes, errors = [], []
+    nodes, errors, trees, defs = [], [], {}, {}
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not d.startswith(".")]
         for filename in sorted(filenames):
@@ -139,8 +182,11 @@ def analyze(root):
             end = max(len(text.splitlines()), 1)
             nodes.append({"id": module, "kind": "module", "name": module, "parent": None,
                           "file": file, "line": 1, "endLine": end})
-            visit(tree.body, module, module, nodes, file, playback.import_aliases(tree))
-    return {"nodes": nodes, "errors": errors}
+            trees[module] = (tree, file)
+            visit(tree.body, module, module, nodes, file, playback.import_aliases(tree), None, defs)
+    relationships = relations.find(nodes, trees, defs)
+    return {"nodes": nodes, "errors": errors, "relationships": relationships,
+            "unresolved": sum(r["resolution"] == "unresolved" for r in relationships)}
 
 
 if __name__ == "__main__":

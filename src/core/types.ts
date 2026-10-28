@@ -20,8 +20,32 @@ export type CoreNode = {
   constructorParameters?: { name: string; default?: string; annotation?: string; suggestion?: string }[];
   // External calls in the function's body that need fake data to play, each with a sample literal.
   effects?: { name: string; suggestion: string }[];
+  // Classes and functions: notation markers derived from Python naming and decorators.
+  markers?: Markers;
+  // Classes only: visibility of each attribute in `attributes`, by name.
+  attributeVisibility?: Record<string, Markers["visibility"]>;
 };
-export type Project = { id: string; name: string; path: string; nodes: CoreNode[]; errors: { file: string; message: string }[] };
+export type Markers = { visibility: "public" | "private" | "special"; static?: true; abstract?: true; property?: true };
+
+// How sure the analysis is: resolved (certain target), inferred (matched by name only), unresolved (too dynamic to tell).
+export type Resolution = "resolved" | "inferred" | "unresolved";
+// A relationship between two Nodes of the Components layer. `to` is null when there is no Project target:
+// an external base class (`external: true`, resolved) or an unresolved relationship.
+export type Relationship = {
+  kind: "inherits" | "imports" | "calls";
+  from: string; // Node id
+  to: string | null; // Node id
+  name: string; // the target as written in the source, e.g. "ABC", "area", "getattr"
+  resolution: Resolution;
+  line: number;
+  external?: true; // inherits only
+  names?: string[]; // imports only: the explicitly imported names
+};
+export type Project = {
+  id: string; name: string; path: string; nodes: CoreNode[]; errors: { file: string; message: string }[];
+  relationships: Relationship[];
+  unresolved: number; // how many entries of `relationships` are unresolved
+};
 
 // What the core tells the interface about a run of the builder agent.
 export type AgentEvent =
