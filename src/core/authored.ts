@@ -7,7 +7,7 @@
 // Every Node has a unique non-empty string `id` and `title`, and a Rationale:
 //   "rationale": { "why": "...", "rejected": [ { "option": "...", "reason": "..." } ] }
 // `block` is one of the nine Business Model Canvas blocks (BLOCKS below); `parent` is an optional string.
-// Architecture only: `parent` means "is inside"; `kind` is one of KINDS; `description` is one short sentence;
+// Architecture only: `parent` means "is inside"; `kind` is one of KINDS; `description` is one short sentence; `external` is a boolean (true: outside the system being drawn);
 // `relations` is a list of { to, label, technology? } naming other Nodes of the layer. A bad relation is dropped alone.
 // Extra fields are kept as they are. A bad Node is dropped with an error; a bad file never stops other files.
 import { lstatSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -60,6 +60,7 @@ const relationProblem = (r: unknown, i: number) =>
 function architectureDetailProblem(n: Fields): string | null {
   if (n.kind !== undefined && !KINDS.includes(n.kind as string)) return `"kind" must be one of: ${KINDS.join(", ")}`;
   if (n.description !== undefined && !isNonEmptyString(n.description)) return '"description" must be a non-empty string when present';
+  if (n.external !== undefined && typeof n.external !== "boolean") return '"external" must be a boolean when present';
   if (n.relations === undefined) return null;
   if (!Array.isArray(n.relations)) return '"relations" must be an array when present';
   for (const [i, r] of n.relations.entries()) {
@@ -111,6 +112,7 @@ function parseLayer(layer: string, source: string, file: string): AuthoredLayer 
   const relations = new Map<string, { r: Fields; i: number }[]>(); // architecture: the well-formed relations of each Node, with their place in the file
   for (const [i, n0] of doc.nodes.entries()) {
     let n = n0;
+    let keptHere: { r: Fields; i: number }[] | undefined;
     if (layer === "architecture" && isObject(n) && Array.isArray(n.relations)) {
       const kept: { r: Fields; i: number }[] = [];
       n.relations.forEach((r: unknown, j: number) => {
@@ -118,14 +120,15 @@ function parseLayer(layer: string, source: string, file: string): AuthoredLayer 
         if (bad) fail(`nodes[${i}]: ${bad}`);
         else kept.push({ r: r as Fields, i: j });
       });
-      relations.set(n.id as string, kept);
       n = { ...n, relations: kept.map((k) => k.r) };
+      keptHere = kept;
     }
     const problem = nodeProblem(layer, n, seen);
     if (problem) {
       fail(`nodes[${i}]: ${problem}`);
       continue;
     }
+    if (keptHere) relations.set((n as Fields).id as string, keptHere); // only a Node that survives owns its relations
     seen.add((n as Fields).id as string);
     out.nodes.push(n as AuthoredNode);
   }
@@ -160,7 +163,7 @@ export function loadAuthored(projectPath: string) {
   } catch {
     return { layers, errors }; // no .aidea folder: nothing authored yet
   }
-  for (const entry of entries.filter((e) => e.isFile() && e.name.endsWith(".json")).sort((a, b) => a.name.localeCompare(b.name))) {
+  for (const entry of entries.filter((e) => e.isFile() && e.name.endsWith(".json")).sort((a, b) => a.name.localeCompare(b.name, "en"))) {
     const file = `.aidea/${entry.name}`;
     const layer = entry.name.slice(0, -".json".length);
     if (!Object.hasOwn(layerChecks, layer)) {

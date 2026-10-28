@@ -6,8 +6,8 @@ Reads source with the standard library only; never imports or runs the project.
 Steps are the nodes (start, step, branch, loop, return, raise, end); edges say how control moves.
 Each step also says what the interface needs to pick its flowchart symbol: "construct" (what it is: if, for, while, match,
 case, with, try, except, break, continue, assign, call, lambda, pass...), "generic" (true when no symbol exists for it, so
-it is drawn as a plain step that names the construct), "io" ("input" or "output" for calls to the known effect functions and
-print), "finally" (true inside a finally block), "exception" (what an except step catches) and "exits" (the labels of its
+it is drawn as a plain step that names the construct), "io" ("input" or "output" when the step's own expression calls a known effect function or print: an if test, a for
+iterable, a with item, a return value...; only absent when there is none), "finally" (true inside a finally block), "exception" (what an except step catches) and "exits" (the labels of its
 exits). Each edge may carry "exit" (its label for people: Yes/No, next item/done, a match pattern) and "exception".
 An edge that returns to an earlier step (the end of a loop body going back to the loop) has "back": true.
 """
@@ -40,8 +40,16 @@ class Flow:
         self.edges = []
         self.exits = []  # return and raise steps: they go straight to the end
 
-    def add(self, kind, label, line, end_line, parts=(), also_read=(), writes=None, construct=None, **extra):
+    def io_in(self, parts):
+        """'input' or 'output' when any call inside these AST parts is a known effect function, else None."""
+        found = [io for part in parts for n in ast.walk(part) if isinstance(n, ast.Call) and (io := effects.io_of(n, self.aliases))]
+        return found[0] if found else None
+
+    def add(self, kind, label, line, end_line, parts=(), also_read=(), writes=None, construct=None, io_parts=(), **extra):
         reads, written = names_in(parts, also_read)
+        io = self.io_in(io_parts)
+        if io:
+            extra["io"] = io
         step = {
             "id": f"n{len(self.steps)}",
             "kind": kind,
@@ -117,7 +125,7 @@ class Flow:
     def statement(self, stmt, pending, loop):
         if isinstance(stmt, ast.If):
             first, last = self.header(stmt)
-            node = self.add("branch", f"if {ast.unparse(stmt.test)}", first, last, [stmt.test], construct="if")
+            node = self.add("branch", f"if {ast.unparse(stmt.test)}", first, last, [stmt.test], construct="if", io_parts=[stmt.test])
             self.link(pending, node)
             body_ends = self.block(stmt.body, [(node, "true")], loop)
             else_ends = self.block(stmt.orelse, [(node, "false")], loop) if stmt.orelse else [(node, "false")]
@@ -126,10 +134,10 @@ class Flow:
         if isinstance(stmt, (ast.For, ast.AsyncFor, ast.While)):
             first, last = self.header(stmt)
             if isinstance(stmt, ast.While):
-                node = self.add("loop", f"while {ast.unparse(stmt.test)}", first, last, [stmt.test], construct="while")
+                node = self.add("loop", f"while {ast.unparse(stmt.test)}", first, last, [stmt.test], construct="while", io_parts=[stmt.test])
             else:
                 label = f"for {ast.unparse(stmt.target)} in {ast.unparse(stmt.iter)}"
-                node = self.add("loop", label, first, last, [stmt.target, stmt.iter], construct="for")
+                node = self.add("loop", label, first, last, [stmt.target, stmt.iter], construct="for", io_parts=[stmt.iter])
             self.link(pending, node)
             inner = {"node": node, "breaks": []}
             body_ends = self.block(stmt.body, [(node, "true")], inner)
@@ -140,7 +148,7 @@ class Flow:
         if isinstance(stmt, (ast.With, ast.AsyncWith)):
             first, last = self.header(stmt)
             label = "with " + ", ".join(ast.unparse(i.context_expr) for i in stmt.items)
-            node = self.add("step", label, first, last, [i for i in stmt.items], construct="with")
+            node = self.add("step", label, first, last, [i for i in stmt.items], construct="with", io_parts=stmt.items)
             self.link(pending, node)
             return self.block(stmt.body, [(node, None)], loop)
 
@@ -169,7 +177,7 @@ class Flow:
                 self.in_finally -= 1
 
         if isinstance(stmt, ast.Match):
-            node = self.add("branch", f"match {ast.unparse(stmt.subject)}", stmt.lineno, stmt.lineno, [stmt.subject], construct="match",
+            node = self.add("branch", f"match {ast.unparse(stmt.subject)}", stmt.lineno, stmt.lineno, [stmt.subject], construct="match", io_parts=[stmt.subject],
                             exits=[ast.unparse(c.pattern) + (f" if {ast.unparse(c.guard)}" if c.guard else "") for c in stmt.cases])
             self.link(pending, node)
             # The cases are tried in order: a case that does not match leads to the next one.
@@ -189,7 +197,7 @@ class Flow:
 
         if isinstance(stmt, (ast.Return, ast.Raise)):
             kind = "return" if isinstance(stmt, ast.Return) else "raise"
-            node = self.add(kind, ast.unparse(stmt).split("\n")[0], stmt.lineno, stmt.end_lineno, [stmt])
+            node = self.add(kind, ast.unparse(stmt).split("\n")[0], stmt.lineno, stmt.end_lineno, [stmt], io_parts=[stmt])
             self.link(pending, node)
             self.exits.append(node)
             return []
@@ -218,8 +226,7 @@ class Flow:
         construct, generic = self.construct_of(stmt)
         extra = {"generic": True} if generic else {}
         if construct in ("assign", "call"):
-            found = [io for n in ast.walk(stmt) if isinstance(n, ast.Call) and (io := effects.io_of(n, self.aliases))]
-            extra["io"] = found[0] if found else None
+            extra["io_parts"] = [stmt]
         node = self.add("step", ast.unparse(stmt).split("\n")[0], stmt.lineno, stmt.end_lineno, [stmt], also_read, construct=construct, **extra)
         self.link(pending, node)
         return [(node, None)]

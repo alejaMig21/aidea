@@ -17,7 +17,7 @@ const NODE_HELP =
   "requirements Nodes have a `kind`, \"functional\" (the default: needs `as`, `want`, `so`; may have `criteria`, an array of Given/When/Then lines) " +
   "or \"non-functional\" (needs `statement`, `quality` (performance, security, usability, reliability, maintainability, compatibility, portability or safety) " +
   "and a measurable `measure`; `as`, `want`, `so` are not needed); architecture Nodes need `technology` and may have `parent` (the Node it is inside), `kind` (person, system, container or component), " +
-  "a one-sentence `description` and `relations`: [{ to, label, technology? }] naming other architecture Nodes that this one uses. Any Node may have " +
+  "a one-sentence `description`, `external` (true for a person or system outside the one being designed) and `relations`: [{ to, label, technology? }] naming other architecture Nodes that this one uses. Any Node may have " +
   "`traces`: the ids of the Nodes in the layer below that realise it.";
 
 const TOOLS = [

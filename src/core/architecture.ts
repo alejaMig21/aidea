@@ -52,9 +52,10 @@ export function layoutArchitecture(nodes: Fields[]): ArchitectureDrawing {
   for (const n of nodes) {
     const id = sameStr(n.id), kind = sameStr(n.kind), tech = sameStr(n.technology);
     const group = isGroup(id);
-    const kindName = kind === "system" && !hasKids.has(id) ? "External System" : KIND_NAMES[kind];
+    const external = n.external === true && !group;
+    const kindName = external && kind === "system" ? "External System" : KIND_NAMES[kind];
     const title = sameStr(n.title);
-    const sub = kind === "person" ? "[Person]" : kindName ? `[${kindName}: ${tech}]` : `[${tech}]`;
+    const sub = kind === "person" ? (external ? "[External Person]" : "[Person]") : kindName ? `[${kindName}: ${tech}]` : `[${tech}]`;
     const lines = wrap(sameStr(n.description));
     texts[id] = { title: group ? `${title} [${KIND_NAMES[kind] ?? "Boundary"}]` : title, sub: group ? "" : sub, lines: group ? [] : lines };
     if (group) continue;

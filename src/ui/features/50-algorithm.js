@@ -61,7 +61,7 @@ function flowShape(step, r) {
   const sh = (tag, attrs) => el(tag, { class: "sh", ...attrs });
   if (["start", "end", "return", "raise"].includes(step.kind)) return [sh("rect", { x, y, width: w, height: h, rx: h / 2 })];
   if (step.kind === "branch" || step.kind === "loop") return [sh("polygon", { points: `${cx},${y} ${right},${cy} ${cx},${bottom} ${x},${cy}` })];
-  if (step.io) return [sh("polygon", { points: `${x + 16},${y} ${right},${y} ${right - 16},${bottom} ${x},${bottom}` })];
+  if (step.io && step.kind === "step" && step.construct !== "with") return [sh("polygon", { points: `${x + 16},${y} ${right},${y} ${right - 16},${bottom} ${x},${bottom}` })];
   if (step.construct === "break" || step.construct === "continue") return [sh("polygon", { points: `${x},${y} ${right - 14},${y} ${right},${cy} ${right - 14},${bottom} ${x},${bottom}` })];
   const box = sh("rect", { x, y, width: w, height: h, rx: 5 });
   return step.construct === "with" ? [box, el("rect", { class: "inner", x: x + 4, y: y + 4, width: w - 8, height: h - 8, rx: 3 })] : [box];
@@ -90,7 +90,9 @@ function drawAlgorithm(graph) {
     const text = el("text", { x: r.x + r.width / 2, y: r.y + r.height / 2 - ((lines.length - 1) * 16) / 2 + 4.5 });
     lines.forEach((line, k) => text.append(el("tspan", { x: r.x + r.width / 2, dy: k ? 16 : 0 }, line)));
     g.append(tip, ...flowShape(step, r), text);
-    const tag = step.generic ? step.construct : step.finally ? "finally" : step.construct === "with" ? "with" : "";
+    const slanted = step.io && step.kind === "step" && step.construct !== "with";
+    const own = step.generic ? step.construct : step.finally ? "finally" : step.construct === "with" ? "with" : "";
+    const tag = step.io && !slanted ? `${own} ${step.io === "input" ? "input" : "output"}`.trim() : own; // a decision, loop, with or return that also touches the outside world says so
     if (tag) g.append(el("text", { class: "tag", x: r.x + 6, y: r.y - 4 }, tag));
     parts.push(g);
   }

@@ -32,7 +32,7 @@ notationRegisterLegend("architecture", {
     [notationSwatch(`<circle cx="22" cy="7" r="4" style="fill:none;stroke:var(--authored)"/><path d="M13 21q0-9 9-9q9 0 9 9z" style="fill:none;stroke:var(--authored)"/>`), "Person: someone who uses the system"],
     [notationSwatch(`<rect x="4" y="4" width="36" height="16" rx="4" style="fill:var(--raised);stroke:var(--control)"/><circle cx="10" cy="9" r="2" style="fill:var(--authored)"/>`), "Container: something that runs. Name, [kind: technology], one line"],
     [notationSwatch(`<rect x="3" y="3" width="38" height="18" rx="4" style="fill:none;stroke:#4b5365;stroke-dasharray:5 3"/>`), "Dashed boundary: what it encloses is part of it. Boundaries are a convention of C4 tooling, not required by the C4 authors"],
-    [notationSwatch(`<rect x="4" y="4" width="36" height="16" rx="4" style="fill:var(--panel);stroke:#4b5365;stroke-dasharray:4 3"/>`), "External system, outside the boundary"],
+    [notationSwatch(`<rect x="4" y="4" width="36" height="16" rx="4" style="fill:var(--panel);stroke:#4b5365;stroke-dasharray:4 3"/>`), "External person or system (marked external), outside the boundary"],
     [notationSwatch(`<rect x="4" y="4" width="36" height="16" rx="4" style="fill:var(--proposal);stroke:var(--accent);stroke-dasharray:4 3"/>`), "Proposal: suggested by the agent, not accepted yet"],
   ],
   arrows: [[notationSwatch(`<path d="M2 12H34" style="stroke:#4a546c;stroke-width:1.6;stroke-dasharray:7 5"/><path d="M42 12L33 7.5V16.5Z" style="fill:#4a546c"/>`), "One-way relationship with a verb and the technology; dashes flow and a dot travels in its direction"]],
@@ -68,7 +68,7 @@ function architectureRender() {
     const n = byId.get(r.id) ?? adds.get(r.id)?.node;
     const t = drawing.texts[r.id];
     const proposal = adds.get(r.id);
-    const person = n.kind === "person", external = n.kind === "system" && !boxes.has(r.id);
+    const person = n.kind === "person", external = n.external === true && !boxes.has(r.id);
     const node = el("g", { class: `anode ${extra}${external ? " arch-external" : ""}${proposal ? " proposal add" : ""}`, tabindex: 0, "data-node": r.id, "data-ref": r.id, ...(proposal ? { "data-breathe": "", "data-proposal": proposal.id } : {}) });
     node.append(el("title", {}, `${n.title}: ${n.description ?? n.technology}`), el("rect", { x: r.x, y: r.y, width: r.width, height: r.height, rx: boxes.has(r.id) ? 16 : 12 }));
     if (boxes.has(r.id)) node.append(el("text", { x: r.x + 16, y: r.y + r.height - 10, class: "arch-title" }, t.title)); // at the bottom, as C4 tools do: arrows enter from above

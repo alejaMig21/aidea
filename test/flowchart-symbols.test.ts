@@ -62,7 +62,18 @@ test("calls to the known input and output functions carry an io flag", async () 
   assert.equal(step("data = open(path)").io, "input");
   assert.equal(step("print('done')").io, "output");
   assert.ok(!step("total = 0").io);
-  assert.ok(!step("with open(path)").io); // a with is drawn as a with, not as input
+});
+
+test("a call in any expression position flags its step: with items, for iterables, if tests, return values; eval is not I/O", async () => {
+  const res = await t.get(`/algorithm?project=${encodeURIComponent(fixture("flow"))}&node=symbols.reads`);
+  const steps = ((await res.json()) as { steps: Step[] }).steps;
+  const io = (label: string) => steps.find((s) => s.label === label)?.io;
+  assert.equal(io("with open(path)"), "input");
+  assert.equal(io("for line in open(path)"), "input");
+  assert.equal(io("if input('go? ') == 'y'"), "input");
+  assert.equal(io("return input('again? ')"), "input");
+  assert.ok(!io("eval('1')"));
+  assert.ok(steps.find((s) => s.label === "pass")?.io === undefined);
 });
 
 test("exception edges carry the exception type, and handler steps say what they catch", async () => {

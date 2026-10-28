@@ -91,6 +91,21 @@ test("an unknown kind, a bad description or a relations that is not a list drops
   ]);
 });
 
+test("a dropped duplicate Node does not overwrite the surviving Node's relations", async () => {
+  const dir = await projectWith([node("a", { relations: [{ to: "b", label: "first" }] }), node("a", { relations: [{ to: "b", label: "second" }] }), node("b")]);
+  const layer = (await authored(dir)).layers.architecture;
+  assert.deepEqual(layer.nodes.map((n: any) => n.id), ["a", "b"]);
+  assert.deepEqual(layer.nodes[0].relations, [{ to: "b", label: "first" }]);
+  assert.ok(layer.errors.some((e: any) => e.message.includes('duplicate id "a"')));
+});
+
+test("external must be a boolean when present, and comes back as written", async () => {
+  const dir = await projectWith([node("a", { kind: "system", external: true }), node("b", { external: "yes" })]);
+  const layer = (await authored(dir)).layers.architecture;
+  assert.deepEqual(layer.nodes.map((n: any) => [n.id, n.external]), [["a", true]]);
+  assert.deepEqual(layer.errors.map((e: any) => e.message), ['nodes[1]: "external" must be a boolean when present']);
+});
+
 test("cycles in parent stay ignored and a Node may relate to itself", async () => {
   const dir = await projectWith([node("a", { parent: "b", relations: [{ to: "a", label: "loops" }] }), node("b", { parent: "a" })]);
   const layer = (await authored(dir)).layers.architecture;
@@ -134,7 +149,7 @@ function copyOfC4() {
 test("the builder's tool descriptions mention kind, description and relations", async () => {
   const { reply } = await builder(copyOfC4(), "tools/list", {});
   const text = reply.tools.map((x: any) => x.description).join(" ");
-  for (const word of ["kind", "description", "relations"]) assert.match(text, new RegExp(word));
+  for (const word of ["kind", "description", "relations", "external"]) assert.match(text, new RegExp(word));
 });
 
 test("a Proposal adds a Node with the new fields; accepting writes it in the existing format", async () => {

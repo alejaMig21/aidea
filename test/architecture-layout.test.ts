@@ -27,7 +27,7 @@ const nodes = [
   { id: "studio", title: "Studio", technology: "Python", kind: "system", description: "Everything we build for quoting.", rationale: why },
   { id: "web-app", title: "Web app", technology: "Python + Flask", kind: "container", parent: "studio", description: "Serves the quote form and prices a quote, then keeps the customer informed.", relations: [{ to: "quote-db", label: "Reads and writes quotes", technology: "SQL" }, { to: "mailer", label: "Sends the quote by email" }], rationale: why },
   { id: "quote-db", title: "Quote database", technology: "SQLite", kind: "container", parent: "studio", description: "Stores every quote.", rationale: why },
-  { id: "mailer", title: "Mail service", technology: "SMTP", kind: "system", description: "External service that delivers email.", rationale: why },
+  { id: "mailer", title: "Mail service", technology: "SMTP", kind: "system", external: true, description: "External service that delivers email.", rationale: why },
   { id: "odd", title: "Odd one", technology: "Unknown thing", rationale: why },
 ];
 
@@ -80,6 +80,17 @@ test("an element is sized to fit its name, [kind: technology] and wrapped descri
   assert.equal(d.texts["web-app"].lines.join(" "), nodes[2].description);
   assert.ok(at.get("web-app")!.height > at.get("quote-db")!.height, "more description lines, taller box");
   assert.ok(at.get("web-app")!.width >= "[Container: Python + Flask]".length * 6.6 + 24);
+});
+
+test("only a system marked external is drawn as External; a childless system without the flag is an ordinary Software System", async () => {
+  const d = await drawing(await open([
+    { id: "ours", title: "Ours", technology: "Python", kind: "system", rationale: why },
+    { id: "theirs", title: "Theirs", technology: "SMTP", kind: "system", external: true, rationale: why },
+    { id: "guest", title: "Guest", technology: "Browser", kind: "person", external: true, rationale: why },
+  ]));
+  assert.equal(d.texts["ours"].sub, "[Software System: Python]");
+  assert.equal(d.texts["theirs"].sub, "[External System: SMTP]");
+  assert.equal(d.texts["guest"].sub, "[External Person]");
 });
 
 test("every relation comes back as an orthogonal route with a label position and its technology", async () => {

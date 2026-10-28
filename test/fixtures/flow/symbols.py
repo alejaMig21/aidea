@@ -34,3 +34,13 @@ def tour(items, mode, path):
         return total
     else:
         return pick(value)
+
+
+def reads(path):
+    with open(path) as handle:
+        pass
+    for line in open(path):
+        pass
+    if input("go? ") == "y":
+        eval("1")
+    return input("again? ")

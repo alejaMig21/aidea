@@ -43,7 +43,7 @@ def io_of(call, aliases):
     resolved = resolve_alias(ast.unparse(call.func), aliases)
     if resolved == "print":
         return "output"
-    if not is_effect(resolved):
+    if not is_effect(resolved) or resolved in ("exec", "eval", "__import__"):  # Playback fakes these; they are not input or output
         return None
     if resolved == "open":  # opening for writing is output; the default mode reads
         mode = call.args[1] if len(call.args) > 1 else next((k.value for k in call.keywords if k.arg == "mode"), None)

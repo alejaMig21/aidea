@@ -37,6 +37,7 @@
       "title": "Mail service",
       "technology": "SMTP",
       "kind": "system",
+      "external": true,
       "description": "External service that delivers email.",
       "rationale": { "why": "Not worth building our own.", "rejected": [] }
     }
