@@ -26,6 +26,7 @@ algoStyle.textContent = `
   #algorithm.has-recording .flow-step:not(.visited):not(.now) { opacity: .4; }
   #algorithm .flow-step.visited .sh { stroke: var(--derived); }
   #algorithm .flow-step.now .sh { stroke: var(--accent); stroke-width: 2.4; fill: var(--proposal); filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 60%, transparent)); }
+  #algorithm.has-recording .nt-packet { display: none; } /* during a replay the Playback token is the only thing that moves */
   .flow-token { fill: var(--accent); filter: drop-shadow(0 0 7px var(--accent)); pointer-events: none; }
   .flow-token.danger { fill: var(--danger); filter: drop-shadow(0 0 7px var(--danger)); }
 `;
@@ -75,10 +76,13 @@ function drawAlgorithm(graph) {
   // The core returns one route per edge (same order): a polyline of horizontal and vertical segments, and where the label goes.
   graph.routes.forEach((route, i) => {
     const exception = Boolean(graph.edges[i].exception);
-    parts.push(el("path", {
+    const edge = el("path", {
       class: `flow-edge${exception ? " exception" : ""}`, id: `flow-edge-${i}`, "data-edge": i, "data-flow": "",
       "data-ends": `${route.from} ${route.to}`, d: "M" + route.points.map((p) => `${p.x} ${p.y}`).join(" L"),
-    }));
+    });
+    // Control flowing forward carries one packet (the shared motion kit); the way back of a loop is only dashes.
+    if (!graph.edges[i].back) { edge.setAttribute("data-packets", 1); if (exception) edge.setAttribute("data-tone", "danger"); }
+    parts.push(edge);
     if (route.label) parts.push(el("text", { class: `flow-label${exception ? " exception" : ""}`, x: route.label.x, y: route.label.y }, route.label.text));
   });
   for (const step of graph.steps) {
@@ -86,7 +90,7 @@ function drawAlgorithm(graph) {
     const classes = ["flow-step", `flow-${step.kind}`, `flow-step-${step.kind}`, `c-${step.construct}`];
     if (step.generic) classes.push("generic");
     if (step.finally) classes.push("in-finally");
-    const g = el("g", { class: classes.join(" "), "data-step": step.id, "data-node": step.id, tabindex: 0 });
+    const g = el("g", { class: classes.join(" "), "data-step": step.id, "data-node": step.id, tabindex: 0, ...(step.kind === "start" ? { "data-breathe": "" } : {}) });
     const tip = el("title", {}, `${step.generic ? step.construct + " (no flowchart symbol): " : ""}${step.reads.length ? "reads: " + step.reads.join(", ") : ""}${step.reads.length && step.writes.length ? " · " : ""}${step.writes.length ? "writes: " + step.writes.join(", ") : ""}`);
     const lines = step.lines ?? [step.label];
     const text = el("text", { x: r.x + r.width / 2, y: r.y + r.height / 2 - ((lines.length - 1) * 16) / 2 + 4.5 });
@@ -156,7 +160,7 @@ function flowReplay(visits, index, previous) {
       [arrow("#4a546c"), "Control moves to the next step; the dashes flow in that direction"],
       [notationSwatch(`<path d="M30 20H40V6H8" style="fill:none;stroke:#4a546c;stroke-width:1.6"/><path d="M12 1L5 6L12 11" style="fill:none;stroke:#4a546c;stroke-width:1.5"/>`), "Arrow going back up: the loop repeats"],
       [arrow("var(--danger)", true), "Red dashed, labelled with an exception type: control goes to that handler"],
-      [notationSwatch(`<circle cx="22" cy="12" r="7" style="fill:var(--accent)"/>`), "Playback token: it travels the edges the real run took; the active step glows, visited steps turn teal"],
+      [notationSwatch(`<circle cx="22" cy="12" r="7" style="fill:var(--accent)"/>`), "Playback token: it travels the edges the real run took; the active step glows, visited steps turn teal. With no Playback shown, small dots travel the edges instead and the start breathes"],
     ],
     notShown: ["Data flow between steps (the panel lists the values)", "async and await, and generators", "Comprehensions and lambdas as flows of their own (one generic step each)", "Nested functions (one step; open their own graph)", "Exceptions raised outside a try (only try/except is drawn)"],
   });

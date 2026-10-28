@@ -189,6 +189,7 @@ function pbRender() {
 // A new graph starts without a recording.
 document.addEventListener("algorithm-opened", (e) => {
   pbStop();
+  algoGroup.classList.remove("has-recording"); // the new graph has no recording yet
   pbGraph = e.detail;
   pbRecording = null;
   pbIndex = 0;
@@ -200,6 +201,7 @@ document.addEventListener("algorithm-opened", (e) => {
 const drawWithoutPlayback = draw;
 draw = async (nodes) => {
   pbStop();
+  algoGroup.classList.remove("has-recording");
   pbGraph = null;
   pbRecording = null;
   pbIndex = 0;
