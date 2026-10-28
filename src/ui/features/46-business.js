@@ -71,7 +71,7 @@ function drawBusiness(g, nodes, layout, select) {
       el("text", { x: b.x + 14, y: b.y + 25, class: "btitle" }, BUSINESS_BLOCKS[b.id]),
     );
     const num = el("g", { class: "bnum", "aria-hidden": "true" });
-    num.append(el("circle", { cx: b.x + b.width - 20, cy: b.y + 20, r: 10 }), el("text", { x: b.x + b.width - 20, y: b.y + 24 }, BUSINESS_WALK.indexOf(b.id) + 1)); // the number is the place in the telling order of "Walk me through it"
+    num.append(el("circle", { cx: b.x + b.width - 20, cy: b.y + 20, r: 10 }), el("text", { x: b.x + b.width - 20, y: b.y + 24 }, BUSINESS_WALK.indexOf(b.id) + 1)); // the number is the place in the telling order of "Teach me through it"
     card.append(num);
     // Under the name: the hint, small; an empty block shows it larger as the prompt of what to write.
     const hint = BUSINESS_HELP[b.id]?.hint ?? "";

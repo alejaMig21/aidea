@@ -154,9 +154,9 @@ svg.addEventListener("focusin", (e) => { const b = businessBlockOf(e.target); if
 svg.addEventListener("focusout", businessHideCard);
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !businessCard.hidden) businessHideCard(); });
 
-// ---- "Walk me through it": the blocks one at a time, the others dim; user-stepped, never starts by itself.
+// ---- "Teach me through it": the blocks one at a time, the others dim; user-stepped, never starts by itself.
 let businessWalkOpen = false, businessStep = 0;
-const businessWalkOpener = Object.assign(document.createElement("button"), { type: "button", id: "business-walk-open", textContent: "Walk me through it", hidden: true, title: "A short guided reading of the nine blocks, one at a time" });
+const businessWalkOpener = Object.assign(document.createElement("button"), { type: "button", id: "business-walk-open", textContent: "Teach me through it", hidden: true, title: "A guided class on the nine blocks, one at a time (a quick tour until the Tutor is available)" });
 document.querySelector("main").append(businessWalkOpener);
 const businessWalk = Object.assign(document.createElement("div"), { id: "business-walk", hidden: true, role: "region" });
 businessWalk.setAttribute("aria-label", "Guided reading of the canvas");
