@@ -46,6 +46,10 @@ const pbEl = (tag, props = {}, ...children) => {
 };
 
 function pbShowStep() {
+  pbShowEntry();
+  document.dispatchEvent(new Event("playback-step")); // the trace table and the step controls follow
+}
+function pbShowEntry() {
   const entry = pbRecording.visits[pbIndex];
   if (!entry) { // the run failed before its first step (for example a missing argument)
     $("pb-position").textContent = "0 / 0";

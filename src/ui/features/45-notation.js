@@ -60,12 +60,15 @@ const notationToggle = Object.assign(document.createElement("button"), { type: "
 notationToggle.setAttribute("aria-label", "Animations");
 $("fold-buttons").before(notationToggle);
 
+let notationStepping = false; // "Pause and step" (48-stepmode.js) holds the loop still too
 function notationSync() {
+  const frozen = document.hidden || notationStepping;
   document.body.classList.toggle("motion-off", !notationOn);
-  document.body.classList.toggle("motion-paused", document.hidden); // a hidden window pauses dashes, glow and packets
+  document.body.classList.toggle("motion-paused", frozen); // a hidden window or a paused loop stops dashes, glow and packets
   notationToggle.setAttribute("aria-pressed", String(notationOn));
   notationToggle.innerHTML = `<span class="word">Animations: </span><b>${notationOn ? "on" : "off"}</b>`;
-  if (notationOn && !document.hidden) svg.unpauseAnimations(); else svg.pauseAnimations();
+  if (notationOn && !frozen) svg.unpauseAnimations(); else svg.pauseAnimations();
+  document.dispatchEvent(new Event("notation-sync"));
 }
 notationToggle.onclick = () => {
   notationOn = !notationOn;
