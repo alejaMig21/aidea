@@ -135,8 +135,8 @@ export function layoutRequirements(nodes: { id: string; kind?: unknown; criteria
 }
 
 // What a layer's Nodes are laid out with: Requirements has its own two columns, the other authored layers the grid.
-export const layoutLayer = (layer: string, nodes: { id: string; parent?: unknown }[]): Rect[] =>
-  layer === "requirements" ? layoutRequirements(nodes) : layoutAuthored(nodes);
+export const layoutLayer = (layer: string, nodes: { id: string; parent?: unknown; block?: unknown }[]): Rect[] =>
+  layer === "requirements" ? layoutRequirements(nodes) : layer === "business" ? layoutBusiness(nodes).rects : layoutAuthored(nodes);
 
 
 export type FlowEdge ={ from: string; to: string; label?: string; back?: boolean };
