@@ -6,8 +6,21 @@
 
 **Status:** ready-for-agent
 
-- [ ] Through the protocol with scripted builder and Tutor: in Class mode a Blocking decision creates a decision class and the builder's Proposal does not become acceptable until it is answered or skipped; in Direct mode it is acceptable immediately.
-- [ ] Code changes and non-blocking changes never start a class.
-- [ ] The answer, the reason and the rejected alternatives appear in the Node's Rationale after acceptance.
-- [ ] The mode setting is remembered per Project and survives a restart.
-- [ ] Verified with a headless browser: the mode switch in the Tutor column and a held Proposal marked as waiting for a class.
+- [x] Through the protocol with scripted builder and Tutor: in Class mode a Blocking decision creates a decision class and the builder's Proposal does not become acceptable until it is answered or skipped; in Direct mode it is acceptable immediately.
+- [x] Code changes and non-blocking changes never start a class.
+- [x] The answer, the reason and the rejected alternatives appear in the Node's Rationale after acceptance.
+- [x] The mode setting is remembered per Project and survives a restart.
+- [x] Verified with a headless browser: the mode switch in the Tutor column and a held Proposal marked as waiting for a class.
+
+## Review notes
+
+- [x] `test/decision-classes.test.ts` (10 tests, through the HTTP protocol with a scripted builder and a scripted Tutor) was written first and RUN RED: with no implementation the file never finished (the `classMode` setting and the decision tools did not exist; the run hung until killed and nothing passed). Then implemented: 10 pass. `npm run typecheck` passes; full `npm test`: 325 tests, 324 pass, 0 fail (1 skipped).
+- [x] Mode: per-Project `classMode` ("class" | "direct", default direct) in the preferences store (`Stored` type in `src/core/preferences.ts`), read and written on the existing `GET/POST /agent-options` (`classMode` in the body, 400 for another value); survives a restart (tested with a second core on the same file). Separate from the builder's permission `mode`.
+- [x] Blocking (`isBlocking` in `src/core/decision-class.ts`): a Pattern group, or any `add`/`update` Proposal on Business, Requirements or Architecture (a technology change is a field of one). Removals and everything else are not blocking; code changes never reach Proposals. In Class mode `holdIfBlocking` marks the new Proposal `held`; its stored status stays `pending`, `publicView` shows `waiting-for-class` (GET /proposals, the chat event, `list_proposals`, `read_layers`). Direct mode holds nothing.
+- [x] A held Proposal cannot be accepted: `POST /proposals/answer` accept returns 409 with a plain message; reject always works. The builder is told "waiting-for-class".
+- [x] Event `decision_class {proposal, project}` is sent on the builder's chat stream after the `proposal` event. The interface starts the class with `POST /tutor/classes {project, decision: <proposalId>}` (400 unless that Proposal of this Project is held). The class uses `DECISION_INSTRUCTIONS` (under 4000 characters; asserted), the normal Teacher tools plus `read_decision` (id, layer, kind, title, node, current node for an update, changes, builder Rationale) and `record_decision {proposalId, reason, rejected}`. These two tools exist only in a decision class.
+- [x] `record_decision` is refused until the person gave a real answer in that class (Evidence of the class with `dontKnow` false), for another proposal id, for a Proposal no longer held, and for an invalid Rationale (same `rationaleProblem` rules). On success it writes `rationale` into the Proposal's node (and into `changes` for an update, so the accepted update keeps it), releases it and emits `decision_ready`. `finish_class` is refused in a decision class until the decision is recorded or skipped.
+- [x] Skip: `POST /proposals/skip-class {id, secret}` ("Decide for me"; 403 wrong secret, 404 unknown, 409 not held) releases the Proposal with the builder's Rationale untouched and appends Evidence `kind: "decision-skip"`, `decision: <proposalId>` (`Evidence.kind` gained that value).
+- [x] After accepting, the Node in `.aidea/*.json` has the person's `why` and `rejected` (tested for add and update).
+- [x] UI checked in headless Chrome with a scripted adapter (no real model; screenshots deleted): a Direct / Class switch with one plain line each in the Tutor column (stored on click); a held Proposal shows "WAITING" on its box ("Waiting for a class" in the panel and in the chat line) with "Start the class" and "Decide for me" instead of Accept; the class ran in the Tutor pane, the Proposal then offered Accept, and accepting wrote the reason. No console errors. Existing suites for Proposals, chat, permissions, Contract and class cards pass. "Decide for me" was not clicked in the browser (protocol-tested only).
+- Limits: the core can check that the person answered something, not that the reason passed to `record_decision` matches the answer. A class stopped half-way leaves the Proposal held (start it again or skip). The class-to-decision mapping is in memory (`bindDecision`), like `core.lessons`.

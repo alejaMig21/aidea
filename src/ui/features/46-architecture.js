@@ -79,7 +79,7 @@ function architectureRender() {
       const at = (dx, y, cls, text) => el("text", person ? { x: cx, y: r.y + y, class: cls, "text-anchor": "middle" } : { x: r.x + dx, y: r.y + y, class: cls }, text);
       node.append(at(lead, 30 + off, "arch-name", t.title), at(14, 50 + off, "arch-sub", t.sub));
       t.lines.forEach((line, i) => node.append(at(14, 73 + off + i * 15, "arch-desc", line)));
-      if (proposal) node.append(el("text", { x: r.x + r.width - 14, y: r.y + 26, class: "tag" }, "PROPOSAL"));
+      if (proposal) node.append(el("text", { x: r.x + r.width - 14, y: r.y + 26, class: "tag" }, proposal.status === "waiting-for-class" ? "WAITING" : "PROPOSAL"));
     }
     if (proposal) { node.addEventListener("click", () => showProposal(proposal)); node.addEventListener("keydown", (e) => { if (e.key === "Enter") showProposal(proposal); }); }
     else { node.addEventListener("click", select(node, n)); node.addEventListener("keydown", (e) => { if (e.key === "Enter") select(node, n)(); }); }

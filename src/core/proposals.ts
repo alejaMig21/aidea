@@ -23,10 +23,11 @@ export type Proposal = {
   nodeId: string;
   node?: Fields; // add: the whole Node; update: the Node as it will be once the change is accepted
   changes?: Fields; // update: what the builder asked to change
-  status: "pending" | "accepted" | "rejected";
+  status: "pending" | "waiting-for-class" | "accepted" | "rejected"; // waiting-for-class: only in what is shown; stored as pending + held
   source?: { role: "tutor"; classId: string; questionId: string }; // made by a Tutor tool, after the person answered this question
   fromAnswer?: string; // the person's own answer text that the Tutor built it from
   because?: string; // the Tutor's one-sentence reason
+  held?: true; // Class mode: a Blocking decision whose decision class is not yet answered or skipped (see decision-class.ts)
   blocking?: true; // a Blocking decision (declaring a Pattern group); only marked here, the Tutor's classes act on it
 };
 // A Pattern group is proposed as an "add" whose nodeId is the group's id behind this prefix and whose `node` is the group.
@@ -134,7 +135,7 @@ export function proposePattern(store: ProposalStore, project: Project, secret: s
 }
 
 // What the interface and the builder may see: everything except the secret.
-export const publicView = ({ secret: _secret, ...proposal }: StoredProposal): Proposal => proposal;
+export const publicView = ({ secret: _secret, held, ...proposal }: StoredProposal): Proposal => (held && proposal.status === "pending" ? { ...proposal, status: "waiting-for-class" } : proposal);
 
 // Where each pending Proposal is drawn: a new Node goes after the ones that exist, in the order it was proposed;
 // a change or a removal points at the Node that already exists.

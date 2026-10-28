@@ -131,6 +131,10 @@
       line.append(review);
       document.dispatchEvent(new CustomEvent("proposal-created", { detail: event }));
     }
+    else if (event.type === "decision_class") {
+      add("proposal-line", "A decision is waiting for a class: the Tutor asks you about it before you can accept it. Open the Proposal to start it.");
+      document.dispatchEvent(new CustomEvent("decision-class", { detail: event }));
+    }
     else if (event.type === "text") add("text", event.text, event.parent);
     else if (event.type === "tool") add("tool", `> ${event.name} ${hint(event.input)}`.trim(), event.parent);
     else if (event.type === "error") add("error", event.message);

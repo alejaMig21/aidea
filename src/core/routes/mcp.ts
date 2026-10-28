@@ -5,6 +5,7 @@
 // Plain JSON over HTTP, one message per request. The address contains the token of a running conversation, so only
 // the Claude Code process we started can use it.
 import { contractOf } from "../contract.ts";
+import { decisionTools, finishGate, holdIfBlocking, runDecisionTool } from "../decision-class.ts";
 import { publicView, propose, proposePattern } from "../proposals.ts";
 import type { Proposal } from "../proposals.ts";
 import { NODE_HELP } from "../tutor-authoring.ts";
@@ -106,7 +107,7 @@ const handler: Handler = async (req, res, core) => {
     core.send(res, 200, rpcResult(id, {}));
   } else if (method === "tools/list") {
     const prober = core.permissions.conversationOf(token)?.role === "prober";
-    core.send(res, 200, rpcResult(id, { tools: tutor ? [...TUTOR_TOOLS, ...READ_TOOLS] : prober ? [...PROBE_TOOLS, ...READ_TOOLS] : TOOLS }));
+    core.send(res, 200, rpcResult(id, { tools: tutor ? [...TUTOR_TOOLS, ...READ_TOOLS, ...decisionTools(core.permissions.conversationOf(token)?.classId)] : prober ? [...PROBE_TOOLS, ...READ_TOOLS] : TOOLS }));
   } else if (method === "tools/call") {
     const args = isObject(params.arguments) ? params.arguments : {};
     const name = params.name;
@@ -126,6 +127,17 @@ const handler: Handler = async (req, res, core) => {
         const project = conversation && core.projects.get(conversation.project);
         const read = project ? runReadTool(name, args, core, project) : { text: "The Project is not open", isError: true as const };
         core.send(res, 200, toolText(id, read!.text, read!.isError));
+        return true;
+      }
+      const conversation = core.permissions.conversationOf(token);
+      const decision = runDecisionTool(name, args, core, conversation?.classId, (e) => conversation?.emit(e));
+      if (decision) {
+        core.send(res, 200, toolText(id, decision.text, decision.isError));
+        return true;
+      }
+      const gate = finishGate(core, name, conversation?.classId);
+      if (gate) {
+        core.send(res, 200, toolText(id, gate, true));
         return true;
       }
       if (!TUTOR_TOOLS.some((t) => t.name === name)) {
@@ -183,8 +195,10 @@ const handler: Handler = async (req, res, core) => {
         return true;
       }
       // The person's interface hears about it in the chat stream, with the secret that lets it decide.
-      conversation.emit({ type: "proposal", ...result.proposal });
-      core.send(res, 200, toolText(id, JSON.stringify({ proposal: result.proposal.id, status: "pending", message: "The person will review it. Nothing changes until they accept." })));
+      const held = holdIfBlocking(core, result.proposal);
+      conversation.emit({ type: "proposal", ...publicView(result.proposal), secret: result.proposal.secret });
+      if (held) conversation.emit({ type: "decision_class", proposal: result.proposal.id, project: project.id });
+      core.send(res, 200, toolText(id, JSON.stringify({ proposal: result.proposal.id, status: held ? "waiting-for-class" : "pending", message: held ? "This is a Blocking decision: the person must first answer a short class about it. It cannot be accepted until then. Carry on with what does not depend on it." : "The person will review it. Nothing changes until they accept." })));
     } else {
       core.send(res, 200, rpcError(id, -32602, `Unknown tool: ${String(name)}`));
     }

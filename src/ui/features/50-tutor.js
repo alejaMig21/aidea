@@ -171,6 +171,7 @@
     if (event.type === "text") line("tutor-say", event.text);
     else if (event.type === "tutor_step") { log.append(el("h3", { className: "tutor-step", textContent: event.title })); pane.scrollTop = pane.scrollHeight; }
     else if (event.type === "tutor_explain") { if (event.repair) line("tutor-label", "Let's look again"); line("tutor-say", event.text); }
+    else if (event.type === "decision_ready") document.dispatchEvent(new CustomEvent("proposals-changed"));
     else if (event.type === "tutor_finished") line("tutor-meta", `Class finished: ${event.summary}`);
     else if (event.type === "proposal") tutorProposal(event);
     else if (event.type === "tutor_question") questionCard(event);
@@ -258,6 +259,7 @@
   }
 
   start.onclick = () => startClass();
+  document.addEventListener("decision-class-start", (e) => startClass({ payload: { project: current, decision: e.detail.proposal } }));
   end.onclick = () => (running?.skip ? running.skip() : running?.abort.abort()); // closing the stream ends the class in the core
   window.tutorUi = { startClass, abort: () => running?.abort.abort() };
   document.addEventListener("project-opened", (e) => {

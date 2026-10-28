@@ -3,15 +3,17 @@ import { dirname } from "node:path";
 
 // What the person picked for the builder of one Project. Ids are the adapter's own.
 export type Choice = { mode: string; model: string; tutorModel: string };
+// classMode: "class" holds the builder at a Blocking decision until a decision class is answered; absent means "direct".
+export type Stored = Partial<Choice> & { classMode?: "class" | "direct" };
 export type Preferences = {
   // The stored choice for a Project (any field may be missing, or no longer offered by the adapter).
-  get: (project: string) => Partial<Choice>;
-  set: (project: string, choice: Partial<Choice>) => void;
+  get: (project: string) => Stored;
+  set: (project: string, choice: Stored) => void;
 };
 
 // Remembers the choice per Project, outside any Project. Without a file it lives in memory only.
 export function createPreferences(file?: string): Preferences {
-  let saved: Record<string, Partial<Choice>> = {};
+  let saved: Record<string, Stored> = {};
   try {
     if (file) {
       const read = JSON.parse(readFileSync(file, "utf8"));

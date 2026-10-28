@@ -8,6 +8,7 @@ import { join } from "node:path";
 import type { Handler } from "../types.ts";
 import { TUTOR_INSTRUCTIONS } from "../tutor.ts";
 import { createLesson } from "../teach.ts";
+import { DECISION_INSTRUCTIONS, bindDecision, decisionMessage, heldDecision, unbindDecision } from "../decision-class.ts";
 import { currentChoice } from "./agent-options.ts";
 
 const MAX_MESSAGE_CHARS = 20_000;
@@ -41,7 +42,9 @@ const handler: Handler = async (req, res, core) => {
   if (!project) return reject(400, "project must be a Project that is already open");
   const topic = body?.topic;
   if (topic !== undefined && (typeof topic !== "string" || topic.length > MAX_TOPIC_CHARS)) return reject(400, `topic must be text of at most ${MAX_TOPIC_CHARS} characters`);
-  const message = body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
+  const held = body?.decision === undefined ? undefined : heldDecision(core, project.id, body.decision);
+  if (held && "error" in held) return reject(400, held.error);
+  const message = held ? decisionMessage(held.proposal) : body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
   if (typeof message !== "string" || !message.trim() || message.length > MAX_MESSAGE_CHARS) {
     return reject(400, `message must be a non-empty string of at most ${MAX_MESSAGE_CHARS} characters`);
   }
@@ -56,6 +59,7 @@ const handler: Handler = async (req, res, core) => {
   const lesson = createLesson();
   core.lessons.set(classId, lesson);
   const conversation = core.permissions.open(send, project.id, "tutor", classId);
+  if (held) bindDecision(classId, held.proposal.id);
   const tools = {
     mcpConfig: JSON.stringify({ mcpServers: { tutor: { type: "http", url: `http://${req.headers.host}/mcp/${conversation.token}` } } }),
     allowedTools: ["mcp__tutor__*"],
@@ -70,7 +74,7 @@ const handler: Handler = async (req, res, core) => {
     const cwd = join(tmpdir(), "aidea-tutor");
     mkdirSync(cwd, { recursive: true });
     const { tutorModel } = currentChoice(core, project.id);
-    for await (const event of core.adapter.run({ role: "tutor", cwd, message, model: tutorModel, signal: abort.signal, instructions: TUTOR_INSTRUCTIONS, tools })) {
+    for await (const event of core.adapter.run({ role: "tutor", cwd, message, model: tutorModel, signal: abort.signal, instructions: held ? DECISION_INSTRUCTIONS : TUTOR_INSTRUCTIONS, tools })) {
       if (event.type === "text" && !event.parent) texts.push(event.text);
       send(event);
     }
@@ -80,6 +84,7 @@ const handler: Handler = async (req, res, core) => {
   } finally {
     conversation.close();
     core.lessons.delete(classId);
+    unbindDecision(classId);
   }
   // What was taught is the explanations (also an open step's); a class that never used the loop falls back to the Teacher's plain text.
   if (lesson.texts.length) texts.splice(0, texts.length, ...lesson.texts);

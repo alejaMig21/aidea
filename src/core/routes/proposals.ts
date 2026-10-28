@@ -1,4 +1,5 @@
 // The person's side of Proposals: see what is pending, accept or reject it.
+import { skipClass } from "../decision-class.ts";
 import { sameSecret } from "../permissions.ts";
 import { apply, previewsOf, withPlaces } from "../proposals.ts";
 import type { Handler } from "../types.ts";
@@ -33,6 +34,10 @@ const handler: Handler = async (req, res, core) => {
       core.send(res, 403, { error: "That secret does not belong to this proposal" });
       return true;
     }
+    if (decision === "accept" && proposal.held) {
+      core.send(res, 409, { error: "This decision is waiting for a class: answer it with the Tutor, or choose Decide for me, before accepting" });
+      return true;
+    }
     if (decision === "accept") {
       const project = core.projects.get(proposal.project);
       const problem = project ? apply(project, proposal) : "The Project is not open";
@@ -43,6 +48,21 @@ const handler: Handler = async (req, res, core) => {
     }
     proposal.status = decision === "accept" ? "accepted" : "rejected";
     core.send(res, 200, { ok: true });
+    return true;
+  }
+
+  // "Decide for me": the person skips the decision class; the Proposal can then be accepted as the builder wrote it.
+  if (req.method === "POST" && url.pathname === "/proposals/skip-class") {
+    const body = (await core.readJson(req, res)) as Record<string, unknown> | null | undefined;
+    if (body === undefined) return true; // readJson already answered
+    const proposal = typeof body?.id === "string" ? core.proposals.get(body.id) : undefined;
+    if (!proposal || proposal.status !== "pending") core.send(res, 404, { error: "Unknown proposal, or it was already decided" });
+    else if (typeof body?.secret !== "string" || !sameSecret(body.secret, proposal.secret)) core.send(res, 403, { error: "That secret does not belong to this proposal" });
+    else if (!proposal.held) core.send(res, 409, { error: "This proposal is not waiting for a class" });
+    else {
+      skipClass(core, proposal);
+      core.send(res, 200, { ok: true });
+    }
     return true;
   }
   return false;

@@ -1,5 +1,6 @@
 import type { Core, Handler } from "../types.ts";
-import type { Choice } from "../preferences.ts";
+import type { Choice, Stored } from "../preferences.ts";
+import { classModeOf } from "../decision-class.ts";
 
 // The stored choice, with anything the adapter does not offer (any more) replaced by its first entry.
 export function currentChoice(core: Core, project: string): Choice {
@@ -22,7 +23,7 @@ const handler: Handler = async (req, res, core) => {
   if (req.method === "GET") {
     const project = url.searchParams.get("project") ?? "";
     if (!core.projects.has(project)) return reject("project must be a Project that is already open");
-    core.send(res, 200, { modes, models, choice: currentChoice(core, project) });
+    core.send(res, 200, { modes, models, choice: currentChoice(core, project), classMode: classModeOf(core, project) });
     return true;
   }
 
@@ -31,7 +32,11 @@ const handler: Handler = async (req, res, core) => {
     if (body === undefined) return true; // readJson already answered
     const project = typeof body?.project === "string" ? body.project : "";
     if (!core.projects.has(project)) return reject("project must be a Project that is already open");
-    const choice: Partial<Choice> = {};
+    const choice: Stored = {};
+    if (body?.classMode !== undefined) {
+      if (body.classMode !== "class" && body.classMode !== "direct") return reject('classMode must be "class" or "direct"');
+      choice.classMode = body.classMode;
+    }
     for (const field of ["mode", "model", "tutorModel"] as const) {
       const id = body?.[field];
       if (id === undefined) continue;
@@ -41,9 +46,9 @@ const handler: Handler = async (req, res, core) => {
       if (mode && !mode.available) return reject(`${mode.label} is not available: ${mode.reason ?? "no reason given"}`);
       choice[field] = entry.id;
     }
-    if (!Object.keys(choice).length) return reject("send at least one of mode, model, tutorModel");
+    if (!Object.keys(choice).length) return reject("send at least one of mode, model, tutorModel, classMode");
     core.preferences.set(project, choice);
-    core.send(res, 200, { choice: currentChoice(core, project) });
+    core.send(res, 200, { choice: currentChoice(core, project), classMode: classModeOf(core, project) });
     return true;
   }
   return false;
