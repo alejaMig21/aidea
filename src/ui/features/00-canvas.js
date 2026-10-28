@@ -88,7 +88,7 @@ async function draw(nodes) {
 // Projects
 let current = null;
 let currentUnresolved = 0; // relationships the analysis could not resolve, for the Components legend
-async function open(path) {
+async function openProject(path) {
   $("error").textContent = "";
   const res = await fetch("/projects", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ path }) });
   const body = await res.json();
@@ -102,5 +102,5 @@ async function open(path) {
   apply();
   draw(body.nodes);
 }
-$("open").onsubmit = (e) => { e.preventDefault(); open($("path").value.trim()); };
+$("open").onsubmit = (e) => { e.preventDefault(); openProject($("path").value.trim()); };
 apply();

@@ -1,6 +1,6 @@
 // Top bar: the Project switcher (current Project, recents, "Open folder...", a way back to Home).
 // Names here are prefixed "switcher" because every feature file shares one global scope.
-// Opening a Project reuses open() from the Canvas file; the recents come from the core (GET /recents).
+// Opening a Project reuses openProject() from the Canvas file; the recents come from the core (GET /recents).
 const switcherButton = $("switcher-button");
 const switcherMenu = $("switcher-menu");
 const switcherList = $("switcher-list");
@@ -79,7 +79,7 @@ async function openSwitcher() {
   if (here) parts.push(switcherLabel("Current"), switcherRow(here.name, here.path, switcherCurrent, { current: true }));
   if (others.length) {
     parts.push(switcherLabel("Recent"));
-    for (const r of others) parts.push(switcherRow(r.name, r.available ? r.path : `${r.path} (folder not found)`, () => { closeSwitcher(); open(r.path); }, { when: switcherAgo(r.openedAt), disabled: !r.available }));
+    for (const r of others) parts.push(switcherRow(r.name, r.available ? r.path : `${r.path} (folder not found)`, () => { closeSwitcher(); openProject(r.path); }, { when: switcherAgo(r.openedAt), disabled: !r.available }));
   }
   switcherList.replaceChildren(...parts);
   $("open").hidden = true;

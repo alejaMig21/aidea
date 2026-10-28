@@ -99,7 +99,7 @@ let businessHeld = {}; // block id -> titles of the person's own notes, set by d
     #business-walk .row button { padding: 4px 12px; font-size: 13px; background: transparent; color: var(--text); border: 1px solid var(--control); }
     #business-walk .row button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
     #business-walk .row .close { margin-left: auto; }
-    #layers #business-walk-open { order: 1; margin-left: 4px; padding: 3px 10px; border: 1px solid var(--control); background: transparent; color: var(--text); } /* right after the Business tab, so it is never scrolled out of view */
+    #business-walk-open { position: absolute; left: 15px; top: 58px; z-index: 2; padding: 4px 12px; border-radius: 8px; border: 1px solid var(--control); background: var(--panel); color: var(--text); font-size: 13px; } /* under the layer bar, so no tab is pushed out of view */
     .bwalk-on :is(.bblock, .bnote) { transition: opacity .25s ease; }
     .bwalk-on :is(.bblock, .bnote):not(.bwalk-now) { opacity: .2; }
     .bwalk-on .bblock.bwalk-now > rect { stroke: var(--accent); stroke-width: 2.5; }
@@ -157,7 +157,7 @@ document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !busines
 // ---- "Walk me through it": the blocks one at a time, the others dim; user-stepped, never starts by itself.
 let businessWalkOpen = false, businessStep = 0;
 const businessWalkOpener = Object.assign(document.createElement("button"), { type: "button", id: "business-walk-open", textContent: "Walk me through it", hidden: true, title: "A short guided reading of the nine blocks, one at a time" });
-layerBar.append(businessWalkOpener);
+document.querySelector("main").append(businessWalkOpener);
 const businessWalk = Object.assign(document.createElement("div"), { id: "business-walk", hidden: true, role: "region" });
 businessWalk.setAttribute("aria-label", "Guided reading of the canvas");
 const walkStep = Object.assign(document.createElement("p"), { className: "step" });

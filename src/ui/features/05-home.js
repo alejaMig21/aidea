@@ -24,7 +24,7 @@ async function refreshHome() {
     const info = homeText("span", "info", "");
     info.append(homeText("strong", "", r.name), homeText("span", "path", r.path));
     b.append(info, homeText("span", "when", r.available ? `Opened ${homeAgo(r.openedAt)}` : "Folder not found"));
-    b.onclick = () => open(r.path);
+    b.onclick = () => openProject(r.path);
     li.append(b);
     const f = homeText("button", "forget", "Forget");
     f.title = "Remove from this list; the folder is not touched";
@@ -40,7 +40,7 @@ async function refreshHome() {
 async function homeOpenFolder() {
   if (!window.aidea) return $("path").focus();
   const folder = await window.aidea.pickFolder();
-  if (folder) open(folder);
+  if (folder) openProject(folder);
 }
 $("home-open").onclick = homeOpenFolder;
 const hideHome =() => { $("home").hidden = true; };
@@ -56,6 +56,6 @@ $("home-new-form").onsubmit = async (e) => {
   const res = await fetch("/projects/new", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ parent: $("home-new-parent").value.trim(), name: $("home-new-name").value }) });
   if (!res.ok) { $("home-new-error").textContent = (await res.json()).error; return; }
   $("home-new-form").hidden = true;
-  open((await res.json()).path); // Reopening is idempotent and runs the normal draw path.
+  openProject((await res.json()).path); // Reopening is idempotent and runs the normal draw path.
 };
 refreshHome();
