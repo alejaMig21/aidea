@@ -94,21 +94,51 @@ export function nodeProblem(layer: string, n: unknown, seen: Set<string>): strin
     : layerChecks[layer](n) ?? rationaleProblem(n.rationale);
 }
 
-function parseLayer(layer: string, source: string, file: string): AuthoredLayer {
+// A problem in plain words for the interface: which layer and file, which item (its id, else its position), which field, and what was ignored.
+// `errors` keeps the raw text for other consumers.
+export type AuthoredProblem = { layer?: string; file: string; id?: string; index?: number; field?: string; message: string };
+
+// '"x" must be a non-empty string' -> 'It needs a non-empty "x"'; the other messages keep their words.
+function plainReason(raw: string): string {
+  const empty = raw.match(/^"([^"]+)" must be a non-empty string/);
+  if (empty) return `It needs a non-empty "${empty[1]}"`;
+  const field = raw.match(/^"([^"]+)" (.*)$/);
+  if (field) return `The field "${field[1]}" ${field[2]}`;
+  const dup = raw.match(/^duplicate id "(.*)"$/);
+  if (dup) return `The id "${dup[1]}" is already used by an earlier item`;
+  return `The item ${raw}`;
+}
+
+function parseLayer(layer: string, source: string, file: string, problems: AuthoredProblem[]): AuthoredLayer {
   const out: AuthoredLayer = { nodes: [], errors: [] };
   const fail = (message: string) => out.errors.push({ file, message });
+  // Records the same event as a structured problem. `raw` is the error text without its "nodes[i]: " prefix.
+  const flag = (raw: string, at?: { index: number; id?: unknown }, tail = "The item was ignored.") => {
+    const field = raw.match(/^"([^"]+)"/)?.[1];
+    problems.push({
+      layer, file,
+      ...(at && { index: at.index }),
+      ...(typeof at?.id === "string" && at.id !== "" && { id: at.id }),
+      ...(field && { field }),
+      message: at ? `${plainReason(raw)}. ${tail}` : `The file ${raw}. It was ignored.`,
+    });
+  };
   let doc: unknown;
   try {
     doc = JSON.parse(source);
   } catch (e) {
-    fail(`not valid JSON (${e instanceof Error ? e.message : e})`);
+    const message = `not valid JSON (${e instanceof Error ? e.message : e})`;
+    fail(message);
+    flag(`is ${message}`);
     return out;
   }
   if (!isObject(doc) || !Array.isArray(doc.nodes)) {
     fail('the file must be an object with a "nodes" array');
+    flag('must be an object with a "nodes" array');
     return out;
   }
   const seen = new Set<string>();
+  const indexOf = new Map<string, number>(); // where each surviving Node sits in the file
   const relations = new Map<string, { r: Fields; i: number }[]>(); // architecture: the well-formed relations of each Node, with their place in the file
   for (const [i, n0] of doc.nodes.entries()) {
     let n = n0;
@@ -117,8 +147,10 @@ function parseLayer(layer: string, source: string, file: string): AuthoredLayer 
       const kept: { r: Fields; i: number }[] = [];
       n.relations.forEach((r: unknown, j: number) => {
         const bad = relationProblem(r, j);
-        if (bad) fail(`nodes[${i}]: ${bad}`);
-        else kept.push({ r: r as Fields, i: j });
+        if (bad) {
+          fail(`nodes[${i}]: ${bad}`);
+          flag(`"relations[${j}]" is wrong: ${bad}`, { index: i, id: n.id }, "The relation was ignored.");
+        } else kept.push({ r: r as Fields, i: j });
       });
       n = { ...n, relations: kept.map((k) => k.r) };
       keptHere = kept;
@@ -127,28 +159,33 @@ function parseLayer(layer: string, source: string, file: string): AuthoredLayer 
       // A file with an unknown kind keeps its Node: the kind is reported and ignored, so the Node is drawn as a generic box.
       // (A Proposal with a bad kind is still refused, by nodeProblem.)
       fail(`nodes[${i}]: "kind" must be one of: ${KINDS.join(", ")} (ignored: drawn as a generic box)`);
+      flag(`"kind" must be one of: ${KINDS.join(", ")}`, { index: i, id: n.id }, "The kind was ignored and the item is drawn as a generic box.");
       const { kind: _ignored, ...rest } = n;
       n = rest;
     }
     const problem = nodeProblem(layer, n, seen);
     if (problem) {
       fail(`nodes[${i}]: ${problem}`);
+      flag(problem, { index: i, id: isObject(n) ? n.id : undefined });
       continue;
     }
     if (keptHere) relations.set((n as Fields).id as string, keptHere); // only a Node that survives owns its relations
     seen.add((n as Fields).id as string);
+    indexOf.set((n as Fields).id as string, i);
     out.nodes.push(n as AuthoredNode);
   }
   if (layer === "architecture") {
     out.nodes = out.nodes.filter((n) => {
       if (n.parent === undefined || seen.has(n.parent as string)) return true;
       fail(`node "${n.id}": "parent" refers to unknown id "${n.parent}"`);
+      problems.push({ layer, file, index: indexOf.get(n.id)!, id: n.id, field: "parent", message: `It sits inside "${n.parent}", which does not exist. The item was ignored.` });
       return false;
     });
     for (const n of out.nodes.filter((n) => n.relations !== undefined)) {
       n.relations = relations.get(n.id)!.filter(({ r, i }) => {
         if (seen.has(r.to as string)) return true;
         fail(`node "${n.id}": "relations[${i}].to" refers to unknown id "${r.to}"`);
+        problems.push({ layer, file, index: indexOf.get(n.id)!, id: n.id, field: `relations[${i}].to`, message: `It points to "${r.to}", which does not exist. The relation was ignored.` });
         return false;
       }).map((k) => k.r);
     }
@@ -160,29 +197,32 @@ function parseLayer(layer: string, source: string, file: string): AuthoredLayer 
 export function loadAuthored(projectPath: string) {
   const layers: Record<string, AuthoredLayer> = {};
   const errors: { file: string; message: string }[] = [];
+  const problems: AuthoredProblem[] = [];
   for (const name of Object.keys(layerChecks)) layers[name] = { nodes: [], errors: [] };
 
   const dir = join(projectPath, ".aidea");
   let entries;
   try {
-    if (lstatSync(dir).isSymbolicLink()) return { layers, errors }; // a link could point outside the Project
+    if (lstatSync(dir).isSymbolicLink()) return { layers, errors, problems }; // a link could point outside the Project
     entries = readdirSync(dir, { withFileTypes: true });
   } catch {
-    return { layers, errors }; // no .aidea folder: nothing authored yet
+    return { layers, errors, problems }; // no .aidea folder: nothing authored yet
   }
   for (const entry of entries.filter((e) => e.isFile() && e.name.endsWith(".json")).sort((a, b) => a.name.localeCompare(b.name, "en"))) {
     const file = `.aidea/${entry.name}`;
     const layer = entry.name.slice(0, -".json".length);
     if (!Object.hasOwn(layerChecks, layer)) {
       errors.push({ file, message: "unknown layer file (expected business, requirements or architecture)" });
+      problems.push({ file, message: "This file is not a layer (expected business, requirements or architecture). It was ignored." });
       continue;
     }
     const path = join(dir, entry.name);
     if (statSync(path).size > MAX_FILE_BYTES) {
       layers[layer].errors.push({ file, message: "file is larger than 1 MB" });
+      problems.push({ layer, file, message: "The file is larger than 1 MB. It was ignored." });
       continue;
     }
-    layers[layer] = parseLayer(layer, readFileSync(path, "utf8"), file);
+    layers[layer] = parseLayer(layer, readFileSync(path, "utf8"), file, problems);
   }
-  return { layers, errors };
+  return { layers, errors, problems };
 }

@@ -33,6 +33,7 @@ function markTabs() {
     const n = pendingProposals.filter((p) => p.layer === layer.key).length;
     b.textContent = layer.label;
     if (n) b.append(Object.assign(document.createElement("span"), { className: "badge", textContent: n }));
+    problemsMarkTab(b); // textContent above wiped the red problems badge: put it back
   });
 }
 

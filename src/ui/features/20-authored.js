@@ -14,10 +14,7 @@ const layerBar = document.createElement("div");
 layerBar.id = "layers";
 layerBar.setAttribute("role", "group"); // the buttons are toggles (aria-pressed), not tabs: they switch what the Canvas draws
 layerBar.setAttribute("aria-label", "Layers");
-const authoredErrors = document.createElement("div");
-authoredErrors.id = "authored-errors";
-authoredErrors.setAttribute("role", "alert");
-document.querySelector("main").append(layerBar, authoredErrors);
+document.querySelector("main").append(layerBar);
 
 // The card is 240 wide: a longer line is cut (notationClip), and the whole text stays available as the tooltip of the card.
 const authoredShort = (t) => notationClip(t, 28);
@@ -54,7 +51,6 @@ function showRationale(n) {
 
 function drawAuthored() {
   authoredGroup.replaceChildren();
-  authoredErrors.replaceChildren();
   if (!authoredData) return;
   AUTHORED_LAYERS.forEach(({ key }) => {
     const g = el("g", { "data-layer": key });
@@ -71,12 +67,7 @@ function drawAuthored() {
     authoredGroup.append(g); // architecture: drawn into it by 46-architecture.js (boundaries and relationships)
   });
   architectureRender();
-  const all = [...authoredData.errors, ...AUTHORED_LAYERS.flatMap(({ key }) => authoredData.layers[key].errors)];
-  authoredErrors.replaceChildren(...all.map((e) => {
-    const d = document.createElement("div");
-    d.textContent = `${e.file}: ${e.message}`;
-    return d;
-  }));
+  problemsRender(authoredData.problems ?? []); // 49-problems.js: tab badges and the Problems popover, never drawn on the Canvas
 }
 
 // One layer at a time: the derived view is everything on the Canvas except the authored group.
