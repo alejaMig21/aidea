@@ -4,8 +4,8 @@
 {
   const style = document.createElement("style");
   style.textContent = `
-    #problems-button { position: absolute; right: 53px; top: 15px; z-index: 2; height: 30px; padding: 0 12px; border-radius: 15px; background: var(--panel); color: var(--danger); border: 1px solid var(--danger); font-size: 12.5px; font-weight: 600; }
-    #problems-pop { position: absolute; right: 15px; top: 52px; z-index: 5; width: min(420px, calc(100% - 30px)); max-height: calc(100% - 120px); overflow-y: auto; background: var(--raised); border: 1px solid var(--control); border-radius: 12px; padding: 12px 14px; box-shadow: 0 12px 32px #0009; }
+    #problems-button { position: absolute; right: 15px; top: 54px; z-index: 2; height: 30px; padding: 0 12px; border-radius: 15px; background: var(--panel); color: var(--danger); border: 1px solid var(--danger); font-size: 12.5px; font-weight: 600; }
+    #problems-pop { position: absolute; right: 15px; top: 92px; z-index: 5; width: min(420px, calc(100% - 30px)); max-height: calc(100% - 160px); overflow-y: auto; background: var(--raised); border: 1px solid var(--control); border-radius: 12px; padding: 12px 14px; box-shadow: 0 12px 32px #0009; }
     #problems-pop h3 { margin: 0 0 6px; font: 600 10.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
     #problems-pop ul { margin: 0 0 12px; padding: 0; list-style: none; display: grid; gap: 8px; }
     #problems-pop li { font-size: 12.5px; color: var(--label); overflow-wrap: anywhere; }
