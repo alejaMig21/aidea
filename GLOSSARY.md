@@ -101,8 +101,28 @@ _Avoid_: Prompt, confirmation, dialog
 ## Learning
 
 **Tutor**:
-The part of aidea that teaches the user the reasons behind decisions, by asking them to predict before revealing.
+The part of aidea that makes sure the person understands what they build. It measures what they know, plans what they must understand for this project, teaches the reasons behind decisions by asking them to predict before revealing, and helps them write each authored layer in their own words. It can read the project and propose changes to the authored layers as Proposals, never edits code, and keeps the Learner graph of what the person has demonstrated.
 _Avoid_: Assistant, coach, explainer
+
+**Contract**:
+What the person has accepted on the Business, Requirements and Architecture layers. The builder reads it before building and may not depart from it except through a Proposal the person accepts; aidea compares what was built with it and shows the differences.
+_Avoid_: Spec, brief
+
+**Plan**:
+The Tutor's map for one project: the concepts the person must understand, in the order they depend on each other, and the decisions still open on each layer. The person sees it and asks for changes; the Tutor asks questions only about what is in it.
+_Avoid_: Curriculum, roadmap
+
+**Evidence**:
+The record of each answer the person gave in a class: whether it was right, how sure they were and what they thought. It is kept apart from the Learner graph, which holds only ideas the Tutor taught.
+_Avoid_: Score, grade
+
+**Decision class**:
+A short class in Class mode that stops the builder at one Blocking decision until the person has answered.
+_Avoid_: Quiz
+
+**Layer class**:
+A longer class, started from a layer's "Teach me through it" button, in which the Tutor builds that layer with the person, asking first and turning their answers into Proposals. Until the Tutor is available the button runs a fixed quick tour.
+_Avoid_: Tutorial, wizard
 
 **Class mode**:
 A setting in which the tutor interrupts the agent on decisions so the user must predict first.
@@ -145,7 +165,7 @@ A set of propositions that together lead to a conclusion.
 _Avoid_: Argument, path
 
 **Practice session**:
-A separate session of generated problems, based on the user's own project, that checks recall of propositions without naming them.
+A separate session of generated problems, based on the user's own project, that checks recall of propositions without naming them. Planned for a later version; the Learner graph is designed so that it can be added.
 _Avoid_: Quiz, exercise
 
 ## Window
