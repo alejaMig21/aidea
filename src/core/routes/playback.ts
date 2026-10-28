@@ -114,7 +114,7 @@ const handler: Handler = async (req, res, core) => {
   }
 
   const id = `pb-${++counter}`;
-  const recording = { id, node: node.id, input, interpreter: projectInterpreter ?? "default", ...outcome };
+  const recording = { id, project: project.id, node: node.id, input, interpreter: projectInterpreter ?? "default", ...outcome };
   if (core.recordings.size >= MAX_RECORDINGS) core.recordings.delete(core.recordings.keys().next().value!);
   core.recordings.set(id, recording);
   core.send(res, 201, recording);

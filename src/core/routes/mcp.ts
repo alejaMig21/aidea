@@ -8,6 +8,7 @@ import { contractOf } from "../contract.ts";
 import { publicView, propose, proposePattern } from "../proposals.ts";
 import type { Proposal } from "../proposals.ts";
 import { TUTOR_TOOLS, parseQuestion } from "../tutor.ts";
+import { READ_TOOLS, runReadTool } from "../tutor-reads.ts";
 import type { Handler } from "../types.ts";
 
 const MAX_MCP_BODY_BYTES = 4 * 1024 * 1024; // a request to write a file carries the whole content
@@ -110,13 +111,20 @@ const handler: Handler = async (req, res, core) => {
   } else if (method === "ping") {
     core.send(res, 200, rpcResult(id, {}));
   } else if (method === "tools/list") {
-    core.send(res, 200, rpcResult(id, { tools: tutor ? TUTOR_TOOLS : TOOLS }));
+    core.send(res, 200, rpcResult(id, { tools: tutor ? [...TUTOR_TOOLS, ...READ_TOOLS] : TOOLS }));
   } else if (method === "tools/call") {
     const args = isObject(params.arguments) ? params.arguments : {};
     const name = params.name;
 
     if (tutor) {
       // A class has its own tool set. The question is withdrawn if Claude Code drops this request before it is answered.
+      if (READ_TOOLS.some((t) => t.name === name)) {
+        const conversation = core.permissions.conversationOf(token);
+        const project = conversation && core.projects.get(conversation.project);
+        const read = project ? runReadTool(name, args, core, project) : { text: "The Project is not open", isError: true as const };
+        core.send(res, 200, toolText(id, read!.text, read!.isError));
+        return true;
+      }
       if (name !== "ask") {
         core.send(res, 200, rpcError(id, -32602, `Unknown tool: ${String(name)}`));
         return true;
