@@ -174,7 +174,8 @@ test("the core lays the graph out top to bottom and frames it", async () => {
   assert.deepEqual(at.get(idOf("while total > 100")), { id: idOf("while total > 100"), x: 0, y: 84, width: 240, height: 44 });
   assert.deepEqual(at.get(idOf("return total")), { id: idOf("return total"), x: 280, y: 168, width: 240, height: 44 });
   for (const e of g.edges.filter((e: Edge) => !e.back)) assert.ok(at.get(e.to)!.y > at.get(e.from)!.y);
-  assert.deepEqual(g.frame, { x: -24, y: -24, width: 568, height: 344 });
+  // The frame now also holds the way back, which runs 24 to the right of the widest step.
+  assert.deepEqual(g.frame, { x: -24, y: -24, width: 592, height: 344 });
 });
 
 test("asking for an Algorithm graph with bad input gives clear errors", async () => {

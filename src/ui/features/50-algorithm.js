@@ -36,18 +36,10 @@ showLayer = (which) => {
 function drawAlgorithm(graph) {
   const at = new Map(graph.rects.map((r) => [r.id, r]));
   const parts = [];
-  for (const e of graph.edges) {
-    const from = at.get(e.from), to = at.get(e.to);
-    // A way back leaves from the right side of a step and re-enters the right side of an earlier one.
-    const d = e.back
-      ? `M${from.x + from.width} ${from.y + from.height / 2} C${from.x + from.width + 70} ${from.y + from.height / 2}, ${to.x + to.width + 70} ${to.y + to.height / 2}, ${to.x + to.width} ${to.y + to.height / 2}`
-      : `M${from.x + from.width / 2} ${from.y + from.height} L${to.x + to.width / 2} ${to.y}`;
-    parts.push(el("path", { class: "flow-edge", d }));
-    if (e.label) {
-      const x = e.back ? from.x + from.width + 40 : (from.x + to.x) / 2 + from.width / 2 + 6;
-      const y = e.back ? (from.y + to.y) / 2 + from.height / 2 : (from.y + from.height + to.y) / 2;
-      parts.push(el("text", { class: "flow-label", x, y }, e.label));
-    }
+  // The core returns one route per edge (same order): a polyline of horizontal and vertical segments, and where the label goes.
+  for (const route of graph.routes) {
+    parts.push(el("path", { class: "flow-edge", d: "M" + route.points.map((p) => `${p.x} ${p.y}`).join(" L") }));
+    if (route.label) parts.push(el("text", { class: "flow-label", x: route.label.x, y: route.label.y }, route.label.text));
   }
   for (const step of graph.steps) {
     const r = at.get(step.id);

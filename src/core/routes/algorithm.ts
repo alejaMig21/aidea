@@ -39,8 +39,10 @@ const handler: Handler = async (req, res, core) => {
     throw e;
   }
 
-  const rects = layoutFlow(flow.steps, flow.edges);
-  core.send(res, 200, { node: node.id, file: node.file, line: node.line, endLine: node.endLine, ...flow, rects, frame: frameOf(rects) });
+  const { rects, routes } = layoutFlow(flow.steps, flow.edges);
+  // The frame holds the steps and every point of every route (a way back runs outside the steps).
+  const bounds = [...rects, ...routes.flatMap((r) => r.points.map((p) => ({ id: "", x: p.x, y: p.y, width: 0, height: 0 })))];
+  core.send(res, 200, { node: node.id, file: node.file, line: node.line, endLine: node.endLine, ...flow, rects, routes, frame: frameOf(bounds) });
   return true;
 };
 

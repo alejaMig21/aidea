@@ -1,5 +1,6 @@
 // The core owns where every Node sits on its Layer, so it can also say where the camera should look.
 // The interface only draws the rectangles it is given and applies the framings it is sent.
+import { layered } from "./layered.ts";
 import type { CoreNode } from "./types.ts";
 
 export type Rect = { id: string; x: number; y: number; width: number; height: number };
@@ -70,20 +71,10 @@ export function layoutAuthored(nodes: { id: string; parent?: unknown }[]): Rect[
 
 export type FlowEdge = { from: string; to: string; label?: string; back?: boolean };
 
-// An Algorithm graph runs top to bottom: a step sits one row below the lowest step that leads to it.
-// Steps are numbered in program order, so every edge that is not a way back goes from an earlier step to a later one.
-// Steps on the same row sit side by side, in that order (the "true" side first).
-export function layoutFlow(steps: { id: string }[], edges: FlowEdge[]): Rect[] {
-  const row = new Map<string, number>();
-  const placed = new Map<number, number>();
-  return steps.map((step) => {
-    const above = edges.filter((e) => e.to === step.id && !e.back).map((e) => (row.get(e.from) ?? -1) + 1);
-    const y = Math.max(0, ...above);
-    row.set(step.id, y);
-    const column = placed.get(y) ?? 0;
-    placed.set(y, column + 1);
-    return { id: step.id, x: column * COLUMN, y: y * 84, width: 240, height: 44 };
-  });
+// An Algorithm graph runs top to bottom, laid out by the layered engine: a straight run stays in one column,
+// the exits of a branch sit side by side and rejoin below, a way back goes around its loop. Returns the routes too.
+export function layoutFlow(steps: { id: string }[], edges: FlowEdge[]) {
+  return layered(steps.map((s) => ({ id: s.id, width: 240, height: 44 })), edges);
 }
 
 // The smallest rectangle that holds all the given ones, with a margin on every side.
