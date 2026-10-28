@@ -33,8 +33,24 @@ A named set of nodes on the architecture layer that together realise an architec
 _Avoid_: Template, blueprint
 
 **Algorithm graph**:
-The node-and-wire depiction of one function's steps, branches and data flow, shown instead of a UML box.
-_Avoid_: Flowchart, UML diagram
+The flowchart of one function: its steps, decisions and loops drawn with the notation engineers know for flowcharts, so that Playback can animate it.
+_Avoid_: UML diagram
+
+**Notation**:
+The shapes and arrows a layer draws with, and what each of them means. Every layer follows the notation engineers already know for that kind of diagram, in aidea's own visual style, and says in its legend what it covers and what it leaves out.
+_Avoid_: Style, theme
+
+**Legend**:
+The small explanation of a layer's notation, opened from the layer's Canvas card. It also says what the layer cannot show.
+_Avoid_: Key, help
+
+**Relationship**:
+A labelled arrow between two nodes of the same layer meaning that one uses or depends on the other. It is different from a trace link, which joins layers.
+_Avoid_: Connection, wire
+
+**Resolution**:
+How sure a derived layer is about a relationship it drew: resolved, inferred from names, or unresolved because the code is too dynamic to tell. A relationship is never drawn as certain when it is not.
+_Avoid_: Confidence, accuracy
 
 **Playback**:
 An animated run of an algorithm graph showing which step is active and how values change.
@@ -127,11 +143,11 @@ _Avoid_: Quiz, exercise
 ## Window
 
 **Column**:
-A vertical area of the window that the person can resize or fold away. The window arranges the project list, the chat and the Canvas in columns, and adds two more only when they apply: the Tutor column and the Algorithm column.
+A vertical area of the window that the person can resize or fold away. The work session arranges the chat, the Canvas and a right slot, which holds the Tutor column and the Algorithm column as tabs. Folded columns take no space, and in narrow windows the chat and the right slot open as drawers over the Canvas.
 _Avoid_: Sidebar, panel, pane
 
 **Tutor column**:
 The column that belongs to the Tutor: explanations, questions and class mode. It holds nothing else.
 
 **Algorithm column**:
-The column for everything about the algorithms layer: the form for the data of a test and the Playback. It appears only while an algorithm is open.
+The column for everything about the algorithms layer: the form for the data of a test and the Playback. Its tab is always in the right slot and is enabled only while an algorithm is open.
