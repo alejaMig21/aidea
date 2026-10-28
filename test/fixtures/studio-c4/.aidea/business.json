@@ -1,0 +1,13 @@
+{
+  "nodes": [
+    {
+      "id": "vp-fast-quotes",
+      "title": "Quotes in minutes",
+      "block": "value propositions",
+      "rationale": {
+        "why": "Small shops lose deals while waiting days for a quote.",
+        "rejected": [{ "option": "Phone-only quotes", "reason": "Does not scale past one salesperson." }]
+      }
+    }
+  ]
+}

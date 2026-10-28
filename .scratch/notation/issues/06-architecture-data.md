@@ -12,3 +12,11 @@
 - [ ] The builder's tool descriptions mention the new fields.
 - [ ] The Rationale panel shows kind, description and relations of the selected Node.
 - [ ] `GLOSSARY.md` mentions Relationship on the Architecture layer if not already covered.
+
+## Review notes
+
+- [x] Protocol tests in `test/architecture-data.test.ts` (9, written failing first); full `npm test` 172 pass, `npm run typecheck` clean; earlier authored and proposal tests unchanged.
+- [x] Per-field behaviour: an unknown `kind`, a bad `description` or a `relations` that is not an array drops the whole Node (like a bad `technology` or `parent`); a bad relation (not an object, no `to`, no `label`, non-string `technology`) or a relation to a missing Node drops only that relation and the Node survives. Errors name the field, with the original index (`"relations[1].label" ...`). Proposals refuse all of these with the same field messages (`Invalid node:` / `Invalid change:`), and also at accept time.
+- [x] Relations may point at the Node itself. Removing a Node that others relate to is not refused: those relations are dropped on the next load with an error.
+- [x] Tool descriptions mention `kind`, `description`, `relations` (NODE_HELP in `src/core/routes/mcp.ts`). Fixture `test/fixtures/studio-c4` (Designer, Web app, Quote database, external Mail service) added so `studio` stays untouched. GLOSSARY already defines Relationship.
+- [ ] Rationale panel (kind, description, relations of the selected Node) is written but not looked at in a headless browser.

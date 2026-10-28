@@ -33,6 +33,12 @@ export type ProposalRequest = { layer: unknown; id?: unknown; node?: unknown; ch
 // Architecture only: "parent" must be another Node of the layer, and a Node that is somebody's parent cannot go away.
 const parentProblem = (layer: string, node: Fields, otherIds: Set<unknown>) =>
   layer === "architecture" && node.parent !== undefined && !otherIds.has(node.parent) ? `"parent" refers to unknown id "${node.parent}"` : null;
+// Architecture only: every relation must point at a Node of the layer (itself included).
+const relationTargetProblem = (layer: string, node: Fields, ids: Set<unknown>) => {
+  if (layer !== "architecture" || !Array.isArray(node.relations)) return null;
+  const at = node.relations.findIndex((r) => !ids.has((r as Fields).to));
+  return at === -1 ? null : `"relations[${at}].to" refers to unknown id "${(node.relations[at] as Fields).to}"`;
+};
 const childOf = (nodes: { id?: unknown; parent?: unknown }[], id: string) => nodes.find((n) => n.parent === id)?.id;
 
 let counter = 0;
@@ -72,7 +78,7 @@ export function propose(
     if (pending.some((p) => p.kind === "add" && p.nodeId === nodeId)) return { error: `A proposal to add "${nodeId}" is already pending` };
     const problem = nodeProblem(key, request.node, new Set());
     if (problem) return { error: `Invalid node: ${problem}` };
-    const parent = parentProblem(key, request.node, ids);
+    const parent = parentProblem(key, request.node, ids) ?? relationTargetProblem(key, request.node, new Set([...ids, nodeId]));
     if (parent) return { error: `Invalid node: ${parent}` };
     node = request.node;
   } else {
@@ -87,7 +93,7 @@ export function propose(
       if (request.changes.id !== undefined && request.changes.id !== nodeId) return { error: 'The "id" of a Node cannot be changed: remove it and add a new one' };
       changes = request.changes;
       node = { ...current, ...changes };
-      const problem = nodeProblem(key, node, new Set()) ?? parentProblem(key, node, new Set([...ids].filter((i) => i !== nodeId)));
+      const problem = nodeProblem(key, node, new Set()) ?? parentProblem(key, node, new Set([...ids].filter((i) => i !== nodeId))) ?? relationTargetProblem(key, node, ids);
       if (problem) return { error: `Invalid change: ${problem}` };
     } else {
       const child = childOf([...existing, ...adds.map((p) => ({ id: p.nodeId, ...p.node }))], nodeId);
@@ -140,7 +146,7 @@ export function apply(project: Project, p: Proposal): string | null {
 
   if (p.kind === "add") {
     if (at !== -1) return `A Node with id "${p.nodeId}" already exists on the ${p.layer} layer (the file changed since the proposal)`;
-    const problem = nodeProblem(p.layer, p.node, new Set(nodes.map((n) => n.id as string))) ?? parentProblem(p.layer, p.node!, new Set(nodes.map((n) => n.id)));
+    const problem = nodeProblem(p.layer, p.node, new Set(nodes.map((n) => n.id as string))) ?? parentProblem(p.layer, p.node!, new Set(nodes.map((n) => n.id))) ?? relationTargetProblem(p.layer, p.node!, new Set([...nodes.map((n) => n.id), p.nodeId]));
     if (problem) return `The Node no longer fits the file: ${problem}`;
     nodes.push(p.node!);
   } else if (at === -1) {
@@ -148,7 +154,7 @@ export function apply(project: Project, p: Proposal): string | null {
   } else if (p.kind === "update") {
     const merged = { ...nodes[at], ...p.changes };
     const others = nodes.filter((_, i) => i !== at);
-    const problem = nodeProblem(p.layer, merged, new Set(others.map((n) => n.id as string))) ?? parentProblem(p.layer, merged, new Set(others.map((n) => n.id)));
+    const problem = nodeProblem(p.layer, merged, new Set(others.map((n) => n.id as string))) ?? parentProblem(p.layer, merged, new Set(others.map((n) => n.id))) ?? relationTargetProblem(p.layer, merged, new Set(nodes.map((n) => n.id)));
     if (problem) return `The change no longer fits the file: ${problem}`;
     nodes[at] = merged;
   } else {

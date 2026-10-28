@@ -1,0 +1,44 @@
+{
+  "nodes": [
+    {
+      "id": "designer",
+      "title": "Designer",
+      "technology": "Browser",
+      "kind": "person",
+      "description": "Builds a quote for a customer.",
+      "relations": [{ "to": "web-app", "label": "Builds quotes with", "technology": "HTTPS" }],
+      "rationale": { "why": "The main user of the product.", "rejected": [] }
+    },
+    {
+      "id": "web-app",
+      "title": "Web app",
+      "technology": "Python + Flask",
+      "kind": "container",
+      "description": "Serves the quote form and prices a quote.",
+      "relations": [
+        { "to": "quote-db", "label": "Reads and writes quotes", "technology": "SQL" },
+        { "to": "mailer", "label": "Sends the quote by email" }
+      ],
+      "rationale": {
+        "why": "The team already knows Python.",
+        "rejected": [{ "option": "Node + Express", "reason": "Would split the team across two languages." }]
+      }
+    },
+    {
+      "id": "quote-db",
+      "title": "Quote database",
+      "technology": "SQLite",
+      "kind": "container",
+      "description": "Stores every quote.",
+      "rationale": { "why": "One file, no server to run.", "rejected": [] }
+    },
+    {
+      "id": "mailer",
+      "title": "Mail service",
+      "technology": "SMTP",
+      "kind": "system",
+      "description": "External service that delivers email.",
+      "rationale": { "why": "Not worth building our own.", "rejected": [] }
+    }
+  ]
+}

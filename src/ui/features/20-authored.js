@@ -33,7 +33,17 @@ function showRationale(n) {
     li.textContent = `${r.option}: ${r.reason}`;
     return li;
   }));
-  const parts = [h, why];
+  const parts = [h];
+  if (n.kind) parts.push(Object.assign(document.createElement("p"), { className: "node-sub", textContent: `[${n.kind}]` }));
+  if (n.description) parts.push(Object.assign(document.createElement("p"), { textContent: n.description }));
+  parts.push(why);
+  if (n.relations?.length) {
+    const h3 = document.createElement("h2");
+    h3.textContent = "Relations";
+    const ul = document.createElement("ul");
+    ul.replaceChildren(...n.relations.map((r) => Object.assign(document.createElement("li"), { textContent: `${r.label} → ${r.to}${r.technology ? ` [${r.technology}]` : ""}` })));
+    parts.push(h3, ul);
+  }
   if (rejected.children.length) {
     const h3 = document.createElement("h2");
     h3.textContent = "Rejected alternatives";
