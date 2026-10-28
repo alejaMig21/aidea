@@ -38,3 +38,10 @@ Remaining problems:
 - One column per module: a Project with many modules is very wide (no wrapping into bands).
 - Long member names are not clipped (width estimated at 7.4 px per character).
 - The shared legend "Colours" row still says "Unresolved or inferred: grey, dashed, never moving" (`45-notation.js`, left alone to avoid merge conflicts); inferred edges do move here, as the ticket asks.
+
+## Review fixes
+
+- Hovering a class no longer recolours an unresolved edge: it keeps its grey (headless: computed stroke `rgb(91, 101, 120)` while lit, same for a broken Requirements trace edge).
+- The unresolved count in the legend comes from the layout response (`unresolved`) on every drawing, not only when the Project is opened (test added).
+- The "Not shown" list now also names imports of modules outside the Project, calls in class bodies and decorators, and aliases (`f = g`).
+- Text clipping uses one shared helper (`notationClip` in `45-notation.js`).

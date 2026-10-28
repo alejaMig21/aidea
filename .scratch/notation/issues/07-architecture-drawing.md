@@ -12,3 +12,15 @@
 - [ ] Packets travel along relationships; the animation switch and reduce-motion are respected.
 - [ ] The legend opens from "?".
 - [ ] Verified headless: screenshots of the `studio` fixture (extended with kinds, descriptions and relations) next to the prototype's Architecture tab, differences listed in the review notes; no console errors.
+
+## Review notes
+
+Headless run (Chrome, 1440x900, `studio-c4` fixture, after the review fixes): the layer draws (about 50 shapes) with no console errors, and only the Mail service gets the External look because it sets `external: true`. Not verified: hover lighting, packets and the person glyph were not inspected in this run; the drawing was not compared side by side with the prototype's Architecture tab; proposal previews were covered by protocol tests, not looked at in a browser.
+
+## Review fixes
+
+- Only a Node with `external: true` is drawn with the dashed External look and label (see ticket 06).
+- An unknown `kind` is drawn as a generic box (the Node is kept; see ticket 06), as this ticket's acceptance list says.
+- The layout indexes boundary members in a Map instead of scanning leaves per relation, climbs parent chains iteratively, and ignores a repeated id after the first.
+- The leftover generic card loop and parent connector of ticket 13 were deleted from `20-authored.js` and `70-proposals.js`; `layoutAuthored` was unreachable and is gone.
+- Broken-link marks survive an Architecture redraw (`markBroken()`).

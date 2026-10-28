@@ -27,3 +27,11 @@ Verified with test/business-canvas.test.ts (core protocol) and a headless Chrome
 - [x] No console errors besides the pre-existing /favicon.ico 404. typecheck and npm test pass (168 pass, 1 skipped).
 
 Differences from the prototype: SVG instead of HTML, so "above neighbours" moves the hovered note to the end of the layer while hovered (no restack on keyboard focus). Block numbers follow the core order of the nine names, not the prototype telling order; no step mode. The block id stays "key partnerships", titled "Key Partners". Long titles wrap to two lines then ellipsis (tooltip has the full title). Flows run along the bottom strip of the blocks they cross, with small arrowheads. Blocks breathe all the time, not only the active one. First visit fits the canvas. Business legend is registered in 46-business.js, loaded after the kit.
+
+## Review fixes
+
+- Notes carry `data-node` (their Node id), so a double-click zooms along their Trace links and a Broken link marks them (`.bnote.has-broken`); `data-light` (the block) keeps the hover lighting of the block's flows. Verified headless on a Business fixture with one good and one broken trace.
+- Hovering a note never lit the flows: the flow `data-ends` were space-separated while block ids contain spaces. Business flows now use `|` as separator and the kit reads either form (headless: 2 flows lit on hover).
+- Broken-link marks were lost whenever a layer was redrawn (Requirements traces arriving, Architecture redraws); `markBroken()` re-applies them after each redraw.
+- Credit line reads exactly "Business Model Canvas by Strategyzer AG, licensed CC BY-SA 3.0. Layout adapted for aidea." followed by a real link (`target="_blank" rel="noopener noreferrer"` to creativecommons.org/licenses/by-sa/3.0/). It has an opaque panel background, sits in a strip above the zoom control, and Fit leaves room for it (headless at 420 px wide: no overlap with blocks or notes, no horizontal scroll).
+- `electron/main.js`: `setWindowOpenHandler` opens http(s) links with `shell.openExternal` and denies the window. Electron was not launched (no visible windows allowed in this pass), so this handler is untested.

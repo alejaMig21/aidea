@@ -26,3 +26,13 @@ Core: `flow.py` steps now carry `construct`, `generic`, `io`, `finally`, `except
 Differences from the prototype: layout is the engine's, not hand-placed (the `return` sits beside the loop and the back edge runs far right); the token is a plain dot parked on the step's centre (covers some text); loop exits are labelled "next item / done" and "yes / no"; break/continue are pointed pentagons and with has a double frame (not in the prototype); no trace table or narration.
 
 Remaining: the exception edge is drawn from `try`, while the run raises from inside the body, so the token jumps to the handler along that edge; the `finally` marker is only a dotted outline and a tag.
+
+## Review fixes
+
+- `flow.py`: a call to a known I/O function now flags the step wherever it sits: `with` items, a `for` iterable, an `if`/`while` test, a `match` subject, a `return`/`raise` value. A plain step is still drawn as a parallelogram; a decision, loop, `with` or terminator keeps its own symbol and carries an `input`/`output` tag instead. `eval`, `exec` and `__import__` stay in the Playback effect list (it fakes them) but are no longer reported as I/O (`effects.io_of`). Fixture `symbols.reads` and tests added; the old assertion that a `with open(...)` step has no `io` flag was replaced (the flag is now set, the symbol stays a double frame).
+- `flowBox` sizes I/O-flagged control steps by their own symbol, not as parallelograms.
+- Branch and loop diamonds are stroked with the neutral label colour; accent is kept for the Playback token ("active now").
+- The exception `flow-flash` is under `body:not(.motion-off)` and a `prefers-reduced-motion` rule, and is more specific than the kit's dash rule: computed `animation-name` is `flow-flash` with motion on and `none` with motion off (headless).
+- Flow edges now carry the kit's packets (forward edges only, red for an exception edge) and the start terminator breathes; a recording hides the packets (headless: 6 packets moving on an idle `ops.drain`, 0 visible during a replay; motion off stops the breathing).
+- A leftover `has-recording` class made a newly opened graph look dimmed; it is cleared when a graph opens and when the Project is redrawn.
+- Not done: the open items of the review notes above (side-by-side comparison with the prototype) are unchanged.
