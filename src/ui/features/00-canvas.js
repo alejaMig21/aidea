@@ -93,6 +93,7 @@ async function open(path) {
   const res = await fetch("/projects", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ path }) });
   const body = await res.json();
   if (!res.ok) { $("error").textContent = body.error; return; }
+  if (current !== body.id) authoredShown = "components"; // a different Project starts on the derived view, not on a layer it may not have yet
   current = body.id;
   currentUnresolved = body.unresolved ?? 0;
   document.dispatchEvent(new CustomEvent("project-opened", { detail: { id: body.id } }));
