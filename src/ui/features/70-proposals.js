@@ -45,7 +45,9 @@ function drawProposals() {
     const pad = p.kind === "add" ? 0 : 5;
     const { x, y, width, height } = p.rect;
     g.append(el("rect", { x: x - pad, y: y - pad, width: width + 2 * pad, height: height + 2 * pad, rx: 10 }));
-    if (p.kind === "add") {
+    if (p.kind === "add" && height < 64) { // a Business note: just its title, the dashed outline says it is a Proposal
+      g.append(el("text", { x: x + 10, y: y + 26 }, authoredShort(p.node?.title ?? p.nodeId)));
+    } else if (p.kind === "add") {
       const layer = AUTHORED_LAYERS.find((l) => l.key === p.layer);
       g.append(
         el("text", { x: x + width - 14, y: y + 25, class: "tag" }, "PROPOSAL"),

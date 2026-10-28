@@ -69,7 +69,54 @@ export function layoutAuthored(nodes: { id: string; parent?: unknown }[]): Rect[
   return nodes.map((n) => at.get(n.id)!);
 }
 
-export type FlowEdge = { from: string; to: string; label?: string; back?: boolean };
+// Business layer: the nine blocks of the canvas in its canonical arrangement on a five-column grid
+// (partners | activities over resources | value propositions | relationships over channels | segments),
+// with cost structure (three columns) and revenue streams (two) across the bottom.
+// Notes fill their block in the order given, one note per grid column the block spans (so 3 and 2 across in the wide bottom blocks);
+// a block is as tall as its notes need, and the rows of the top part stretch to keep the three tall blocks level.
+// Each area is [column, row, columns spanned, rows spanned].
+const BLOCK_W = 240, BLOCK_GAP = 16, BLOCK_HEAD = 40, BLOCK_PAD = 12, NOTE_H = 44, NOTE_GAP = 8;
+const BLOCK_AREAS: Record<string, [number, number, number, number]> = {
+  "key partnerships": [0, 0, 1, 2], "key activities": [1, 0, 1, 1], "key resources": [1, 1, 1, 1],
+  "value propositions": [2, 0, 1, 2], "customer relationships": [3, 0, 1, 1], channels: [3, 1, 1, 1],
+  "customer segments": [4, 0, 1, 2], "cost structure": [0, 2, 3, 1], "revenue streams": [3, 2, 2, 1],
+};
+export function layoutBusiness(nodes: { id: string; block?: unknown }[]) {
+  const names = Object.keys(BLOCK_AREAS);
+  const widthOf = (span: number) => span * BLOCK_W + (span - 1) * BLOCK_GAP;
+  const held = new Map(names.map((name) => [name, nodes.filter((n) => n.block === name)]));
+  const need = (name: string) => {
+    const rows = Math.ceil(held.get(name)!.length / BLOCK_AREAS[name][2]);
+    return BLOCK_HEAD + Math.max(rows, 2) * (NOTE_H + NOTE_GAP) + BLOCK_PAD - NOTE_GAP;
+  };
+  const upper = Math.max(need("key activities"), need("customer relationships"));
+  let lower = Math.max(need("key resources"), need("channels"));
+  const tall = Math.max(need("key partnerships"), need("value propositions"), need("customer segments"));
+  lower = Math.max(lower, tall - upper - BLOCK_GAP);
+  const top = [0, upper + BLOCK_GAP, upper + BLOCK_GAP + lower + BLOCK_GAP];
+  const heights = [upper, lower, Math.max(need("cost structure"), need("revenue streams"))];
+  const blocks: Rect[] = [];
+  const rects: Rect[] = [];
+  for (const name of names) {
+    const [column, row, columns, rowsSpanned] = BLOCK_AREAS[name];
+    const height = rowsSpanned === 2 ? upper + BLOCK_GAP + lower : heights[row];
+    const block = { id: name, x: column * (BLOCK_W + BLOCK_GAP), y: top[row], width: widthOf(columns), height };
+    blocks.push(block);
+    const across = columns;
+    const width = Math.floor((block.width - 2 * BLOCK_PAD - (across - 1) * NOTE_GAP) / across);
+    held.get(name)!.forEach((n, i) => rects.push({
+      id: n.id,
+      x: block.x + BLOCK_PAD + (i % across) * (width + NOTE_GAP),
+      y: block.y + BLOCK_HEAD + Math.floor(i / across) * (NOTE_H + NOTE_GAP),
+      width,
+      height: NOTE_H,
+    }));
+  }
+  const order = new Map(nodes.map((n, i) => [n.id, i]));
+  return { blocks, rects: rects.sort((a, b) => order.get(a.id)! - order.get(b.id)!) };
+}
+
+export type FlowEdge ={ from: string; to: string; label?: string; back?: boolean };
 
 // An Algorithm graph runs top to bottom, laid out by the layered engine: a straight run stays in one column,
 // the exits of a branch sit side by side and rejoin below, a way back goes around its loop. Returns the routes too.

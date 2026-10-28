@@ -6,9 +6,24 @@
 
 **Status:** ready-for-agent
 
-- [ ] Through the core protocol: the Business layer layout places the nine blocks in the canonical arrangement, an empty block is present, notes are placed inside their block without overlap, and the result is identical for the same input.
-- [ ] A note whose `block` is not one of the nine is reported as an error as today.
-- [ ] Accepting a Proposal that adds a Business Node shows it as a note in its block.
-- [ ] Hover tilt works as described and never overlaps a neighbour for the widest note in the fixtures; straight when not hovered.
-- [ ] The credit line is always visible on the layer; the legend opens from "?".
-- [ ] Verified headless: screenshots next to the prototype's Business tab, differences listed in the review notes; tilt checked on the widest and a narrow note; no console errors.
+- [x] Through the core protocol: the Business layer layout places the nine blocks in the canonical arrangement, an empty block is present, notes are placed inside their block without overlap, and the result is identical for the same input.
+- [x] A note whose `block` is not one of the nine is reported as an error as today.
+- [x] Accepting a Proposal that adds a Business Node shows it as a note in its block.
+- [x] Hover tilt works as described and never overlaps a neighbour for the widest note in the fixtures; straight when not hovered.
+- [x] The credit line is always visible on the layer; the legend opens from "?".
+- [x] Verified headless: screenshots next to the prototype's Business tab, differences listed in the review notes; tilt checked on the widest and a narrow note; no console errors.
+
+## Review notes
+
+Verified with test/business-canvas.test.ts (core protocol) and a headless Chrome script (1440x900 and 420x800) on a project with 19 notes; screenshot compared with the prototype Business tab.
+
+- [x] Core layout (layoutBusiness in src/core/layout.ts, served by GET /layout?layer=business as rects (notes) plus blocks): canonical arrangement, empty blocks present, notes inside their block without overlap, blocks grow, same input gives the same result.
+- [x] A note with an invalid block is still an error and is not placed.
+- [x] A Proposal adding a Business Node previews inside its block (test). Drawn as a dashed outline with the title only; that drawing was not screenshotted.
+- [x] Hover tilt measured: widest note (237 wide) 1.45deg, 216 wide 1.59deg, 232 wide 1.48deg, alternating sign; straight at rest and after leaving; opaque #41392f; lifted 2px. 3px at the ends, gap 8px, so no neighbour overlap.
+- [x] Keyboard focus lifts, tilts and goes opaque. Animations off: no tilt (checked). The prefers-reduced-motion rule is in the CSS but was not checked under emulated reduced motion.
+- [x] Credit line always visible on the layer; legend opens from "?" with blocks, sticky notes, both flows and not-shown items.
+- [x] Value packets (accent) run Value Propositions to Customer Segments through Channels and Customer Relationships; money packets (amber) from Customer Segments down to Revenue Streams. Hovering a block or note lights the flows through its block.
+- [x] No console errors besides the pre-existing /favicon.ico 404. typecheck and npm test pass (168 pass, 1 skipped).
+
+Differences from the prototype: SVG instead of HTML, so "above neighbours" moves the hovered note to the end of the layer while hovered (no restack on keyboard focus). Block numbers follow the core order of the nine names, not the prototype telling order; no step mode. The block id stays "key partnerships", titled "Key Partners". Long titles wrap to two lines then ellipsis (tooltip has the full title). Flows run along the bottom strip of the blocks they cross, with small arrowheads. Blocks breathe all the time, not only the active one. First visit fits the canvas. Business legend is registered in 46-business.js, loaded after the kit.

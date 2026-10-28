@@ -66,6 +66,15 @@ function drawAuthored() {
   if (!authoredData) return;
   AUTHORED_LAYERS.forEach(({ key, detail }) => {
     const g = el("g", { "data-layer": key });
+    if (key === "business") { // the canvas of nine blocks draws itself (46-business.js)
+      drawBusiness(g, authoredData.layers.business.nodes, authoredLayouts.business, (node, n) => {
+        authoredGroup.querySelectorAll(".selected").forEach((s) => s.classList.remove("selected"));
+        node.classList.add("selected");
+        showRationale(n);
+      });
+      authoredGroup.append(g);
+      return;
+    }
     // Connectors go first, so they sit behind the cards.
     authoredData.layers[key].nodes.forEach((n) => {
       const parent = authoredLayouts[key].find((r) => r.id === n.parent);
@@ -137,7 +146,7 @@ draw = async (nodes) => {
   const responses = await Promise.all(AUTHORED_LAYERS.map(({ key }) => fetch(`/layout?project=${id}&layer=${key}`)));
   if (project !== current || !data || responses.some((r) => !r.ok)) return;
   const layouts = {};
-  (await Promise.all(responses.map((r) => r.json()))).forEach((body, i) => { layouts[AUTHORED_LAYERS[i].key] = body.rects; });
+  (await Promise.all(responses.map((r) => r.json()))).forEach((body, i) => { layouts[AUTHORED_LAYERS[i].key] = Object.assign(body.rects, { blocks: body.blocks }); });
   if (project !== current) return;
   authoredData = data;
   authoredLayouts = layouts;

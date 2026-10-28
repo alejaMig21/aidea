@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 import { lstatSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadAuthored, nodeProblem } from "./authored.ts";
-import { frameOf, layoutAuthored } from "./layout.ts";
+import { frameOf, layoutAuthored, layoutBusiness } from "./layout.ts";
 import { AUTHORED_LAYERS } from "./traces.ts";
 import type { AuthoredLayerKey } from "./traces.ts";
 import type { Project } from "./types.ts";
@@ -117,7 +117,8 @@ export function withPlaces(store: ProposalStore, project: Project) {
     .map((p) => {
       const existing = nodesOf(project, p.layer);
       const adds = pendingOf(store, project.id, p.layer).filter((q) => q.kind === "add");
-      const places = layoutAuthored([...existing.map((n) => ({ id: String(n.id), parent: n.parent })), ...adds.map((q) => ({ id: q.nodeId, parent: q.node?.parent }))]);
+      const nodes = [...existing.map((n) => ({ id: String(n.id), parent: n.parent, block: n.block })), ...adds.map((q) => ({ id: q.nodeId, parent: q.node?.parent, block: q.node?.block }))];
+      const places = p.layer === "business" ? layoutBusiness(nodes).rects : layoutAuthored(nodes);
       const rect = places.find((r) => r.id === p.nodeId) ?? null;
       return { ...publicView(p), rect, frame: rect && frameOf([rect]) };
     });
