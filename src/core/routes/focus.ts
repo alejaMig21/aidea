@@ -23,11 +23,16 @@ function openProject(core: Core, res: ServerResponse, id: unknown): Project | nu
 }
 
 // A class is drawn as one box with its members inside: it stays lit with the members it holds, and the members with it.
-function litBy(project: Project, footprint: string[], id: string): boolean {
-  if (footprint.includes(id)) return true;
-  const classOf = (n?: { parent: string | null }) => project.nodes.find((c) => c.id === n?.parent && c.kind === "class")?.id;
-  const owner = id.includes("#") ? id.split("#")[0] : classOf(project.nodes.find((n) => n.id === id));
-  return (owner !== undefined && footprint.includes(owner)) || footprint.some((f) => classOf(project.nodes.find((n) => n.id === f)) === id);
+function litBy(project: Project, footprint: string[]): (id: string) => boolean {
+  const byId = new Map(project.nodes.map((n) => [n.id, n]));
+  const lit = new Set(footprint);
+  const classOf = (n?: { parent: string | null }) => { const p = n?.parent ? byId.get(n.parent) : undefined; return p?.kind === "class" ? p.id : undefined; };
+  const holders = new Set(footprint.map((f) => classOf(byId.get(f)))); // classes that hold a lit member
+  return (id) => {
+    if (lit.has(id) || holders.has(id)) return true;
+    const owner = id.includes("#") ? id.split("#")[0] : classOf(byId.get(id));
+    return owner !== undefined && lit.has(owner);
+  };
 }
 
 const handler: Handler = async (req, res, core) => {
@@ -85,13 +90,14 @@ const handler: Handler = async (req, res, core) => {
     const below = layerBelow[layer];
     const target = layoutOf(below, project, authored).some((r) => footprint.includes(r.id)) ? below : "components";
     const rects = layoutOf(target, project, authored);
+    const isLit = litBy(project, footprint);
     trails.set(project, [...(trails.get(project) ?? []), { layer, node: body!.node as string }]);
     core.send(res, 200, {
       layer: target,
       origin: { layer, node: body!.node },
       footprint,
       frame: frameOf(rects.filter((r) => footprint.includes(r.id))),
-      dimmed: rects.filter((r) => !litBy(project, footprint, r.id)).map((r) => r.id),
+      dimmed: rects.filter((r) => !isLit(r.id)).map((r) => r.id),
       broken,
     });
     return true;

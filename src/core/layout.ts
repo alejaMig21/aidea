@@ -1,6 +1,6 @@
 // The core owns where every Node sits on its Layer, so it can also say where the camera should look.
 // The interface only draws the rectangles it is given and applies the framings it is sent.
-import { layered } from "./layered.ts";
+import { layered, least, most } from "./layered.ts";
 import { layoutComponentsDiagram } from "./components-layout.ts";
 import type { CoreNode } from "./types.ts";
 
@@ -119,14 +119,15 @@ export function flowBox(step: FlowStep) {
 // the exits of a branch sit side by side and rejoin below, a way back goes around its loop. Returns the routes too.
 export function layoutFlow(steps: FlowStep[], edges: FlowEdge[]) {
   // the label that is drawn is the exit's name (Yes, next item, a pattern, an exception type), so the engine makes room for it
-  return layered(steps.map((s) => ({ id: s.id, ...flowBox(s) })), edges.map((e) => ({ ...e, label: e.exit ?? e.label })));
+  const boxes = steps.map((s) => ({ id: s.id, ...flowBox(s) })); // sized once; the wrapped lines go back to the caller for drawing
+  return { ...layered(boxes, edges.map((e) => ({ ...e, label: e.exit ?? e.label }))), lines: new Map(boxes.map((b) => [b.id, b.lines])) };
 }
 
 // The smallest rectangle that holds all the given ones, with a margin on every side.
 export function frameOf(rects: Rect[], margin = 24) {
-  const left = Math.min(...rects.map((r) => r.x));
-  const top = Math.min(...rects.map((r) => r.y));
-  const right = Math.max(...rects.map((r) => r.x + r.width));
-  const bottom = Math.max(...rects.map((r) => r.y + r.height));
+  const left = least(rects.map((r) => r.x));
+  const top = least(rects.map((r) => r.y));
+  const right = most(rects.map((r) => r.x + r.width));
+  const bottom = most(rects.map((r) => r.y + r.height));
   return { x: left - margin, y: top - margin, width: right - left + 2 * margin, height: bottom - top + 2 * margin };
 }

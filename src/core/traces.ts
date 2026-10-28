@@ -27,9 +27,12 @@ export function layoutOf(layer: LayerKey, project: Project, authored: Authored):
 
 export function traceLinks(project: Project, authored: Authored): TraceLink[] {
   const links: TraceLink[] = [];
+  let components: Set<string> | undefined; // the Components layout is the costly one: laid out once per call
+  const componentIds = () => (components ??= new Set(layoutComponents(project.nodes).map((r) => r.id)));
   for (const layer of AUTHORED_LAYERS) {
-    const targets = new Set(layoutOf(layerBelow[layer], project, authored).map((r) => r.id));
-    const code = layer === "requirements" ? new Set(layoutComponents(project.nodes).map((r) => r.id)) : new Set<string>();
+    const below = layerBelow[layer];
+    const targets = below === "components" ? componentIds() : new Set(layoutOf(below, project, authored).map((r) => r.id));
+    const code = layer === "requirements" ? componentIds() : new Set<string>();
     for (const node of authored.layers[layer].nodes) {
       for (const to of (node.traces as string[] | undefined) ?? []) {
         // A functional requirement may also point straight at code; a non-functional one only at Architecture.

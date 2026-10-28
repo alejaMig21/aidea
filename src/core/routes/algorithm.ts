@@ -1,5 +1,5 @@
 // Algorithms layer: the control-flow graph of one function, laid out and framed by the core.
-import { flowBox, frameOf, layoutFlow } from "../layout.ts";
+import { frameOf, layoutFlow } from "../layout.ts";
 import type { FlowEdge, FlowStep } from "../layout.ts";
 import { locate, moduleAndName } from "../locate.ts";
 import { runPython } from "../python.ts";
@@ -39,10 +39,10 @@ const handler: Handler = async (req, res, core) => {
     throw e;
   }
 
-  const { rects, routes } = layoutFlow(flow.steps, flow.edges);
+  const { rects, routes, lines } = layoutFlow(flow.steps, flow.edges);
   // The frame holds the steps and every point of every route (a way back runs outside the steps).
   const bounds = [...rects, ...routes.flatMap((r) => r.points.map((p) => ({ id: "", x: p.x, y: p.y, width: 0, height: 0 })))];
-  core.send(res, 200, { node: node.id, file: node.file, line: node.line, endLine: node.endLine, ...flow, steps: flow.steps.map((s) => ({ ...s, lines: flowBox(s).lines })), rects, routes, frame: frameOf(bounds) });
+  core.send(res, 200, { node: node.id, file: node.file, line: node.line, endLine: node.endLine, ...flow, steps: flow.steps.map((s) => ({ ...s, lines: lines.get(s.id) })), rects, routes, frame: frameOf(bounds) });
   return true;
 };
 

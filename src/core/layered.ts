@@ -28,6 +28,9 @@ type Item = { id: string; real: boolean; w: number; h: number; rank: number; gro
 
 const natural = (a: string, b: string) => a.localeCompare(b, "en", { numeric: true });
 const mean = (xs: number[]) => xs.reduce((s, v) => s + v, 0) / xs.length;
+// Math.min/max(...xs) pass every element as an argument, which fails on a very large array: these loop instead.
+export const least = (xs: number[]) => xs.reduce((a, b) => (b < a ? b : a), Infinity);
+export const most = (xs: number[], floor = -Infinity) => xs.reduce((a, b) => (b > a ? b : a), floor);
 
 export function layered(nodes: LayerNode[], edges: LayerEdge[], groups: LayerGroup[] = []) {
   const known = new Map(nodes.map((n) => [n.id, n]));
@@ -40,14 +43,30 @@ export function layered(nodes: LayerNode[], edges: LayerEdge[], groups: LayerGro
   for (const e of all) if (!e.back) incoming.set(e.to, [...(incoming.get(e.to) ?? []), e.from]);
   const rank = new Map<string, number>();
   const visiting = new Set<string>();
-  const rankOf = (id: string): number => {
-    if (rank.has(id)) return rank.get(id)!;
-    visiting.add(id);
-    let r = 0;
-    for (const from of incoming.get(id) ?? []) if (!visiting.has(from)) r = Math.max(r, rankOf(from) + 1);
-    visiting.delete(id);
-    rank.set(id, r);
-    return r;
+  // Depth-first with an explicit stack, so a chain of thousands of nodes cannot overflow the call stack.
+  const rankOf = (start: string) => {
+    if (rank.has(start)) return;
+    const stack = [{ id: start, from: incoming.get(start) ?? [], next: 0, r: 0 }];
+    visiting.add(start);
+    while (stack.length) {
+      const top = stack[stack.length - 1];
+      let descended = false;
+      while (top.next < top.from.length) {
+        const from = top.from[top.next++];
+        if (visiting.has(from)) continue; // closing a cycle: that edge is a way back
+        if (rank.has(from)) { top.r = Math.max(top.r, rank.get(from)! + 1); continue; }
+        visiting.add(from);
+        stack.push({ id: from, from: incoming.get(from) ?? [], next: 0, r: 0 });
+        descended = true;
+        break;
+      }
+      if (descended) continue;
+      stack.pop();
+      visiting.delete(top.id);
+      rank.set(top.id, top.r);
+      const parent = stack[stack.length - 1];
+      if (parent) parent.r = Math.max(parent.r, top.r + 1);
+    }
   };
   ids.forEach(rankOf);
   const isBack = (e: (typeof all)[number]) => e.back || e.from === e.to || rank.get(e.to)! <= rank.get(e.from)!;
@@ -135,9 +154,9 @@ export function layered(nodes: LayerNode[], edges: LayerEdge[], groups: LayerGro
     for (let guard = 0; guard < 8; guard++) {
       const members = [...items.values()].filter((it) => it.group === g.id);
       if (!members.length) break;
-      const x1 = Math.min(...members.map((m) => m.x - m.w / 2)) - MARGIN, x2 = Math.max(...members.map((m) => m.x + m.w / 2)) + MARGIN;
+      const x1 = least(members.map((m) => m.x - m.w / 2)) - MARGIN, x2 = most(members.map((m) => m.x + m.w / 2)) + MARGIN;
       const rows = members.map((m) => m.rank);
-      const hit = layers.slice(Math.min(...rows), Math.max(...rows) + 1).flat().find((it) => it.group !== g.id && it.x + it.w / 2 > x1 && it.x - it.w / 2 < x2);
+      const hit = layers.slice(least(rows), most(rows) + 1).flat().find((it) => it.group !== g.id && it.x + it.w / 2 > x1 && it.x - it.w / 2 < x2);
       if (!hit) break;
       const row = layers[hit.rank];
       const mine = row.find((o) => o.group === g.id);
@@ -146,7 +165,7 @@ export function layered(nodes: LayerNode[], edges: LayerEdge[], groups: LayerGro
       for (const o of row.slice(from, to)) o.x += d;
     }
   }
-  const left = Math.min(...[...items.values()].map((it) => it.x - it.w / 2)); // the leftmost node starts at x = 0
+  const left = least([...items.values()].map((it) => it.x - it.w / 2)); // the leftmost node starts at x = 0
   for (const l of layers) for (const it of l) it.x -= left;
 
   // Rows: top-aligned; the gap between rows holds the elbows and the labels (wider when groups need their margins).
@@ -155,7 +174,7 @@ export function layered(nodes: LayerNode[], edges: LayerEdge[], groups: LayerGro
   const bottom: number[] = [];
   layers.forEach((l, r) => {
     top[r] = r ? bottom[r - 1] + gapY : 0;
-    bottom[r] = top[r] + Math.max(0, ...l.map((it) => it.h));
+    bottom[r] = top[r] + most(l.map((it) => it.h), 0);
     for (const it of l) it.y = top[r];
   });
   const midGap = (r: number) => bottom[r] + gapY / 2; // y of the horizontal run between row r and row r + 1
@@ -222,7 +241,7 @@ export function layered(nodes: LayerNode[], edges: LayerEdge[], groups: LayerGro
     entered.set(e.to, k + 1);
     const ty = t.y + t.h / 2 + (k - (enters(e.to) - 1) / 2) * 8;
     const near = lanes.filter((l) => l.lo <= hi && lo <= l.hi).map((l) => l.x + LANE_STEP);
-    const lane = Math.max(LANE + Math.max(...layers.slice(lo, hi + 1).flat().map(rightOf)), ...near);
+    const lane = Math.max(LANE + most(layers.slice(lo, hi + 1).flat().map(rightOf)), most(near));
     lanes.push({ lo, hi, x: lane });
     const points: Point[] = [];
     const below = f.x - f.w / 2 + f.w * 0.85, above = t.x - t.w / 2 + t.w * 0.85;
@@ -242,8 +261,8 @@ export function layered(nodes: LayerNode[], edges: LayerEdge[], groups: LayerGro
   for (const g of groups) {
     const inside = rects.filter((r) => g.children.includes(r.id));
     if (!inside.length) continue;
-    const x = Math.min(...inside.map((r) => r.x)) - MARGIN, y = Math.min(...inside.map((r) => r.y)) - MARGIN;
-    boxes.push({ id: g.id, x, y, width: Math.max(...inside.map((r) => r.x + r.width)) + MARGIN - x, height: Math.max(...inside.map((r) => r.y + r.height)) + MARGIN - y });
+    const x = least(inside.map((r) => r.x)) - MARGIN, y = least(inside.map((r) => r.y)) - MARGIN;
+    boxes.push({ id: g.id, x, y, width: most(inside.map((r) => r.x + r.width)) + MARGIN - x, height: most(inside.map((r) => r.y + r.height)) + MARGIN - y });
   }
   return { rects, routes: all.map((e) => routes.get(e.index)!), groups: boxes };
 }

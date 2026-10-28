@@ -33,7 +33,9 @@ function wrap(text: string): string[] {
 
 const sameStr = (v: unknown) => (typeof v === "string" ? v : "");
 
-export function layoutArchitecture(nodes: Fields[]): ArchitectureDrawing {
+export function layoutArchitecture(all: Fields[]): ArchitectureDrawing {
+  const taken = new Set<string>();
+  const nodes = all.filter((n) => !taken.has(sameStr(n.id)) && taken.add(sameStr(n.id))); // a repeated id: the first Node wins
   const ids = new Set(nodes.map((n) => sameStr(n.id)));
   const parentOf = new Map(nodes.map((n) => [sameStr(n.id), ids.has(n.parent as string) ? (n.parent as string) : undefined]));
   const inLoop = (id: string) => {
@@ -43,7 +45,13 @@ export function layoutArchitecture(nodes: Fields[]): ArchitectureDrawing {
   };
   for (const id of [...ids].filter(inLoop)) parentOf.set(id, undefined); // a loop of parents makes roots
   const hasKids = new Set([...parentOf.values()].filter((p): p is string => p !== undefined));
-  const top = (id: string): string => (parentOf.get(id) === undefined ? id : top(parentOf.get(id)!));
+  const topId = new Map<string, string>();
+  for (const id of ids) {
+    let at = id;
+    while (parentOf.get(at) !== undefined) at = parentOf.get(at)!; // loops were cut above, so this ends
+    topId.set(id, at);
+  }
+  const top = (id: string) => topId.get(id) ?? id;
   // ponytail: one level of boundary. A Node nested deeper is drawn as a box inside its top-level ancestor's boundary.
   const isGroup = (id: string) => hasKids.has(id) && parentOf.get(id) === undefined;
 
@@ -65,7 +73,9 @@ export function layoutArchitecture(nodes: Fields[]): ArchitectureDrawing {
 
   const leaves = nodes.map((n) => sameStr(n.id)).filter((id) => !isGroup(id));
   const groupIds = [...ids].filter(isGroup);
-  const rep = (id: string) => (isGroup(id) ? leaves.find((l) => top(l) === id && l !== id) : id); // a boundary stands for its first member while routing
+  const members = new Map<string, string[]>(); // boundary id -> its leaves, in input order
+  for (const l of leaves) if (top(l) !== l) (members.get(top(l)) ?? members.set(top(l), []).get(top(l))!).push(l);
+  const rep = (id: string) => (isGroup(id) ? members.get(id)?.[0] : id); // a boundary stands for its first member while routing
   const edges: (LayerEdge & { technology?: string; original: [string, string] })[] = [];
   for (const n of nodes) {
     for (const r of (n.relations as Relation[] | undefined) ?? []) {
@@ -77,7 +87,7 @@ export function layoutArchitecture(nodes: Fields[]): ArchitectureDrawing {
   const laid = layered(
     leaves.map((id) => ({ id, ...sizes.get(id)! })),
     edges,
-    groupIds.map((g) => ({ id: g, children: leaves.filter((l) => top(l) === g && l !== g) })),
+    groupIds.map((g) => ({ id: g, children: members.get(g) ?? [] })),
   );
 
   const at = new Map<string, Rect>();
