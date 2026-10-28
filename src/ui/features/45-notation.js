@@ -22,9 +22,15 @@ const notationColours = [
     .nt-packet { fill: var(--tone, var(--accent)); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--tone, var(--accent)) 70%, transparent)); pointer-events: none; }
     body.motion-off .nt-packet { display: none; }
     @keyframes nt-flow { to { stroke-dashoffset: -12; } }
-    @keyframes nt-breathe { 0%, 100% { filter: drop-shadow(0 0 0 transparent); } 50% { filter: drop-shadow(0 0 9px color-mix(in srgb, var(--tone, var(--accent)) 55%, transparent)); } }
+    @keyframes nt-breathe {
+      0%, 100% { filter: drop-shadow(0 0 1px color-mix(in srgb, var(--tone, var(--accent)) 15%, transparent)); }
+      12.5%, 87.5% { filter: drop-shadow(0 0 2.2px color-mix(in srgb, var(--tone, var(--accent)) 22%, transparent)); }
+      25%, 75% { filter: drop-shadow(0 0 5px color-mix(in srgb, var(--tone, var(--accent)) 35%, transparent)); }
+      37.5%, 62.5% { filter: drop-shadow(0 0 7.8px color-mix(in srgb, var(--tone, var(--accent)) 49%, transparent)); }
+      50% { filter: drop-shadow(0 0 9px color-mix(in srgb, var(--tone, var(--accent)) 55%, transparent)); }
+    }
     body:not(.motion-off) [data-flow]:not([data-tone="unresolved"]) { stroke-dasharray: 7 5; animation: nt-flow .9s linear infinite; }
-    body:not(.motion-off) :is([data-breathe], .anode.selected) { animation: nt-breathe 2.5s ease-in-out infinite; }
+    body:not(.motion-off) :is([data-breathe], .anode.selected) { animation: nt-breathe 2s linear infinite; /* eight sine-sampled stops: a smooth swell, never fully off */ }
     body.motion-paused * { animation-play-state: paused !important; }
     svg#canvas.nt-hl [data-ends] { opacity: .18; transition: opacity .2s; }
     svg#canvas.nt-hl [data-ends].nt-lit { opacity: 1; stroke-width: 3; }
