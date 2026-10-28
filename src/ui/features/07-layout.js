@@ -72,13 +72,13 @@ function rightSetTabEnabled(id, enabled) {
 // The Tutor tab is always present. Its entry point stays disabled until the Tutor exists.
 {
   const pane = document.createElement("div");
-  const tile = Object.assign(document.createElement("div"), { className: "tile", textContent: "?" });
+  const tile = Object.assign(document.createElement("div"), { className: "tile tutor-empty", textContent: "?" });
   tile.setAttribute("aria-hidden", "true");
-  const title = Object.assign(document.createElement("h2"), { textContent: "The Tutor is not available yet" });
-  const text = Object.assign(document.createElement("p"), {
+  const title = Object.assign(document.createElement("h2"), { className: "tutor-empty", textContent: "The Tutor is not available yet" });
+  const text = Object.assign(document.createElement("p"), { className: "tutor-empty",
     textContent: "When it is, it will explain why each decision was made and ask you questions about your project.",
   });
-  const start = Object.assign(document.createElement("button"), { type: "button", textContent: "Start a class", disabled: true });
+  const start = Object.assign(document.createElement("button"), { type: "button", id: "tutor-start", textContent: "Start a class", disabled: true });
   pane.append(tile, title, text, start);
   rightRegisterTab("tutor", "Tutor", pane);
 }

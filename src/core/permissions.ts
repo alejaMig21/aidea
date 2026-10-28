@@ -4,13 +4,21 @@
 //   - an answer secret, sent only to the person's interface inside the stream, so only the interface can answer.
 // The builder must not be able to approve its own requests, so it never learns the answer secret.
 import { randomBytes, timingSafeEqual } from "node:crypto";
+import { answerForTutor, parseAnswer, publicQuestion } from "./tutor.ts";
+import type { Question } from "./tutor.ts";
 
 export type Decision = { behavior: "allow" } | { behavior: "deny"; message: string };
 
 const MAX_PENDING = 20; // requests one conversation may have waiting at once
 
-type Conversation = { project: string; secret: string; emit: (event: object) => void; pending: Set<string> };
-type Request = { conversation: Conversation; resolve: (decision: Decision) => void };
+// A "tutor" conversation is a class: the same token and secret mechanism, but its tools are the Tutor's and its requests are questions.
+type Role = "builder" | "tutor";
+type Conversation = { project: string; secret: string; emit: (event: object) => void; pending: Set<string>; role: Role };
+// `onClose` is what a waiting request resolves to when its conversation ends. A question carries its committed answer.
+type Request = { conversation: Conversation; resolve: (value: any) => void; onClose: unknown; question?: Question };
+
+// What the Tutor's waiting `ask` call gets back: the answer, or why there is none.
+export type QuestionResult = { text: string; isError?: true };
 
 export const sameSecret = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
@@ -21,9 +29,9 @@ export function createBroker() {
 
   return {
     // A conversation starts, about one Project. `emit` sends an event to the person's chat stream.
-    open(emit: (event: object) => void, project: string) {
+    open(emit: (event: object) => void, project: string, role: Role = "builder") {
       const token = randomBytes(16).toString("hex");
-      const conversation: Conversation = { project, secret: randomBytes(16).toString("hex"), emit, pending: new Set() };
+      const conversation: Conversation = { project, secret: randomBytes(16).toString("hex"), emit, pending: new Set(), role };
       conversations.set(token, conversation);
       return {
         token,
@@ -31,7 +39,8 @@ export function createBroker() {
         close() {
           conversations.delete(token);
           for (const id of conversation.pending) {
-            requests.get(id)?.resolve({ behavior: "deny", message: "The conversation ended before the person answered" });
+            const request = requests.get(id);
+            request?.resolve(request.onClose);
             requests.delete(id);
           }
           conversation.pending.clear();
@@ -42,9 +51,9 @@ export function createBroker() {
     isOpen: (token: string) => conversations.has(token),
 
     // What the builder's tools need to know about the conversation they belong to.
-    conversationOf(token: string): { project: string; secret: string; emit: (event: object) => void } | undefined {
+    conversationOf(token: string): { project: string; secret: string; emit: (event: object) => void; role: Role } | undefined {
       const c = conversations.get(token);
-      return c && { project: c.project, secret: c.secret, emit: c.emit };
+      return c && { project: c.project, secret: c.secret, emit: c.emit, role: c.role };
     },
 
     // The builder asks for permission. Resolves when the person answers; undefined if the conversation is not running.
@@ -58,7 +67,7 @@ export function createBroker() {
       }
       const id = `perm-${++counter}`;
       return new Promise((resolve) => {
-        requests.set(id, { conversation, resolve });
+        requests.set(id, { conversation, resolve, onClose: { behavior: "deny", message: "The conversation ended before the person answered" } });
         conversation.pending.add(id);
         conversation.emit({ type: "permission", id, secret: conversation.secret, tool, input });
         gaveUp?.addEventListener(
@@ -78,11 +87,48 @@ export function createBroker() {
     // waiting (never asked, or already answered).
     answer(id: string, secret: string, decision: Decision): "answered" | "unknown" | "forbidden" {
       const request = requests.get(id);
-      if (!request) return "unknown";
+      if (!request || request.question) return "unknown";
       if (!sameSecret(secret, request.conversation.secret)) return "forbidden";
       requests.delete(id);
       request.conversation.pending.delete(id);
       request.resolve(decision);
+      return "answered";
+    },
+
+    // The Tutor asks a question. Resolves when the person answers, or when the class ends or the Tutor stops waiting.
+    askQuestion(token: string, question: Question, gaveUp?: AbortSignal): Promise<QuestionResult> | undefined {
+      const conversation = conversations.get(token);
+      if (!conversation) return undefined;
+      if (conversation.pending.size >= MAX_PENDING) return Promise.resolve({ text: "Too many questions are waiting for the person", isError: true });
+      const id = `q-${++counter}`;
+      return new Promise((resolve) => {
+        const withdrawn: QuestionResult = { text: "The person did not answer: the class ended or you stopped waiting. Do not ask again; end your turn.", isError: true };
+        requests.set(id, { conversation, resolve, onClose: withdrawn, question });
+        conversation.pending.add(id);
+        conversation.emit({ type: "tutor_question", id, secret: conversation.secret, ...publicQuestion(question) });
+        gaveUp?.addEventListener(
+          "abort",
+          () => {
+            if (!requests.delete(id)) return; // already answered
+            conversation.pending.delete(id);
+            resolve(withdrawn);
+            conversation.emit({ type: "tutor_question_expired", id });
+          },
+          { once: true },
+        );
+      });
+    },
+
+    // The person answers a question. "invalid" carries a message for the interface; the question keeps waiting.
+    answerQuestion(id: string, secret: string, raw: Record<string, unknown>): "answered" | "unknown" | "forbidden" | { invalid: string } {
+      const request = requests.get(id);
+      if (!request?.question) return "unknown";
+      if (!sameSecret(secret, request.conversation.secret)) return "forbidden";
+      const parsed = parseAnswer(request.question, raw);
+      if ("error" in parsed) return { invalid: parsed.error };
+      requests.delete(id);
+      request.conversation.pending.delete(id);
+      request.resolve({ text: JSON.stringify(answerForTutor(request.question, parsed.answer)) });
       return "answered";
     },
   };

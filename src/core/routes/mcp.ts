@@ -7,6 +7,7 @@
 import { contractOf } from "../contract.ts";
 import { publicView, propose } from "../proposals.ts";
 import type { Proposal } from "../proposals.ts";
+import { TUTOR_TOOLS, parseQuestion } from "../tutor.ts";
 import type { Handler } from "../types.ts";
 
 const MAX_MCP_BODY_BYTES = 4 * 1024 * 1024; // a request to write a file carries the whole content
@@ -88,6 +89,7 @@ const handler: Handler = async (req, res, core) => {
     return true;
   }
   const { id, method } = message;
+  const tutor = core.permissions.conversationOf(token)?.role === "tutor";
   const params = isObject(message.params) ? message.params : {};
   if (id === undefined) {
     res.writeHead(202).end(); // a notification: nothing to answer
@@ -100,10 +102,28 @@ const handler: Handler = async (req, res, core) => {
   } else if (method === "ping") {
     core.send(res, 200, rpcResult(id, {}));
   } else if (method === "tools/list") {
-    core.send(res, 200, rpcResult(id, { tools: TOOLS }));
+    core.send(res, 200, rpcResult(id, { tools: tutor ? TUTOR_TOOLS : TOOLS }));
   } else if (method === "tools/call") {
     const args = isObject(params.arguments) ? params.arguments : {};
     const name = params.name;
+
+    if (tutor) {
+      // A class has its own tool set. The question is withdrawn if Claude Code drops this request before it is answered.
+      if (name !== "ask") {
+        core.send(res, 200, rpcError(id, -32602, `Unknown tool: ${String(name)}`));
+        return true;
+      }
+      const parsed = parseQuestion(args);
+      if ("error" in parsed) {
+        core.send(res, 200, toolText(id, parsed.error, true));
+        return true;
+      }
+      const gaveUp = new AbortController();
+      res.on("close", () => gaveUp.abort());
+      const result = (await core.permissions.askQuestion(token, parsed.question, gaveUp.signal)) ?? { text: "The class is not running", isError: true as const };
+      core.send(res, 200, toolText(id, result.text, result.isError));
+      return true;
+    }
 
     if (name === "approve") {
       // The person approves exactly what the card shows, so a request without a proper input is refused, never guessed.

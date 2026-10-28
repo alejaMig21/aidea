@@ -20,6 +20,12 @@ const realSpawn: SpawnFn = (args, cwd) =>
     },
   });
 
+// Nearly all input is reported as cache tokens (measured: `input_tokens` alone was 2 to 8), so all three count.
+const inputTokens = (u: any): number | undefined => {
+  const parts = [u?.input_tokens, u?.cache_creation_input_tokens, u?.cache_read_input_tokens].filter((n) => typeof n === "number");
+  return parts.length ? parts.reduce((a, b) => a + b, 0) : undefined;
+};
+
 // Turns stream-json lines into aidea events. Stateful because Claude Code reports a signed-out run twice
 // (an assistant message flagged with `error`, then an error result) and we want a single error event.
 export function createParser() {
@@ -57,7 +63,7 @@ export function createParser() {
         text: String(j.result ?? ""),
         costUsd: j.total_cost_usd,
         durationMs: j.duration_ms,
-        usage: { inputTokens: j.usage?.input_tokens, outputTokens: j.usage?.output_tokens },
+        usage: { inputTokens: inputTokens(j.usage), outputTokens: j.usage?.output_tokens },
       }];
     }
     return [];
@@ -82,12 +88,17 @@ export function createClaudeAdapter(spawnFn: SpawnFn = realSpawn): Adapter {
         { id: "haiku", label: "Haiku" },
       ],
     },
-    async *run({ cwd, message, sessionId, mode, model, signal, permission, instructions }) {
+    async *run({ role, tools, cwd, message, sessionId, mode, model, signal, permission, instructions }) {
       const args = ["-p", "--output-format", "stream-json", "--verbose"];
       if (sessionId) args.push("--resume", sessionId);
       if (mode) args.push("--permission-mode", mode);
       if (model && model !== "default") args.push("--model", model);
-      if (instructions) args.push("--append-system-prompt", instructions);
+      if (role === "tutor") {
+        // Measured recipe (research 03): these flags leave only the core's tools, no plugins, skills, hooks or CLAUDE.md.
+        // One process serves the whole class: a resumed session loses this isolation, so nothing is persisted or resumed.
+        args.push("--system-prompt", instructions ?? "", "--setting-sources", "", "--strict-mcp-config", "--disable-slash-commands", "--tools", "", "--no-session-persistence");
+        if (tools) args.push("--mcp-config", tools.mcpConfig, "--allowedTools", tools.allowedTools.join(","));
+      } else if (instructions) args.push("--append-system-prompt", instructions);
       // Permission requests that the person's own rules do not settle go to aidea's tool instead of being denied.
       if (permission) {
         args.push("--mcp-config", permission.mcpConfig, "--permission-prompt-tool", permission.tool);

@@ -65,7 +65,9 @@ export type Adapter = {
   // `mode` and `model` are ids from `options`, chosen by the person for this message.
   // `permission` is how the agent can ask aidea for permission: an MCP configuration (JSON text) and the name of its tool.
   // `instructions` are added to the agent's own system prompt.
-  run: (opts: { cwd: string; message: string; sessionId?: string; mode?: string; model?: string; signal?: AbortSignal; instructions?: string; permission?: { mcpConfig: string; tool: string; allowedTools: string[]; deniedTools: string[] } }) => AsyncIterable<AgentEvent>;
+  // `role` is "builder" (the default) or "tutor": the Tutor runs isolated, with its own instructions as the whole system prompt
+  // and only `tools` (an MCP configuration and the tools it may use), never the person's plugins or settings.
+  run: (opts: { role?: "builder" | "tutor"; tools?: { mcpConfig: string; allowedTools: string[] }; cwd: string; message: string; sessionId?: string; mode?: string; model?: string; signal?: AbortSignal; instructions?: string; permission?: { mcpConfig: string; tool: string; allowedTools: string[]; deniedTools: string[] } }) => AsyncIterable<AgentEvent>;
 };
 
 // A spawn-like process source; the real one launches `claude`, tests replay recorded streams.
