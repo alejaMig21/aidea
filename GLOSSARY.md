@@ -12,6 +12,10 @@ _Avoid_: Whiteboard, diagram, board
 One level of abstraction of a project (business, requirements, architecture, components and data, algorithms, code) that becomes visible at a given zoom depth.
 _Avoid_: Level, tier, view
 
+**Lens**:
+Information laid over a layer that already exists, such as a measurement of cost on the Components and Algorithms layers, without becoming a layer of its own or changing the stack of layers.
+_Avoid_: Overlay layer, mode
+
 **Authored layer**:
 A layer whose content is written by a person or the agent and stored as the project's own record, because it cannot be recovered from code.
 _Avoid_: Manual layer, high layer
