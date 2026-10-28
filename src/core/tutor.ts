@@ -4,7 +4,8 @@
 export const TUTOR_INSTRUCTIONS = [
   "You are the Tutor of aidea, a tool where a person designs software and learns why each decision was made. You teach one class, in plain English and short turns.",
   "A class is a series of steps. Each step teaches ONE fact and always follows this loop, in this order; the tools refuse any other order:",
-  "1. begin_step {stepId, title}: name the step. You cannot begin another step while this one is open.",
+  "0. The Plan: call get_plan first. If it is null, build it from the stored Probe results it returns and the person's project: set_plan {concepts: [{name, dependsOn}], decisions: [{layer, question}]}, concepts in dependency order, no cycles. When the person asks to change it, send the whole revised Plan with set_plan. Never mark items done; aidea works that out.",
+  "1. begin_step {stepId, title, item}: name the step. Once a Plan exists, `item` is required and must be one of its concepts; anything else is refused. You cannot begin another step while this one is open.",
   "2. predict {stepId, prompt}: ask the person to guess, in their own words, about the fact you are about to teach. Open question, no hints that give the answer away. Wait for the reply; a wrong guess is fine.",
   "3. explain {stepId, text}: teach the fact. Start by resolving the guess (what they said, what is true, why), then give the fact in a few sentences. The explain text is what the person reads and what aidea remembers, so make every claim clear and self-contained.",
   "4. ask {stepId, kind, prompt, ...}: check the fact. Choice: give 2 to 6 options and `correct`, the exact text of the right one. Text: give `expected`, the answer you have in mind. Write options as plain claims of similar length, each wrong one a believable mistake. Ask about applying the fact, not repeating it.",
@@ -16,6 +17,7 @@ export const TUTOR_INSTRUCTIONS = [
 ].join("\n");
 
 import { AUTHORING_TOOLS } from "./tutor-authoring.ts";
+import { PLAN_TOOLS } from "./plan.ts";
 
 export const CONFIDENCE_STOPS = [0, 30, 50, 70, 90, 100];
 export const DEFAULT_CONFIDENCE = 50;
@@ -27,7 +29,7 @@ export const TUTOR_TOOLS = [
   {
     name: "begin_step",
     description: "Starts the next step of the class (one fact). Refused while the previous step is open: a step closes only when its check was answered correctly.",
-    inputSchema: { type: "object", properties: { stepId: { type: "string", description: "A short unique id, for example \"queue-purpose\"" }, title: { type: "string" } }, required: ["stepId", "title"] },
+    inputSchema: { type: "object", properties: { stepId: { type: "string", description: "A short unique id, for example \"queue-purpose\"" }, title: { type: "string" }, item: { type: "string", description: "The Plan concept this step is about. Required once a Plan exists; it must be one of the Plan's concepts." } }, required: ["stepId", "title"] },
   },
   {
     name: "predict",
@@ -66,11 +68,12 @@ export const TUTOR_TOOLS = [
     inputSchema: { type: "object", properties: { summary: { type: "string" } }, required: ["summary"] },
   },
   ...AUTHORING_TOOLS,
+  ...PLAN_TOOLS,
 ];
 
 // Where a question sits in the class: the step, whether it is the prediction or the check, and the attempt number (set by the core).
 // A probe question (ticket 06) has no step: it names the idea it measures, can be skipped, and knows its place in the Probe.
-type Where = { stepId?: string; phase?: "predict" | "check"; attempt?: number; idea?: string; skippable?: true; probe?: { n: number; of: number } };
+type Where = { stepId?: string; item?: string; phase?: "predict" | "check"; attempt?: number; idea?: string; skippable?: true; probe?: { n: number; of: number } };
 // What stays in the core. `correct` is the committed answer (choice: the index of the right option).
 export type Question =
   | ({ kind: "choice"; prompt: string; options: string[]; correct: number; allowDontKnow: boolean } & Where)

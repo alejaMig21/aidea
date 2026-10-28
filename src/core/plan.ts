@@ -1,0 +1,173 @@
+// The Plan: the concepts the person must understand for a Project, in dependency order, and the decisions still open on each layer.
+// The Teacher sets it with set_plan and revises it the same way (each call replaces the last); the person never edits it by hand.
+// The core refuses a cycle and, once a Plan exists, any step about an item outside it. What is "covered" is never stored:
+// it is derived from the Evidence and the Learner graph every time it is asked for. Plans live in the per-user folder, outside any Project.
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { normalise } from "./learner-pipeline.ts";
+import { LAYER_CONCEPTS, isLayer } from "./probe.ts";
+import type { Core } from "./types.ts";
+
+export type PlanConcept = { name: string; dependsOn: string[]; layer?: string };
+export type PlanDecision = { layer: string; question: string };
+export type Plan = { project: string; concepts: PlanConcept[]; decisions: PlanDecision[]; time: string };
+
+const str = { type: "string" };
+export const PLAN_TOOLS = [
+  {
+    name: "get_plan",
+    description: "Returns the Plan stored for this Project (null if none) and the stored Probe results per layer, so you can build or revise the Plan from what the person already knows.",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "set_plan",
+    description:
+      "Sets the Plan for this Project, replacing the previous one (to revise it, send the whole new Plan, keeping the items that still hold). " +
+      "concepts: 1 to 30 of {name, dependsOn: [names of other concepts it needs first], layer?: business, requirements, architecture, components or algorithms}. decisions: {layer, question} for the choices still open. " +
+      "Dependencies must not form a cycle. Items are never marked done: what the person has covered is worked out by aidea.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        concepts: { type: "array", items: { type: "object", properties: { name: str, dependsOn: { type: "array", items: str }, layer: str }, required: ["name", "dependsOn"] } },
+        decisions: { type: "array", items: { type: "object", properties: { layer: str, question: str }, required: ["layer", "question"] } },
+      },
+      required: ["concepts"],
+    },
+  },
+];
+
+const isObj = (x: unknown): x is Record<string, unknown> => typeof x === "object" && x !== null && !Array.isArray(x);
+const text = (x: unknown, max: number): x is string => typeof x === "string" && x.trim().length > 0 && x.length <= max;
+const onlyKeys = (o: Record<string, unknown>, keys: string[], at: string) => {
+  const extra = Object.keys(o).find((k) => !keys.includes(k));
+  return extra ? `${at} has an unknown field "${extra}": use only ${keys.join(", ")}. Items are never marked done; aidea works that out.` : undefined;
+};
+
+// Checks what the Teacher sent. The error text is written for the model: it says what to change.
+export function parsePlan(args: Record<string, unknown>): { concepts: PlanConcept[]; decisions: PlanDecision[] } | { error: string } {
+  const { concepts: raw, decisions: rawDecisions = [] } = args;
+  if (!Array.isArray(raw) || raw.length < 1 || raw.length > 30) return { error: "set_plan needs concepts: a list of 1 to 30 entries {name, dependsOn, layer?}" };
+  const concepts: PlanConcept[] = [];
+  const seen = new Set<string>();
+  for (const [i, c] of raw.entries()) {
+    const at = `concepts[${i}]`;
+    if (!isObj(c)) return { error: `${at} must be an object {name, dependsOn, layer?}` };
+    const extra = onlyKeys(c, ["name", "dependsOn", "layer"], at);
+    if (extra) return { error: extra };
+    if (!text(c.name, 200)) return { error: `${at}.name must be the concept's name, as text of at most 200 characters` };
+    const key = normalise(c.name);
+    if (seen.has(key)) return { error: `${at}.name "${c.name}" is listed twice. Each concept appears once.` };
+    seen.add(key);
+    if (!Array.isArray(c.dependsOn) || !c.dependsOn.every((d) => text(d, 200))) return { error: `${at}.dependsOn must be a list (possibly empty) of the names of concepts it needs first` };
+    if (c.layer !== undefined && !isLayer(c.layer)) return { error: `${at}.layer must be one of business, requirements, architecture, components, algorithms` };
+    concepts.push({ name: c.name.trim(), dependsOn: c.dependsOn.map((d: string) => d.trim()), ...(c.layer ? { layer: c.layer as string } : {}) });
+  }
+  for (const [i, c] of concepts.entries()) {
+    const missing = c.dependsOn.find((d) => !seen.has(normalise(d)));
+    if (missing) return { error: `concepts[${i}] ("${c.name}") depends on "${missing}", which is not a concept of the Plan. Add it as a concept or remove the dependency.` };
+  }
+  const cycle = findCycle(concepts);
+  if (cycle) return { error: `The dependencies form a cycle: ${cycle.join(" -> ")}. Break it so every concept can be taught after the ones it needs.` };
+  if (!Array.isArray(rawDecisions) || rawDecisions.length > 30) return { error: "decisions must be a list of at most 30 entries {layer, question}" };
+  const decisions: PlanDecision[] = [];
+  for (const [i, d] of rawDecisions.entries()) {
+    const at = `decisions[${i}]`;
+    if (!isObj(d)) return { error: `${at} must be an object {layer, question}` };
+    const extra = onlyKeys(d, ["layer", "question"], at);
+    if (extra) return { error: extra };
+    if (!isLayer(d.layer)) return { error: `${at}.layer must be one of business, requirements, architecture, components, algorithms` };
+    if (!text(d.question, 300)) return { error: `${at}.question must be the open decision, as text of at most 300 characters` };
+    decisions.push({ layer: d.layer, question: d.question.trim() });
+  }
+  return { concepts, decisions };
+}
+
+// The first dependency cycle, as a closed path of names, or null.
+function findCycle(concepts: PlanConcept[]): string[] | null {
+  const byKey = new Map(concepts.map((c) => [normalise(c.name), c]));
+  const state = new Map<string, 1 | 2>(); // 1 on the current path, 2 finished
+  const path: string[] = [];
+  const visit = (c: PlanConcept): string[] | null => {
+    const k = normalise(c.name);
+    if (state.get(k) === 2) return null;
+    if (state.get(k) === 1) return [...path.slice(path.findIndex((n) => normalise(n) === k)), c.name];
+    state.set(k, 1);
+    path.push(c.name);
+    for (const d of c.dependsOn) {
+      const found = visit(byKey.get(normalise(d))!);
+      if (found) return found;
+    }
+    path.pop();
+    state.set(k, 2);
+    return null;
+  };
+  for (const c of concepts) {
+    const found = visit(c);
+    if (found) return found;
+  }
+  return null;
+}
+
+// plans.jsonl: one line per set_plan, the last for a Project wins (memory only without a folder).
+export function createPlans(dir?: string) {
+  const file = dir && join(dir, "plans.jsonl");
+  const plans = new Map<string, Plan>();
+  if (file && existsSync(file)) {
+    for (const line of readFileSync(file, "utf8").split("\n")) {
+      try {
+        const p = JSON.parse(line);
+        if (p?.project && Array.isArray(p.concepts)) plans.set(p.project, p);
+      } catch {
+        // an empty or torn line: skipped
+      }
+    }
+  }
+  return {
+    get: (project: string) => plans.get(project),
+    put(p: Plan) {
+      if (file) {
+        mkdirSync(dir!, { recursive: true });
+        appendFileSync(file, "\n" + JSON.stringify(p) + "\n"); // a leading newline: a torn last line cannot swallow this record
+      }
+      plans.set(p.project, p);
+    },
+  };
+}
+export type Plans = ReturnType<typeof createPlans>;
+
+// The names of the Plan's concepts the person has covered: the idea is on the Learner graph, or a check about it was answered correctly.
+export function coveredOf(core: Core, plan: Plan): string[] {
+  const held = new Set(core.learner.graph().propositions.flatMap((p) => [p.name, ...p.aliases].map(normalise)));
+  const checked = new Set(core.learner.evidence({ project: plan.project }).filter((e) => e.phase === "check" && e.correct === true && e.item).map((e) => e.item));
+  return plan.concepts.map((c) => c.name).filter((n) => held.has(normalise(n)) || checked.has(normalise(n)));
+}
+
+// The item a step is about, checked against the Plan. Without a Plan any step is allowed (the Plan never gates a first class).
+export function itemFor(core: Core, project: string, item: unknown): { item?: string } | { error: string } {
+  const plan = core.plans.get(project);
+  if (!plan) return {};
+  const names = plan.concepts.map((c) => c.name);
+  if (typeof item !== "string" || !item.trim()) return { error: `begin_step needs \`item\`: the Plan concept this step is about. The Plan holds: ${names.join(", ")}. If the person needs something else, change the Plan with set_plan first.` };
+  const hit = plan.concepts.find((c) => normalise(c.name) === normalise(item));
+  if (!hit) return { error: `"${item.trim()}" is not in the Plan, so the person is not asked about it. The Plan holds: ${names.join(", ")}. Pick one of those, or change the Plan with set_plan if the person asked for it.` };
+  return { item: normalise(hit.name) };
+}
+
+type Reply = { text: string; isError?: true };
+// Runs get_plan and set_plan for a class. Null when the tool is not one of them.
+export function runPlanTool(name: string, args: Record<string, unknown>, core: Core, project: string, emit: (e: object) => void): Reply | null {
+  if (name === "get_plan") {
+    const probes = Object.keys(LAYER_CONCEPTS).flatMap((l) => {
+      const r = core.probes.get(project, l);
+      return r ? [{ layer: l, status: r.status, topics: r.topics }] : [];
+    });
+    return { text: JSON.stringify({ plan: core.plans.get(project) ?? null, probes }) };
+  }
+  if (name !== "set_plan") return null;
+  const parsed = parsePlan(args);
+  if ("error" in parsed) return { text: parsed.error, isError: true };
+  const plan: Plan = { project, ...parsed, time: new Date().toISOString() };
+  core.plans.put(plan);
+  emit({ type: "tutor_plan", plan, covered: coveredOf(core, plan) });
+  return { text: JSON.stringify({ ok: true, next: "The Plan is set and shown to the person. Begin a step with begin_step, giving `item`: one of the Plan's concepts." }) };
+}

@@ -5,12 +5,13 @@
 import { evidenceOf } from "./learner.ts";
 import { callRole } from "./learner-pipeline.ts";
 import { runAuthoringTool } from "./tutor-authoring.ts";
+import { itemFor, runPlanTool } from "./plan.ts";
 import { answerForTutor, parseQuestion } from "./tutor.ts";
 import type { Answer, Question } from "./tutor.ts";
 import type { Core } from "./types.ts";
 
 type State = "new" | "predicted" | "explained" | "missed" | "closed";
-type Step = { title: string; state: State; predicts: number; checks: number };
+type Step = { title: string; item?: string; state: State; predicts: number; checks: number };
 type Failure = { error: string };
 
 const MAX_PROSE = 4000;
@@ -47,14 +48,14 @@ export function createLesson() {
     elements,
     isFinished: () => finished,
 
-    begin(args: Record<string, unknown>): Failure | { stepId: string } {
+    begin(args: Record<string, unknown>, item?: string): Failure | { stepId: string } {
       if (finished) return { error: "The class is finished. End your turn." };
       const { stepId, title } = args;
       if (!nonEmpty(stepId, 100)) return { error: "begin_step needs a stepId: a short unique id for the step" };
       if (!nonEmpty(title, 200)) return { error: "begin_step needs a title: a few words naming the step" };
       if (open) return { error: `Step "${open}" is still open: ${WHAT_NEXT[steps.get(open)!.state]}. Finish it before beginning another step.` };
       if (steps.has(stepId)) return { error: `A step called "${stepId}" already exists. Use a new stepId for a new step.` };
-      steps.set(stepId, { title: title.trim(), state: "new", predicts: 0, checks: 0 });
+      steps.set(stepId, { title: title.trim(), ...(item ? { item } : {}), state: "new", predicts: 0, checks: 0 });
       open = stepId;
       return { stepId };
     },
@@ -66,7 +67,7 @@ export function createLesson() {
       if (!nonEmpty(args.prompt, MAX_PROSE)) return { error: "predict needs a prompt: the open question you want the person to answer" };
       if (step.state !== "new") return { error: `Step "${args.stepId}" already has its prediction: ${WHAT_NEXT[step.state]}.` };
       step.predicts++;
-      return { question: { kind: "text", prompt: args.prompt.trim(), allowDontKnow: true, stepId: args.stepId as string, phase: "predict", attempt: step.predicts } };
+      return { question: { kind: "text", prompt: args.prompt.trim(), allowDontKnow: true, stepId: args.stepId as string, ...(step.item ? { item: step.item } : {}), phase: "predict", attempt: step.predicts } };
     },
     predicted(stepId: string) {
       const step = steps.get(stepId);
@@ -96,7 +97,7 @@ export function createLesson() {
       const q = parsed.question;
       if (q.kind === "text" && !nonEmpty(q.expected, MAX_PROSE)) return { error: "A text check needs `expected`: the answer you have in mind, fixed before the question is shown" };
       step.checks++;
-      return { question: { ...q, stepId: args.stepId as string, phase: "check", attempt: step.checks } };
+      return { question: { ...q, stepId: args.stepId as string, ...(step.item ? { item: step.item } : {}), phase: "check", attempt: step.checks } };
     },
     // The verdict of a check: right closes the step, wrong leaves it open for a re-teach.
     checked(stepId: string, correct: boolean) {
@@ -158,8 +159,13 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
   const authored = await runAuthoringTool(name, args, { core, token, lesson, gaveUp });
   if (authored) return authored;
 
+  const planned = runPlanTool(name, args, core, project, (e) => conversation.emit(e));
+  if (planned) return planned.isError ? err(planned.text) : { text: planned.text };
+
   if (name === "begin_step") {
-    const r = lesson.begin(args);
+    const planItem = itemFor(core, project, args.item);
+    if ("error" in planItem) return err(planItem.error);
+    const r = lesson.begin(args, planItem.item);
     if ("error" in r) return err(r.error);
     conversation.emit({ type: "tutor_step", stepId: r.stepId, title: String(args.title).trim() });
     return ok({ stepId: r.stepId, next: "Now call predict for this step." });

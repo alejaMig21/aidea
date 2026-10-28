@@ -177,7 +177,8 @@
     else if (event.type === "tutor_question") questionCard(event);
     else if (event.type === "tutor_question_expired") expire(event.id);
     else if (event.type === "error") { const p = el("p", { className: "tutor-error", textContent: event.message }); p.setAttribute("role", "alert"); log.append(p); }
-    else if (event.type === "learner") learnerLine(event);
+    else if (event.type === "learner") { learnerLine(event); document.dispatchEvent(new CustomEvent("plan-changed")); }
+    else if (event.type === "tutor_plan") document.dispatchEvent(new CustomEvent("plan-changed"));
     else if (event.type === "probe_done") line("tutor-meta", `Known: ${event.counts.known}, partly: ${event.counts.partial}, new to you: ${event.counts.unknown}`);
     else if (event.type === "probe_skipped") line("tutor-meta", "Probe skipped. You can start a class anyway.");
   }

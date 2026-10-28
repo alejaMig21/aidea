@@ -202,7 +202,7 @@ test("the Tutor can change a Node only by a Proposal: the tool list, and the ins
     yield { type: "text", text: "done" };
   };
   await t.runClass();
-  assert.deepEqual(names, ["begin_step", "predict", "explain", "ask", "finish_class", "propose_node", "propose_change", "read_layers", "read_node", "list_files", "read_file", "read_recording"]);
+  assert.deepEqual(names, ["begin_step", "predict", "explain", "ask", "finish_class", "propose_node", "propose_change", "get_plan", "set_plan", "read_layers", "read_node", "list_files", "read_file", "read_recording"]);
   assert.ok(TUTOR_INSTRUCTIONS.length <= 4000, `${TUTOR_INSTRUCTIONS.length} characters`);
   assert.match(TUTOR_INSTRUCTIONS, /element/);
   assert.match(TUTOR_INSTRUCTIONS, /own words/);

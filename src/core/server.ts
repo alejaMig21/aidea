@@ -9,6 +9,7 @@ import { createRecents } from "./recents.ts";
 import { createPreferences } from "./preferences.ts";
 import { createLearner } from "./learner-pipeline.ts";
 import { createProbes } from "./probe.ts";
+import { createPlans } from "./plan.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
 const routesDir = fileURLToPath(new URL("./routes/", import.meta.url));
@@ -35,6 +36,7 @@ export async function startCore({ port, adapter = createClaudeAdapter(), recents
     recordings: new Map<string, unknown>(),
     lessons: new Map(),
     probes: createProbes(learnerDir),
+    plans: createPlans(learnerDir),
     permissions: createBroker(),
     proposals: new Map(),
     recents: createRecents(recentsFile),

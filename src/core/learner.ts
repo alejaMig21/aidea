@@ -20,6 +20,8 @@ export type Evidence = {
   stepId?: string; phase?: "predict" | "check" | "probe"; attempt?: number; sureAndWrong?: true;
   // Present for answers given in a Probe: phase "probe" and the idea the question measured (normalised).
   idea?: string;
+  // Present for answers in a step that was about a Plan concept (normalised name).
+  item?: string;
   // kind "decision-skip": the person chose "Decide for me" for this Proposal instead of a decision class.
   decision?: string;
 };
@@ -143,7 +145,7 @@ export function evidenceOf(classId: string, questionId: string, project: string,
     classId, questionId, project, kind: q.kind, correct, confidence,
     answer: dontKnow ? null : q.kind === "choice" ? q.options[a.option!] : (a.text ?? null),
     thought: a.thought ?? null, dontKnow, time,
-    ...(q.stepId ? { stepId: q.stepId, phase: q.phase, attempt: q.attempt } : {}),
+    ...(q.stepId ? { stepId: q.stepId, phase: q.phase, attempt: q.attempt, ...(q.item ? { item: q.item } : {}) } : {}),
     ...(choice && correct === false && (confidence ?? 0) >= 70 ? { sureAndWrong: true as const } : {}),
   };
 }

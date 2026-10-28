@@ -7,6 +7,7 @@ import type { Preferences } from "./preferences.ts";
 import type { Learner } from "./learner-pipeline.ts";
 import type { Lesson } from "./teach.ts";
 import type { Probes } from "./probe.ts";
+import type { Plans } from "./plan.ts";
 
 export type CoreNode = {
   id: string;
@@ -100,6 +101,8 @@ export type Core = {
   lessons: Map<string, Lesson>;
   // The Probes: the stored result of each Project and layer, and the ones running now.
   probes: Probes;
+  // The Plan of each Project (set by the Teacher, stored per user outside the Project).
+  plans: Plans;
   // Returns null when the body exceeds the size limit (64 KB unless a route asks for more).
   readBody: (req: IncomingMessage, maxBytes?: number) => Promise<string | null>;
   // Parses a JSON body; on failure it has already sent the 413 or 400 response and returns undefined.
