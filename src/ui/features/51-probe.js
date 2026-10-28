@@ -63,7 +63,7 @@
   function begin(layer) {
     const project = current;
     if (!project || !window.tutorUi) return;
-    window.tutorUi.startClass({
+    return window.tutorUi.startClass({
       path: "/tutor/probes",
       payload: { project, layer, redo: true },
       endLabel: "Skip probe",
@@ -77,6 +77,7 @@
     });
   }
 
+  window.probeUi = { begin }; // the layer class (46-layer-class.js) runs the Probe first when the layer was never checked
   document.addEventListener("project-opened", refresh);
   $("layers").addEventListener("click", () => setTimeout(refresh, 0)); // the layer tabs: each layer has its own Probe
 }

@@ -10,6 +10,8 @@ import { TUTOR_INSTRUCTIONS } from "../tutor.ts";
 import { createLesson } from "../teach.ts";
 import { DECISION_INSTRUCTIONS, bindDecision, decisionMessage, heldDecision, unbindDecision } from "../decision-class.ts";
 import { currentChoice } from "./agent-options.ts";
+import { layerClassMessage } from "../layer-help.ts";
+import { LAYER_CONCEPTS, isLayer } from "../probe.ts";
 
 const MAX_MESSAGE_CHARS = 20_000;
 const MAX_TOPIC_CHARS = 500;
@@ -42,9 +44,11 @@ const handler: Handler = async (req, res, core) => {
   if (!project) return reject(400, "project must be a Project that is already open");
   const topic = body?.topic;
   if (topic !== undefined && (typeof topic !== "string" || topic.length > MAX_TOPIC_CHARS)) return reject(400, `topic must be text of at most ${MAX_TOPIC_CHARS} characters`);
+  const layer = body?.layer;
+  if (layer !== undefined && !isLayer(layer)) return reject(400, `layer must be one of ${Object.keys(LAYER_CONCEPTS).join(", ")}`);
   const held = body?.decision === undefined ? undefined : heldDecision(core, project.id, body.decision);
   if (held && "error" in held) return reject(400, held.error);
-  const message = held ? decisionMessage(held.proposal) : body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
+  const message = held ? decisionMessage(held.proposal) : layer ? layerClassMessage(layer) : body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
   if (typeof message !== "string" || !message.trim() || message.length > MAX_MESSAGE_CHARS) {
     return reject(400, `message must be a non-empty string of at most ${MAX_MESSAGE_CHARS} characters`);
   }

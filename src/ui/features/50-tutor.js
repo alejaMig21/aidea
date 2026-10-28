@@ -167,7 +167,11 @@
     card.form.querySelector(".tutor-status").textContent = "Expired: the Tutor stopped waiting for an answer";
   }
 
+  const UNREACHABLE = ["not_installed", "not_signed_in", "failed"];
   function render(event) {
+    // A class that asked for a fallback (the layer class's quick tour) does not show an error when the Tutor could not be reached at all.
+    if (event.type === "error" && running?.fallback && !running.heard && UNREACHABLE.includes(event.code)) { running.unavailable = true; return; }
+    if (event.type !== "session" && event.type !== "error" && running) running.heard = true;
     if (event.type === "text") line("tutor-say", event.text);
     else if (event.type === "tutor_step") { log.append(el("h3", { className: "tutor-step", textContent: event.title })); pane.scrollTop = pane.scrollHeight; }
     else if (event.type === "tutor_explain") { if (event.repair) line("tutor-label", "Let's look again"); line("tutor-say", event.text); }
@@ -223,7 +227,7 @@
   async function startClass(opts = {}) {
     if (!current || running) return;
     const project = current;
-    running = { abort: new AbortController(), project, skip: opts.skip };
+    running = { abort: new AbortController(), project, skip: opts.skip, fallback: opts.fallback };
     end.textContent = opts.endLabel ?? "End class";
     log.replaceChildren();
     log.hidden = false;
@@ -232,6 +236,7 @@
     end.hidden = false;
     start.disabled = true;
     end.focus();
+    let unavailable = false;
     try {
       const res = await fetch(opts.path ?? "/tutor/classes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(opts.payload ?? { project, topic: topic.value.trim() || undefined }), signal: running.abort.signal });
       if (!res.ok) {
@@ -254,9 +259,11 @@
     } catch (err) {
       if (err.name !== "AbortError") { const p = el("p", { className: "tutor-error", textContent: `Could not reach the core: ${err.message}` }); p.setAttribute("role", "alert"); log.append(p); }
     } finally {
-      finish(opts);
+      unavailable = running?.unavailable === true;
+      finish(unavailable ? { ended: "The Tutor is not available." } : opts);
       opts.after?.();
     }
+    return unavailable; // true: the Tutor could not be reached and the caller asked for a fallback
   }
 
   start.onclick = () => startClass();
