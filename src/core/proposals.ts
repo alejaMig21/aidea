@@ -3,6 +3,7 @@
 import { randomBytes } from "node:crypto";
 import { lstatSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { architecturePreview } from "./architecture.ts";
 import { loadAuthored, nodeProblem } from "./authored.ts";
 import { frameOf, layoutLayer } from "./layout.ts";
 import { AUTHORED_LAYERS } from "./traces.ts";
@@ -117,7 +118,8 @@ export function withPlaces(store: ProposalStore, project: Project) {
     .map((p) => {
       const existing = nodesOf(project, p.layer);
       const adds = pendingOf(store, project.id, p.layer).filter((q) => q.kind === "add");
-      const places = layoutLayer(p.layer, [...existing.map((n) => ({ ...n, id: String(n.id) })), ...adds.map((q) => ({ ...q.node, id: q.nodeId }))]);
+      const places = p.layer === "architecture" ? architecturePreview(existing, pendingOf(store, project.id, p.layer)).rects
+        : layoutLayer(p.layer, [...existing.map((n) => ({ ...n, id: String(n.id) })), ...adds.map((q) => ({ ...q.node, id: q.nodeId }))]);
       const rect = places.find((r) => r.id === p.nodeId) ?? null;
       return { ...publicView(p), rect, frame: rect && frameOf([rect]) };
     });
@@ -168,4 +170,10 @@ export function apply(project: Project, p: Proposal): string | null {
   writeFileSync(temporary, JSON.stringify(doc, null, 2) + "\n");
   renameSync(temporary, file);
   return null;
+}
+
+// The Architecture layer as it would be drawn with every pending Proposal applied (absent when none is pending).
+export function previewsOf(store: ProposalStore, project: Project) {
+  const pending = pendingOf(store, project.id, "architecture");
+  return pending.length ? { architecture: architecturePreview(nodesOf(project, "architecture"), pending) } : {};
 }

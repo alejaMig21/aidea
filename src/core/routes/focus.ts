@@ -1,6 +1,7 @@
 // Focus zoom: zooming into a Node frames the Footprint of its Trace links on the layer below.
 import { loadAuthored } from "../authored.ts";
 import { frameOf, layoutBusiness } from "../layout.ts";
+import { layoutArchitecture } from "../architecture.ts";
 import { AUTHORED_LAYERS, LAYERS, layerBelow, layoutOf, traceLinks } from "../traces.ts";
 import type { AuthoredLayerKey, LayerKey } from "../traces.ts";
 import type { Core, Handler, Project } from "../types.ts";
@@ -37,7 +38,7 @@ const handler: Handler = async (req, res, core) => {
       return true;
     }
     const blocks = layer === "business" ? { blocks: layoutBusiness(authored.layers.business.nodes).blocks } : {};
-    core.send(res, 200, { layer, rects: layoutOf(layer, project, authored), ...blocks });
+    core.send(res, 200, layer === "architecture" ? { layer, ...layoutArchitecture(authored.layers.architecture.nodes) } : { layer, rects: layoutOf(layer, project, authored), ...blocks });
     return true;
   }
 

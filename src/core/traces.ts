@@ -1,5 +1,6 @@
 // Trace links: a Node on an authored layer lists, in its `traces` field, the ids of Nodes in the layer below
 // that realise it. Business -> Requirements -> Architecture -> Components. A link whose target is gone is broken.
+import { layoutArchitecture } from "./architecture.ts";
 import { layoutComponents, layoutLayer } from "./layout.ts";
 import type { Rect } from "./layout.ts";
 import type { loadAuthored } from "./authored.ts";
@@ -20,6 +21,7 @@ type Authored = ReturnType<typeof loadAuthored>;
 export type TraceLink = { layer: AuthoredLayerKey; from: string; to: string; broken: boolean };
 
 export function layoutOf(layer: LayerKey, project: Project, authored: Authored): Rect[] {
+  if (layer === "architecture") return layoutArchitecture(authored.layers.architecture.nodes).rects;
   return layer === "components" ? layoutComponents(project.nodes) : layoutLayer(layer, authored.layers[layer].nodes);
 }
 

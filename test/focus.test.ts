@@ -31,8 +31,8 @@ test("each layer has a layout computed by the core", async () => {
   assert.equal(res.status, 200);
   const { rects } = await res.json();
   assert.deepEqual(rects.slice(0, 2), [
-    { id: "checkout", x: 0, y: 0, width: 240, height: 64 },
-    { id: "ledger", x: 280, y: 0, width: 240, height: 64 },
+    { id: "checkout", x: 0, y: 0, width: 180, height: 70 },
+    { id: "ledger", x: 220, y: 0, width: 180, height: 70 },
   ]);
   assert.deepEqual(rects.map((r: { id: string }) => r.id), ["checkout", "ledger", "lonely"]);
 });
@@ -79,8 +79,8 @@ test("zooming out returns to the Node the person came from", async () => {
   const body = await res.json();
   assert.equal(body.layer, "architecture");
   assert.equal(body.node, "checkout");
-  // checkout is the first Node of its layer: x=0, y=0, 240 by 64, plus 24 of margin.
-  assert.deepEqual(body.frame, { x: -24, y: -24, width: 288, height: 112 });
+  // checkout is the first Node of its layer: x=0, y=0, 180 by 70 (Architecture layout), plus 24 of margin.
+  assert.deepEqual(body.frame, { x: -24, y: -24, width: 228, height: 118 });
   // How many earlier Nodes the person can still return to.
   assert.equal(body.remaining, 0);
   // Nothing is left to zoom out from.

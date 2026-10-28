@@ -1,6 +1,6 @@
 // The person's side of Proposals: see what is pending, accept or reject it.
 import { sameSecret } from "../permissions.ts";
-import { apply, withPlaces } from "../proposals.ts";
+import { apply, previewsOf, withPlaces } from "../proposals.ts";
 import type { Handler } from "../types.ts";
 
 const handler: Handler = async (req, res, core) => {
@@ -12,7 +12,7 @@ const handler: Handler = async (req, res, core) => {
       core.send(res, 404, { error: "Unknown project: open it with POST /projects first" });
       return true;
     }
-    core.send(res, 200, { proposals: withPlaces(core.proposals, project) });
+    core.send(res, 200, { proposals: withPlaces(core.proposals, project), previews: previewsOf(core.proposals, project) });
     return true;
   }
 

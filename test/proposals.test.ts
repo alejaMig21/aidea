@@ -109,17 +109,22 @@ test("adding a Node produces a pending Proposal and changes no file", async () =
   const list = await pending(dir);
   assert.equal(list.length, 1);
   assert.equal(list[0].secret, undefined); // the answer secret never leaves the stream
-  // A new root: the second card of the first row, after the root "web-app" (its child sits below it, not in the row).
-  assert.deepEqual(list[0].rect, { id: "cache", x: 280, y: 0, width: 240, height: 64 });
+  // A new root is drawn from the Architecture layout (ticket 07): a leaf box of its own size, outside the "web-app" boundary.
+  const { rect, frame } = list[0];
+  assert.deepEqual({ id: rect.id, width: rect.width, height: rect.height }, { id: "cache", width: 180, height: 70 });
+  const web = (await (await get(`/proposals?project=${encodeURIComponent(dir)}`)).json()).previews.architecture.groups[0];
+  assert.ok(rect.x >= web.x + web.width || rect.x + rect.width <= web.x || rect.y >= web.y + web.height || rect.y + rect.height <= web.y, "outside the boundary");
   // The core also says how to frame it, so the interface can bring it into view (24 of margin on every side).
-  assert.deepEqual(list[0].frame, { x: 256, y: -24, width: 288, height: 112 });
+  assert.deepEqual(frame, { x: rect.x - 24, y: rect.y - 24, width: rect.width + 48, height: rect.height + 48 });
 });
 
 test("a Proposal that adds a child Node is placed under its parent", async () => {
   const dir = await freshProject();
   await builderCalls(dir, [{ name: "propose_add_node", arguments: { layer: "architecture", node: { ...cache, parent: "web-app" } } }]);
-  // "quote-db" already sits under "web-app": the new sibling goes beside it (280 apart), one row down, and the parent centres over the pair.
-  assert.deepEqual((await pending(dir))[0].rect, { id: "cache", x: 280, y: 164, width: 240, height: 64 });
+  // The new child is drawn inside the "web-app" boundary (ticket 07 replaced the parent-connector layout).
+  const { rect } = (await pending(dir))[0];
+  const web = (await pending(dir))[0].rect && (await (await get(`/proposals?project=${encodeURIComponent(dir)}`)).json()).previews.architecture.groups[0];
+  assert.ok(rect.x >= web.x && rect.y >= web.y && rect.x + rect.width <= web.x + web.width && rect.y + rect.height <= web.y + web.height);
 });
 
 test("accepting writes the Node to the authored file and it shows up on the layer; rejecting leaves everything as it was", async () => {
@@ -177,7 +182,8 @@ test("updating and removing Nodes: accepted changes touch only that Node and kee
   const first = (await builderCalls(dir, [update])).proposals[0];
   assert.equal(first.kind, "update");
   // An update highlights the Node that already exists: its own place on the layer.
-  assert.deepEqual((await pending(dir))[0].rect, { id: "web-app", x: 0, y: 0, width: 240, height: 64 });
+  // (web-app now has a child, so its own place is its boundary box.)
+  assert.deepEqual((await pending(dir))[0].rect, { id: "web-app", x: -20, y: -20, width: 220, height: 110 });
   await answer(first, "accept");
   let nodes = nodesOf(dir, "architecture");
   assert.equal(nodes[0].technology, "Python + FastAPI");

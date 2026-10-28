@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fixture, startTestCore } from "./helpers.ts";
+import { startTestCore } from "./helpers.ts";
 
 let t: Awaited<ReturnType<typeof startTestCore>>;
 const scratch: string[] = [];
@@ -30,35 +30,31 @@ async function rectsOf(nodes: ReturnType<typeof node>[]) {
 }
 const overlap = (a: R, b: R) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 
-test("a child sits below its parent, overlapping it horizontally; the root keeps its place", async () => {
-  await t.post("/projects", { path: fixture("studio") });
-  const { rects } = await (await t.get(`/layout?project=${encodeURIComponent(fixture("studio"))}&layer=architecture`)).json();
-  assert.deepEqual(rects, [
-    { id: "web-app", x: 0, y: 0, width: 240, height: 64 },
-    { id: "quote-db", x: 0, y: 164, width: 240, height: 64 },
-  ]);
+// Ticket 07 replaced the parent-connector layout of the Architecture layer with boundaries (the full layout is covered
+// in architecture-layout.test.ts): a child is inside its parent's box, and the guarantees below still hold.
+test("a child sits inside its parent's box; the parent's rect is the boundary", async () => {
+  const at = await rectsOf([node("p"), node("c", "p")]);
+  const [p, c] = [at.get("p")!, at.get("c")!];
+  assert.ok(c.x > p.x && c.y > p.y && c.x + c.width < p.x + p.width && c.y + c.height < p.y + p.height);
 });
 
-test("siblings sit side by side, centred under their parent", async () => {
+test("siblings sit inside the same box without touching", async () => {
   const at = await rectsOf([node("p"), node("a", "p"), node("b", "p")]);
   const [p, a, b] = ["p", "a", "b"].map((id) => at.get(id)!);
-  assert.equal(a.y, 164);
-  assert.equal(b.y, 164);
-  assert.equal(b.x - a.x, 280); // side by side, same gap as the grid
-  assert.equal(p.x + 120, (a.x + b.x + 240) / 2); // the parent's centre is the middle of the pair
+  assert.ok(!overlap(a, b));
+  for (const c of [a, b]) assert.ok(c.x >= p.x && c.x + c.width <= p.x + p.width && c.y >= p.y && c.y + c.height <= p.y + p.height);
 });
 
-test("a root in a later grid row does not collide with the children of an earlier root", async () => {
+test("roots beside a boundary do not collide with its children", async () => {
   const at = await rectsOf([node("r1"), node("c1", "r1"), node("c2", "r1"), node("r2"), node("r3"), node("r4"), node("r5")]);
-  const first = ["r1", "r2", "r3", "r4"].map((id) => at.get(id)!);
-  assert.equal(new Set(first.map((r) => r.y)).size, 1); // four to a row, as before
-  assert.ok(at.get("r5")!.y >= at.get("c1")!.y + 64);
-  const all = [...at.values()];
+  const all = [...at.values()].filter((r) => r.id !== "r1"); // r1 is the boundary around c1 and c2
   for (const a of all) for (const b of all) if (a !== b) assert.ok(!overlap(a, b), `${a.id} overlaps ${b.id}`);
+  for (const id of ["r2", "r3", "r4", "r5"]) assert.ok(!overlap(at.get(id)!, at.get("r1")!), `${id} is outside the boundary`);
 });
 
 test("a cycle of parents does not hang: its Nodes become roots", async () => {
   const at = await rectsOf([node("a", "b"), node("b", "a"), node("c")]);
   assert.deepEqual([...at.keys()], ["a", "b", "c"]);
-  assert.deepEqual([...at.values()].map((r) => r.y), [0, 0, 0]);
+  const all = [...at.values()];
+  for (const a of all) for (const b of all) if (a !== b) assert.ok(!overlap(a, b));
 });
