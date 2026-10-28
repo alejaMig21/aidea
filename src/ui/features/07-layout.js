@@ -1,12 +1,15 @@
 // Work-session layout: the chat (left) and the right slot are resized by dragging or with the arrow keys, and folded from the top bar.
-// The grid itself lives in index.html (the Canvas track has a minimum width the other tracks can never take); this file only sets
-// --chat-w / --right-w, clamps them, and remembers them. Names are prefixed "layout" or "right" because every feature file shares one global scope.
+// The grid itself lives in index.html; this file sets its three tracks (--chat-track, --canvas-track, --right-track), folds panes
+// that do not fit, runs the drawers of narrow windows, and remembers sizes. Names are prefixed "layout" or "right" because every
+// feature file shares one global scope.
 const layoutKey = "aidea.layout";
-const layoutCanvasMin = 320; // keep equal to --canvas-min in index.html
-const layoutPaneMin = 160;
+const layoutCanvasMin = 360; // the Canvas is never squeezed below this (wide windows)
+const layoutCanvasFr = 800; // the Canvas weight; the panes' weights (340, 320 by default) are on the same scale
+const layoutPaneMin = { chat: 268, right: 288 }; // 260 and 280 px cards plus their 8px window margin
+const layoutNarrowBelow = 760; // narrower windows show the panes as drawers
 const layoutStep = 20;
 const layoutSeparatorWidth = 8; // the gap between two cards
-const layoutOuterMargins = 16; // 8px of the window's edge on each side of the cards
+const layoutEdge = 8; // the margin between a card and the window's edge
 
 {
   const style = document.createElement("style");
@@ -15,6 +18,14 @@ const layoutOuterMargins = 16; // 8px of the window's edge on each side of the c
     #sepr { grid-area: sepr; }
     #sepc:hover, #sepr:hover, #sepc:focus-visible, #sepr:focus-visible, #sepc.dragging, #sepr.dragging { background: var(--accent); outline: none; }
     body.chat-folded #chat, body.chat-folded #sepc, body.right-folded #right, body.right-folded #sepr { display: none; }
+    body.chat-folded main { margin-left: ${layoutEdge}px; } body.right-folded main { margin-right: ${layoutEdge}px; }
+    .drawer-close, #scrim { display: none; }
+    body.narrow { --canvas-min: 0px; }
+    body.narrow #scrim:not([hidden]) { display: block; position: fixed; inset: 51px 0 0 0; z-index: 15; background: rgba(0, 0, 0, .5); }
+    body.narrow.drawer-chat #chat, body.narrow.drawer-right #right { display: flex; position: fixed; top: 51px; bottom: 0; z-index: 20; width: min(360px, calc(100vw - 16px)); box-shadow: 0 14px 36px rgba(0, 0, 0, .5); }
+    body.narrow.drawer-chat #chat { left: 0; }
+    body.narrow.drawer-right #right { right: 0; }
+    body.narrow .drawer-close:not([hidden]) { display: block; position: absolute; top: 6px; right: 8px; z-index: 1; padding: 3px 10px; background: transparent; color: var(--text); border: 1px solid var(--control); }
   `;
   document.head.append(style);
 }
@@ -72,65 +83,132 @@ function rightSetTabEnabled(id, enabled) {
   rightRegisterTab("tutor", "Tutor", pane);
 }
 
-// ---- Sizes and folded state.
+
+// ---- Sizes and folded state. A pane's size is a flex weight (fr), so every visible column grows and shrinks with the window.
+// Folded (by the person or automatically) means a 0 track with its separator hidden. Automatic folds are never saved.
 const layoutState = { chat: 340, right: 320, chatFolded: false, rightFolded: false };
 try { Object.assign(layoutState, JSON.parse(localStorage.getItem(layoutKey) || "{}")); } catch {}
+for (const n of ["chat", "right"]) if (!(layoutState[n] > 0)) layoutState[n] = n === "chat" ? 340 : 320;
 const layoutSave = () => { try { localStorage.setItem(layoutKey, JSON.stringify(layoutState)); } catch {} };
 
 const layoutPanes = {
-  chat: { sep: $("sepc"), el: $("chat"), button: $("fold-chat"), fold: "chatFolded", cls: "chat-folded", grow: (x) => x - $("chat").getBoundingClientRect().left, other: "right" },
-  right: { sep: $("sepr"), el: $("right"), button: $("fold-right"), fold: "rightFolded", cls: "right-folded", grow: (x) => $("right").getBoundingClientRect().right - x, other: "chat" },
+  chat: { sep: $("sepc"), el: $("chat"), button: $("fold-chat"), fold: "chatFolded", cls: "chat-folded", other: "right", edge: (x) => x },
+  right: { sep: $("sepr"), el: $("right"), button: $("fold-right"), fold: "rightFolded", cls: "right-folded", other: "chat", edge: (x) => layoutWidth() - x },
 };
+let layoutShown = { chat: true, right: true }; // what is really on screen: the person's choice minus automatic folds
+let layoutNarrow = false;
+let layoutDrawer = null; // "chat" | "right" | null, only in narrow windows
+let layoutOpener = null; // the button that opened the drawer, which gets the focus back
+let layoutLastOpened = "chat"; // the pane the person opened last is the one auto-fold keeps
 
-// Most a pane may take: everything except the Canvas minimum, the side list's current width, the other pane and the separators.
-function layoutMax(name) {
-  const o = layoutPanes[layoutPanes[name].other];
-  const used = layoutOuterMargins + (layoutState[o.fold] ? 0 : layoutState[layoutPanes[name].other]) + 2 * layoutSeparatorWidth;
-  return Math.max(layoutPaneMin, window.innerWidth - layoutCanvasMin - used);
+const layoutWidth = () => document.documentElement.clientWidth;
+// A side without a pane leaves the Canvas an 8px margin; a side with one costs its track minimum plus the separator.
+const layoutSide = (shown, name) => (shown[name] ? layoutPaneMin[name] + layoutSeparatorWidth : layoutEdge);
+const layoutNeed = (shown) => layoutCanvasMin + layoutSide(shown, "chat") + layoutSide(shown, "right");
+const layoutTrack = (name) => layoutPanes[name].el.offsetWidth + layoutEdge; // the card plus its 8px window margin
+
+function layoutResolve() {
+  layoutNarrow = layoutWidth() < layoutNarrowBelow;
+  if (layoutNarrow) { layoutShown = { chat: false, right: false }; return; }
+  layoutDrawer = null;
+  layoutShown = { chat: !layoutState.chatFolded, right: !layoutState.rightFolded };
+  for (const n of layoutLastOpened === "right" ? ["chat", "right"] : ["right", "chat"]) if (layoutNeed(layoutShown) > layoutWidth()) layoutShown[n] = false;
 }
-const layoutClamp = (name, w) => Math.round(Math.min(layoutMax(name), Math.max(layoutPaneMin, w)));
+
+// Most a pane's track may take: the window minus the Canvas minimum, the other side and this separator.
+function layoutMax(name) {
+  const other = layoutPanes[name].other;
+  return Math.max(layoutPaneMin[name], layoutWidth() - layoutCanvasMin - layoutSeparatorWidth - (layoutShown[other] ? layoutTrack(other) + layoutSeparatorWidth : layoutEdge));
+}
 
 function layoutApply() {
+  layoutResolve();
+  const body = document.body;
+  const track = (name) => (layoutShown[name] ? `minmax(${layoutPaneMin[name]}px, ${layoutState[name]}fr)` : "0px");
+  const canvasMin = layoutNarrow ? 0 : layoutCanvasMin + layoutEdge * ((layoutShown.chat ? 0 : 1) + (layoutShown.right ? 0 : 1));
+  body.style.setProperty("--chat-track", track("chat"));
+  body.style.setProperty("--right-track", track("right"));
+  body.style.setProperty("--canvas-track", `minmax(${canvasMin}px, ${layoutCanvasFr}fr)`);
+  body.classList.toggle("narrow", layoutNarrow);
+  $("scrim").hidden = !layoutDrawer;
   for (const [name, p] of Object.entries(layoutPanes)) {
-    document.body.classList.toggle(p.cls, layoutState[p.fold]);
-    document.body.style.setProperty(`--${name}-w`, `${layoutState[name]}px`);
-    p.button.setAttribute("aria-pressed", String(!layoutState[p.fold]));
-    p.sep.setAttribute("aria-valuemin", String(layoutPaneMin));
+    const open = layoutNarrow && layoutDrawer === name;
+    body.classList.toggle(p.cls, !layoutShown[name]);
+    body.classList.toggle(`drawer-${name}`, open);
+    p.el.setAttribute("role", open ? "dialog" : "region");
+    p.closeButton.hidden = !open;
+    if (layoutNarrow) { p.button.removeAttribute("aria-pressed"); p.button.setAttribute("aria-expanded", String(open)); }
+    else { p.button.removeAttribute("aria-expanded"); p.button.setAttribute("aria-pressed", String(layoutShown[name])); }
+    if (!layoutShown[name]) continue;
+    p.sep.setAttribute("aria-valuemin", String(layoutPaneMin[name]));
     p.sep.setAttribute("aria-valuemax", String(Math.round(layoutMax(name))));
-    p.sep.setAttribute("aria-valuenow", String(Math.round(layoutState[name])));
+    p.sep.setAttribute("aria-valuenow", String(Math.round(layoutTrack(name))));
   }
 }
-// Selects a tab and makes sure the right slot is open to show it.
-function rightShowTab(id) {
-  layoutState.rightFolded = false;
+
+// Sets a pane to a wanted track width in px by turning it into a weight: w / (w + canvas + other) = wanted / available.
+function layoutSet(name, px) {
+  if (!layoutShown[name]) return;
+  const other = layoutPanes[name].other;
+  const t = Math.min(layoutMax(name), Math.max(layoutPaneMin[name], px));
+  const available = layoutWidth() - (layoutShown.chat ? layoutSeparatorWidth : 0) - (layoutShown.right ? layoutSeparatorWidth : 0);
+  layoutState[name] = Math.round(t * (layoutCanvasFr + (layoutShown[other] ? layoutState[other] : 0)) / Math.max(1, available - t) * 100) / 100;
   layoutApply();
   layoutSave();
+}
+
+// ---- Drawers (narrow windows): one panel over the Canvas at a time, opened from the top-bar buttons.
+function layoutOpenDrawer(name) {
+  layoutDrawer = name;
+  layoutOpener = layoutPanes[name].button;
+  layoutApply();
+  layoutPanes[name].el.focus();
+}
+function layoutCloseDrawer() {
+  if (!layoutDrawer) return;
+  layoutDrawer = null;
+  layoutApply();
+  layoutOpener?.focus();
+}
+$("scrim").onclick = layoutCloseDrawer;
+// Capture phase: the switcher's own Escape handler closes its popover first, and that Escape must not also close a drawer.
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && layoutDrawer && $("switcher-menu").hidden) layoutCloseDrawer(); }, true);
+
+// Selects a tab and makes sure the right slot is open to show it.
+function rightShowTab(id) {
+  if (layoutNarrow) layoutOpenDrawer("right");
+  else { layoutState.rightFolded = false; layoutLastOpened = "right"; layoutApply(); layoutSave(); }
   rightSelectTab(id);
 }
-function layoutSet(name, w) { layoutState[name] = layoutClamp(name, w); layoutApply(); layoutSave(); }
 
 for (const [name, p] of Object.entries(layoutPanes)) {
-  p.button.onclick = () => { layoutState[p.fold] = !layoutState[p.fold]; layoutApply(); layoutSave(); };
+  p.el.tabIndex = -1;
+  p.closeButton = Object.assign(document.createElement("button"), { type: "button", className: "drawer-close", textContent: "Close", hidden: true, onclick: layoutCloseDrawer });
+  p.closeButton.setAttribute("aria-label", `Close the ${name === "chat" ? "chat" : "right panel"}`);
+  p.el.append(p.closeButton);
+  p.button.onclick = () => {
+    if (layoutNarrow) { layoutDrawer === name ? layoutCloseDrawer() : layoutOpenDrawer(name); return; }
+    // Hiding is the person's choice and is saved; showing a pane that had no room makes auto-fold take the other one.
+    layoutState[p.fold] = layoutShown[name];
+    if (!layoutShown[name]) layoutLastOpened = name;
+    layoutApply();
+    layoutSave();
+  };
   p.sep.onpointerdown = (e) => {
     e.preventDefault();
     p.sep.setPointerCapture(e.pointerId);
     p.sep.classList.add("dragging");
   };
-  p.sep.onpointermove = (e) => { if (p.sep.hasPointerCapture(e.pointerId)) layoutSet(name, p.grow(e.clientX)); };
+  p.sep.onpointermove = (e) => { if (p.sep.hasPointerCapture(e.pointerId)) layoutSet(name, p.edge(e.clientX)); };
   p.sep.onpointerup = p.sep.onpointercancel = () => p.sep.classList.remove("dragging");
   // Arrow keys move the edge: Right moves it right, so the chat grows and the right slot shrinks.
   p.sep.onkeydown = (e) => {
     const dir = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
     if (!dir) return;
     e.preventDefault();
-    layoutSet(name, layoutState[name] + layoutStep * dir * (name === "chat" ? 1 : -1));
+    layoutSet(name, layoutTrack(name) + layoutStep * dir * (name === "chat" ? 1 : -1));
   };
 }
 
-// A saved width may no longer fit (smaller window, other pane bigger): re-clamp what is stored, and keep the ARIA values honest.
-const layoutReclamp = () => {
-  for (const name of ["chat", "right"]) layoutState[name] = layoutClamp(name, layoutState[name]);
-  layoutApply();
-};
-layoutReclamp();
+layoutApply();
 window.addEventListener("resize", layoutApply);

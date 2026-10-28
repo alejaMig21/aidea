@@ -23,7 +23,7 @@ function openWindow(url) {
   const { x, y } = target.workArea;
   // Placing the window with setBounds is more reliable than x and y in the constructor when the screens have
   // different scales (the second launch of the first test opened on the wrong screen).
-  const win = new BrowserWindow({ width: 1280, height: 800, show: false, webPreferences: { preload: fileURLToPath(new URL("./preload.cjs", import.meta.url)), contextIsolation: true, nodeIntegration: false } });
+  const win = new BrowserWindow({ width: 1280, height: 800, minWidth: 720, minHeight: 520, show: false, webPreferences: { preload: fileURLToPath(new URL("./preload.cjs", import.meta.url)), contextIsolation: true, nodeIntegration: false } });
   // Twice: the first call moves the window and the second fixes its size, which the first one reads at the old screen's scale.
   win.setBounds({ x, y, width: 1280, height: 800 });
   win.setBounds({ x, y, width: 1280, height: 800 });
