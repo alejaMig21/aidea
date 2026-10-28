@@ -172,12 +172,22 @@
     else if (event.type === "tutor_step") { log.append(el("h3", { className: "tutor-step", textContent: event.title })); pane.scrollTop = pane.scrollHeight; }
     else if (event.type === "tutor_explain") { if (event.repair) line("tutor-label", "Let's look again"); line("tutor-say", event.text); }
     else if (event.type === "tutor_finished") line("tutor-meta", `Class finished: ${event.summary}`);
+    else if (event.type === "proposal") tutorProposal(event);
     else if (event.type === "tutor_question") questionCard(event);
     else if (event.type === "tutor_question_expired") expire(event.id);
     else if (event.type === "error") { const p = el("p", { className: "tutor-error", textContent: event.message }); p.setAttribute("role", "alert"); log.append(p); }
     else if (event.type === "learner") learnerLine(event);
     else if (event.type === "probe_done") line("tutor-meta", `Known: ${event.counts.known}, partly: ${event.counts.partial}, new to you: ${event.counts.unknown}`);
     else if (event.type === "probe_skipped") line("tutor-meta", "Probe skipped. You can start a class anyway.");
+  }
+
+  // A Proposal the Tutor made from the person's answer: the Canvas shows it pending on its layer; here a line says so and offers the way there.
+  function tutorProposal(event) {
+    const review = el("button", { type: "button", textContent: "Review" });
+    review.onclick = () => document.dispatchEvent(new CustomEvent("proposal-open", { detail: { id: event.id } }));
+    log.append(el("p", { className: "tutor-meta tutor-proposal" }, el("strong", { textContent: "From the Tutor: " }), `proposal to ${event.kind === "add" ? "add" : "change"} "${event.nodeId}" on the ${event.layer} layer. `, review));
+    document.dispatchEvent(new CustomEvent("proposal-created", { detail: event }));
+    pane.scrollTop = pane.scrollHeight;
   }
 
   // After a class: one plain line about the Learner graph. If the pipeline failed, a Retry button asks the core again.

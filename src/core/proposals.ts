@@ -24,6 +24,9 @@ export type Proposal = {
   node?: Fields; // add: the whole Node; update: the Node as it will be once the change is accepted
   changes?: Fields; // update: what the builder asked to change
   status: "pending" | "accepted" | "rejected";
+  source?: { role: "tutor"; classId: string; questionId: string }; // made by a Tutor tool, after the person answered this question
+  fromAnswer?: string; // the person's own answer text that the Tutor built it from
+  because?: string; // the Tutor's one-sentence reason
   blocking?: true; // a Blocking decision (declaring a Pattern group); only marked here, the Tutor's classes act on it
 };
 // A Pattern group is proposed as an "add" whose nodeId is the group's id behind this prefix and whose `node` is the group.

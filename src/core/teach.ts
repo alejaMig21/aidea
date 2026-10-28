@@ -4,6 +4,7 @@
 //                                                    explained -> (check wrong) missed -> (explain again) explained
 import { evidenceOf } from "./learner.ts";
 import { callRole } from "./learner-pipeline.ts";
+import { runAuthoringTool } from "./tutor-authoring.ts";
 import { answerForTutor, parseQuestion } from "./tutor.ts";
 import type { Answer, Question } from "./tutor.ts";
 import type { Core } from "./types.ts";
@@ -28,6 +29,7 @@ export function createLesson() {
   const steps = new Map<string, Step>();
   let open: string | undefined;
   let finished = false;
+  const elements = new Map<string, { questionId: string; text: string }>(); // layer elements the person has answered about (co-authoring)
   const texts: string[] = []; // every explanation, in order: the Teacher's prose for the Learner graph
 
   const stepOf = (id: unknown, call: string): Step | Failure => {
@@ -42,6 +44,7 @@ export function createLesson() {
 
   return {
     texts,
+    elements,
     isFinished: () => finished,
 
     begin(args: Record<string, unknown>): Failure | { stepId: string } {
@@ -151,6 +154,9 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
       console.error(e); // a ledger that cannot be written must not stop the class
     }
   };
+
+  const authored = await runAuthoringTool(name, args, { core, token, lesson, gaveUp });
+  if (authored) return authored;
 
   if (name === "begin_step") {
     const r = lesson.begin(args);

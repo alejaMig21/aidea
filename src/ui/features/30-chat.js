@@ -124,7 +124,7 @@
     else if (event.type === "permission_expired") expireCard(event.id);
     else if (event.type === "proposal") {
       // The Canvas shows it highlighted on its layer; the chat says it happened and offers to take the person there.
-      const line = add("proposal-line", `Proposal: ${event.kind} "${event.nodeId}" on the ${event.layer} layer. `);
+      const line = add("proposal-line", `${event.source?.role === "tutor" ? "From the Tutor. " : ""}Proposal: ${event.kind} "${event.nodeId}" on the ${event.layer} layer. `);
       const review = document.createElement("button");
       review.textContent = "Review";
       review.onclick = () => document.dispatchEvent(new CustomEvent("proposal-open", { detail: { id: event.id } }));

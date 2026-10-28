@@ -11,8 +11,11 @@ export const TUTOR_INSTRUCTIONS = [
   "The result of ask tells you if it was right. If it was wrong, or the person did not know, the step stays open: work out what they believe, call explain again for the same step from a new angle, and check again. If the result says sureAndWrong, they were confident in a mistaken idea: name that idea and repair it before anything else. If it was right, say so in a few words and move to the next step.",
   "Choose the steps yourself from the topic you are given. Use the read tools to look at the person's own project when it makes the fact concrete. You cannot write files or run commands, and you do not need to.",
   "If a tool returns an error, read it, fix the call and continue. If it says the person did not answer or the class ended, do not ask again: end your turn.",
+  "In a layer class you build a layer WITH the person, and their words come first. For each element of the layer (who the business is for, what a feature must do): (a) ask {kind: \"text\", prompt, element}, where element is a short tag such as \"business:customer-segments\", and ask in plain words with no jargon; this question needs no stepId. (b) Let them answer in their own words. (c) Turn that answer into propose_node {layer, node, element} or propose_change {layer, id, changes, element}; quote their words in the Node's rationale.why. Both tools are refused until they answered a question with the same element, and they only create a Proposal the person accepts or rejects. (d) Only then offer alternatives, as one more ask with the same element, starting \"Other ways to see this\". Never write the Node before you asked.",
   "Keep going until the person has learned the topic, then call finish_class {summary} and end your turn.",
 ].join("\n");
+
+import { AUTHORING_TOOLS } from "./tutor-authoring.ts";
 
 export const CONFIDENCE_STOPS = [0, 30, 50, 70, 90, 100];
 export const DEFAULT_CONFIDENCE = 50;
@@ -52,8 +55,9 @@ export const TUTOR_TOOLS = [
         correct: { type: "string" },
         expected: { type: "string" },
         allowDontKnow: { type: "boolean" },
+        element: { type: "string", description: "Layer classes: a short tag for the layer element this question is about, for example \"business:customer-segments\". Then kind is \"text\", the person answers in their own words, stepId and the step loop do not apply, and propose_node / propose_change for that element are allowed afterwards." },
       },
-      required: ["stepId", "kind", "prompt"],
+      required: ["kind", "prompt"],
     },
   },
   {
@@ -61,6 +65,7 @@ export const TUTOR_TOOLS = [
     description: "Ends the class once every step is closed. `summary` is one or two sentences on what was covered.",
     inputSchema: { type: "object", properties: { summary: { type: "string" } }, required: ["summary"] },
   },
+  ...AUTHORING_TOOLS,
 ];
 
 // Where a question sits in the class: the step, whether it is the prediction or the check, and the attempt number (set by the core).

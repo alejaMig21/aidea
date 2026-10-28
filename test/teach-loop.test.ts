@@ -353,5 +353,5 @@ test("the Teacher's tool list carries the loop tools next to the read tools", as
     yield { type: "text", text: "x" };
   };
   await t.runClass();
-  assert.deepEqual(names, ["begin_step", "predict", "explain", "ask", "finish_class", "read_layers", "read_node", "list_files", "read_file", "read_recording"]);
+  assert.deepEqual(names, ["begin_step", "predict", "explain", "ask", "finish_class", "propose_node", "propose_change", "read_layers", "read_node", "list_files", "read_file", "read_recording"]);
 });

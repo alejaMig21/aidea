@@ -82,8 +82,9 @@ const json = (r: Reply) => JSON.parse(r.content[0].text);
 test("the Tutor's tool list is exactly these, and none of them can write, delete, move or run anything", async () => {
   let names: string[] = [];
   await asTutor(async (_c, rpc) => { names = (await rpc("tools/list")).result.tools.map((t: any) => t.name); });
-  assert.deepEqual(names, ["begin_step", "predict", "explain", "ask", "finish_class", "read_layers", "read_node", "list_files", "read_file", "read_recording"]);
-  assert.ok(names.every((n) => !/write|delete|remove|move|rename|exec|run|edit|create|propose|save|shell|bash/i.test(n)));
+  assert.deepEqual(names, ["begin_step", "predict", "explain", "ask", "finish_class", "propose_node", "propose_change", "read_layers", "read_node", "list_files", "read_file", "read_recording"]);
+  // The only tools that touch the project at all are the two that make a pending Proposal (ticket 08); the person decides.
+  assert.ok(names.filter((n) => !/^propose_(node|change)$/.test(n)).every((n) => !/write|delete|remove|move|rename|exec|run|edit|create|propose|save|shell|bash/i.test(n)));
 });
 
 test("the builder does not have the Tutor's read tools and cannot call them", async () => {

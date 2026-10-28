@@ -7,6 +7,7 @@
 import { contractOf } from "../contract.ts";
 import { publicView, propose, proposePattern } from "../proposals.ts";
 import type { Proposal } from "../proposals.ts";
+import { NODE_HELP } from "../tutor-authoring.ts";
 import { TUTOR_TOOLS } from "../tutor.ts";
 import { runTeachTool } from "../teach.ts";
 import { READ_TOOLS, runReadTool } from "../tutor-reads.ts";
@@ -16,15 +17,6 @@ import type { Handler } from "../types.ts";
 const MAX_MCP_BODY_BYTES = 4 * 1024 * 1024; // a request to write a file carries the whole content
 
 const LAYERS = ["business", "requirements", "architecture"];
-const NODE_HELP =
-  "A Node has a unique `id`, a `title` and a `rationale` { why, rejected: [{ option, reason }] } that explains the decision and the alternatives " +
-  "that were rejected. Business Nodes also need `block` (one of the nine Business Model Canvas blocks, such as \"value propositions\"); " +
-  "requirements Nodes have a `kind`, \"functional\" (the default: needs `as`, `want`, `so`; may have `criteria`, an array of Given/When/Then lines) " +
-  "or \"non-functional\" (needs `statement`, `quality` (performance, security, usability, reliability, maintainability, compatibility, portability or safety) " +
-  "and a measurable `measure`; `as`, `want`, `so` are not needed); architecture Nodes need `technology` and may have `parent` (the Node it is inside), `kind` (person, system, container or component), " +
-  "a one-sentence `description`, `external` (true for a person or system outside the one being designed) and `relations`: [{ to, label, technology? }] naming other architecture Nodes that this one uses. Any Node may have " +
-  "`traces`: the ids of the Nodes in the layer below that realise it. To mark architecture Nodes as one pattern (for example hexagonal) use propose_pattern_group.";
-
 const TOOLS = [
   {
     name: "approve",

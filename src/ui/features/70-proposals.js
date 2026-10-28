@@ -13,6 +13,8 @@ proposalStyle.textContent = `
   #panel .proposal-box h2 { margin: 0; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--text); font-weight: 600; }
   #panel .proposal-box .field { font-size: 12px; margin: 4px 0; }
   #panel .proposal-box .old { color: var(--muted); text-decoration: line-through; }
+  #panel .proposal-box .from-tutor { display: inline-block; margin: 2px 0 4px; padding: 1px 8px; font-size: 11px; font-weight: 600; color: var(--accent); border: 1px dashed var(--accent); border-radius: 10px; }
+  #panel .proposal-box .from-answer { margin: 4px 0; padding: 2px 10px; border-left: 2px solid var(--accent); color: var(--text); font-size: 12px; font-style: italic; overflow-wrap: anywhere; }
   #panel .proposal-box .row { display: flex; gap: 8px; margin-top: 10px; }
 `;
 document.head.append(proposalStyle);
@@ -119,6 +121,8 @@ function showProposal(p) {
   $("panel").replaceChildren(node("div", { className: "proposal-box" },
     node("h2", { textContent: `Proposal: ${p.kind} "${p.node?.title ?? old?.title ?? p.nodeId}"` }),
     node("div", { className: "field", textContent: `${p.layer} layer` }),
+    ...(p.source?.role === "tutor" ? [node("div", { className: "from-tutor", textContent: "From the Tutor" })] : []),
+    ...(p.fromAnswer ? [node("blockquote", { className: "from-answer", textContent: p.fromAnswer }), node("div", { className: "field", textContent: "Your words, which the Tutor used." })] : []),
     ...rows,
     node("div", { className: "row" },
       node("button", { textContent: "Accept", onclick: () => decide("accept") }),
