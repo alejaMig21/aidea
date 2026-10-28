@@ -9,7 +9,7 @@
 // `block` is one of the nine Business Model Canvas blocks (BLOCKS below); `parent` is an optional string.
 // Architecture only: `parent` means "is inside"; `kind` is one of KINDS; `description` is one short sentence; `external` is a boolean (true: outside the system being drawn);
 // `relations` is a list of { to, label, technology? } naming other Nodes of the layer. A bad relation is dropped alone.
-// Extra fields are kept as they are. A bad Node is dropped with an error; a bad file never stops other files.
+// Extra fields are kept as they are. A bad Node is dropped with an error (except an unknown Architecture `kind`: the Node stays, the kind is ignored); a bad file never stops other files.
 import { lstatSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { AuthoredLayer, AuthoredNode } from "./types.ts";
@@ -122,6 +122,13 @@ function parseLayer(layer: string, source: string, file: string): AuthoredLayer 
       });
       n = { ...n, relations: kept.map((k) => k.r) };
       keptHere = kept;
+    }
+    if (layer === "architecture" && isObject(n) && n.kind !== undefined && !KINDS.includes(n.kind as string)) {
+      // A file with an unknown kind keeps its Node: the kind is reported and ignored, so the Node is drawn as a generic box.
+      // (A Proposal with a bad kind is still refused, by nodeProblem.)
+      fail(`nodes[${i}]: "kind" must be one of: ${KINDS.join(", ")} (ignored: drawn as a generic box)`);
+      const { kind: _ignored, ...rest } = n;
+      n = rest;
     }
     const problem = nodeProblem(layer, n, seen);
     if (problem) {

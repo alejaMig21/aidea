@@ -6,7 +6,7 @@ const BUSINESS_BLOCKS = {
   "value propositions": "Value Propositions", "customer relationships": "Customer Relationships", channels: "Channels",
   "customer segments": "Customer Segments", "cost structure": "Cost Structure", "revenue streams": "Revenue Streams",
 };
-const BUSINESS_CREDIT = "Business Model Canvas by Strategyzer AG, licensed CC BY-SA 3.0 (creativecommons.org/licenses/by-sa/3.0/). Layout adapted for aidea.";
+const BUSINESS_CREDIT = "Business Model Canvas by Strategyzer AG, licensed CC BY-SA 3.0. Layout adapted for aidea.";
 
 {
   const style = document.createElement("style");
@@ -23,13 +23,17 @@ const BUSINESS_CREDIT = "Business Model Canvas by Strategyzer AG, licensed CC BY
     .bnote.selected rect { stroke: var(--accent); stroke-width: 1.5; }
     @media (prefers-reduced-motion: reduce) { .bnote:is(:hover, :focus-visible) { transform: none; } }
     body.motion-off .bnote:is(:hover, :focus-visible) { transform: none; }
-    #business-credit { position: absolute; left: 15px; bottom: 15px; z-index: 1; max-width: calc(100% - 210px); font-size: 11.5px; color: var(--muted); }
+    #business-credit { position: absolute; left: 15px; right: 15px; bottom: 63px; z-index: 1; margin: 0; padding: 6px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; font-size: 11.5px; line-height: 1.4; color: var(--muted); }
+    #business-credit a { color: var(--accent); }
   `;
   document.head.append(style);
 }
 
-const businessCredit = Object.assign(document.createElement("p"), { id: "business-credit", textContent: BUSINESS_CREDIT, hidden: true });
-businessCredit.style.margin = "0";
+const businessCredit = Object.assign(document.createElement("p"), { id: "business-credit", hidden: true });
+businessCredit.append(
+  `${BUSINESS_CREDIT} `,
+  Object.assign(document.createElement("a"), { href: "https://creativecommons.org/licenses/by-sa/3.0/", target: "_blank", rel: "noopener noreferrer", textContent: "CC BY-SA 3.0 licence" }),
+);
 document.querySelector("main").append(businessCredit);
 
 // Two short lines at most; the whole title stays available as the tooltip.
@@ -69,10 +73,10 @@ function drawBusiness(g, nodes, layout, select) {
   if (blocks.length === 9) {
     const vp = at["value propositions"], cs = at["customer segments"], rev = at["revenue streams"];
     for (const via of ["customer relationships", "channels"]) {
-      flows.push({ d: `M${vp.x + vp.width} ${bottom(via)}H${cs.x - 9}`, head: [cs.x, bottom(via), "right"], tone: "accent", ends: `value propositions ${via} customer segments`, dur: 4 });
+      flows.push({ d: `M${vp.x + vp.width} ${bottom(via)}H${cs.x - 9}`, head: [cs.x, bottom(via), "right"], tone: "accent", ends: `value propositions|${via}|customer segments`, dur: 4 });
     }
     const x = cs.x + cs.width / 2;
-    flows.push({ d: `M${x} ${cs.y + cs.height - 34}V${rev.y - 9}`, head: [x, rev.y, "down"], tone: "authored", ends: "customer segments revenue streams", dur: 3 });
+    flows.push({ d: `M${x} ${cs.y + cs.height - 34}V${rev.y - 9}`, head: [x, rev.y, "down"], tone: "authored", ends: "customer segments|revenue streams", dur: 3 });
   }
   for (const f of flows) {
     g.append(el("path", { class: "edge bflow", d: f.d, "data-tone": f.tone, "data-flow": "", "data-packets": 2, "data-packet-dur": f.dur, "data-ends": f.ends }));
@@ -86,8 +90,8 @@ function drawBusiness(g, nodes, layout, select) {
     if (!r) continue;
     const index = placed.get(n.block) ?? 0;
     placed.set(n.block, index + 1);
-    // data-id (the block) makes hovering a note light the flows through its block; data-ref#note dims it with the block.
-    const note = el("g", { class: "bnote", tabindex: 0, "data-id": n.block, "data-ref": `${n.block}#${n.id}`, style: `--tilt:${businessTilt(r.width, index)}` });
+    // data-node makes the note zoomable and markable like any Node; data-light (the block) makes hovering it light the flows through its block; data-ref#note dims it with the block.
+    const note = el("g", { class: "bnote", tabindex: 0, "data-node": n.id, "data-light": n.block, "data-ref": `${n.block}#${n.id}`, style: `--tilt:${businessTilt(r.width, index)}` });
     const lines = businessWrap(n.title);
     note.append(el("title", {}, n.title), el("rect", { x: r.x, y: r.y, width: r.width, height: r.height, rx: 6 }));
     lines.forEach((line, i) => note.append(el("text", { x: r.x + 10, y: r.y + (lines.length === 1 ? 26 : 19 + i * 15) }, line)));

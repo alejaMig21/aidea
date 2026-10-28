@@ -49,7 +49,7 @@ const handler: Handler = async (req, res, core) => {
     const blocks = layer === "business" ? { blocks: layoutBusiness(authored.layers.business.nodes).blocks } : {};
     if (layer === "components") {
       const { rects, compartments, routes } = layoutComponentsDiagram(project.nodes, project.relationships);
-      core.send(res, 200, { layer, rects, compartments, routes });
+      core.send(res, 200, { layer, rects, compartments, routes, unresolved: project.unresolved });
       return true;
     }
     core.send(res, 200, layer === "architecture" ? { layer, ...layoutArchitecture(authored.layers.architecture.nodes) } : { layer, rects: layoutOf(layer, project, authored), ...blocks });

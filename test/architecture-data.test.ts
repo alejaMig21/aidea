@@ -73,7 +73,7 @@ test("a bad relation is dropped alone with an error naming the field; the Node s
   ]);
 });
 
-test("an unknown kind, a bad description or a relations that is not a list drops that Node and names the field", async () => {
+test("an unknown kind keeps the Node as a generic box and names the field; a bad description or relations drops the Node", async () => {
   const dir = await projectWith([
     node("a", { kind: "database" }),
     node("b", { description: 7 }),
@@ -82,13 +82,15 @@ test("an unknown kind, a bad description or a relations that is not a list drops
     node("e", { kind: "component", description: "Fine." }),
   ]);
   const layer = (await authored(dir)).layers.architecture;
-  assert.deepEqual(layer.nodes.map((n: any) => n.id), ["e"]);
+  assert.deepEqual(layer.nodes.map((n: any) => n.id), ["a", "e"]);
+  assert.equal("kind" in layer.nodes[0], false, "the unknown kind is treated as unset");
   assert.deepEqual(layer.errors.map((e: any) => e.message), [
-    'nodes[0]: "kind" must be one of: person, system, container, component',
+    'nodes[0]: "kind" must be one of: person, system, container, component (ignored: drawn as a generic box)',
     'nodes[1]: "description" must be a non-empty string when present',
     'nodes[2]: "description" must be a non-empty string when present',
     'nodes[3]: "relations" must be an array when present',
   ]);
+  assert.equal((await t.get(`/layout?project=${encodeURIComponent(dir)}&layer=architecture`)).status, 200);
 });
 
 test("a dropped duplicate Node does not overwrite the surviving Node's relations", async () => {

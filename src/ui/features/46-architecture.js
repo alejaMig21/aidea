@@ -102,4 +102,5 @@ function architectureRender() {
     }
   }
   for (const r of drawing.rects) if (!boxes.has(r.id) && rectOf.has(r.id) && (byId.has(r.id) || adds.has(r.id))) g.append(tile(r));
+  markBroken(); // the tiles are new
 }

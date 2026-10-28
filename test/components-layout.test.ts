@@ -104,3 +104,10 @@ test("a relationship with no Project target is a short stub out of its source an
   assert.ok(getattr && getattr.resolution === "unresolved");
   assert.ok(stubs.every((r) => r.points.length === 2 && r.points[0].y === r.points[1].y));
 });
+
+test("the layout says how many relationships are unresolved, so the legend can refresh with each drawing", async () => {
+  const project = await (await t.post("/projects", { path: fixture("relations") })).json();
+  const { body } = await layout("relations");
+  assert.ok(project.unresolved > 0);
+  assert.equal((body as Layout & { unresolved: number }).unresolved, project.unresolved);
+});

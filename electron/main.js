@@ -1,6 +1,6 @@
 // Desktop shell: runs the core as a separate Node process and shows its interface.
 // AIDEA_DISPLAY=secondary opens the window on the second monitor, for live testing.
-import { app, BrowserWindow, dialog, ipcMain, Menu, screen } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu, screen, shell } from "electron";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
@@ -28,6 +28,11 @@ function openWindow(url) {
   win.setBounds({ x, y, width: 1280, height: 800 });
   win.setBounds({ x, y, width: 1280, height: 800 });
   win.once("ready-to-show", () => win.show());
+  // A link that asks for a new window (such as the licence link on the Business canvas) opens in the person's browser, never in this window.
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//i.test(url)) shell.openExternal(url);
+    return { action: "deny" };
+  });
   win.loadURL(url);
 }
 

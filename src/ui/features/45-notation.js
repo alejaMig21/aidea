@@ -4,7 +4,8 @@
 //   [data-flow]      on an edge path: dashes flow in the path's direction.
 //   [data-packets="N"]  on an edge path: N glowing packets travel source to target along that very path, in a loop (data-packet-dur="s" overrides the pace).
 //   [data-breathe]   on any element: slow glow (about 2.5 s).
-//   [data-ends="idA idB"]  on an edge: the ids of its two Nodes; hovering or focusing a [data-node]/[data-id] Node lights its edges and dims the rest.
+//   [data-ends="idA idB"]  on an edge: the ids of its two Nodes; hovering or focusing a [data-node]/[data-id] Node lights its edges and dims the rest
+//                    (a Node may carry data-light="id" when the edges know it by another id).
 // Legends: notationRegisterLegend(layerKey, { shapes, arrows, notShown }) with shapes/arrows as [[notationSwatch(svgInner), "text"], ...] and notShown as ["text", ...].
 const notationKey = "aidea.animations";
 const notationColours = [
@@ -26,7 +27,8 @@ const notationColours = [
     body:not(.motion-off) :is([data-breathe], .anode.selected) { animation: nt-breathe 2.5s ease-in-out infinite; }
     body.motion-paused * { animation-play-state: paused !important; }
     svg#canvas.nt-hl [data-ends] { opacity: .18; transition: opacity .2s; }
-    svg#canvas.nt-hl [data-ends].nt-lit { opacity: 1; stroke: var(--accent-soft); stroke-width: 3; }
+    svg#canvas.nt-hl [data-ends].nt-lit { opacity: 1; stroke-width: 3; }
+    svg#canvas.nt-hl [data-ends].nt-lit:not([data-tone="unresolved"]) { stroke: var(--accent-soft); } /* unresolved stays grey */
     svg#canvas.nt-hl [data-ref]:not([data-ends]):not(.nt-near) { opacity: .35; }
     #motion-toggle { margin-left: auto; flex: none; padding: 4px 10px; background: transparent; color: var(--text); border: 1px solid var(--control); font-size: 12.5px; font-weight: 400; }
     #motion-toggle b { font-weight: 600; color: var(--accent); } #motion-toggle[aria-pressed="false"] b { color: var(--muted); }
@@ -96,11 +98,12 @@ function notationBBox() {
 }
 
 // ---- Hover and keyboard focus light a Node's edges and dim the rest.
+const notationEnds = (p) => p.dataset.ends.split(p.dataset.ends.includes("|") ? "|" : " "); // "|" when an id holds a space (the Business blocks)
 const notationLight = (e) => {
   const node = e.target.closest?.("[data-node],[data-id]");
-  const id = node && (node.dataset.node ?? node.dataset.id);
-  const edges = id ? [...$("world").querySelectorAll("[data-ends]")].filter((p) => p.dataset.ends.split(" ").includes(id)) : [];
-  const near = new Set(edges.flatMap((p) => p.dataset.ends.split(" ")));
+  const id = node && (node.dataset.light ?? node.dataset.node ?? node.dataset.id); // data-light: a note lights the edges of its block
+  const edges = id ? [...$("world").querySelectorAll("[data-ends]")].filter((p) => notationEnds(p).includes(id)) : [];
+  const near = new Set(edges.flatMap(notationEnds));
   svg.classList.toggle("nt-hl", edges.length > 0);
   $("world").querySelectorAll("[data-ends]").forEach((p) => p.classList.toggle("nt-lit", edges.includes(p)));
   $("world").querySelectorAll("[data-ref]:not([data-ends])").forEach((n) => n.classList.toggle("nt-near", near.has(n.dataset.ref.split("#")[0])));

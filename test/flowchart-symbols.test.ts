@@ -74,6 +74,9 @@ test("a call in any expression position flags its step: with items, for iterable
   assert.equal(io("return input('again? ')"), "input");
   assert.ok(!io("eval('1')"));
   assert.ok(steps.find((s) => s.label === "pass")?.io === undefined);
+  const rects = ((await (await t.get(`/algorithm?project=${encodeURIComponent(fixture("flow"))}&node=symbols.reads`)).json()) as { rects: Rect[]; steps: Step[] });
+  const ret = rects.rects.find((r) => r.id === rects.steps.find((s) => s.label === "return input('again? ')")!.id)!;
+  assert.equal(ret.height, 40, "a return that reads input is still a terminator, not a parallelogram");
 });
 
 test("exception edges carry the exception type, and handler steps say what they catch", async () => {

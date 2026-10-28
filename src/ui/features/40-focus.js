@@ -4,7 +4,7 @@ const focusStyle = document.createElement("style");
 focusStyle.textContent = `
   [data-ref] { transition: opacity .2s; }
   .dim { opacity: .2; }
-  .anode.has-broken rect { stroke: var(--danger); stroke-width: 1.5; }
+  .anode.has-broken rect, .bnote.has-broken rect { stroke: var(--danger); stroke-width: 1.5; }
 `;
 document.head.append(focusStyle);
 
@@ -58,7 +58,13 @@ zoomOut.onclick = async () => {
   zoomOut.hidden = body.remaining === 0;
 };
 
-// After each Project is drawn, mark the Nodes that have a Broken link.
+// The Nodes with a Broken link carry a red outline. Every redraw of a layer calls markBroken again.
+let brokenFrom = new Set();
+function markBroken() {
+  document.querySelectorAll(".anode, .bnote").forEach((n) => n.classList.toggle("has-broken", brokenFrom.has(n.dataset.node)));
+}
+
+// After each Project is drawn, find the Nodes that have a Broken link.
 const drawWithoutBroken = draw;
 draw = async (nodes) => {
   await drawWithoutBroken(nodes);
@@ -67,6 +73,6 @@ draw = async (nodes) => {
   const res = await fetch(`/traces?project=${encodeURIComponent(project)}`);
   if (!res.ok || project !== current) return;
   const { links } = await res.json();
-  const broken = new Set(links.filter((l) => l.broken).map((l) => l.from));
-  document.querySelectorAll(".anode").forEach((n) => n.classList.toggle("has-broken", broken.has(n.dataset.node)));
+  brokenFrom = new Set(links.filter((l) => l.broken).map((l) => l.from));
+  markBroken();
 };

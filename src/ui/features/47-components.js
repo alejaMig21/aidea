@@ -66,6 +66,9 @@ function componentsLegend(unresolved) {
       "Calls to libraries and Python builtins are left out",
       "Nested functions are not Nodes: their calls count for the function around them",
       "A call from several methods of one class to another class is drawn once, between the two boxes",
+      "Imports of modules outside the Project",
+      "Calls made in a class body or in a decorator",
+      "Aliases (f = g): a call through the new name is not followed to g; it shows as unresolved",
     ],
   });
   notationRenderLegend();

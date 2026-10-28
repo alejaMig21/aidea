@@ -5,7 +5,9 @@ algoStyle.textContent = `
   .flow-edge { stroke: #4a546c; fill: none; stroke-width: 1.6; marker-end: url(#flow-arrow); }
   .flow-edge.exception { stroke: var(--danger); stroke-dasharray: 6 4; marker-end: url(#flow-arrow-red); opacity: .75; }
   .flow-edge.taken { stroke: var(--derived); opacity: 1; marker-end: url(#flow-arrow-teal); }
-  .flow-edge.exception.taken { stroke: var(--danger); marker-end: url(#flow-arrow-red); animation: flow-flash .9s ease-out 2; }
+  .flow-edge.exception.taken { stroke: var(--danger); marker-end: url(#flow-arrow-red); }
+  body:not(.motion-off) .flow-edge.exception.taken { animation: flow-flash .9s ease-out 2; } /* more specific than the kit's dash rule, so the flash wins; off with the motion switch */
+  @media (prefers-reduced-motion: reduce) { .flow-edge.exception.taken { animation: none !important; } }
   @keyframes flow-flash { 0%, 100% { stroke-width: 1.6; } 30% { stroke-width: 5; filter: drop-shadow(0 0 6px var(--danger)); } }
   .flow-arrow-head { fill: #4a546c; }
   #flow-arrow-red .flow-arrow-head { fill: var(--danger); } #flow-arrow-teal .flow-arrow-head { fill: var(--derived); }
@@ -15,7 +17,7 @@ algoStyle.textContent = `
   .flow-step .sh { fill: var(--raised); stroke: var(--control); stroke-width: 1.4; }
   .flow-step text { font: 500 12.5px var(--mono); fill: var(--text); text-anchor: middle; pointer-events: none; }
   .flow-step text.tag { font: 500 9.5px var(--mono); fill: var(--muted); text-anchor: start; letter-spacing: .06em; text-transform: uppercase; }
-  .flow-branch .sh, .flow-loop .sh { stroke: var(--accent); }
+  .flow-branch .sh, .flow-loop .sh { stroke: var(--label); stroke-width: 1.8; } /* structure, not "active now": accent is reserved for the token */
   .flow-raise .sh { fill: #ff8a8018; stroke: var(--danger); }
   .flow-step.generic .sh { stroke-dasharray: 3 3; }
   .flow-step.in-finally .sh { stroke-dasharray: 1 3; stroke-linecap: round; }

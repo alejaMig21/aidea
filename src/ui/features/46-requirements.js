@@ -143,6 +143,7 @@ draw = async (nodes) => {
   requirementTraces = next;
   drawAuthored();
   showLayer(authoredShown);
+  markBroken(); // the redraw made new cards
 };
 
 notationRegisterLegend("requirements", {

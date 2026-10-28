@@ -124,7 +124,7 @@ export type FlowEdge = { from: string; to: string; label?: string; exit?: string
 
 // Flowchart boxes: the size of each step's symbol follows its text, so a diamond or a parallelogram always holds its label.
 // The text is wrapped into lines (returned for drawing), at fewer characters per line inside a diamond.
-export type FlowStep = { id: string; kind: string; label: string; io?: string | null };
+export type FlowStep = { id: string; kind: string; label: string; io?: string | null; construct?: string };
 const CHAR = 7.6; // width of one character of the 12.5 px monospace label
 const LINE = 16;
 
@@ -145,11 +145,12 @@ export function wrapText(text: string, max: number): string[] {
 
 export function flowBox(step: FlowStep) {
   const decision = step.kind === "branch" || step.kind === "loop";
-  const lines = wrapText(step.label, decision ? 20 : step.io ? 28 : 34);
+  const slanted = Boolean(step.io) && step.kind === "step" && step.construct !== "with"; // only a plain step is drawn as input/output
+  const lines = wrapText(step.label, decision ? 20 : slanted ? 28 : 34);
   const textW = Math.max(...lines.map((l) => l.length)) * CHAR;
   const textH = lines.length * LINE;
   const size = decision ? { width: Math.max(130, Math.ceil(textW * 1.7 + 16)), height: Math.max(64, Math.ceil(textH * 2.8)) }
-    : step.io ? { width: Math.max(130, Math.ceil(textW + 60)), height: Math.max(44, textH + 20) }
+    : slanted ? { width: Math.max(130, Math.ceil(textW + 60)), height: Math.max(44, textH + 20) }
     : ["start", "end", "return", "raise"].includes(step.kind) ? { width: Math.max(110, Math.ceil(textW + 44)), height: Math.max(40, textH + 20) }
     : { width: Math.max(120, Math.ceil(textW + 28)), height: Math.max(40, textH + 20) };
   return { ...size, lines };

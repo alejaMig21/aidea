@@ -34,7 +34,8 @@ $("zoom-fit").onclick = () => {
   const b = notationBBox(); // elements that are not displayed (other layers) are left out
   if (!b.width || !b.height) { Object.assign(view, viewStart); return apply(); }
   const r = svg.getBoundingClientRect();
-  const w = r.width - 48, h = r.height - 140; // clear of the floating Layer tabs (top) and the zoom control (bottom)
+  const credit = $("business-credit"), creditH = credit && !credit.hidden ? credit.offsetHeight + 8 : 0; // the Business credit line sits above the zoom control
+  const w = r.width - 48, h = r.height - 140 - creditH; // clear of the floating Layer tabs (top) and the zoom control (bottom)
   view.k = Math.min(1, Math.max(0.2, Math.min(w / b.width, h / b.height)));
   view.x = (r.width - b.width * view.k) / 2 - b.x * view.k;
   view.y = 70 + (h - b.height * view.k) / 2 - b.y * view.k;
@@ -80,6 +81,7 @@ async function draw(nodes) {
   if (!res.ok) { $("error").textContent = layout.error; return; }
   const world = $("world");
   world.replaceChildren();
+  currentUnresolved = layout.unresolved ?? currentUnresolved; // the legend counts what this very drawing was made from
   componentsDraw(world, nodes, layout, currentUnresolved);
 }
 
