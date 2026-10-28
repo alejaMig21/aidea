@@ -169,7 +169,7 @@ function routesFor(
     const cA = channel(p.gapA);
     if (p.gapA === p.gapB) p.route.points = [start, { x: cA, y: start.y }, { x: cA, y: end.y }, end];
     else {
-      const cB = channel(p.gapB), lane = LANE_TOP - 10 * lanes++;
+      const cB = channel(p.gapB), lane = LANE_TOP - 16 * lanes++;
       p.route.points = [start, { x: cA, y: start.y }, { x: cA, y: lane }, { x: cB, y: lane }, { x: cB, y: end.y }, end];
     }
     if (p.route.kind === "imports") {

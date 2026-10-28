@@ -75,38 +75,24 @@ const el = (name, attrs, text) => {
 async function draw(nodes) {
   const project = current;
   const res = await fetch(`/layout?project=${encodeURIComponent(project)}&layer=components`);
-  const { rects, error } = await res.json();
+  const layout = await res.json();
   if (project !== current) return;
-  if (!res.ok) { $("error").textContent = error; return; }
-  const at = new Map(rects.map((r) => [r.id, r]));
+  if (!res.ok) { $("error").textContent = layout.error; return; }
   const world = $("world");
   world.replaceChildren();
-  for (const n of nodes) {
-    const parent = at.get(n.parent), r = at.get(n.id);
-    if (parent) world.append(el("path", { class: "edge", d: `M${parent.x + 9} ${parent.y + parent.height} V${r.y + 14} H${r.x}`, "data-ref": n.id, "data-flow": "", "data-packets": 1, "data-ends": `${n.parent} ${n.id}` }));
-  }
-  for (const n of nodes) {
-    const r = at.get(n.id);
-    world.append(el("rect", { x: r.x, y: r.y, width: r.width, height: r.height, rx: 8, "data-id": n.id, "data-ref": n.id }));
-    world.append(el("circle", { cx: r.x + 13, cy: r.y + r.height / 2, r: 3.5, class: "dot-derived", "data-ref": n.id }));
-    world.append(el("text", { x: r.x + 24, y: r.y + 19, "data-ref": n.id }, `${n.kind === "function" ? "ƒ " : ""}${n.name.split(".").pop()}`));
-    // Attributes are members of a class Node, drawn as slim rows above its methods.
-    for (const a of n.attributes ?? []) {
-      const ref = `${n.id}#${a.name}`, ar = at.get(ref);
-      world.append(el("rect", { x: ar.x, y: ar.y, width: ar.width, height: ar.height, rx: 8, fill: "none", "stroke-dasharray": "3 3", "data-ref": ref }));
-      world.append(el("text", { x: ar.x + 10, y: ar.y + 17, "data-ref": ref }, `• ${a.name}`));
-    }
-  }
+  componentsDraw(world, nodes, layout, currentUnresolved);
 }
 
 // Projects
 let current = null;
+let currentUnresolved = 0; // relationships the analysis could not resolve, for the Components legend
 async function open(path) {
   $("error").textContent = "";
   const res = await fetch("/projects", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ path }) });
   const body = await res.json();
   if (!res.ok) { $("error").textContent = body.error; return; }
   current = body.id;
+  currentUnresolved = body.unresolved ?? 0;
   document.dispatchEvent(new CustomEvent("project-opened", { detail: { id: body.id } }));
   if (typeof hideHome === "function") hideHome();
   Object.assign(view, viewStart);
