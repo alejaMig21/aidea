@@ -5,7 +5,7 @@
 // The builder must not be able to approve its own requests, so it never learns the answer secret.
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { answerForTutor, parseAnswer, publicQuestion } from "./tutor.ts";
-import type { Question } from "./tutor.ts";
+import type { Answer, Question } from "./tutor.ts";
 
 export type Decision = { behavior: "allow" } | { behavior: "deny"; message: string };
 
@@ -13,7 +13,7 @@ const MAX_PENDING = 20; // requests one conversation may have waiting at once
 
 // A "tutor" conversation is a class: the same token and secret mechanism, but its tools are the Tutor's and its requests are questions.
 type Role = "builder" | "tutor";
-type Conversation = { project: string; secret: string; emit: (event: object) => void; pending: Set<string>; role: Role };
+type Conversation = { project: string; secret: string; emit: (event: object) => void; pending: Set<string>; role: Role; classId?: string };
 // `onClose` is what a waiting request resolves to when its conversation ends. A question carries its committed answer.
 type Request = { conversation: Conversation; resolve: (value: any) => void; onClose: unknown; question?: Question };
 
@@ -22,16 +22,18 @@ export type QuestionResult = { text: string; isError?: true };
 
 export const sameSecret = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
-export function createBroker() {
+// `onAnswer` hears every valid answer to a Tutor question (the ledger of evidence is written from it).
+export type AnswerHeard = { classId: string; questionId: string; project: string; question: Question; answer: Answer };
+export function createBroker(onAnswer?: (heard: AnswerHeard) => void) {
   const conversations = new Map<string, Conversation>(); // token -> conversation
   const requests = new Map<string, Request>(); // request id -> who is waiting
   let counter = 0;
 
   return {
     // A conversation starts, about one Project. `emit` sends an event to the person's chat stream.
-    open(emit: (event: object) => void, project: string, role: Role = "builder") {
+    open(emit: (event: object) => void, project: string, role: Role = "builder", classId?: string) {
       const token = randomBytes(16).toString("hex");
-      const conversation: Conversation = { project, secret: randomBytes(16).toString("hex"), emit, pending: new Set(), role };
+      const conversation: Conversation = { project, secret: randomBytes(16).toString("hex"), emit, pending: new Set(), role, classId };
       conversations.set(token, conversation);
       return {
         token,
@@ -128,6 +130,8 @@ export function createBroker() {
       if ("error" in parsed) return { invalid: parsed.error };
       requests.delete(id);
       request.conversation.pending.delete(id);
+      const { classId, project } = request.conversation;
+      if (classId) onAnswer?.({ classId, questionId: id, project, question: request.question, answer: parsed.answer });
       request.resolve({ text: JSON.stringify(answerForTutor(request.question, parsed.answer)) });
       return "answered";
     },

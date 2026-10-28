@@ -61,6 +61,7 @@ export function createParser() {
       return [{
         type: "result",
         text: String(j.result ?? ""),
+        ...(j.structured_output !== undefined ? { structured: j.structured_output } : {}),
         costUsd: j.total_cost_usd,
         durationMs: j.duration_ms,
         usage: { inputTokens: inputTokens(j.usage), outputTokens: j.usage?.output_tokens },
@@ -88,15 +89,16 @@ export function createClaudeAdapter(spawnFn: SpawnFn = realSpawn): Adapter {
         { id: "haiku", label: "Haiku" },
       ],
     },
-    async *run({ role, tools, cwd, message, sessionId, mode, model, signal, permission, instructions }) {
+    async *run({ role, schema, tools, cwd, message, sessionId, mode, model, signal, permission, instructions }) {
       const args = ["-p", "--output-format", "stream-json", "--verbose"];
       if (sessionId) args.push("--resume", sessionId);
       if (mode) args.push("--permission-mode", mode);
       if (model && model !== "default") args.push("--model", model);
-      if (role === "tutor") {
+      if (role === "tutor" || role === "extractor" || role === "auditor") {
         // Measured recipe (research 03): these flags leave only the core's tools, no plugins, skills, hooks or CLAUDE.md.
         // One process serves the whole class: a resumed session loses this isolation, so nothing is persisted or resumed.
         args.push("--system-prompt", instructions ?? "", "--setting-sources", "", "--strict-mcp-config", "--disable-slash-commands", "--tools", "", "--no-session-persistence");
+        if (schema) args.push("--json-schema", JSON.stringify(schema)); // the answer arrives as `structured_output` on the result
         if (tools) args.push("--mcp-config", tools.mcpConfig, "--allowedTools", tools.allowedTools.join(","));
       } else if (instructions) args.push("--append-system-prompt", instructions);
       // Permission requests that the person's own rules do not settle go to aidea's tool instead of being denied.

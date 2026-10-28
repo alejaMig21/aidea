@@ -157,6 +157,23 @@
     else if (event.type === "tutor_question") questionCard(event);
     else if (event.type === "tutor_question_expired") expire(event.id);
     else if (event.type === "error") { const p = el("p", { className: "tutor-error", textContent: event.message }); p.setAttribute("role", "alert"); log.append(p); }
+    else if (event.type === "learner") learnerLine(event);
+  }
+
+  // After a class: one plain line about the Learner graph. If the pipeline failed, a Retry button asks the core again.
+  function learnerLine(event) {
+    if (event.status === "saved") return void (event.ideas > 0 && line("tutor-meta", `Saved ${event.ideas} ${event.ideas === 1 ? "idea" : "ideas"} to your map`));
+    const p = el("p", { className: "tutor-error", textContent: `${event.message} ` });
+    const retry = el("button", { type: "button", textContent: "Retry" });
+    retry.onclick = async () => {
+      retry.disabled = true;
+      const res = await fetch(`/tutor/classes/${encodeURIComponent(event.classId)}/close`, { method: "POST" }).catch(() => null);
+      const body = await res?.json().catch(() => ({}));
+      if (res?.ok) { p.className = "tutor-meta"; p.textContent = `Saved ${body.ideas} ${body.ideas === 1 ? "idea" : "ideas"} to your map`; }
+      else { p.firstChild.textContent = `${body?.message ?? body?.error ?? "Could not reach the core"} `; retry.disabled = false; }
+    };
+    p.append(retry);
+    log.append(p);
   }
 
   // Back from a class: the conversation stays on screen, with the way to begin another one below it.

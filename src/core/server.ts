@@ -7,6 +7,8 @@ import { createClaudeAdapter } from "./adapter/claude.ts";
 import { createBroker } from "./permissions.ts";
 import { createRecents } from "./recents.ts";
 import { createPreferences } from "./preferences.ts";
+import { createLearner } from "./learner-pipeline.ts";
+import { evidenceOf } from "./learner.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
 const routesDir = fileURLToPath(new URL("./routes/", import.meta.url));
@@ -19,16 +21,25 @@ async function loadRoutes(): Promise<Handler[]> {
 
 // `recentsFile` is where the recent Projects are kept between runs; without it they stay in memory.
 // `preferencesFile` does the same for the mode and model chosen for each Project.
-export async function startCore({ port, adapter = createClaudeAdapter(), recentsFile, preferencesFile }: { port: number; adapter?: Adapter; recentsFile?: string; preferencesFile?: string }) {
+// `learnerDir` is the per-user folder of the Learner's evidence and graph (memory only without it); `learnerModel` is the model of its Extractor and Auditor.
+export async function startCore({ port, adapter = createClaudeAdapter(), recentsFile, preferencesFile, learnerDir, learnerModel }: { port: number; adapter?: Adapter; recentsFile?: string; preferencesFile?: string; learnerDir?: string; learnerModel?: string }) {
   const routes = await loadRoutes();
   // Only the core's own address may talk to it: stops web pages from reaching it (CSRF, DNS rebinding).
   let allowedHosts = new Set<string>();
 
+  const learner = createLearner(learnerDir, adapter, learnerModel);
   const core: Core = {
     adapter,
+    learner,
     projects: new Map<string, Project>(),
     recordings: new Map<string, unknown>(),
-    permissions: createBroker(),
+    permissions: createBroker((h) => {
+      try {
+        learner.recordEvidence(evidenceOf(h.classId, h.questionId, h.project, h.question, h.answer));
+      } catch (e) {
+        console.error(e); // a ledger that cannot be written must not stop the class
+      }
+    }),
     proposals: new Map(),
     recents: createRecents(recentsFile),
     preferences: createPreferences(preferencesFile),

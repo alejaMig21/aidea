@@ -1,6 +1,7 @@
 // The Tutor's class: POST /tutor/classes starts one and streams its events (newline-delimited JSON, like /chat);
 // POST /tutor/answer is the person's answer to a question the Tutor is waiting on.
 // A class is one Tutor process for as long as the stream stays open: closing the stream ends the class.
+import { randomBytes } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -43,7 +44,10 @@ const handler: Handler = async (req, res, core) => {
   const send = (event: object) => {
     if (!res.writableEnded) res.write(JSON.stringify(event) + "\n");
   };
-  const conversation = core.permissions.open(send, project.id, "tutor");
+  const classId = `c-${Date.now().toString(36)}${randomBytes(3).toString("hex")}`;
+  const node = typeof body?.node === "string" ? body.node : undefined; // the Project Node the class is about, if any
+  const texts: string[] = []; // the Teacher's prose, for the Learner graph
+  const conversation = core.permissions.open(send, project.id, "tutor", classId);
   const tools = {
     mcpConfig: JSON.stringify({ mcpServers: { tutor: { type: "http", url: `http://${req.headers.host}/mcp/${conversation.token}` } } }),
     allowedTools: ["mcp__tutor__*"],
@@ -59,6 +63,7 @@ const handler: Handler = async (req, res, core) => {
     mkdirSync(cwd, { recursive: true });
     const { tutorModel } = currentChoice(core, project.id);
     for await (const event of core.adapter.run({ role: "tutor", cwd, message, model: tutorModel, signal: abort.signal, instructions: TUTOR_INSTRUCTIONS, tools })) {
+      if (event.type === "text" && !event.parent) texts.push(event.text);
       send(event);
     }
   } catch (e) {
@@ -67,6 +72,8 @@ const handler: Handler = async (req, res, core) => {
   } finally {
     conversation.close();
   }
+  // The class is closed only when the pipeline has run; if it fails the prose is kept and POST /tutor/classes/<id>/close retries.
+  if (texts.length) send({ type: "learner", classId, ...(await core.learner.closeClass({ classId, project: project.id, node, texts })) });
   res.end();
   return true;
 };

@@ -4,6 +4,7 @@ import type { Broker } from "./permissions.ts";
 import type { ProposalStore } from "./proposals.ts";
 import type { Recents } from "./recents.ts";
 import type { Preferences } from "./preferences.ts";
+import type { Learner } from "./learner-pipeline.ts";
 
 export type CoreNode = {
   id: string;
@@ -52,7 +53,7 @@ export type AgentEvent =
   | { type: "session"; sessionId: string }
   | { type: "text"; text: string; parent?: string }
   | { type: "tool"; id: string; name: string; input: unknown; parent?: string }
-  | { type: "result"; text: string; costUsd?: number; durationMs?: number; usage: { inputTokens?: number; outputTokens?: number } }
+  | { type: "result"; text: string; structured?: unknown; costUsd?: number; durationMs?: number; usage: { inputTokens?: number; outputTokens?: number } }
   | { type: "error"; code: "not_installed" | "not_signed_in" | "failed"; message: string };
 
 // An Agent adapter drives one agent product (Claude Code first) and reports aidea events.
@@ -67,7 +68,9 @@ export type Adapter = {
   // `instructions` are added to the agent's own system prompt.
   // `role` is "builder" (the default) or "tutor": the Tutor runs isolated, with its own instructions as the whole system prompt
   // and only `tools` (an MCP configuration and the tools it may use), never the person's plugins or settings.
-  run: (opts: { role?: "builder" | "tutor"; tools?: { mcpConfig: string; allowedTools: string[] }; cwd: string; message: string; sessionId?: string; mode?: string; model?: string; signal?: AbortSignal; instructions?: string; permission?: { mcpConfig: string; tool: string; allowedTools: string[]; deniedTools: string[] } }) => AsyncIterable<AgentEvent>;
+  // "extractor" and "auditor" are the Learner graph's one-shot roles: no tools, `instructions` as the whole system prompt, and `schema`
+  // (a JSON Schema) constrains the answer, which comes back as `structured` on the result event.
+  run: (opts: { role?: "builder" | "tutor" | "extractor" | "auditor"; schema?: object; tools?: { mcpConfig: string; allowedTools: string[] }; cwd: string; message: string; sessionId?: string; mode?: string; model?: string; signal?: AbortSignal; instructions?: string; permission?: { mcpConfig: string; tool: string; allowedTools: string[]; deniedTools: string[] } }) => AsyncIterable<AgentEvent>;
 };
 
 // A spawn-like process source; the real one launches `claude`, tests replay recorded streams.
@@ -88,6 +91,8 @@ export type Core = {
   recents: Recents;
   // The person's mode and model choice for each Project.
   preferences: Preferences;
+  // The Learner: evidence, the Learner graph and the end-of-class pipeline. Per user, outside any Project.
+  learner: Learner;
   // Returns null when the body exceeds the size limit (64 KB unless a route asks for more).
   readBody: (req: IncomingMessage, maxBytes?: number) => Promise<string | null>;
   // Parses a JSON body; on failure it has already sent the 413 or 400 response and returns undefined.
