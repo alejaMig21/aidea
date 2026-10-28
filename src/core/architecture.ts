@@ -92,6 +92,15 @@ export function layoutArchitecture(nodes: Fields[]): ArchitectureDrawing {
     if (isGroup(from)) points = clip(points, at.get(from)!, true);
     return { from, to, points, ...(route.label ? { label: route.label } : {}), ...(edges[i].technology ? { technology: edges[i].technology } : {}) };
   });
+  // Labels of edges that leave one box side by side start at nearly the same x: move each to the right of the ones placed before it.
+  // ponytail: only slides sideways along the gap between rows; a very long row of siblings makes the labels spread wide.
+  const placed: { x1: number; x2: number; y1: number; y2: number }[] = [];
+  for (const r of routes) {
+    if (!r.label) continue;
+    const w = Math.max(r.label.text.length, r.technology ? r.technology.length + 2 : 0) * 6.2 + 4, y1 = r.label.y - 12, y2 = r.label.y + (r.technology ? 16 : 4);
+    for (const p of placed) if (r.label.x < p.x2 + 6 && p.x1 < r.label.x + w && y1 < p.y2 && p.y1 < y2) r.label.x = p.x2 + 8;
+    placed.push({ x1: r.label.x, x2: r.label.x + w, y1, y2 });
+  }
   return { rects, groups: boxes, routes, texts };
 }
 

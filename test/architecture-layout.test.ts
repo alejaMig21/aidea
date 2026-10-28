@@ -98,6 +98,13 @@ test("every relation comes back as an orthogonal route with a label position and
   assert.deepEqual(d.routes.map((r) => [r.label!.text, r.technology]), [["Builds quotes with", "HTTPS"], ["Reads and writes quotes", "SQL"], ["Sends the quote by email", undefined]]);
 });
 
+test("labels of neighbouring relations do not cover each other", async () => {
+  const d = await drawing(await open(nodes));
+  const box = (r: Route): R => ({ id: r.from, x: r.label!.x, y: r.label!.y - 12, width: Math.max(r.label!.text.length, (r.technology?.length ?? 0) + 2) * 6.2, height: r.technology ? 28 : 16 });
+  const boxes = d.routes.map(box);
+  for (const a of boxes) for (const b of boxes) if (a !== b) assert.ok(!overlap(a, b), `labels of ${a.id} collide`);
+});
+
 test("a relation to a boundary ends on the box, not inside it", async () => {
   const list = [nodes[0], nodes[1], nodes[2], nodes[3]].map((n) => (n.id === "designer" ? { ...n, relations: [{ to: "studio", label: "Uses" }] } : n));
   const d = await drawing(await open(list));

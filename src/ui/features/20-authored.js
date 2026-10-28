@@ -76,6 +76,7 @@ function drawAuthored() {
       authoredGroup.append(g);
       return;
     }
+    if (key === "architecture") { authoredGroup.append(g); return; } // drawn by 46-architecture.js (boundaries and relationships)
     // Connectors go first, so they sit behind the cards.
     authoredData.layers[key].nodes.forEach((n) => {
       const parent = authoredLayouts[key].find((r) => r.id === n.parent);
@@ -103,6 +104,7 @@ function drawAuthored() {
     });
     authoredGroup.append(g);
   });
+  architectureRender();
   const all = [...authoredData.errors, ...AUTHORED_LAYERS.flatMap(({ key }) => authoredData.layers[key].errors)];
   authoredErrors.replaceChildren(...all.map((e) => {
     const d = document.createElement("div");
@@ -147,8 +149,9 @@ draw = async (nodes) => {
   const responses = await Promise.all(AUTHORED_LAYERS.map(({ key }) => fetch(`/layout?project=${id}&layer=${key}`)));
   if (project !== current || !data || responses.some((r) => !r.ok)) return;
   const layouts = {};
-  (await Promise.all(responses.map((r) => r.json()))).forEach((body, i) => { layouts[AUTHORED_LAYERS[i].key] = Object.assign(body.rects, { blocks: body.blocks }); });
+  (await Promise.all(responses.map((r) => r.json()))).forEach((body, i) => { layouts[AUTHORED_LAYERS[i].key] = Object.assign(body.rects, { blocks: body.blocks }); if (AUTHORED_LAYERS[i].key === "architecture") architectureDrawing = body; });
   if (project !== current) return;
+  architecturePreview = null; // refreshProposals brings it back when Proposals are pending
   authoredData = data;
   authoredLayouts = layouts;
   drawAuthored();

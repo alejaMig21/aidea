@@ -38,7 +38,9 @@ function markTabs() {
 
 function drawProposals() {
   authoredGroup.querySelectorAll(".proposal, .proposal-edge").forEach((g) => g.remove());
+  architectureRender(); // the Architecture layer draws its own added elements and relations from the preview
   for (const p of pendingProposals) {
+    if (p.layer === "architecture" && p.kind === "add") continue;
     const layerGroup = authoredGroup.querySelector(`[data-layer="${p.layer}"]`);
     if (!layerGroup || !p.rect) continue;
     const g = el("g", { class: `proposal ${p.kind}`, tabindex: 0, "data-proposal": p.id, "data-ref": p.id });
@@ -72,7 +74,9 @@ async function refreshProposals() {
   if (!project) return;
   const res = await fetch(`/proposals?project=${encodeURIComponent(project)}`);
   if (!res.ok || project !== current) return;
-  pendingProposals = (await res.json()).proposals;
+  const body = await res.json();
+  pendingProposals = body.proposals;
+  architecturePreview = body.previews?.architecture ?? null;
   drawProposals();
 }
 
