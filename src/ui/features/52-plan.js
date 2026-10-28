@@ -23,13 +23,14 @@
   $("contract-card").before(card); // above the Contract: it is what the person reads first
 
   // Concepts so that each comes after the ones it needs (the core guarantees there is no cycle).
+  const planNorm = (s) => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); // the core's `normalise`
   function planOrder(concepts) {
-    const byName = new Map(concepts.map((c) => [c.name.toLowerCase(), c]));
+    const byName = new Map(concepts.map((c) => [planNorm(c.name), c]));
     const out = [], seen = new Set();
     const visit = (c) => {
       if (seen.has(c)) return;
       seen.add(c);
-      c.dependsOn.forEach((d) => byName.has(d.toLowerCase()) && visit(byName.get(d.toLowerCase())));
+      c.dependsOn.forEach((d) => byName.has(planNorm(d)) && visit(byName.get(planNorm(d))));
       out.push(c);
     };
     concepts.forEach(visit);
@@ -45,9 +46,9 @@
     if (mine !== planToken) return; // a newer refresh, or another Project, took over
     card.hidden = !body?.plan;
     if (!body?.plan) return;
-    const covered = new Set(body.covered.map((n) => n.toLowerCase()));
+    const covered = new Set(body.covered.map(planNorm));
     const concepts = planOrder(body.plan.concepts).map((c) => {
-      const done = covered.has(c.name.toLowerCase());
+      const done = covered.has(planNorm(c.name));
       const mark = mk("span", { className: "mark", textContent: done ? "✓" : "○" });
       mark.setAttribute("role", "img");
       mark.setAttribute("aria-label", done ? "covered" : "not covered yet");

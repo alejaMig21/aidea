@@ -204,3 +204,18 @@ test("an unknown Project has no plan, and the instructions teach the plan within
   assert.match(TUTOR_INSTRUCTIONS, /set_plan/);
   assert.ok(TUTOR_INSTRUCTIONS.length < 4000, `${TUTOR_INSTRUCTIONS.length} characters`);
 });
+
+test("the Plan cannot change while a step is open, so an open step never asks about something outside it", async () => {
+  const t = await newCore();
+  const seen: Record<string, any> = {};
+  teacher = async function* (call) {
+    await call("set_plan", PLAN);
+    await call("begin_step", { stepId: "s1", title: "Queue", item: "Queue" });
+    seen.whileOpen = await call("set_plan", { concepts: [{ name: "Other", dependsOn: [] }] });
+    yield { type: "text", text: "done" };
+  };
+  await t.runClass();
+  assert.equal(seen.whileOpen.isError, true);
+  assert.match(text(seen.whileOpen), /step "s1" is still open/i);
+  assert.deepEqual((await t.plan()).plan.concepts.map((c: any) => c.name), ["Queue", "Worker", "Retry policy"]);
+});

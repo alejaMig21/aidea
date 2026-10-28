@@ -47,6 +47,7 @@ export function createLesson() {
     texts,
     elements,
     isFinished: () => finished,
+    openStep: () => open,
 
     begin(args: Record<string, unknown>, item?: string): Failure | { stepId: string } {
       if (finished) return { error: "The class is finished. End your turn." };
@@ -159,6 +160,7 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
   const authored = await runAuthoringTool(name, args, { core, token, lesson, gaveUp });
   if (authored) return authored;
 
+  if (name === "set_plan" && lesson.openStep()) return err(`Step "${lesson.openStep()}" is still open. Close it (its check must be answered correctly) before changing the Plan, so no question goes out about something the Plan no longer holds.`);
   const planned = runPlanTool(name, args, core, project, (e) => conversation.emit(e));
   if (planned) return planned.isError ? err(planned.text) : { text: planned.text };
 

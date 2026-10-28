@@ -23,7 +23,7 @@ export const PLAN_TOOLS = [
     name: "set_plan",
     description:
       "Sets the Plan for this Project, replacing the previous one (to revise it, send the whole new Plan, keeping the items that still hold). " +
-      "concepts: 1 to 30 of {name, dependsOn: [names of other concepts it needs first], layer?: business, requirements, architecture, components or algorithms}. decisions: {layer, question} for the choices still open. " +
+      "concepts: 1 to 30 of {name, dependsOn: [names of other concepts it needs first], layer?: one of the five layers}. decisions: {layer, question} for the choices still open. " +
       "Dependencies must not form a cycle. Items are never marked done: what the person has covered is worked out by aidea.",
     inputSchema: {
       type: "object",
@@ -37,6 +37,7 @@ export const PLAN_TOOLS = [
 ];
 
 const isObj = (x: unknown): x is Record<string, unknown> => typeof x === "object" && x !== null && !Array.isArray(x);
+const LAYERS_TEXT = Object.keys(LAYER_CONCEPTS).join(", ");
 const text = (x: unknown, max: number): x is string => typeof x === "string" && x.trim().length > 0 && x.length <= max;
 const onlyKeys = (o: Record<string, unknown>, keys: string[], at: string) => {
   const extra = Object.keys(o).find((k) => !keys.includes(k));
@@ -59,7 +60,7 @@ export function parsePlan(args: Record<string, unknown>): { concepts: PlanConcep
     if (seen.has(key)) return { error: `${at}.name "${c.name}" is listed twice. Each concept appears once.` };
     seen.add(key);
     if (!Array.isArray(c.dependsOn) || !c.dependsOn.every((d) => text(d, 200))) return { error: `${at}.dependsOn must be a list (possibly empty) of the names of concepts it needs first` };
-    if (c.layer !== undefined && !isLayer(c.layer)) return { error: `${at}.layer must be one of business, requirements, architecture, components, algorithms` };
+    if (c.layer !== undefined && !isLayer(c.layer)) return { error: `${at}.layer must be one of ${LAYERS_TEXT}` };
     concepts.push({ name: c.name.trim(), dependsOn: c.dependsOn.map((d: string) => d.trim()), ...(c.layer ? { layer: c.layer as string } : {}) });
   }
   for (const [i, c] of concepts.entries()) {
@@ -75,7 +76,7 @@ export function parsePlan(args: Record<string, unknown>): { concepts: PlanConcep
     if (!isObj(d)) return { error: `${at} must be an object {layer, question}` };
     const extra = onlyKeys(d, ["layer", "question"], at);
     if (extra) return { error: extra };
-    if (!isLayer(d.layer)) return { error: `${at}.layer must be one of business, requirements, architecture, components, algorithms` };
+    if (!isLayer(d.layer)) return { error: `${at}.layer must be one of ${LAYERS_TEXT}` };
     if (!text(d.question, 300)) return { error: `${at}.question must be the open decision, as text of at most 300 characters` };
     decisions.push({ layer: d.layer, question: d.question.trim() });
   }
