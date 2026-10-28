@@ -1,34 +1,15 @@
 // The core owns where every Node sits on its Layer, so it can also say where the camera should look.
 // The interface only draws the rectangles it is given and applies the framings it is sent.
 import { layered } from "./layered.ts";
+import { layoutComponentsDiagram } from "./components-layout.ts";
 import type { CoreNode } from "./types.ts";
 
 export type Rect = { id: string; x: number; y: number; width: number; height: number };
 
 const COLUMN = 280;
-const ROW = 36;
-const INDENT = 18;
 
-// Components and data: one column per module, members stacked below it, indented by depth.
-// A class lists its attributes first (as slim rows with the id `<class>#<name>`), then its methods.
-export function layoutComponents(nodes: CoreNode[]): Rect[] {
-  const rects: Rect[] = [];
-  const childrenOf = (id: string) => nodes.filter((n) => n.parent === id);
-  nodes.filter((n) => n.kind === "module").forEach((module, column) => {
-    let row = 0;
-    const place = (n: CoreNode, depth: number) => {
-      const x = column * COLUMN + depth * INDENT;
-      const width = 240 - depth * INDENT;
-      rects.push({ id: n.id, x, y: row++ * ROW, width, height: 28 });
-      for (const attribute of n.attributes ?? []) {
-        rects.push({ id: `${n.id}#${attribute.name}`, x: x + INDENT, y: row++ * ROW, width: width - INDENT, height: 24 });
-      }
-      childrenOf(n.id).forEach((child) => place(child, depth + 1));
-    };
-    place(module, 0);
-  });
-  return rects;
-}
+// Components and data: packages in columns with class boxes stacked inside (see components-layout.ts).
+export const layoutComponents = (nodes: CoreNode[]): Rect[] => layoutComponentsDiagram(nodes).rects;
 
 // Authored layers: root cards in a grid, four to a row. A Node with a `parent` on the layer sits one row below it,
 // siblings side by side and centred under it. A missing parent, or a parent chain that loops, makes a root.

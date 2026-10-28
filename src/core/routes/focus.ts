@@ -1,5 +1,6 @@
 // Focus zoom: zooming into a Node frames the Footprint of its Trace links on the layer below.
 import { loadAuthored } from "../authored.ts";
+import { layoutComponentsDiagram } from "../components-layout.ts";
 import { frameOf, layoutBusiness } from "../layout.ts";
 import { layoutArchitecture } from "../architecture.ts";
 import { AUTHORED_LAYERS, LAYERS, layerBelow, layoutOf, traceLinks } from "../traces.ts";
@@ -21,6 +22,14 @@ function openProject(core: Core, res: ServerResponse, id: unknown): Project | nu
   return project ?? null;
 }
 
+// A class is drawn as one box with its members inside: it stays lit with the members it holds, and the members with it.
+function litBy(project: Project, footprint: string[], id: string): boolean {
+  if (footprint.includes(id)) return true;
+  const classOf = (n?: { parent: string | null }) => project.nodes.find((c) => c.id === n?.parent && c.kind === "class")?.id;
+  const owner = id.includes("#") ? id.split("#")[0] : classOf(project.nodes.find((n) => n.id === id));
+  return (owner !== undefined && footprint.includes(owner)) || footprint.some((f) => classOf(project.nodes.find((n) => n.id === f)) === id);
+}
+
 const handler: Handler = async (req, res, core) => {
   const url = new URL(req.url ?? "/", "http://core");
 
@@ -38,6 +47,11 @@ const handler: Handler = async (req, res, core) => {
       return true;
     }
     const blocks = layer === "business" ? { blocks: layoutBusiness(authored.layers.business.nodes).blocks } : {};
+    if (layer === "components") {
+      const { rects, compartments, routes } = layoutComponentsDiagram(project.nodes, project.relationships);
+      core.send(res, 200, { layer, rects, compartments, routes });
+      return true;
+    }
     core.send(res, 200, layer === "architecture" ? { layer, ...layoutArchitecture(authored.layers.architecture.nodes) } : { layer, rects: layoutOf(layer, project, authored), ...blocks });
     return true;
   }
@@ -77,7 +91,7 @@ const handler: Handler = async (req, res, core) => {
       origin: { layer, node: body!.node },
       footprint,
       frame: frameOf(rects.filter((r) => footprint.includes(r.id))),
-      dimmed: rects.filter((r) => !footprint.includes(r.id)).map((r) => r.id),
+      dimmed: rects.filter((r) => !litBy(project, footprint, r.id)).map((r) => r.id),
       broken,
     });
     return true;

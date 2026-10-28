@@ -57,16 +57,16 @@ test("zooming into a Node returns a framing centered on its Footprint", async ()
   assert.equal(body.layer, "components");
   assert.deepEqual(body.origin, { layer: "architecture", node: "ledger" });
   assert.deepEqual(body.footprint, ["billing.charge"]);
-  // billing.charge sits at x=18, y=36 and is 222 wide and 28 high; the framing adds 24 of margin on every side.
-  assert.deepEqual(body.frame, { x: -6, y: 12, width: 270, height: 76 });
+  // billing.charge is a function box at x=14, y=48 (inside its package), 220 wide and 30 high; the framing adds 24 of margin on every side.
+  assert.deepEqual(body.frame, { x: -10, y: 24, width: 268, height: 78 });
 });
 
 test("a Footprint with several separate parts is framed as a whole and the rest is dimmed", async () => {
   await t.post("/projects", { path: traced });
   const body = await (await focus(traced, "architecture", "checkout")).json();
   assert.deepEqual(body.footprint, ["billing.charge", "orders.place"]);
-  // billing.charge ends at x=240; orders.place starts at x=298 and ends at x=520.
-  assert.deepEqual(body.frame, { x: -6, y: 12, width: 550, height: 76 });
+  // billing.charge ends at x=234; orders.place starts at x=482 (next package column) and ends at x=702.
+  assert.deepEqual(body.frame, { x: -10, y: 24, width: 736, height: 78 });
   assert.ok(body.dimmed.includes("billing") && body.dimmed.includes("orders"));
   assert.ok(!body.dimmed.includes("billing.charge") && !body.dimmed.includes("orders.place"));
 });
@@ -142,4 +142,19 @@ test("a Trace links field that is not a list of ids is reported as a mistake in 
   const body = await (await t.get(`/authored?${q(dir)}`)).json();
   assert.deepEqual(body.layers.architecture.nodes, []);
   assert.match(body.layers.architecture.errors[0].message, /traces/);
+});
+
+test("zooming to a method keeps the class box that holds it undimmed, and to a class keeps its members", async () => {
+  const dir = copyOfTraced();
+  writeFileSync(join(dir, "billing.py"), "class Ledger:\n    def __init__(self):\n        self.rows = []\n\n    def charge(self):\n        return 2\n\n    def refund(self):\n        return 3\n");
+  writeFileSync(join(dir, ".aidea", "architecture.json"), JSON.stringify({ nodes: [
+    { id: "ledger", title: "Ledger", technology: "Python", traces: ["billing.Ledger.charge"], rationale: { why: "x", rejected: [] } },
+    { id: "all", title: "All", technology: "Python", traces: ["billing.Ledger"], rationale: { why: "x", rejected: [] } },
+  ] }));
+  await t.post("/projects", { path: dir });
+  const method = await (await focus(dir, "architecture", "ledger")).json();
+  assert.ok(!method.dimmed.includes("billing.Ledger"), "the class holding the method stays lit");
+  assert.ok(method.dimmed.includes("billing") && method.dimmed.includes("billing.Ledger.refund"));
+  const whole = await (await focus(dir, "architecture", "all")).json();
+  for (const id of ["billing.Ledger", "billing.Ledger.charge", "billing.Ledger#rows"]) assert.ok(!whole.dimmed.includes(id), `${id} stays lit`);
 });
