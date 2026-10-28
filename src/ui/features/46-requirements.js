@@ -3,7 +3,7 @@
 // code for a functional requirement, Architecture for a non-functional one. The core decides where each card sits
 // (layoutRequirements); card heights depend on the number of criteria, so the drawing only follows the rectangles it is given.
 // This file loads after 45-notation.js because it registers its legend there.
-const REQ_CHIP_X = 50, REQ_CHIP_W = 170, REQ_MAX_CHIPS = 3; // ponytail: only the first 3 trace targets of a requirement get a chip (the legend says so)
+const REQ_CHIP_X = 24, REQ_CHIP_W = 170, REQ_MAX_CHIPS = 3; // ponytail: only the first 3 trace targets of a requirement get a chip (the legend says so)
 let requirementTraces = {}; // node id -> [{ to, broken }], from GET /traces
 
 {
@@ -56,7 +56,7 @@ function reqCard(n, r) {
       el("text", { x: x + 36, y: y + 62, class: "req-line" }, notationClip(n.statement, 40)),
       el("rect", { x: x + 36, y: y + 70, width: n.quality.length * 7 + 18, height: 18, rx: 9, class: "req-tag" }),
       el("text", { x: x + 45, y: y + 83, class: "req-tagtext" }, n.quality.toUpperCase()),
-      el("text", { x: x + 36, y: y + 104, class: "req-measure" }, notationClip(`Measure: ${n.measure}`, 42)),
+      el("text", { x: x + 36, y: y + 104, class: "req-measure" }, notationClip(`Measure: ${n.measure}`, 38)),
     );
     return g;
   }
@@ -68,7 +68,7 @@ function reqCard(n, r) {
     const top = y + 92 + 22 * i;
     g.append(
       el("rect", { x: x + 13, y: top + 1, width: 14, height: 14, rx: 4, class: "req-box" }),
-      el("text", { x: x + 36, y: top + 13, class: "req-crit" }, notationClip(c, 44)),
+      el("text", { x: x + 36, y: top + 13, class: "req-crit" }, notationClip(c, 38)),
     );
   });
   return g;
@@ -84,7 +84,7 @@ function reqTrace(n, r) {
     const cy = railY - 30 * i;
     const edge = el("path", {
       class: "edge req-edge", "data-flow": "", "data-packets": 1, "data-tone": broken ? "unresolved" : nfr ? "authored" : "derived", "data-ends": `${n.id} ${to}`,
-      d: `M${railX} ${r.y + 37}V${railY}H${chipX - 22}V${cy}H${chipX}`,
+      d: `M${railX} ${r.y + 37}V${railY}H${chipX - 12}V${cy}H${chipX}`,
     });
     const chip = el("g", { class: `req-chip ${nfr ? "arch" : "code"}${broken ? " broken" : ""}`, "data-ref": to });
     chip.append(

@@ -35,18 +35,22 @@ businessCredit.append(
 );
 document.querySelector("main").append(businessCredit);
 
-// Two short lines at most; the whole title stays available as the tooltip.
-function businessWrap(text, max = 30) {
-  const lines = [""];
-  for (const word of text.split(" ")) {
-    const last = lines.length - 1;
-    if (!lines[last] || (lines[last] + " " + word).length <= max) lines[last] = (lines[last] + " " + word).trim();
-    else if (last === 0) lines.push(word);
-    else lines[last] += " " + word;
-  }
-  const last = lines.length - 1;
-  lines[last] = notationClip(lines[last], max);
-  return lines;
+// Two lines at most, cut by measured width (not by character count, so wide letters cannot cross the note's edge);
+// the whole title stays available as the tooltip.
+const businessMeasure = document.createElement("canvas").getContext("2d");
+function businessWrap(text, width) {
+  businessMeasure.font = `12.5px ${getComputedStyle(document.documentElement).getPropertyValue("--sans") || "sans-serif"}`;
+  const fits = (s) => businessMeasure.measureText(s).width <= width;
+  const clip = (s) => {
+    if (fits(s)) return s;
+    while (s.length > 1 && !fits(`${s}…`)) s = s.slice(0, -1);
+    return `${s}…`;
+  };
+  const words = text.split(" ");
+  let first = "", i = 0;
+  while (i < words.length && fits(`${first} ${words[i]}`.trim())) first = `${first} ${words[i++]}`.trim();
+  if (!first) return [clip(text)];
+  return i < words.length ? [first, clip(words.slice(i).join(" "))] : [first];
 }
 
 // The prompt of an empty block: the hint cut into lines of about 24 letters.
@@ -84,7 +88,7 @@ function drawBusiness(g, nodes, layout, select) {
     placed.set(n.block, index + 1);
     // data-node makes the note zoomable and markable like any Node; data-block ties it to its block (help card, guided reading); data-ref#note dims it with the block.
     const note = el("g", { class: "bnote", tabindex: 0, "data-node": n.id, "data-block": n.block, "data-ref": `${n.block}#${n.id}`, style: `--tilt:${businessTilt(r.width, index)}` });
-    const lines = businessWrap(n.title);
+    const lines = businessWrap(n.title, r.width - 20);
     note.append(el("title", {}, n.title), el("rect", { x: r.x, y: r.y, width: r.width, height: r.height, rx: 6 }));
     lines.forEach((line, i) => note.append(el("text", { x: r.x + 10, y: r.y + (lines.length === 1 ? 26 : 19 + i * 15) }, line)));
     const open = () => select(n, note);

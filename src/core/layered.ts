@@ -12,7 +12,7 @@
 import type { Rect } from "./layout.ts";
 
 export type LayerNode = { id: string; width: number; height: number };
-export type LayerEdge = { from: string; to: string; label?: string; back?: boolean };
+export type LayerEdge = { from: string; to: string; label?: string; back?: boolean; loopExit?: boolean }; // loopExit: the edge that leaves a loop (routed from the side of the decision that faces its target when it can be)
 export type LayerGroup = { id: string; children: string[] };
 export type Point = { x: number; y: number };
 export type Route = { from: string; to: string; points: Point[]; label?: { text: string; x: number; y: number } };
@@ -181,10 +181,10 @@ export function layered(nodes: LayerNode[], edges: LayerEdge[], groups: LayerGro
 
   // Ports: an edge leaves the bottom of its source and enters the top of its target, spread along the side in the
   // order of the next column so edges of one node do not cross at the node.
-  const spread = (chainSide: "out" | "in") => {
+  const spread = (chainSide: "out" | "in", mine = chains) => {
     const x = new Map<number, number>();
     const by = new Map<Item, { index: number; near: number }[]>();
-    for (const [index, chain] of chains) {
+    for (const [index, chain] of mine) {
       const node = chainSide === "out" ? chain[0] : chain[chain.length - 1];
       const near = chainSide === "out" ? chain[1] : chain[chain.length - 2];
       by.set(node, [...(by.get(node) ?? []), { index, near: near.x }]);
@@ -195,11 +195,34 @@ export function layered(nodes: LayerNode[], edges: LayerEdge[], groups: LayerGro
     }
     return x;
   };
-  const out = spread("out");
   const into = spread("in");
+
+  // A loop's exit leaves the side of the decision that faces the next step and drops straight to the top of that step:
+  // one elbow instead of a jog along a dummy in every row. It is kept only when no node is in the way and its label fits.
+  // ponytail: the first clear column wins (nearest the step's usual port); no search for a route with fewer crossings.
+  const real = [...items.values()].filter((it) => it.real);
+  const free = (a: Point, b: Point) => real.every((r) => !(Math.max(a.x, b.x) > r.x - r.w / 2 && Math.min(a.x, b.x) < r.x + r.w / 2 && Math.max(a.y, b.y) > r.y && Math.min(a.y, b.y) < r.y + r.h));
+  const leaves = new Map<number, { route: Route; side: "left" | "right" }>();
+  for (const [index, chain] of chains) {
+    const e = edges[index];
+    if (!e.loopExit) continue;
+    const f = chain[0], t = chain[chain.length - 1];
+    const side = t.x > f.x + f.w / 2 ? "right" : t.x < f.x - f.w / 2 ? "left" : null;
+    if (!side) continue; // the next step is right below: the usual drop from the bottom is already straight
+    const start = { x: side === "right" ? f.x + f.w / 2 : f.x - f.w / 2, y: f.y + f.h / 2 };
+    const port = into.get(index)!;
+    const columns = [port, ...Array.from({ length: Math.floor((t.w - 24) / 8) + 1 }, (_, k) => t.x - t.w / 2 + 12 + 8 * k).sort((a, b) => Math.abs(a - port) - Math.abs(b - port))];
+    const x = columns.find((c) => (side === "right" ? c > start.x + 8 : c < start.x - 8) && free(start, { x: c, y: start.y }) && free({ x: c, y: start.y }, { x: c, y: t.y }));
+    if (x === undefined) continue;
+    const label = e.label ? { text: e.label, x: side === "right" ? start.x + 6 : start.x - 6 - 6.5 * e.label.length, y: start.y - 5 } : undefined;
+    if (label && !real.every((r) => !(label.x + 6.5 * label.text.length > r.x - r.w / 2 && label.x < r.x + r.w / 2 && label.y + 2 > r.y && label.y - 11 < r.y + r.h))) continue;
+    leaves.set(index, { side, route: { from: e.from, to: e.to, points: [start, { x, y: start.y }, { x, y: t.y }], ...(label ? { label } : {}) } });
+  }
+  const out = spread("out", new Map([...chains].filter(([index]) => !leaves.has(index))));
 
   const routes = new Map<number, Route>();
   for (const [index, chain] of chains) {
+    if (leaves.has(index)) { routes.set(index, leaves.get(index)!.route); continue; }
     const e = edges[index];
     const first = chain[0];
     let cur: Point = { x: out.get(index)!, y: first.y + first.h };
@@ -241,13 +264,16 @@ export function layered(nodes: LayerNode[], edges: LayerEdge[], groups: LayerGro
     entered.set(e.to, k + 1);
     const ty = t.y + t.h / 2 + (k - (enters(e.to) - 1) / 2) * 8;
     const near = lanes.filter((l) => l.lo <= hi && lo <= l.hi).map((l) => l.x + LANE_STEP);
-    const lane = Math.max(LANE + most(layers.slice(lo, hi + 1).flat().map(rightOf)), most(near));
+    // the dummies of an exit that was routed straight are not on any route, so they do not push the lane out
+    const spans = layers.slice(lo, hi + 1).flat().filter((it) => it.real || !leaves.has(Number(it.id.slice(1).split(".")[0])));
+    const lane = Math.max(LANE + most(spans.map(rightOf)), most(near));
     lanes.push({ lo, hi, x: lane });
     const points: Point[] = [];
     const below = f.x - f.w / 2 + f.w * 0.85, above = t.x - t.w / 2 + t.w * 0.85;
     if (!hasNodeToRight(f)) points.push({ x: rightOf(f), y: sy }, { x: lane, y: sy });
     else points.push({ x: below, y: f.y + f.h }, { x: below, y: midGap(f.rank) }, { x: lane, y: midGap(f.rank) });
-    if (!hasNodeToRight(t)) points.push({ x: lane, y: ty }, { x: rightOf(t), y: ty });
+    // an exit leaving the right side of the target takes that side; the way back then comes in from above
+    if (!hasNodeToRight(t) && ![...leaves.entries()].some(([i, l]) => l.side === "right" && edges[i].from === e.to)) points.push({ x: lane, y: ty }, { x: rightOf(t), y: ty });
     else points.push({ x: lane, y: t.y - gapY / 2 }, { x: above, y: t.y - gapY / 2 }, { x: above, y: t.y });
     const onLane = points.filter((p) => p.x === lane);
     routes.set(e.index, { from: e.from, to: e.to, points: straighten(points), ...(e.label ? { label: { text: e.label, x: lane + 6, y: (onLane[0].y + onLane[onLane.length - 1].y) / 2 } } : {}) });

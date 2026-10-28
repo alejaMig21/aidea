@@ -40,6 +40,9 @@
 
 const componentsMarks = { public: "+", private: "-", special: "~" };
 const componentsShort = (name) => name.split(".").pop();
+// A name that does not fit its box is cut with an ellipsis and the whole name goes in the tooltip (about 7.4 px per character of the 12-13 px fonts).
+const componentsFit = (text, room, char = 7.4) => notationClip(text, Math.max(3, Math.floor(room / char)));
+const componentsTip = (t, full, shown) => (shown !== full && t.append(el("title", {}, full)), t);
 
 function componentsLegend(unresolved) {
   const line = (d, extra = "") => `<path d="${d}" style="fill:none;stroke:var(--cp-line);stroke-width:1.4;${extra}"/>`;
@@ -80,11 +83,12 @@ function componentsDraw(world, nodes, layout, unresolved) {
 
   for (const m of nodes.filter((n) => n.kind === "module")) {
     const r = at.get(m.id);
-    const tabW = Math.min(r.width, componentsShort(m.name).length * 7.4 + 32);
+    const pkgName = componentsShort(m.name), pkgShown = componentsFit(pkgName, r.width - 24);
+    const tabW = Math.min(r.width, pkgShown.length * 7.4 + 32);
     world.append(
       el("rect", { x: r.x, y: r.y + 14, width: r.width, height: r.height - 14, rx: 8, class: "cp-pkg", "data-id": m.id, "data-ref": m.id }),
       el("rect", { x: r.x, y: r.y, width: tabW, height: 28, rx: 6, class: "cp-tab", "data-id": m.id, "data-ref": m.id }),
-      el("text", { x: r.x + 12, y: r.y + 19, class: "cp-pkg-name", "data-ref": m.id }, componentsShort(m.name)),
+      componentsTip(el("text", { x: r.x + 12, y: r.y + 19, class: "cp-pkg-name", "data-ref": m.id }, pkgShown), pkgName, pkgShown),
     );
   }
 
@@ -106,7 +110,7 @@ function componentsDraw(world, nodes, layout, unresolved) {
     if (route.label) {
       const stub = route.to === null;
       const text = stub ? notationClip(route.name, 12) : route.label.text;
-      world.append(el("text", { x: route.label.x, y: route.label.y, class: "cp-label", "data-ref": route.from }, text));
+      world.append(componentsTip(el("text", { x: route.label.x, y: route.label.y, class: "cp-label", "data-ref": route.from }, text), route.label.text, text));
       if (stub && route.resolution === "unresolved") {
         world.append(el("text", { x: route.label.x + text.length * 6.6 + 4, y: route.label.y, class: "cp-q", "data-ref": route.from }, "?"));
       }
@@ -115,8 +119,9 @@ function componentsDraw(world, nodes, layout, unresolved) {
 
   const row = (r, mark, label, cls, refId) => {
     const t = el("text", { x: r.x + 10, y: r.y + 15, class: `cp-member ${cls}`, "data-ref": refId });
-    t.append(el("tspan", { class: "cp-mark" }, `${mark} `), document.createTextNode(label));
-    return t;
+    const shown = componentsFit(label, r.width - 20 - 2 * 7.4); // the mark and its space take two characters
+    t.append(el("tspan", { class: "cp-mark" }, `${mark} `), document.createTextNode(shown));
+    return componentsTip(t, label, shown);
   };
 
   for (const n of nodes.filter((x) => at.has(x.id) && x.kind !== "module" && (x.kind === "class" || node.get(x.parent)?.kind === "module"))) {
@@ -125,12 +130,14 @@ function componentsDraw(world, nodes, layout, unresolved) {
     world.append(el("rect", { x: r.x, y: r.y, width: r.width, height: r.height, rx: 6, "data-id": n.id, "data-ref": n.id }));
     const name = componentsShort(n.name);
     if (!isClass) {
-      world.append(el("text", { x: r.x + 10, y: r.y + 19, class: `cp-member ${n.markers?.abstract ? "cp-abstract" : ""} ${n.markers?.static ? "cp-static" : ""}`, "data-ref": n.id }, `${componentsMarks[n.markers?.visibility ?? "public"]} ƒ ${name}()`));
+      const full = `${componentsMarks[n.markers?.visibility ?? "public"]} ƒ ${name}()`, shown = componentsFit(full, r.width - 20);
+      world.append(componentsTip(el("text", { x: r.x + 10, y: r.y + 19, class: `cp-member ${n.markers?.abstract ? "cp-abstract" : ""} ${n.markers?.static ? "cp-static" : ""}`, "data-ref": n.id }, shown), full, shown));
       continue;
     }
     const c = layout.compartments[n.id];
+    const shownName = componentsFit(name, r.width - 20, 8.4); // the class name is semibold 13 px
     world.append(
-      el("text", { x: r.x + r.width / 2, y: r.y + 20, "text-anchor": "middle", class: `cp-class-name ${n.markers?.abstract ? "cp-abstract" : ""}`, "data-ref": n.id }, name),
+      componentsTip(el("text", { x: r.x + r.width / 2, y: r.y + 20, "text-anchor": "middle", class: `cp-class-name ${n.markers?.abstract ? "cp-abstract" : ""}`, "data-ref": n.id }, shownName), name, shownName),
       el("path", { d: `M${r.x} ${c.attributes}H${r.x + r.width}M${r.x} ${c.methods}H${r.x + r.width}`, class: "cp-divider", "data-ref": n.id }),
     );
     for (const a of n.attributes ?? []) {

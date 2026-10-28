@@ -105,6 +105,14 @@ test("the Requirements layout puts functional on the left and non-functional on 
   assert.ok(by["us-save-pdf"].height > by["us-old"].height);
 });
 
+test("the room between the two columns is a fixed small gap: a chip (24 + 170) and a margin, no wide empty space", async () => {
+  const { rects } = await (await get(`/layout?project=${enc(fixture("studio-requirements"))}&layer=requirements`)).json();
+  const by = Object.fromEntries(rects.map((r: any) => [r.id, r]));
+  const gap = by["nfr-fast"].x - (by["us-save-pdf"].x + by["us-save-pdf"].width);
+  assert.ok(gap >= 24 + 170 + 40, `the chips need room, got ${gap}`);
+  assert.ok(gap <= 24 + 170 + 70, `the gap is wider than a chip plus a margin: ${gap}`);
+});
+
 test("a functional requirement may trace to code and zooms to Components; a non-functional one traces to Architecture only", async () => {
   const project = fixture("studio-requirements");
   const { links } = await (await get(`/traces?project=${enc(project)}`)).json();

@@ -59,7 +59,7 @@ export function layoutBusiness(nodes: { id: string; block?: unknown }[]) {
 // Requirements: two columns, functional on the left and non-functional on the right, each stacked in file order.
 // A functional card grows by one row per acceptance criterion. The room between the columns holds the trace chips.
 const REQUIREMENT_CARD = 300;
-const REQUIREMENT_RIGHT = 620;
+const REQUIREMENT_RIGHT = REQUIREMENT_CARD + 260; // 24 to the chip, 170 for it (REQ_CHIP_X, REQ_CHIP_W in 46-requirements.js), 66 before the next column
 export function layoutRequirements(nodes: { id: string; kind?: unknown; criteria?: unknown }[]): Rect[] {
   const bottom = { left: 0, right: 0 };
   const at = new Map<string, Rect>();
@@ -120,7 +120,10 @@ export function flowBox(step: FlowStep) {
 export function layoutFlow(steps: FlowStep[], edges: FlowEdge[]) {
   // the label that is drawn is the exit's name (Yes, next item, a pattern, an exception type), so the engine makes room for it
   const boxes = steps.map((s) => ({ id: s.id, ...flowBox(s) })); // sized once; the wrapped lines go back to the caller for drawing
-  return { ...layered(boxes, edges.map((e) => ({ ...e, label: e.exit ?? e.label }))), lines: new Map(boxes.map((b) => [b.id, b.lines])) };
+  const loops = new Set(steps.filter((s) => s.kind === "loop").map((s) => s.id));
+  // the exit of a loop is the edge flow.py names "done" (for) or "no" (while)
+  const loopExit = (e: FlowEdge) => !e.back && loops.has(e.from) && (e.exit === "done" || e.exit === "no");
+  return { ...layered(boxes, edges.map((e) => ({ ...e, label: e.exit ?? e.label, loopExit: loopExit(e) }))), lines: new Map(boxes.map((b) => [b.id, b.lines])) };
 }
 
 // The smallest rectangle that holds all the given ones, with a margin on every side.

@@ -105,6 +105,39 @@ test("a loop's way back goes around its body, to the right of every body step", 
   assertSound(g);
 });
 
+const elbows = (points: Point[]) => points.length - 2;
+const loopSources: Record<string, string> = {
+  for: "def f(xs):\n    t = 0\n    for x in xs:\n        t += x\n    return t\n",
+  while: "def f(n):\n    while n > 100:\n        n -= 10\n    return n\n",
+  nested: "def f(xs):\n    t = 0\n    for a in xs:\n        for b in xs:\n            t += b\n    return t\n",
+  "for with an if": "def f(xs):\n    t = 0\n    for x in xs:\n        if x > 1:\n            t += x\n    return t\n",
+  "while with a break": "def f(xs):\n    while xs:\n        if xs[0]:\n            break\n        xs = xs[1:]\n    return 1\n",
+};
+for (const [name, src] of Object.entries(loopSources)) {
+  test(`the exit of a ${name} loop leaves on the side that faces the next step, with few elbows and no node in the way`, async () => {
+    const g = await graphOf(src, "f");
+    assertSound(g);
+    let tested = 0;
+    for (const head of g.steps.filter((s) => g.edges.some((e) => e.back && e.to === s.id))) {
+      const rect = g.rects.find((r) => r.id === head.id)!;
+      const index = g.edges.findIndex((e) => e.from === head.id && !e.back && /^(done|no)$/.test((e as Edge & { exit?: string }).exit ?? ""));
+      if (index < 0) continue; // an inner loop whose exit is the outer loop's way back has no forward exit
+      tested++;
+      const way = g.routes[index].points, target = g.rects.find((r) => r.id === g.edges[index].to)!;
+      const faces = target.x + target.width / 2 > rect.x + rect.width / 2 ? rect.x + rect.width : rect.x;
+      assert.equal(way[0].x, faces, `${head.label}: the exit starts on the side facing the next step`);
+      assert.equal(way[0].y, rect.y + rect.height / 2, `${head.label}: at the middle of that side`);
+      assert.ok(elbows(way) <= 3, `${head.label}: ${elbows(way)} elbows`);
+      for (const back of g.routes.filter((_, i) => g.edges[i].back && g.edges[i].to === head.id)) {
+        const end = back.points.at(-1)!;
+        assert.ok(end.x !== way[0].x || end.y !== way[0].y, "a way back does not enter where the exit leaves");
+      }
+    }
+    assert.ok(tested >= 1);
+    assert.deepEqual((await graphOf(src, "f")).routes, g.routes); // deterministic
+  });
+}
+
 test("edge labels get room: no label overlaps a step", async () => {
   const g = await graphOf("def f(xs):\n    for x in xs:\n        if x:\n            continue\n        print(x)\n    return 1\n", "f");
   const labelled = g.routes.filter((r) => r.label);
