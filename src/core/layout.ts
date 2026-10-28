@@ -139,7 +139,7 @@ export const layoutLayer = (layer: string, nodes: { id: string; parent?: unknown
   layer === "requirements" ? layoutRequirements(nodes) : layer === "business" ? layoutBusiness(nodes).rects : layoutAuthored(nodes);
 
 
-export type FlowEdge ={ from: string; to: string; label?: string; back?: boolean };
+export type FlowEdge = { from: string; to: string; label?: string; exit?: string; back?: boolean };
 
 // Flowchart boxes: the size of each step's symbol follows its text, so a diamond or a parallelogram always holds its label.
 // The text is wrapped into lines (returned for drawing), at fewer characters per line inside a diamond.
@@ -177,7 +177,8 @@ export function flowBox(step: FlowStep) {
 // An Algorithm graph runs top to bottom, laid out by the layered engine: a straight run stays in one column,
 // the exits of a branch sit side by side and rejoin below, a way back goes around its loop. Returns the routes too.
 export function layoutFlow(steps: FlowStep[], edges: FlowEdge[]) {
-  return layered(steps.map((s) => ({ id: s.id, ...flowBox(s) })), edges);
+  // the label that is drawn is the exit's name (Yes, next item, a pattern, an exception type), so the engine makes room for it
+  return layered(steps.map((s) => ({ id: s.id, ...flowBox(s) })), edges.map((e) => ({ ...e, label: e.exit ?? e.label })));
 }
 
 // The smallest rectangle that holds all the given ones, with a margin on every side.

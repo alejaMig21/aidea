@@ -3,8 +3,7 @@
 const playbackStyle = document.createElement("style");
 playbackStyle.textContent = `
   #algorithm.has-recording .flow-step:not(.visited) { opacity: .4; }
-  #algorithm .flow-step.now rect { stroke: var(--accent); stroke-width: 2; fill: var(--proposal); }
-  #pane-algorithm { padding: 0; gap: 0; }
+    #pane-algorithm { padding: 0; gap: 0; }
   #pane-algorithm > header { display: flex; justify-content: space-between; align-items: center; height: 40px; padding: 0 14px; border-bottom: 1px solid var(--line); font-weight: 600; font-size: 13px; flex: none; }
   #pane-algorithm > header span { font: 400 12px var(--mono); color: var(--muted); }
   #pane-algorithm .body { padding: 14px; display: flex; flex-direction: column; gap: 8px; }
@@ -34,6 +33,7 @@ rightSetTabEnabled("algorithm", false); // until an Algorithm is open
 let pbGraph = null;     // the open Algorithm graph
 let pbRecording = null; // the recording being replayed
 let pbIndex = 0;
+let pbPrevIndex = -1; // the step shown before, so the token knows which edge to travel
 let pbRenderedFor = null; // the graph the form was last built for: the form is rebuilt only when this changes
 let pbTimer = null;
 
@@ -53,6 +53,8 @@ function pbShowStep() {
     $("pb-output").textContent = pbRecording.output ?? "";
     return;
   }
+  flowReplay(pbRecording.visits, pbIndex, pbPrevIndex);
+  pbPrevIndex = pbIndex;
   document.querySelectorAll("#algorithm .flow-step").forEach((g) => {
     const seen = pbRecording.visits.slice(0, pbIndex + 1).some((e) => e.step === g.dataset.step);
     g.classList.toggle("visited", seen);
@@ -107,6 +109,7 @@ async function pbRecord() {
     return;
   }
   pbStop();
+  pbPrevIndex = -1;
   pbRecording = answer;
   $("algorithm").classList.add("has-recording");
   pbRender();
@@ -189,6 +192,7 @@ document.addEventListener("algorithm-opened", (e) => {
   pbGraph = e.detail;
   pbRecording = null;
   pbIndex = 0;
+  pbPrevIndex = -1;
   pbRenderedFor = null;
 });
 
