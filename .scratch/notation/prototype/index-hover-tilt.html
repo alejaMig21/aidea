@@ -108,8 +108,11 @@ svg .mono, svg text.m { font-family:var(--mono); }
 .blk .chips { display:flex; flex-direction:column; gap:6px; }
 .chipn { background:#f2b45a22; border:1px solid #f2b45a66; color:#ffe0ae; border-radius:6px; padding:6px 8px; font-size:12.5px; transform:none; box-shadow:0 2px 0 #0006; transition:transform .18s ease, box-shadow .18s ease, background-color .18s ease; }
 /* Straight by default; a note tilts and lifts when the cursor is over it, like a sticky note being picked up. */
-.chipn:hover { transform:rotate(-1.8deg) translateY(-2px); box-shadow:0 6px 10px #0008; background:#f2b45a33; }
-.chipn:nth-child(even):hover { transform:rotate(1.8deg) translateY(-2px); }
+/* The angle is set per note (--tilt, see the script at the end) so that a wide note never swings more than about 3px at its ends:
+   it stays inside the 6px gap between notes. On hover the note is also opaque and above its neighbours. */
+.chipn { position:relative; }
+.chipn:hover { z-index:5; transform:rotate(calc(var(--tilt, 1.2deg) * -1)) translateY(-2px); box-shadow:0 6px 10px #0008; background:#41392f; border-color:#f2b45a99; }
+.chipn:nth-child(even):hover { transform:rotate(var(--tilt, 1.2deg)) translateY(-2px); }
 @media (prefers-reduced-motion: reduce) { .chipn:hover { transform:none; } }
 .blk.hid { opacity:.28; } .blk.hid .chips { visibility:hidden; }
 .blk.act { border-color:var(--accent); box-shadow:0 0 0 2px #8aa4ff55; }
@@ -570,6 +573,15 @@ function show(id) {
 $("#tabs").innerHTML = ORDER.map(([k, n, a]) => `<button role="tab" data-id="${k}" class="${a ? "auth" : ""}" id="tab-${k}" aria-controls="p-${k}">${n}</button>`).join("");
 $$("#tabs button").forEach(b => { b.onclick = () => show(b.dataset.id); b.onkeydown = e => { const i = ORDER.findIndex(o => o[0] === b.dataset.id); if (e.key === "ArrowRight" || e.key === "ArrowLeft") { const j = (i + (e.key === "ArrowRight" ? 1 : ORDER.length - 1)) % ORDER.length; show(ORDER[j][0]); $("#tab-" + ORDER[j][0]).focus(); } }; });
 show("business");
+</script>
+<script>
+/* Hover tilt: angle chosen from the note's width, capped at 1.8deg. */
+document.addEventListener("pointerover", (e) => {
+  const n = e.target.closest && e.target.closest(".chipn");
+  if (!n) return;
+  const deg = Math.min(1.8, Math.atan(3 / (n.offsetWidth / 2)) * 180 / Math.PI);
+  n.style.setProperty("--tilt", deg.toFixed(2) + "deg");
+});
 </script>
 </body>
 </html>
