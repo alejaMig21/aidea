@@ -141,10 +141,43 @@ export const layoutLayer = (layer: string, nodes: { id: string; parent?: unknown
 
 export type FlowEdge ={ from: string; to: string; label?: string; back?: boolean };
 
+// Flowchart boxes: the size of each step's symbol follows its text, so a diamond or a parallelogram always holds its label.
+// The text is wrapped into lines (returned for drawing), at fewer characters per line inside a diamond.
+export type FlowStep = { id: string; kind: string; label: string; io?: string | null };
+const CHAR = 7.6; // width of one character of the 12.5 px monospace label
+const LINE = 16;
+
+export function wrapText(text: string, max: number): string[] {
+  const lines: string[] = [];
+  let line = "";
+  for (let word of text.split(" ")) {
+    while (word.length > max) { // a word longer than a line is cut
+      if (line) { lines.push(line); line = ""; }
+      lines.push(word.slice(0, max));
+      word = word.slice(max);
+    }
+    if (line && (line + " " + word).length > max) { lines.push(line); line = word; }
+    else line = line ? line + " " + word : word;
+  }
+  return line ? [...lines, line] : lines.length ? lines : [""];
+}
+
+export function flowBox(step: FlowStep) {
+  const decision = step.kind === "branch" || step.kind === "loop";
+  const lines = wrapText(step.label, decision ? 20 : step.io ? 28 : 34);
+  const textW = Math.max(...lines.map((l) => l.length)) * CHAR;
+  const textH = lines.length * LINE;
+  const size = decision ? { width: Math.max(130, Math.ceil(textW * 1.7 + 16)), height: Math.max(64, Math.ceil(textH * 2.8)) }
+    : step.io ? { width: Math.max(130, Math.ceil(textW + 60)), height: Math.max(44, textH + 20) }
+    : ["start", "end", "return", "raise"].includes(step.kind) ? { width: Math.max(110, Math.ceil(textW + 44)), height: Math.max(40, textH + 20) }
+    : { width: Math.max(120, Math.ceil(textW + 28)), height: Math.max(40, textH + 20) };
+  return { ...size, lines };
+}
+
 // An Algorithm graph runs top to bottom, laid out by the layered engine: a straight run stays in one column,
 // the exits of a branch sit side by side and rejoin below, a way back goes around its loop. Returns the routes too.
-export function layoutFlow(steps: { id: string }[], edges: FlowEdge[]) {
-  return layered(steps.map((s) => ({ id: s.id, width: 240, height: 44 })), edges);
+export function layoutFlow(steps: FlowStep[], edges: FlowEdge[]) {
+  return layered(steps.map((s) => ({ id: s.id, ...flowBox(s) })), edges);
 }
 
 // The smallest rectangle that holds all the given ones, with a margin on every side.

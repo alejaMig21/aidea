@@ -1,6 +1,6 @@
 // Algorithms layer: the control-flow graph of one function, laid out and framed by the core.
-import { frameOf, layoutFlow } from "../layout.ts";
-import type { FlowEdge } from "../layout.ts";
+import { flowBox, frameOf, layoutFlow } from "../layout.ts";
+import type { FlowEdge, FlowStep } from "../layout.ts";
 import { locate, moduleAndName } from "../locate.ts";
 import { runPython } from "../python.ts";
 import type { Handler } from "../types.ts";
@@ -19,7 +19,7 @@ const handler: Handler = async (req, res, core) => {
 
   const { qualifiedName } = moduleAndName(project, node);
 
-  let flow: { steps: { id: string }[]; edges: FlowEdge[] };
+  let flow: { steps: (FlowStep & Record<string, unknown>)[]; edges: FlowEdge[] };
   try {
     flow = JSON.parse(await runPython("flow.py", [file, qualifiedName], { timeoutMs: 30_000 }));
   } catch (e) {
@@ -42,7 +42,7 @@ const handler: Handler = async (req, res, core) => {
   const { rects, routes } = layoutFlow(flow.steps, flow.edges);
   // The frame holds the steps and every point of every route (a way back runs outside the steps).
   const bounds = [...rects, ...routes.flatMap((r) => r.points.map((p) => ({ id: "", x: p.x, y: p.y, width: 0, height: 0 })))];
-  core.send(res, 200, { node: node.id, file: node.file, line: node.line, endLine: node.endLine, ...flow, rects, routes, frame: frameOf(bounds) });
+  core.send(res, 200, { node: node.id, file: node.file, line: node.line, endLine: node.endLine, ...flow, steps: flow.steps.map((s) => ({ ...s, lines: flowBox(s).lines })), rects, routes, frame: frameOf(bounds) });
   return true;
 };
 

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { cpSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { flowBox } from "../src/core/layout.ts";
 import { fixture, startTestCore } from "./helpers.ts";
 
 let t: Awaited<ReturnType<typeof startTestCore>>;
@@ -171,11 +172,15 @@ test("the core lays the graph out top to bottom and frames it", async () => {
   const g = await (await algorithm("shapes.drain")).json();
   const at = new Map<string, Rect>(g.rects.map((r: Rect) => [r.id, r]));
   const idOf = (label: string) => g.steps.find((s: Step) => s.label === label).id;
-  assert.deepEqual(at.get(idOf("while total > 100")), { id: idOf("while total > 100"), x: 0, y: 84, width: 240, height: 44 });
-  assert.deepEqual(at.get(idOf("return total")), { id: idOf("return total"), x: 280, y: 168, width: 240, height: 44 });
+  const loop = at.get(idOf("while total > 100"))!;
+  const box = flowBox({ id: "", kind: "loop", label: "while total > 100" }); // a symbol is as big as its text needs
+  assert.deepEqual([loop.width, loop.height], [box.width, box.height]);
+  assert.ok(at.get(idOf("return total"))!.y > loop.y);
   for (const e of g.edges.filter((e: Edge) => !e.back)) assert.ok(at.get(e.to)!.y > at.get(e.from)!.y);
-  // The frame now also holds the way back, which runs 24 to the right of the widest step.
-  assert.deepEqual(g.frame, { x: -24, y: -24, width: 592, height: 344 });
+  // The frame holds every step and the way back, with a margin of 24.
+  const right = Math.max(...g.rects.map((r: Rect) => r.x + r.width), ...g.routes.flatMap((r: { points: { x: number }[] }) => r.points.map((p) => p.x)));
+  const bottom = Math.max(...g.rects.map((r: Rect) => r.y + r.height));
+  assert.deepEqual(g.frame, { x: -24, y: -24, width: right + 48, height: bottom + 48 });
 });
 
 test("asking for an Algorithm graph with bad input gives clear errors", async () => {

@@ -31,16 +31,11 @@ import os
 import sys
 import sysconfig
 
+from effects import import_aliases, is_effect, resolve_alias  # sits next to this file; analyze.py reaches import_aliases through here
+
 MAX_STEPS = 2000  # a run that records more steps than this is cut short (for example an endless loop)
 MAX_TEXT = 80
 
-EFFECT_CALLS = {"open", "input", "exec", "eval", "__import__"}
-EFFECT_ROOTS = {
-    "os", "subprocess", "socket", "requests", "urllib", "http", "shutil", "sqlite3", "ftplib", "smtplib", "webbrowser",
-    "tempfile", "glob", "ctypes", "_winapi", "multiprocessing",
-}
-EFFECT_METHODS = {"read_text", "write_text", "read_bytes", "write_bytes", "unlink", "mkdir", "rmdir", "touch", "rename"}
-PURE_PREFIXES = ("os.path.join", "os.path.basename", "os.path.dirname", "os.path.splitext", "os.path.split", "os.path.normpath", "urllib.parse.")
 # Audit events that are stopped while the function runs. Python names them after the operation.
 BLOCKED_EVENTS = {
     "os.system", "os.exec", "os.posix_spawn", "os.spawn", "os.startfile", "os.remove", "os.rename", "os.rmdir", "os.mkdir",
@@ -69,24 +64,6 @@ def load_flow():
     return module
 
 
-def import_aliases(tree):
-    """Names a module gives to what it imports: `import os as o` and `from os import remove as rm`."""
-    aliases = {}
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            for a in node.names:
-                aliases[(a.asname or a.name).split(".")[0]] = a.name if a.asname else a.name.split(".")[0]
-        elif isinstance(node, ast.ImportFrom) and node.module:
-            for a in node.names:
-                aliases[a.asname or a.name] = f"{node.module}.{a.name}"
-    return aliases
-
-
-def resolve_alias(name, aliases):
-    first, dot, rest = name.partition(".")
-    return aliases[first] + dot + rest if first in aliases else name
-
-
 def effects_of(function, fakes, aliases):
     """Calls in the function's own body that touch the outside world and are not replaced.
     This looks at names only: a helper that the function calls is not inspected (the audit hook covers it)."""
@@ -96,10 +73,9 @@ def effects_of(function, fakes, aliases):
             continue
         name = ast.unparse(node.func)
         resolved = resolve_alias(name, aliases)
-        if name in fakes or resolved in fakes or resolved.startswith(PURE_PREFIXES):
+        if name in fakes or resolved in fakes:
             continue
-        root, last = resolved.split(".")[0], resolved.rsplit(".", 1)[-1]
-        if resolved in EFFECT_CALLS or ("." in resolved and (root in EFFECT_ROOTS or last in EFFECT_METHODS)):
+        if is_effect(resolved):
             found.append({"name": name, "line": node.lineno})
     return sorted(found, key=lambda e: (e["line"], e["name"]))
 

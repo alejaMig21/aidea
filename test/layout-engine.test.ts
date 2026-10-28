@@ -78,7 +78,7 @@ test("laying out the same function twice gives identical rectangles and routes",
 
 test("a straight function keeps its steps in one column", async () => {
   const g = await graphOf("def f(a):\n    b = a + 1\n    c = b + 1\n    return c\n", "f");
-  assert.equal(new Set(g.rects.map((r) => r.x)).size, 1);
+  assert.equal(new Set(g.rects.map((r) => r.x + r.width / 2)).size, 1); // one column: the centres line up
   assert.deepEqual(g.rects.map((r) => r.y), [...g.rects.map((r) => r.y)].sort((p, q) => p - q));
   assertSound(g);
 });
@@ -145,7 +145,7 @@ test("a larger function with nested loops and branches is laid out soundly, in u
   const g = await graphOf(big(10), "big");
   assert.ok(g.steps.length > 100);
   assertSound(g);
-  const nodes = g.steps.map((s) => ({ id: s.id, width: 240, height: 44 }));
+  const nodes = g.rects.map((r) => ({ id: r.id, width: r.width, height: r.height }));
   const started = performance.now();
   const out = layered(nodes, g.edges);
   assert.ok(performance.now() - started < 1000);
