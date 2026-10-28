@@ -173,7 +173,7 @@ document.querySelector("main").append(businessWalk);
 
 function businessNarration(id) {
   const help = BUSINESS_HELP[id], own = businessHeld[id] ?? [];
-  if (!own.length) return `${help.narration} Nothing is written here yet, and that is fine.`;
+  if (!own.length) return help.narration;
   const shown = own.slice(0, 4).join(", ") + (own.length > 4 ? ` and ${own.length - 4} more` : "");
   return `${help.yours}: ${shown}. ${help.narration}`;
 }
