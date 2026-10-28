@@ -89,7 +89,7 @@ test("Claude Code is launched unmodified, in the Project folder, with the messag
   await chat({ project: shop, message }, "real-ok.jsonl");
   // Everything but the flags that route permission requests to aidea (checked in the next test) and the person's
   // mode choice (checked in agent-options.test.ts).
-  const aideaFlags = ["--mcp-config", "--permission-prompt-tool", "--allowedTools", "--disallowedTools", "--permission-mode"];
+  const aideaFlags = ["--mcp-config", "--permission-prompt-tool", "--allowedTools", "--disallowedTools", "--permission-mode", "--append-system-prompt"];
   const withoutPermissionFlags = (args: string[]) => args.filter((a, i) => !aideaFlags.includes(a) && !aideaFlags.includes(args[i - 1]));
   assert.deepEqual(withoutPermissionFlags(calls[0].args), ["-p", "--output-format", "stream-json", "--verbose"]);
   assert.equal(calls[0].cwd, shop);
@@ -113,7 +113,7 @@ test("permission requests are routed to aidea's own tool, whose address belongs 
   const allowed = args[args.indexOf("--allowedTools") + 1].split(",");
   // The authored files change only through Proposals: the builder's own file tools are denied there, card or no card.
   assert.deepEqual(args[args.indexOf("--disallowedTools") + 1].split(",").sort(), ["Edit(.aidea/**)", "MultiEdit(.aidea/**)", "Write(.aidea/**)"]);
-  assert.deepEqual(allowed.sort(), ["mcp__aidea__list_proposals", "mcp__aidea__propose_add_node", "mcp__aidea__propose_remove_node", "mcp__aidea__propose_update_node"]);
+  assert.deepEqual(allowed.sort(), ["mcp__aidea__list_proposals", "mcp__aidea__propose_add_node", "mcp__aidea__propose_remove_node", "mcp__aidea__propose_update_node", "mcp__aidea__read_contract"]);
 
   await chat({ project: shop, message: "two" }, "real-ok.jsonl");
   assert.notEqual(JSON.parse(calls[0].args[calls[0].args.indexOf("--mcp-config") + 1]).mcpServers.aidea.url, url);

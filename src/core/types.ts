@@ -64,7 +64,8 @@ export type Adapter = {
   };
   // `mode` and `model` are ids from `options`, chosen by the person for this message.
   // `permission` is how the agent can ask aidea for permission: an MCP configuration (JSON text) and the name of its tool.
-  run: (opts: { cwd: string; message: string; sessionId?: string; mode?: string; model?: string; signal?: AbortSignal; permission?: { mcpConfig: string; tool: string; allowedTools: string[]; deniedTools: string[] } }) => AsyncIterable<AgentEvent>;
+  // `instructions` are added to the agent's own system prompt.
+  run: (opts: { cwd: string; message: string; sessionId?: string; mode?: string; model?: string; signal?: AbortSignal; instructions?: string; permission?: { mcpConfig: string; tool: string; allowedTools: string[]; deniedTools: string[] } }) => AsyncIterable<AgentEvent>;
 };
 
 // A spawn-like process source; the real one launches `claude`, tests replay recorded streams.

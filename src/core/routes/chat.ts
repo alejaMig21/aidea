@@ -1,4 +1,5 @@
 import type { Handler } from "../types.ts";
+import { BUILDER_INSTRUCTIONS } from "../contract.ts";
 import { currentChoice } from "./agent-options.ts";
 
 const MAX_MESSAGE_CHARS = 20_000;
@@ -35,7 +36,7 @@ const handler: Handler = async (req, res, core) => {
   const permission = {
     mcpConfig: JSON.stringify({ mcpServers: { aidea: { type: "http", url: `http://${req.headers.host}/mcp/${conversation.token}` } } }),
     tool: "mcp__aidea__approve",
-    allowedTools: ["propose_add_node", "propose_update_node", "propose_remove_node", "list_proposals"].map((t) => `mcp__aidea__${t}`),
+    allowedTools: ["propose_add_node", "propose_update_node", "propose_remove_node", "list_proposals", "read_contract"].map((t) => `mcp__aidea__${t}`),
     deniedTools: ["Write", "Edit", "MultiEdit"].map((t) => `${t}(.aidea/**)`), // the authored files change only through Proposals
   };
 
@@ -47,7 +48,7 @@ const handler: Handler = async (req, res, core) => {
   });
   try {
     const { mode, model } = currentChoice(core, project.id);
-    for await (const event of core.adapter.run({ cwd: project.path, message, sessionId, mode, model, signal: abort.signal, permission })) {
+    for await (const event of core.adapter.run({ cwd: project.path, message, sessionId, mode, model, signal: abort.signal, permission, instructions: BUILDER_INSTRUCTIONS })) {
       send(event);
     }
   } catch (e) {

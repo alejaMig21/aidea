@@ -4,6 +4,7 @@
 //    writes those files itself: its tools only create pending Proposals, and the person decides.
 // Plain JSON over HTTP, one message per request. The address contains the token of a running conversation, so only
 // the Claude Code process we started can use it.
+import { contractOf } from "../contract.ts";
 import { publicView, propose } from "../proposals.ts";
 import type { Proposal } from "../proposals.ts";
 import type { Handler } from "../types.ts";
@@ -48,6 +49,11 @@ const TOOLS = [
     name: "propose_remove_node",
     description: "Proposes removing a Node from an authored layer. Nothing changes until the person accepts it.",
     inputSchema: { type: "object", properties: { layer: { type: "string", enum: LAYERS }, id: { type: "string" } }, required: ["layer", "id"] },
+  },
+  {
+    name: "read_contract",
+    description: "Returns the Contract: what the person accepted on the Business, Requirements and Architecture layers (pending Proposals are not in it). Read it before you build, and follow it.",
+    inputSchema: { type: "object", properties: {} },
   },
   {
     name: "list_proposals",
@@ -117,6 +123,10 @@ const handler: Handler = async (req, res, core) => {
       const project = conversation && core.projects.get(conversation.project);
       if (!conversation || !project) {
         core.send(res, 200, toolText(id, "The Project is not open", true));
+        return true;
+      }
+      if (name === "read_contract") {
+        core.send(res, 200, toolText(id, JSON.stringify(contractOf(project.path).layers)));
         return true;
       }
       if (name === "list_proposals") {

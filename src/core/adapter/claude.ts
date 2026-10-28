@@ -82,11 +82,12 @@ export function createClaudeAdapter(spawnFn: SpawnFn = realSpawn): Adapter {
         { id: "haiku", label: "Haiku" },
       ],
     },
-    async *run({ cwd, message, sessionId, mode, model, signal, permission }) {
+    async *run({ cwd, message, sessionId, mode, model, signal, permission, instructions }) {
       const args = ["-p", "--output-format", "stream-json", "--verbose"];
       if (sessionId) args.push("--resume", sessionId);
       if (mode) args.push("--permission-mode", mode);
       if (model && model !== "default") args.push("--model", model);
+      if (instructions) args.push("--append-system-prompt", instructions);
       // Permission requests that the person's own rules do not settle go to aidea's tool instead of being denied.
       if (permission) {
         args.push("--mcp-config", permission.mcpConfig, "--permission-prompt-tool", permission.tool);
