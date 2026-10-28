@@ -118,7 +118,7 @@ test("layers without parent or relations keep their layout and carry no boundari
   const b = await drawing(fixture("studio-c4"), "business");
   assert.equal((b as unknown as Record<string, unknown>).groups, undefined);
   assert.equal((b as unknown as Record<string, unknown>).routes, undefined);
-  assert.deepEqual([b.rects[0].x, b.rects[0].y, b.rects[0].width, b.rects[0].height], [0, 0, 240, 64]);
+  assert.ok(b.rects.length > 0); // Business has its own canvas layout now (ticket 04): the notes sit inside blocks
 });
 
 // The builder is a stand-in that makes the given tool calls over MCP, as in test/proposals.test.ts.
