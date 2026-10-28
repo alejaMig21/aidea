@@ -13,9 +13,9 @@ export const layoutComponents = (nodes: CoreNode[]): Rect[] => layoutComponentsD
 // (partners | activities over resources | value propositions | relationships over channels | segments),
 // with cost structure (three columns) and revenue streams (two) across the bottom.
 // Notes fill their block in the order given, one note per grid column the block spans (so 3 and 2 across in the wide bottom blocks);
-// a block is as tall as its notes need, and the rows of the top part stretch to keep the three tall blocks level.
+// the header holds the block's name and a one-line hint; a block is as tall as its notes need, and the rows of the top part stretch to keep the three tall blocks level.
 // Each area is [column, row, columns spanned, rows spanned].
-const BLOCK_W = 240, BLOCK_GAP = 16, BLOCK_HEAD = 40, BLOCK_PAD = 12, NOTE_H = 44, NOTE_GAP = 8;
+const BLOCK_W = 240, BLOCK_GAP = 16, BLOCK_HEAD = 58, BLOCK_PAD = 12, NOTE_H = 44, NOTE_GAP = 8;
 const BLOCK_AREAS: Record<string, [number, number, number, number]> = {
   "key partnerships": [0, 0, 1, 2], "key activities": [1, 0, 1, 1], "key resources": [1, 1, 1, 1],
   "value propositions": [2, 0, 1, 2], "customer relationships": [3, 0, 1, 1], channels: [3, 1, 1, 1],

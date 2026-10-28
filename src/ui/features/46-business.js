@@ -1,5 +1,5 @@
 // Business layer: the nine-block canvas with sticky notes. The core says where every block and note sits (GET /layout);
-// this draws them, the two illustrative flows (value out to the customers, money back to revenue) and the credit line.
+// this draws them, a hint line in each (the wording lives in 46-business-help.js) and the credit line.
 // Loaded after the notation kit so its legend replaces the generic one; drawAuthored (20-authored.js) calls drawBusiness.
 const BUSINESS_BLOCKS = {
   "key partnerships": "Key Partners", "key activities": "Key Activities", "key resources": "Key Resources",
@@ -14,7 +14,6 @@ const BUSINESS_CREDIT = "Business Model Canvas by Strategyzer AG, licensed CC BY
     .bblock rect { fill: var(--raised); stroke: var(--control); }
     .bblock .btitle { fill: var(--authored); font: 600 12.5px var(--sans); }
     .bblock .bnum circle { fill: var(--selected); stroke: none; } .bblock .bnum text { fill: var(--muted); font: 700 11px var(--mono); text-anchor: middle; }
-    .bflow { fill: none; stroke-width: 2; } .bflow-head { stroke: none; fill: var(--tone); }
     .bnote { cursor: pointer; transform-box: fill-box; transform-origin: center; transition: transform .18s ease, filter .18s ease; filter: drop-shadow(0 2px 0 #0006); }
     .bnote rect { fill: #f2b45a22; stroke: #f2b45a66; transition: fill .18s ease, stroke .18s ease; }
     .bnote text { fill: #ffe0ae; font: 12.5px var(--sans); pointer-events: none; }
@@ -50,12 +49,17 @@ function businessWrap(text, max = 30) {
   return lines;
 }
 
+// The prompt of an empty block: the hint cut into lines of about 24 letters.
+const businessPrompt = (text, max = 24) => text.split(" ").reduce((lines, word) => {
+  if (lines.length && (lines.at(-1) + " " + word).length <= max) lines[lines.length - 1] += " " + word; else lines.push(word);
+  return lines;
+}, []);
+
 // A note tilts by an angle that shrinks with its width, so its ends move about 3 px at most and stay inside the gap to its neighbours.
 const businessTilt = (width, index) => `${(index % 2 ? 1 : -1) * Math.min(1.8, (Math.atan(3 / (width / 2)) * 180) / Math.PI)}deg`;
 
 function drawBusiness(g, nodes, layout, select) {
   const blocks = layout.blocks ?? [];
-  const at = Object.fromEntries(blocks.map((b) => [b.id, b]));
   blocks.forEach((b, i) => {
     const card = el("g", { class: "bblock", tabindex: 0, "data-id": b.id, "data-ref": b.id });
     card.append(
@@ -65,24 +69,12 @@ function drawBusiness(g, nodes, layout, select) {
     const num = el("g", { class: "bnum", "aria-hidden": "true" });
     num.append(el("circle", { cx: b.x + b.width - 20, cy: b.y + 20, r: 10 }), el("text", { x: b.x + b.width - 20, y: b.y + 24 }, i + 1));
     card.append(num);
+    // Under the name: the hint, small; an empty block shows it larger as the prompt of what to write.
+    const hint = BUSINESS_HELP[b.id]?.hint ?? "";
+    if (nodes.some((n) => n.block === b.id)) card.append(el("text", { x: b.x + 14, y: b.y + 44, class: "bhint" }, hint));
+    else businessPrompt(hint).forEach((line, k) => card.append(el("text", { x: b.x + 14, y: b.y + 84 + k * 20, class: "bprompt" }, line)));
     g.append(card);
   });
-  // The flows sit between the cards and the notes. They are illustrative, not relationships between notes.
-  const bottom = (id) => at[id].y + at[id].height - 6;
-  const flows = [];
-  if (blocks.length === 9) {
-    const vp = at["value propositions"], cs = at["customer segments"], rev = at["revenue streams"];
-    for (const via of ["customer relationships", "channels"]) {
-      flows.push({ d: `M${vp.x + vp.width} ${bottom(via)}H${cs.x - 9}`, head: [cs.x, bottom(via), "right"], tone: "accent", ends: `value propositions|${via}|customer segments`, dur: 4 });
-    }
-    const x = cs.x + cs.width / 2;
-    flows.push({ d: `M${x} ${cs.y + cs.height - 34}V${rev.y - 9}`, head: [x, rev.y, "down"], tone: "authored", ends: "customer segments|revenue streams", dur: 3 });
-  }
-  for (const f of flows) {
-    g.append(el("path", { class: "edge bflow", d: f.d, "data-tone": f.tone, "data-flow": "", "data-packets": 2, "data-packet-dur": f.dur, "data-ends": f.ends }));
-    const [x, y, way] = f.head;
-    g.append(el("path", { class: "bflow-head", "data-tone": f.tone, d: way === "right" ? `M${x - 9} ${y - 5}L${x} ${y}L${x - 9} ${y + 5}Z` : `M${x - 5} ${y - 9}L${x} ${y}L${x + 5} ${y - 9}Z` }));
-  }
   const rects = new Map(layout.map((r) => [r.id, r]));
   const placed = new Map();
   for (const n of nodes) {
@@ -90,8 +82,8 @@ function drawBusiness(g, nodes, layout, select) {
     if (!r) continue;
     const index = placed.get(n.block) ?? 0;
     placed.set(n.block, index + 1);
-    // data-node makes the note zoomable and markable like any Node; data-light (the block) makes hovering it light the flows through its block; data-ref#note dims it with the block.
-    const note = el("g", { class: "bnote", tabindex: 0, "data-node": n.id, "data-light": n.block, "data-ref": `${n.block}#${n.id}`, style: `--tilt:${businessTilt(r.width, index)}` });
+    // data-node makes the note zoomable and markable like any Node; data-block ties it to its block (help card, guided reading); data-ref#note dims it with the block.
+    const note = el("g", { class: "bnote", tabindex: 0, "data-node": n.id, "data-block": n.block, "data-ref": `${n.block}#${n.id}`, style: `--tilt:${businessTilt(r.width, index)}` });
     const lines = businessWrap(n.title);
     note.append(el("title", {}, n.title), el("rect", { x: r.x, y: r.y, width: r.width, height: r.height, rx: 6 }));
     lines.forEach((line, i) => note.append(el("text", { x: r.x + 10, y: r.y + (lines.length === 1 ? 26 : 19 + i * 15) }, line)));
@@ -104,6 +96,9 @@ function drawBusiness(g, nodes, layout, select) {
     note.addEventListener("pointerleave", () => { if (home) { g.insertBefore(note, home); home = null; } });
     g.append(note);
   }
+  businessHeld = {};
+  for (const n of nodes) (businessHeld[n.block] ??= []).push(n.title);
+  businessHelpDrawn();
 }
 
 // The credit line is always visible on this layer; a first visit fits the whole canvas on screen.
@@ -119,10 +114,7 @@ notationRegisterLegend("business", {
   shapes: [
     [notationSwatch(`<rect x="4" y="3" width="36" height="18" rx="5" style="fill:var(--raised);stroke:var(--control)"/><circle cx="33" cy="9" r="3" style="fill:var(--selected)"/>`), "One of the nine blocks; its place on the canvas is part of its meaning, and the number is its order"],
     [notationSwatch(`<rect x="6" y="6" width="32" height="12" rx="3" style="fill:#f2b45a22;stroke:#f2b45a99"/>`), "A sticky note: one idea in plain words, inside the block it belongs to"],
-  ],
-  arrows: [
-    [notationSwatch(`<path d="M2 12H38" style="stroke:var(--accent);stroke-width:2;stroke-dasharray:7 5"/><circle cx="24" cy="12" r="4" style="fill:var(--accent)"/>`), "Value flows from the value propositions to the customer segments, through channels and relationships (illustrative)"],
-    [notationSwatch(`<path d="M2 12H38" style="stroke:var(--authored);stroke-width:2;stroke-dasharray:7 5"/><circle cx="24" cy="12" r="4" style="fill:var(--authored)"/>`), "Money flows from the customer segments down to the revenue streams (illustrative)"],
+    [notationSwatch(`<rect x="4" y="3" width="36" height="18" rx="5" style="fill:none;stroke:var(--control);stroke-dasharray:4 3"/>`), "The blocks fill in over time; an empty one is normal, it is a question still to answer"],
   ],
   notShown: ["Relationships between notes", "The order of notes by importance", "Numbers, priorities or evidence for any note"],
 });

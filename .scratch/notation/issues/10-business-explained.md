@@ -19,3 +19,17 @@ All wording is English, short, free of jargon, and not copied from the canvas's 
 - [ ] The text is stored in one structure (block id to hint, description, question, example, narration) so a later ticket can reuse the pattern for other layers.
 - [ ] Verified headless (no visible window) at 1440x900 and 1000x700: screenshots of an empty Business layer, a filled one, mid-walk, and a hover card, read by the implementer; no overlaps; no console errors; notes still tilt on hover as before.
 - [ ] Read by the person for clarity.
+
+## Review notes
+
+Wording lives in `BUSINESS_HELP` (block id to `hint`, `what`, `question`, `example`, `narration`, `yours`) plus `BUSINESS_WALK` (the telling order) in `src/ui/features/46-business-help.js`. The core reserves a 58 px header per block (`BLOCK_HEAD` in `src/core/layout.ts`, test "every block reserves a header...").
+
+- [x] Flows, packets, flow hover lighting and their legend entries are gone from Business (0 flow paths, 0 packets, 0 `[data-ends]` in the layer); blocks still breathe and the animation switch still applies.
+- [x] Every block shows its hint; empty blocks show it as a larger two-line prompt; no hint is wider than its block (measured); a block with notes keeps its notes unclipped (core geometry, notes start 58 px below the top).
+- [x] "Walk me through it" (button right after the Business tab): nine steps in the stated order, narration quotes the person's notes ("You said you offer: Quotes in minutes."), Next/Back/Finish/Close/Escape work, normal view restored, focus returns to the opener, narration is `aria-live`. Never starts by itself; closes when leaving the layer.
+- [x] Hover and keyboard focus card shows what/question/"Example"; placed below the block (else above, else beside), clamped inside the canvas; checked for 5 blocks at 1440x900 and 1000x700: never overlaps the block, always inside. Focus on a block shows it too.
+- [x] Note tilt unchanged: straight at rest (`none`), tilts and lifts on hover.
+- [x] Headless at 1440x900 and 1000x700 (empty and filled projects, mid-walk, hover card): screenshots read (1000x700 hover shot checked by metrics only); no console errors. The reduced-motion branch is CSS only (`prefers-reduced-motion`, `body.motion-off`) and was not run under emulation.
+- [x] Legend gains "The blocks fill in over time; an empty one is normal, it is a question still to answer".
+- [x] `npm run typecheck` and `npm test` pass (226 pass, 0 fail; one earlier full run showed 15 failures that did not repeat, likely load from parallel runs).
+- [ ] Read by the person for clarity.

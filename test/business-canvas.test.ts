@@ -109,6 +109,17 @@ test("a note whose block is not one of the nine is still an error and is not pla
   assert.deepEqual((await layoutOf(dir)).rects.map((r) => r.id), ["ok"]);
 });
 
+test("every block reserves a header tall enough for its name and its one-line hint", async () => {
+  const nodes = [note("a", "channels"), note("b", "cost structure"), note("c", "key partnerships")];
+  const { rects, blocks } = await layoutOf(await project(nodes));
+  for (const n of nodes) {
+    const r = rects.find((x) => x.id === n.id)!, b = blocks.find((x) => x.id === n.block)!;
+    assert.ok(r.y - b.y >= 58, `${n.block}: notes start ${r.y - b.y}px below the top`);
+  }
+  // An empty block still has room for the larger prompt: two rows of notes below the header.
+  for (const b of blocks) assert.ok(b.height >= 58 + 2 * 44, b.id);
+});
+
 test("a Proposal that adds a Business Node is previewed inside its block", async () => {
   const dir = await project([note("n1", "value propositions")]);
   call = { name: "propose_add_node", arguments: { layer: "business", node: note("n2", "value propositions") } };
