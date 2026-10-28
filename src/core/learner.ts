@@ -16,6 +16,8 @@ export type Graph = { propositions: Proposition[]; chains: Chain[] };
 export type Evidence = {
   classId: string; questionId: string; project: string; kind: "choice" | "text";
   correct: boolean | null; confidence: number | null; answer: string | null; thought: string | null; dontKnow: boolean; time: string;
+  // Present for answers given inside the teach loop: the step, "predict" or "check", the attempt number, and a wrong answer given with confidence 70 or more.
+  stepId?: string; phase?: "predict" | "check"; attempt?: number; sureAndWrong?: true;
 };
 // A class waiting for its pipeline: the Teacher's prose, in the order it was said.
 export type PendingClass = { classId: string; project: string; node?: string; texts: string[] };
@@ -126,16 +128,18 @@ export function createLearnerStore(dir?: string) {
 
 export type LearnerStore = ReturnType<typeof createLearnerStore>;
 
-// What goes in the ledger for one answer. Text answers are not graded (the Tutor judges them), so `correct` is null there,
-// and for "I don't know", which shows nothing was demonstrated either way.
-export function evidenceOf(classId: string, questionId: string, project: string, q: Question, a: Answer, time = new Date().toISOString()): Evidence {
+// What goes in the ledger for one answer. A choice is graded by the program; a text answer only if the grader judged it
+// (`graded`), otherwise `correct` is null. "I don't know" is null too: nothing was demonstrated either way.
+export function evidenceOf(classId: string, questionId: string, project: string, q: Question, a: Answer, graded?: boolean, time = new Date().toISOString()): Evidence {
   const dontKnow = a.dontKnow === true;
   const choice = q.kind === "choice" && !dontKnow;
+  const correct = choice ? a.option === q.correct : q.kind === "text" && !dontKnow && graded !== undefined ? graded : null;
+  const confidence = choice ? (a.confidence ?? null) : null;
   return {
-    classId, questionId, project, kind: q.kind,
-    correct: choice ? a.option === q.correct : null,
-    confidence: choice ? (a.confidence ?? null) : null,
+    classId, questionId, project, kind: q.kind, correct, confidence,
     answer: dontKnow ? null : q.kind === "choice" ? q.options[a.option!] : (a.text ?? null),
     thought: a.thought ?? null, dontKnow, time,
+    ...(q.stepId ? { stepId: q.stepId, phase: q.phase, attempt: q.attempt } : {}),
+    ...(choice && correct === false && (confidence ?? 0) >= 70 ? { sureAndWrong: true as const } : {}),
   };
 }

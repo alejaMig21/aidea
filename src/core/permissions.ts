@@ -18,13 +18,13 @@ type Conversation = { project: string; secret: string; emit: (event: object) => 
 type Request = { conversation: Conversation; resolve: (value: any) => void; onClose: unknown; question?: Question };
 
 // What the Tutor's waiting `ask` call gets back: the answer, or why there is none.
-export type QuestionResult = { text: string; isError?: true };
+// `heard` is present when the person answered: the class's flow (teach.ts) grades it and writes the Evidence.
+export type AnswerHeard = { questionId: string; question: Question; answer: Answer };
+export type QuestionResult = { text: string; isError?: true; heard?: AnswerHeard };
 
 export const sameSecret = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
-// `onAnswer` hears every valid answer to a Tutor question (the ledger of evidence is written from it).
-export type AnswerHeard = { classId: string; questionId: string; project: string; question: Question; answer: Answer };
-export function createBroker(onAnswer?: (heard: AnswerHeard) => void) {
+export function createBroker() {
   const conversations = new Map<string, Conversation>(); // token -> conversation
   const requests = new Map<string, Request>(); // request id -> who is waiting
   let counter = 0;
@@ -53,9 +53,9 @@ export function createBroker(onAnswer?: (heard: AnswerHeard) => void) {
     isOpen: (token: string) => conversations.has(token),
 
     // What the builder's tools need to know about the conversation they belong to.
-    conversationOf(token: string): { project: string; secret: string; emit: (event: object) => void; role: Role } | undefined {
+    conversationOf(token: string): { project: string; secret: string; emit: (event: object) => void; role: Role; classId?: string } | undefined {
       const c = conversations.get(token);
-      return c && { project: c.project, secret: c.secret, emit: c.emit, role: c.role };
+      return c && { project: c.project, secret: c.secret, emit: c.emit, role: c.role, classId: c.classId };
     },
 
     // The builder asks for permission. Resolves when the person answers; undefined if the conversation is not running.
@@ -130,9 +130,7 @@ export function createBroker(onAnswer?: (heard: AnswerHeard) => void) {
       if ("error" in parsed) return { invalid: parsed.error };
       requests.delete(id);
       request.conversation.pending.delete(id);
-      const { classId, project } = request.conversation;
-      if (classId) onAnswer?.({ classId, questionId: id, project, question: request.question, answer: parsed.answer });
-      request.resolve({ text: JSON.stringify(answerForTutor(request.question, parsed.answer)) });
+      request.resolve({ text: JSON.stringify(answerForTutor(request.question, parsed.answer)), heard: { questionId: id, question: request.question, answer: parsed.answer } });
       return "answered";
     },
   };

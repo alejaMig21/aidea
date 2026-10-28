@@ -119,7 +119,7 @@ export function mergeGraph(current: Graph, input: { classId: string; node?: stri
   return { propositions, chains: [...chains.values()] };
 }
 
-async function callRole(adapter: Adapter, role: "extractor" | "auditor", instructions: string, message: string, schema: object, model: string): Promise<unknown> {
+export async function callRole(adapter: Adapter, role: "extractor" | "auditor" | "grader", instructions: string, message: string, schema: object, model: string): Promise<unknown> {
   const cwd = join(tmpdir(), "aidea-learner");
   mkdirSync(cwd, { recursive: true });
   let structured: unknown;
@@ -156,6 +156,7 @@ export function createLearner(dir: string | undefined, adapter: Adapter, model =
 
   return {
     ...store,
+    model,
     recordEvidence: store.addEvidence,
     // Keeps the class's prose so a failure can be retried (also after a restart), then runs the pipeline.
     async closeClass(p: PendingClass): Promise<ClassOutcome> {

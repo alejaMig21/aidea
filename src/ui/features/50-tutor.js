@@ -13,6 +13,10 @@
     #tutor-log[hidden] { display: none; }
     #tutor-log .tutor-say { margin: 0; color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.45; }
     #tutor-log .tutor-error { margin: 0; color: var(--danger); overflow-wrap: anywhere; }
+    #tutor-log .tutor-step { margin: 8px 0 0; font-size: 14px; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+    #tutor-log .tutor-label { margin: 0; color: var(--accent); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+    #tutor-topic { align-self: stretch; box-sizing: border-box; margin: 0 0 6px; padding: 6px 8px; font: inherit; font-size: 13px; max-width: 262px; width: 100%; background: var(--raised); color: var(--text); border: 1px solid var(--control); border-radius: 6px; }
+    #pane-tutor.tutor-live #tutor-topic { display: none; }
     #tutor-log .tutor-meta { margin: 0; color: var(--muted); font-size: 12px; }
     #tutor-log .tutor-card { margin: 0; padding: 10px 12px; background: var(--raised); border: 1px solid var(--control); border-radius: 10px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
     #tutor-log .tutor-card fieldset { margin: 0; padding: 0; border: 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
@@ -42,6 +46,9 @@
   const log = Object.assign(document.createElement("div"), { id: "tutor-log", hidden: true });
   log.setAttribute("role", "log");
   log.setAttribute("aria-label", "Class with the Tutor");
+  const topic = Object.assign(document.createElement("input"), { type: "text", id: "tutor-topic", maxLength: 500, placeholder: "Topic (optional)" });
+  topic.setAttribute("aria-label", "Topic of the class (optional)");
+  start.before(topic);
   start.after(end);
   end.after(log);
 
@@ -63,14 +70,15 @@
 
   function collapse(card, summary) {
     card.className = "tutor-card tutor-done";
-    card.replaceChildren(el("p", { className: "tutor-prompt", textContent: card.dataset.prompt }), el("p", { className: "tutor-answered", textContent: summary }));
+    card.replaceChildren(...(card.dataset.phase === "predict" ? [el("p", { className: "tutor-label", textContent: "Predict" })] : []), el("p", { className: "tutor-prompt", textContent: card.dataset.prompt }), el("p", { className: "tutor-answered", textContent: summary }));
   }
 
   function questionCard(q) {
     const n = ++counter;
     const form = el("form", { className: "tutor-card" });
     form.dataset.prompt = q.prompt;
-    form.setAttribute("aria-label", "Question from the Tutor");
+    form.dataset.phase = q.phase ?? "";
+    form.setAttribute("aria-label", q.phase === "predict" ? "Prediction from the Tutor" : "Question from the Tutor");
     const status = el("p", { className: "tutor-status" });
     status.setAttribute("role", "alert");
     const thought = el("textarea", { id: `tutor-thought-${n}`, rows: 2 });
@@ -109,6 +117,7 @@
       dontKnow = el("button", { type: "button", className: "tutor-dontknow", textContent: "Don't know" });
       buttons.append(dontKnow);
     }
+    if (q.phase === "predict") form.prepend(el("p", { className: "tutor-label", textContent: "Predict" }));
     form.append(...body, thoughtLabel, thought, buttons, status);
 
     const submit = async (reply, summaryText) => {
@@ -154,6 +163,9 @@
 
   function render(event) {
     if (event.type === "text") line("tutor-say", event.text);
+    else if (event.type === "tutor_step") { log.append(el("h3", { className: "tutor-step", textContent: event.title })); pane.scrollTop = pane.scrollHeight; }
+    else if (event.type === "tutor_explain") { if (event.repair) line("tutor-label", "Let's look again"); line("tutor-say", event.text); }
+    else if (event.type === "tutor_finished") line("tutor-meta", `Class finished: ${event.summary}`);
     else if (event.type === "tutor_question") questionCard(event);
     else if (event.type === "tutor_question_expired") expire(event.id);
     else if (event.type === "error") { const p = el("p", { className: "tutor-error", textContent: event.message }); p.setAttribute("role", "alert"); log.append(p); }
@@ -199,7 +211,7 @@
     start.disabled = true;
     end.focus();
     try {
-      const res = await fetch("/tutor/classes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ project }), signal: running.abort.signal });
+      const res = await fetch("/tutor/classes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ project, topic: topic.value.trim() || undefined }), signal: running.abort.signal });
       if (!res.ok) {
         const p = el("p", { className: "tutor-error", textContent: (await res.json().catch(() => ({}))).error ?? "The class could not start" });
         p.setAttribute("role", "alert");

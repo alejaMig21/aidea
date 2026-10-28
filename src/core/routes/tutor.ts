@@ -7,10 +7,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Handler } from "../types.ts";
 import { TUTOR_INSTRUCTIONS } from "../tutor.ts";
+import { createLesson } from "../teach.ts";
 import { currentChoice } from "./agent-options.ts";
 
 const MAX_MESSAGE_CHARS = 20_000;
-const FIRST_MESSAGE = "The person has opened a class. Greet them in one sentence and ask your first question.";
+const MAX_TOPIC_CHARS = 500;
+const FIRST_MESSAGE = "The person has opened a class but gave no topic. Look at their project with the read tools, pick the one idea worth teaching first, and begin the first step.";
+const topicMessage = (topic: string) => `The person has opened a class. The topic is: ${topic}
+Begin the first step.`;
 
 const handler: Handler = async (req, res, core) => {
   const path = new URL(req.url ?? "/", "http://core").pathname;
@@ -35,7 +39,9 @@ const handler: Handler = async (req, res, core) => {
 
   const project = typeof body?.project === "string" ? core.projects.get(body.project) : undefined;
   if (!project) return reject(400, "project must be a Project that is already open");
-  const message = body?.message ?? FIRST_MESSAGE;
+  const topic = body?.topic;
+  if (topic !== undefined && (typeof topic !== "string" || topic.length > MAX_TOPIC_CHARS)) return reject(400, `topic must be text of at most ${MAX_TOPIC_CHARS} characters`);
+  const message = body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
   if (typeof message !== "string" || !message.trim() || message.length > MAX_MESSAGE_CHARS) {
     return reject(400, `message must be a non-empty string of at most ${MAX_MESSAGE_CHARS} characters`);
   }
@@ -47,6 +53,8 @@ const handler: Handler = async (req, res, core) => {
   const classId = `c-${Date.now().toString(36)}${randomBytes(3).toString("hex")}`;
   const node = typeof body?.node === "string" ? body.node : undefined; // the Project Node the class is about, if any
   const texts: string[] = []; // the Teacher's prose, for the Learner graph
+  const lesson = createLesson();
+  core.lessons.set(classId, lesson);
   const conversation = core.permissions.open(send, project.id, "tutor", classId);
   const tools = {
     mcpConfig: JSON.stringify({ mcpServers: { tutor: { type: "http", url: `http://${req.headers.host}/mcp/${conversation.token}` } } }),
@@ -71,7 +79,10 @@ const handler: Handler = async (req, res, core) => {
     send({ type: "error", code: "failed", message: "The Tutor stopped unexpectedly" });
   } finally {
     conversation.close();
+    core.lessons.delete(classId);
   }
+  // What was taught is the explanations (also an open step's); a class that never used the loop falls back to the Teacher's plain text.
+  if (lesson.texts.length) texts.splice(0, texts.length, ...lesson.texts);
   // The class is closed only when the pipeline has run; if it fails the prose is kept and POST /tutor/classes/<id>/close retries.
   if (texts.length) send({ type: "learner", classId, ...(await core.learner.closeClass({ classId, project: project.id, node, texts })) });
   res.end();

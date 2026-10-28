@@ -8,7 +8,6 @@ import { createBroker } from "./permissions.ts";
 import { createRecents } from "./recents.ts";
 import { createPreferences } from "./preferences.ts";
 import { createLearner } from "./learner-pipeline.ts";
-import { evidenceOf } from "./learner.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
 const routesDir = fileURLToPath(new URL("./routes/", import.meta.url));
@@ -33,13 +32,8 @@ export async function startCore({ port, adapter = createClaudeAdapter(), recents
     learner,
     projects: new Map<string, Project>(),
     recordings: new Map<string, unknown>(),
-    permissions: createBroker((h) => {
-      try {
-        learner.recordEvidence(evidenceOf(h.classId, h.questionId, h.project, h.question, h.answer));
-      } catch (e) {
-        console.error(e); // a ledger that cannot be written must not stop the class
-      }
-    }),
+    lessons: new Map(),
+    permissions: createBroker(),
     proposals: new Map(),
     recents: createRecents(recentsFile),
     preferences: createPreferences(preferencesFile),

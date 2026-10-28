@@ -2,12 +2,16 @@
 // A question fixes its correct answer before it is shown; that answer stays in the core until the person has answered.
 
 export const TUTOR_INSTRUCTIONS = [
-  "You are the Tutor of aidea, a tool where a person designs software and learns why each decision was made.",
-  "Teach by asking. Pose one question at a time with the ask tool, then wait: the tool returns when the person has answered.",
-  "Fix the correct answer inside the question itself (a choice question needs its options and which one is right; a text question may carry the answer you expect).",
-  "Use the person's answer, their confidence and what they thought to decide what to explain next. Keep explanations short and in plain words.",
-  "If the ask tool returns an error, read it and fix the call. If it says the person did not answer or the class ended, do not ask again: end your turn.",
-  "You cannot edit files or run commands, and you do not need to.",
+  "You are the Tutor of aidea, a tool where a person designs software and learns why each decision was made. You teach one class, in plain English and short turns.",
+  "A class is a series of steps. Each step teaches ONE fact and always follows this loop, in this order; the tools refuse any other order:",
+  "1. begin_step {stepId, title}: name the step. You cannot begin another step while this one is open.",
+  "2. predict {stepId, prompt}: ask the person to guess, in their own words, about the fact you are about to teach. Open question, no hints that give the answer away. Wait for the reply; a wrong guess is fine.",
+  "3. explain {stepId, text}: teach the fact. Start by resolving the guess (what they said, what is true, why), then give the fact in a few sentences. The explain text is what the person reads and what aidea remembers, so make every claim clear and self-contained.",
+  "4. ask {stepId, kind, prompt, ...}: check the fact. Choice: give 2 to 6 options and `correct`, the exact text of the right one. Text: give `expected`, the answer you have in mind. Write options as plain claims of similar length, each wrong one a believable mistake. Ask about applying the fact, not repeating it.",
+  "The result of ask tells you if it was right. If it was wrong, or the person did not know, the step stays open: work out what they believe, call explain again for the same step from a new angle, and check again. If the result says sureAndWrong, they were confident in a mistaken idea: name that idea and repair it before anything else. If it was right, say so in a few words and move to the next step.",
+  "Choose the steps yourself from the topic you are given. Use the read tools to look at the person's own project when it makes the fact concrete. You cannot write files or run commands, and you do not need to.",
+  "If a tool returns an error, read it, fix the call and continue. If it says the person did not answer or the class ended, do not ask again: end your turn.",
+  "Keep going until the person has learned the topic, then call finish_class {summary} and end your turn.",
 ].join("\n");
 
 export const CONFIDENCE_STOPS = [0, 30, 50, 70, 90, 100];
@@ -15,16 +19,33 @@ export const DEFAULT_CONFIDENCE = 50;
 
 const MAX_TEXT = 4000;
 
+const stepId = { type: "string", description: "The step's id, chosen by you in begin_step" };
 export const TUTOR_TOOLS = [
+  {
+    name: "begin_step",
+    description: "Starts the next step of the class (one fact). Refused while the previous step is open: a step closes only when its check was answered correctly.",
+    inputSchema: { type: "object", properties: { stepId: { type: "string", description: "A short unique id, for example \"queue-purpose\"" }, title: { type: "string" } }, required: ["stepId", "title"] },
+  },
+  {
+    name: "predict",
+    description: "Asks the person to guess, in their own words, about the fact of the open step before you explain it. Waits for the answer and returns it.",
+    inputSchema: { type: "object", properties: { stepId, prompt: { type: "string" } }, required: ["stepId", "prompt"] },
+  },
+  {
+    name: "explain",
+    description: "Shows the person the explanation of the open step. Allowed only after they answered the prediction (or, after a missed check, to teach the step again). Open by resolving their guess.",
+    inputSchema: { type: "object", properties: { stepId, text: { type: "string" } }, required: ["stepId", "text"] },
+  },
   {
     name: "ask",
     description:
-      "Asks the person one question and waits for the answer. kind \"choice\": give `prompt`, `options` (2 to 6 texts) and `correct` (the exact text of the right option); " +
-      "the person picks one and says how sure they are. kind \"text\": give `prompt` and optionally `expected`, the answer you have in mind; the person writes in their own words. " +
-      "Set `allowDontKnow` to false only if \"I don't know\" makes no sense (default true). Returns the person's answer, confidence and what they thought.",
+      "Checks the open step after you explained it, and waits for the answer. kind \"choice\": give `prompt`, `options` (2 to 6 texts) and `correct` (the exact text of the right option); " +
+      "the person picks one and says how sure they are. kind \"text\": give `prompt` and `expected`, the answer you have in mind; the person writes in their own words and a grader compares it with `expected`. " +
+      "`stepId` is required. Set `allowDontKnow` to false only if \"I don't know\" makes no sense (default true). Returns the verdict, the person's answer, confidence and what they thought.",
     inputSchema: {
       type: "object",
       properties: {
+        stepId,
         kind: { type: "string", enum: ["choice", "text"] },
         prompt: { type: "string" },
         options: { type: "array", items: { type: "string" } },
@@ -32,15 +53,22 @@ export const TUTOR_TOOLS = [
         expected: { type: "string" },
         allowDontKnow: { type: "boolean" },
       },
-      required: ["kind", "prompt"],
+      required: ["stepId", "kind", "prompt"],
     },
+  },
+  {
+    name: "finish_class",
+    description: "Ends the class once every step is closed. `summary` is one or two sentences on what was covered.",
+    inputSchema: { type: "object", properties: { summary: { type: "string" } }, required: ["summary"] },
   },
 ];
 
+// Where a question sits in the class: the step, whether it is the prediction or the check, and the attempt number (set by the core).
+type Where = { stepId?: string; phase?: "predict" | "check"; attempt?: number };
 // What stays in the core. `correct` is the committed answer (choice: the index of the right option).
 export type Question =
-  | { kind: "choice"; prompt: string; options: string[]; correct: number; allowDontKnow: boolean }
-  | { kind: "text"; prompt: string; expected?: string; allowDontKnow: boolean };
+  | ({ kind: "choice"; prompt: string; options: string[]; correct: number; allowDontKnow: boolean } & Where)
+  | ({ kind: "text"; prompt: string; expected?: string; allowDontKnow: boolean } & Where);
 
 export type Answer = { option?: number; text?: string; confidence?: number; thought?: string; dontKnow?: boolean };
 
@@ -68,8 +96,10 @@ export function parseQuestion(args: Record<string, unknown>): { question: Questi
 }
 
 // What the interface is told about a question: never the committed answer.
-export const publicQuestion = (q: Question) =>
-  q.kind === "choice" ? { kind: q.kind, prompt: q.prompt, options: q.options, allowDontKnow: q.allowDontKnow } : { kind: q.kind, prompt: q.prompt, allowDontKnow: q.allowDontKnow };
+export const publicQuestion = (q: Question) => {
+  const where = q.stepId ? { stepId: q.stepId, phase: q.phase } : {};
+  return q.kind === "choice" ? { kind: q.kind, prompt: q.prompt, options: q.options, allowDontKnow: q.allowDontKnow, ...where } : { kind: q.kind, prompt: q.prompt, allowDontKnow: q.allowDontKnow, ...where };
+};
 
 // Checks the person's answer against the question it belongs to (the interface sends it, so it is checked, not trusted).
 export function parseAnswer(q: Question, raw: Record<string, unknown>): { answer: Answer } | { error: string } {

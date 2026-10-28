@@ -1,0 +1,229 @@
+// The order of a class. The Teacher calls begin_step, predict, explain, ask (the check) and finish_class; this file decides, per class,
+// which call is allowed next and answers the ones that are not with plain words naming what to do. The model cannot skip the order.
+//   new -> (predict answered) predicted -> (explain) explained -> (check right) closed
+//                                                    explained -> (check wrong) missed -> (explain again) explained
+import { evidenceOf } from "./learner.ts";
+import { callRole } from "./learner-pipeline.ts";
+import { answerForTutor, parseQuestion } from "./tutor.ts";
+import type { Answer, Question } from "./tutor.ts";
+import type { Core } from "./types.ts";
+
+type State = "new" | "predicted" | "explained" | "missed" | "closed";
+type Step = { title: string; state: State; predicts: number; checks: number };
+type Failure = { error: string };
+
+const MAX_PROSE = 4000;
+const nonEmpty = (v: unknown, max: number): v is string => typeof v === "string" && v.trim().length > 0 && v.length <= max;
+
+// What the model should do next, by the state the open step is in.
+const WHAT_NEXT: Record<State, string> = {
+  new: "ask the person to predict with predict",
+  predicted: "teach it with explain",
+  explained: "check it with ask (give its stepId)",
+  missed: "the check was missed: re-teach it with a new explain for the same step, then check again with ask",
+  closed: "",
+};
+
+export function createLesson() {
+  const steps = new Map<string, Step>();
+  let open: string | undefined;
+  let finished = false;
+  const texts: string[] = []; // every explanation, in order: the Teacher's prose for the Learner graph
+
+  const stepOf = (id: unknown, call: string): Step | Failure => {
+    if (finished) return { error: "The class is finished. End your turn." };
+    if (!nonEmpty(id, 100)) return { error: `${call} needs a stepId: the id you gave the step in begin_step` };
+    const step = steps.get(id);
+    if (!step) return { error: `There is no step "${id}". Call begin_step with a stepId and a title first.` };
+    if (id !== open) return { error: `Step "${id}" is already closed. The open step is ${open ? `"${open}"` : "none"}.` };
+    return step;
+  };
+  const failed = (x: Step | Failure): x is Failure => "error" in x;
+
+  return {
+    texts,
+    isFinished: () => finished,
+
+    begin(args: Record<string, unknown>): Failure | { stepId: string } {
+      if (finished) return { error: "The class is finished. End your turn." };
+      const { stepId, title } = args;
+      if (!nonEmpty(stepId, 100)) return { error: "begin_step needs a stepId: a short unique id for the step" };
+      if (!nonEmpty(title, 200)) return { error: "begin_step needs a title: a few words naming the step" };
+      if (open) return { error: `Step "${open}" is still open: ${WHAT_NEXT[steps.get(open)!.state]}. Finish it before beginning another step.` };
+      if (steps.has(stepId)) return { error: `A step called "${stepId}" already exists. Use a new stepId for a new step.` };
+      steps.set(stepId, { title: title.trim(), state: "new", predicts: 0, checks: 0 });
+      open = stepId;
+      return { stepId };
+    },
+
+    // The prediction question for the open step. It can be asked again only while it has not been answered.
+    predict(args: Record<string, unknown>): Failure | { question: Question } {
+      const step = stepOf(args.stepId, "predict");
+      if (failed(step)) return step;
+      if (!nonEmpty(args.prompt, MAX_PROSE)) return { error: "predict needs a prompt: the open question you want the person to answer" };
+      if (step.state !== "new") return { error: `Step "${args.stepId}" already has its prediction: ${WHAT_NEXT[step.state]}.` };
+      step.predicts++;
+      return { question: { kind: "text", prompt: args.prompt.trim(), allowDontKnow: true, stepId: args.stepId as string, phase: "predict", attempt: step.predicts } };
+    },
+    predicted(stepId: string) {
+      const step = steps.get(stepId);
+      if (step?.state === "new") step.state = "predicted";
+    },
+
+    explain(args: Record<string, unknown>): Failure | { repair: boolean } {
+      const step = stepOf(args.stepId, "explain");
+      if (failed(step)) return step;
+      if (!nonEmpty(args.text, MAX_PROSE)) return { error: `explain needs text: the explanation, at most ${MAX_PROSE} characters` };
+      if (step.state === "new") return { error: `Step "${args.stepId}" has no prediction yet. Call predict first and wait for the person's answer; open your explanation by resolving it.` };
+      if (step.state === "explained") return { error: `Step "${args.stepId}" is already explained. Check it with ask (give its stepId) before teaching more.` };
+      const repair = step.state === "missed";
+      step.state = "explained";
+      texts.push(args.text.trim());
+      return { repair };
+    },
+
+    // The check question for the open step, with its correct answer committed.
+    check(args: Record<string, unknown>): Failure | { question: Question } {
+      const step = stepOf(args.stepId, "A check (ask)");
+      if (failed(step)) return step;
+      if (step.state === "new" || step.state === "predicted") return { error: `Step "${args.stepId}" has not been explained yet: ${WHAT_NEXT[step.state]}.` };
+      if (step.state === "missed") return { error: `Step "${args.stepId}" was missed. Re-teach it with a new explain for the same step before checking again.` };
+      const parsed = parseQuestion(args);
+      if ("error" in parsed) return parsed;
+      const q = parsed.question;
+      if (q.kind === "text" && !nonEmpty(q.expected, MAX_PROSE)) return { error: "A text check needs `expected`: the answer you have in mind, fixed before the question is shown" };
+      step.checks++;
+      return { question: { ...q, stepId: args.stepId as string, phase: "check", attempt: step.checks } };
+    },
+    // The verdict of a check: right closes the step, wrong leaves it open for a re-teach.
+    checked(stepId: string, correct: boolean) {
+      const step = steps.get(stepId)!;
+      step.state = correct ? "closed" : "missed";
+      if (correct) open = undefined;
+    },
+
+    finish(args: Record<string, unknown>): Failure | { summary: string } {
+      if (finished) return { error: "The class is finished. End your turn." };
+      if (open) return { error: `Step "${open}" is still open: ${WHAT_NEXT[steps.get(open)!.state]}. Close it before finish_class.` };
+      if (!steps.size) return { error: "No step was taught. Begin one with begin_step, or end your turn." };
+      if (!nonEmpty(args.summary, MAX_PROSE)) return { error: "finish_class needs a summary: one or two sentences on what was covered" };
+      finished = true;
+      return { summary: args.summary.trim() };
+    },
+  };
+}
+
+export type Lesson = ReturnType<typeof createLesson>;
+
+// ---- The grader: one free-text answer against the answer the Teacher committed.
+const GRADE_SCHEMA = {
+  type: "object",
+  properties: { correct: { type: "boolean" }, feedback: { type: "string" } },
+  required: ["correct", "feedback"],
+};
+const GRADE_INSTRUCTIONS =
+  "You grade one short answer. You get a question, the expected answer and the person's answer. " +
+  "correct is true when the person expresses the expected idea, even in different words; false when the key idea is missing, wrong or only hinted at. " +
+  "feedback is one plain sentence for the teacher naming what the person got right or missed. Answer with the JSON only.";
+
+async function grade(core: Core, q: Question & { kind: "text" }, a: Answer): Promise<{ correct: boolean; feedback: string }> {
+  const out = (await callRole(core.adapter, "grader", GRADE_INSTRUCTIONS, `Question: ${q.prompt}\nExpected answer: ${q.expected}\nPerson's answer: ${a.text}`, GRADE_SCHEMA, core.learner.model)) as any;
+  if (typeof out?.correct !== "boolean" || typeof out?.feedback !== "string") throw new Error("the grader returned an invalid verdict");
+  return out;
+}
+
+type Reply = { text: string; isError?: true };
+type Ctx = { core: Core; token: string; lesson: Lesson; gaveUp: AbortSignal };
+const err = (text: string): Reply => ({ text, isError: true });
+const ok = (x: object): Reply => ({ text: JSON.stringify({ ok: true, ...x }) });
+
+// Runs one of the loop's tools for a class.
+export async function runTeachTool(name: string, args: Record<string, unknown>, { core, token, lesson, gaveUp }: Ctx): Promise<Reply> {
+  const conversation = core.permissions.conversationOf(token);
+  if (!conversation?.classId) return err("The class is not running");
+  const { classId, project } = conversation;
+  const record = (q: Question, a: Answer, questionId: string, graded?: boolean) => {
+    try {
+      const e = evidenceOf(classId, questionId, project, q, a, graded);
+      core.learner.recordEvidence(e);
+      return e;
+    } catch (e) {
+      console.error(e); // a ledger that cannot be written must not stop the class
+    }
+  };
+
+  if (name === "begin_step") {
+    const r = lesson.begin(args);
+    if ("error" in r) return err(r.error);
+    conversation.emit({ type: "tutor_step", stepId: r.stepId, title: String(args.title).trim() });
+    return ok({ stepId: r.stepId, next: "Now call predict for this step." });
+  }
+
+  if (name === "explain") {
+    const r = lesson.explain(args);
+    if ("error" in r) return err(r.error);
+    conversation.emit({ type: "tutor_explain", stepId: args.stepId, text: String(args.text).trim(), repair: r.repair });
+    return ok({ next: "Now check the step with ask (give its stepId)." });
+  }
+
+  if (name === "finish_class") {
+    const r = lesson.finish(args);
+    if ("error" in r) return err(r.error);
+    conversation.emit({ type: "tutor_finished", summary: r.summary });
+    return ok({ next: "The class is finished. End your turn." });
+  }
+
+  // predict and ask pose a question and wait for the person.
+  const posed = name === "predict" ? lesson.predict(args) : lesson.check(args);
+  if ("error" in posed) return err(posed.error);
+  const q = posed.question;
+  const result = await core.permissions.askQuestion(token, q, gaveUp);
+  if (!result) return err("The class is not running");
+  if (!result.heard) return { text: result.text, isError: result.isError };
+  const { heard } = result;
+  const stepId = q.stepId!;
+
+  if (q.phase === "predict") {
+    record(q, heard.answer, heard.questionId);
+    lesson.predicted(stepId);
+    return ok({
+      stepId,
+      ...(heard.answer.dontKnow ? { prediction: null, dontKnow: true } : { prediction: heard.answer.text }),
+      ...(heard.answer.thought ? { thought: heard.answer.thought } : {}),
+      next: "Now call explain for this step. Open it by resolving their prediction: what they said, what is true, and why.",
+    });
+  }
+
+  // A check. A choice is graded by the program, a text answer by the grader against the committed answer.
+  const a = heard.answer;
+  let correct: boolean;
+  let feedback: string | undefined;
+  if (a.dontKnow) correct = false;
+  else if (q.kind === "choice") correct = a.option === q.correct;
+  else {
+    try {
+      ({ correct, feedback } = await grade(core, q, a));
+    } catch (e) {
+      console.error(e);
+      record(q, a, heard.questionId); // the answer is kept; nothing is counted
+      return err("The grader could not judge this answer, so nothing was counted and the step stays as it was. Check the step again with a different question.");
+    }
+  }
+  const entry = record(q, a, heard.questionId, q.kind === "text" && !a.dontKnow ? correct : undefined);
+  lesson.checked(stepId, correct);
+  const sureAndWrong = entry?.sureAndWrong === true;
+  return ok({
+    ...(JSON.parse(result.text) as object),
+    correct,
+    ...(feedback ? { feedback } : {}),
+    stepId,
+    attempt: q.attempt,
+    stepClosed: correct,
+    ...(sureAndWrong ? { sureAndWrong } : {}),
+    next: correct
+      ? "The step is closed. Say so in a few words, then begin the next step with begin_step, or call finish_class if the topic is done."
+      : sureAndWrong
+        ? "The person was sure and wrong: treat it as a firm misconception. Name the mistaken idea and repair it with a new explain for this step before anything else, then check again. begin_step is refused until this step is answered correctly."
+        : "The step stays open. Work out what they believe, re-teach it with a new explain for the same step, then check again. begin_step is refused until this step is answered correctly.",
+  });
+}

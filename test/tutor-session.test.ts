@@ -18,6 +18,7 @@ const fakeAgent: Adapter = {
   options: { modes: [{ id: "default", label: "Manual", meaning: "", available: true }], models: [{ id: "sonnet", label: "Sonnet" }, { id: "haiku", label: "Haiku" }] },
   run: async function* (opts): AsyncGenerator<AgentEvent> {
     launches.push(opts);
+    if (opts.role === "grader") return yield { type: "result", text: "", structured: { correct: true, feedback: "Same idea." }, usage: {} };
     if (opts.role !== "tutor") {
       yield { type: "text", text: "builder here" };
       return;
@@ -66,20 +67,39 @@ const startClass = async (body: Record<string, unknown> = {}) => {
 const answer = (q: { id: string; secret: string }, rest: Record<string, unknown>) => post("/tutor/answer", { id: q.id, secret: q.secret, ...rest });
 const drain = async (stream: AsyncGenerator<Record<string, any>>) => { for await (const _ of stream); };
 
-const choice = { kind: "choice", prompt: "Which one stores the data?", options: ["Queue", "Database", "Cache"], correct: "Database" };
+const choice = { stepId: "s1", kind: "choice", prompt: "Which one stores the data?", options: ["Queue", "Database", "Cache"], correct: "Database" };
+
+// The order the core demands before a check: begin_step, predict (waits for the person), explain.
+const prelude = async (call: Call) => {
+  await call("begin_step", { stepId: "s1", title: "A step" });
+  await call("predict", { stepId: "s1", prompt: "What do you guess?" });
+  await call("explain", { stepId: "s1", text: "A fact." });
+};
+// Answers the prediction card and returns the first check question.
+async function toCheck(stream: AsyncGenerator<Record<string, any>>) {
+  for (;;) {
+    const e = (await stream.next()).value!;
+    if (e.type !== "tutor_question") continue;
+    if (e.phase !== "predict") return e;
+    await answer(e as any, { text: "a guess" });
+  }
+}
 
 // Runs one question through the Tutor and returns what the Tutor's tool call got back.
 async function askAndAnswer(args: unknown, reply: Record<string, unknown>) {
   let result: any;
   tutorScript = async function* ({ call }) {
+    await prelude(call);
     result = await call("ask", args);
     yield { type: "text", text: "done" };
   };
   const { stream } = await startClass();
-  const q = (await stream.next()).value!;
+  const q = await toCheck(stream);
   await answer(q as any, reply);
   await drain(stream);
-  return { q, result: JSON.parse(result.content[0].text) };
+  // What the loop adds to the verdict (step, attempt, next move) is covered in teach-loop.test.ts.
+  const { ok: _ok, stepId: _s, attempt: _a, stepClosed: _c, next: _n, ...rest } = JSON.parse(result.content[0].text);
+  return { q, result: rest };
 }
 
 test("starting a class launches the Tutor role with its own instructions, its own tools and the stored Tutor model", async () => {
@@ -94,7 +114,7 @@ test("starting a class launches the Tutor role with its own instructions, its ow
   assert.equal(opts.role, "tutor");
   assert.equal(opts.model, "haiku");
   assert.match(opts.instructions!, /Tutor of aidea/);
-  assert.match(opts.instructions!, /ask tool/i);
+  assert.match(opts.instructions!, /begin_step/);
   assert.deepEqual(opts.tools!.allowedTools, ["mcp__tutor__*"]);
   assert.equal(opts.permission, undefined);
 });
@@ -112,7 +132,7 @@ test("the Tutor's tool set is separate from the builder's", async () => {
   };
   const { stream } = await startClass();
   await drain(stream);
-  assert.deepEqual(tools, ["ask", "read_layers", "read_node", "list_files", "read_file", "read_recording"]);
+  assert.deepEqual(tools, ["begin_step", "predict", "explain", "ask", "finish_class", "read_layers", "read_node", "list_files", "read_file", "read_recording"]);
 });
 
 test("a multiple-choice question reaches the interface without its correct answer, and the answer goes back to the waiting tool", async () => {
@@ -142,9 +162,9 @@ test('"I don\'t know" is a valid answer, with or without a thought', async () =>
 });
 
 test("a question can forbid \"I don't know\"", async () => {
-  tutorScript = async function* ({ call }) { await call("ask", { ...choice, allowDontKnow: false }); yield { type: "text", text: "x" }; };
+  tutorScript = async function* ({ call }) { await prelude(call); await call("ask", { ...choice, allowDontKnow: false }); yield { type: "text", text: "x" }; };
   const { stream } = await startClass();
-  const q = (await stream.next()).value!;
+  const q = await toCheck(stream);
   assert.equal(q.allowDontKnow, false);
   assert.equal((await answer(q as any, { dontKnow: true })).status, 400);
   await answer(q as any, { option: 1 });
@@ -152,11 +172,11 @@ test("a question can forbid \"I don't know\"", async () => {
 });
 
 test("a free-text question returns the person's words and their thought", async () => {
-  const { q, result } = await askAndAnswer({ kind: "text", prompt: "Why a queue?", expected: "To absorb bursts" }, { text: "So work waits its turn", thought: "like a line" });
+  const { q, result } = await askAndAnswer({ stepId: "s1", kind: "text", prompt: "Why a queue?", expected: "To absorb bursts" }, { text: "So work waits its turn", thought: "like a line" });
   assert.equal(q.kind, "text");
   assert.equal(q.options, undefined);
   assert.ok(!JSON.stringify(q).includes("absorb"));
-  assert.deepEqual(result, { kind: "text", answer: "So work waits its turn", expected: "To absorb bursts", thought: "like a line" });
+  assert.deepEqual(result, { kind: "text", answer: "So work waits its turn", expected: "To absorb bursts", thought: "like a line", correct: true, feedback: "Same idea." });
 });
 
 test("a question with missing or inconsistent parts is rejected with words the model can act on", async () => {
@@ -166,17 +186,18 @@ test("a question with missing or inconsistent parts is rejected with words the m
     [{ ...choice, correct: undefined }, /correct/],
     [{ ...choice, correct: "Message broker" }, /exactly one of the options.*Queue.*Database.*Cache/s],
     [{ ...choice, prompt: "" }, /prompt/],
-    [{ kind: "essay", prompt: "x" }, /kind.*choice.*text/s],
-    [{ kind: "text" }, /prompt/],
+    [{ stepId: "s1", kind: "essay", prompt: "x" }, /kind.*choice.*text/s],
+    [{ stepId: "s1", kind: "text" }, /prompt/],
   ];
   const seen: any[] = [];
   tutorScript = async function* ({ call }) {
+    await prelude(call);
     for (const [args] of bad) seen.push(await call("ask", args));
     yield { type: "text", text: "tried" };
   };
   const { stream } = await startClass();
-  const first = await stream.next();
-  assert.equal(first.value!.type, "text"); // no question card was ever shown
+  const first = await toCheck(stream).catch(() => null);
+  assert.equal(first, null); // no check card was ever shown
   await drain(stream);
   bad.forEach(([, re], i) => {
     assert.equal(seen[i].isError, true);
@@ -185,9 +206,9 @@ test("a question with missing or inconsistent parts is rejected with words the m
 });
 
 test("an answer is checked against the question: secret, shape, confidence stops, once", async () => {
-  tutorScript = async function* ({ call }) { await call("ask", choice); yield { type: "text", text: "x" }; };
+  tutorScript = async function* ({ call }) { await prelude(call); await call("ask", choice); yield { type: "text", text: "x" }; };
   const { stream } = await startClass();
-  const q = (await stream.next()).value! as any;
+  const q = (await toCheck(stream)) as any;
   assert.equal((await post("/tutor/answer", { id: q.id, option: 1 })).status, 400);
   assert.equal((await post("/tutor/answer", { id: q.id, secret: "0".repeat(q.secret.length), option: 1 })).status, 403);
   assert.equal((await answer(q, { option: 7 })).status, 400);
@@ -204,12 +225,13 @@ test("a permission answer cannot settle a question, and the builder's tools are 
   tutorScript = async function* ({ call }) {
     const r: any = await call("approve", { tool_name: "Bash", input: {} }).catch((e) => e);
     yield { type: "text", text: JSON.stringify(r) };
+    await prelude(call);
     await call("ask", choice);
   };
   const { stream } = await startClass();
   const text = (await stream.next()).value! as any;
   assert.equal(text.type, "text");
-  const q = (await stream.next()).value! as any;
+  const q = (await toCheck(stream)) as any;
   assert.equal((await post("/permission", { id: q.id, secret: q.secret, decision: "allow" })).status, 404);
   await answer(q, { option: 1 });
   await drain(stream);
@@ -218,13 +240,14 @@ test("a permission answer cannot settle a question, and the builder's tools are 
 test("if the Tutor stops waiting, the question is withdrawn and cannot be answered", async () => {
   tutorScript = async function* ({ call }) {
     const patience = new AbortController();
+    await prelude(call);
     setTimeout(() => patience.abort(), 200);
     await call("ask", choice, patience.signal).catch(() => {});
     await new Promise((r) => setTimeout(r, 200));
     yield { type: "text", text: "gave up" };
   };
   const { stream } = await startClass();
-  const q = (await stream.next()).value! as any;
+  const q = (await toCheck(stream)) as any;
   assert.equal(q.type, "tutor_question");
   assert.deepEqual((await stream.next()).value, { type: "tutor_question_expired", id: q.id });
   assert.equal((await answer(q, { option: 1 })).status, 404);
@@ -237,6 +260,7 @@ test("ending the class while a question waits releases the Tutor and closes its 
   const gone = new Promise<void>((resolve) => {
     tutorScript = async function* (ctx) {
       url = ctx.url;
+      await prelude(ctx.call);
       released = await ctx.call("ask", choice);
       resolve();
       yield { type: "text", text: "late" };
@@ -244,7 +268,8 @@ test("ending the class while a question waits releases the Tutor and closes its 
   });
   const abort = new AbortController();
   const res = await post("/tutor/classes", { project }, abort.signal);
-  const q = (await events(res).next()).value! as any;
+  const stream = events(res);
+  const q = (await toCheck(stream)) as any;
   abort.abort();
   await gone;
   assert.equal(released.isError, true);
@@ -255,9 +280,9 @@ test("ending the class while a question waits releases the Tutor and closes its 
 });
 
 test("the builder chat and a class run side by side", async () => {
-  tutorScript = async function* ({ call }) { await call("ask", choice); yield { type: "text", text: "x" }; };
+  tutorScript = async function* ({ call }) { await prelude(call); await call("ask", choice); yield { type: "text", text: "x" }; };
   const { stream } = await startClass();
-  const q = (await stream.next()).value! as any; // the class is now waiting for the person
+  const q = (await toCheck(stream)) as any; // the class is now waiting for the person
   const chat = await post("/chat", { project, message: "hello" });
   const chatEvents: Record<string, any>[] = [];
   for await (const e of events(chat)) chatEvents.push(e);

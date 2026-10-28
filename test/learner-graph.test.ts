@@ -22,6 +22,7 @@ const fakeAgent: Adapter = {
     launches.push(opts);
     if (opts.role === "extractor") return yield* extractorOut();
     if (opts.role === "auditor") return yield* auditorOut();
+    if (opts.role === "grader") return yield* ok({ correct: true, feedback: "ok" });
     if (opts.role !== "tutor") return;
     const url = JSON.parse(opts.tools!.mcpConfig).mcpServers.tutor.url as string;
     const call = async (name: string, args: unknown) =>
@@ -60,6 +61,12 @@ async function newCore(dir = mkdtempSync(join(tmpdir(), "aidea-learner-"))) {
 }
 after(() => cores.forEach((c) => c.close()));
 
+// begin_step, predict, explain: what the core demands before a check.
+const prelude = async (call: (name: string, args: unknown) => Promise<any>, stepId = "s1") => {
+  await call("begin_step", { stepId, title: "A step" });
+  await call("predict", { stepId, prompt: "Guess?" });
+  await call("explain", { stepId, text: "A queue holds work." });
+};
 const say = (...texts: string[]) => async function* () { for (const text of texts) yield { type: "text", text } as AgentEvent; };
 const prop = (name: string, statement: string, message = 0, aliases: string[] = []) => ({ name, statement, aliases, message });
 const files = (dir: string) => Object.fromEntries(["evidence.jsonl", "propositions.jsonl", "chains.jsonl"].map((f) => [f, existsSync(join(dir, f)) ? readFileSync(join(dir, f), "utf8") : null]));
@@ -175,31 +182,38 @@ test("a chain with a dangling reference is dropped", async () => {
 
 test("evidence is written for correct, wrong and don't-know answers, and never enters the graph", async () => {
   const t = await newCore();
-  const choice = { kind: "choice", prompt: "Which one stores the data?", options: ["Queue", "Database", "Cache"], correct: "Database" };
+  const choice = { stepId: "s1", kind: "choice", prompt: "Which one stores the data?", options: ["Queue", "Database", "Cache"], correct: "Database" };
   teacher = async function* (call) {
-    await call("ask", choice);
-    await call("ask", choice);
-    await call("ask", choice);
-    await call("ask", { kind: "text", prompt: "Why a queue?" });
-    yield { type: "text", text: "A queue holds work." };
+    await prelude(call);
+    await call("ask", choice); // wrong
+    await call("explain", { stepId: "s1", text: "Again." });
+    await call("ask", choice); // don't know
+    await call("explain", { stepId: "s1", text: "Again, differently." });
+    await call("ask", choice); // right
+    await prelude(call, "s2");
+    await call("ask", { stepId: "s2", kind: "text", prompt: "Why a queue?", expected: "to smooth load" });
   };
   extractorOut = () => ok({ propositions: [QUEUE], chains: [] });
   auditorOut = () => ok({ links: [] });
   const events = await t.runClass({}, [
-    { option: 1, confidence: 70, thought: "persists" },
+    { text: "a guess" },
     { option: 0 },
     { dontKnow: true, thought: "no idea" },
+    { option: 1, confidence: 70, thought: "persists" },
+    { text: "a guess" },
     { text: "to smooth load SECRETWORDS" },
   ]);
   const classId = events.at(-1).classId;
-  const { entries } = await t.get(`/learner/evidence?project=${encodeURIComponent(project)}&class=${classId}`);
+  const all = (await t.get(`/learner/evidence?project=${encodeURIComponent(project)}&class=${classId}`)).entries;
+  const entries = all.filter((e: any) => e.phase === "check");
+  assert.equal(all.length, 6);
   assert.equal(entries.length, 4);
-  assert.deepEqual(entries.map((e: any) => [e.kind, e.correct, e.dontKnow]), [["choice", true, false], ["choice", false, false], ["choice", null, true], ["text", null, false]]);
-  assert.deepEqual([entries[0].confidence, entries[0].answer, entries[0].thought], [70, "Database", "persists"]);
-  assert.deepEqual([entries[1].confidence, entries[1].answer], [50, "Queue"]);
-  assert.deepEqual([entries[2].answer, entries[2].thought], [null, "no idea"]);
+  assert.deepEqual(entries.map((e: any) => [e.kind, e.correct, e.dontKnow]), [["choice", false, false], ["choice", null, true], ["choice", true, false], ["text", true, false]]);
+  assert.deepEqual([entries[2].confidence, entries[2].answer, entries[2].thought], [70, "Database", "persists"]);
+  assert.deepEqual([entries[0].confidence, entries[0].answer], [50, "Queue"]);
+  assert.deepEqual([entries[1].answer, entries[1].thought], [null, "no idea"]);
   assert.equal(entries[3].answer, "to smooth load SECRETWORDS");
-  for (const e of entries) {
+  for (const e of all) {
     assert.equal(e.classId, classId);
     assert.equal(e.project, project);
     assert.match(e.questionId, /^q-/);
@@ -213,11 +227,11 @@ test("evidence is written for correct, wrong and don't-know answers, and never e
 
 test("an answer is recorded even when the class then fails", async () => {
   const t = await newCore();
-  teacher = async function* (call) { await call("ask", { kind: "text", prompt: "Why?" }); yield { type: "text", text: "x" }; };
+  teacher = async function* (call) { await prelude(call); await call("ask", { stepId: "s1", kind: "text", prompt: "Why?", expected: "because" }); yield { type: "text", text: "x" }; };
   extractorOut = () => [{ type: "error", code: "failed", message: "boom" }];
-  const events = await t.runClass({}, [{ text: "because" }]);
+  const events = await t.runClass({}, [{ text: "g" }, { text: "because" }]);
   assert.equal(events.at(-1).status, "failed");
-  assert.equal((await t.get("/learner/evidence")).entries.length, 1);
+  assert.equal((await t.get("/learner/evidence")).entries.length, 2);
 });
 
 test("deleting an idea removes it and the chains that use it, nothing else; there is no edit route", async () => {
@@ -307,10 +321,10 @@ test("a class where the Teacher said nothing has nothing to extract and closes w
 
 test("the stores survive a core restart and live outside the Project", async () => {
   const t = await newCore();
-  teacher = async function* (call) { await call("ask", { kind: "text", prompt: "Why?" }); yield { type: "text", text: "a" }; yield { type: "text", text: "b" }; };
+  teacher = async function* (call) { await prelude(call); await call("ask", { stepId: "s1", kind: "text", prompt: "Why?", expected: "because" }); await prelude(call, "s2"); };
   extractorOut = () => ok({ propositions: [QUEUE, IDEMP], chains: [EXPECTED_CHAIN] });
   auditorOut = () => ok({ links: [] });
-  await t.runClass({}, [{ text: "because" }]);
+  await t.runClass({}, [{ text: "g" }, { text: "because" }, { text: "g" }]);
   const graph = await t.get("/learner/graph");
   const evidence = await t.get("/learner/evidence");
   const again = await newCore(t.dir);

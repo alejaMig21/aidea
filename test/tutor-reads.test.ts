@@ -82,7 +82,7 @@ const json = (r: Reply) => JSON.parse(r.content[0].text);
 test("the Tutor's tool list is exactly these, and none of them can write, delete, move or run anything", async () => {
   let names: string[] = [];
   await asTutor(async (_c, rpc) => { names = (await rpc("tools/list")).result.tools.map((t: any) => t.name); });
-  assert.deepEqual(names, ["ask", "read_layers", "read_node", "list_files", "read_file", "read_recording"]);
+  assert.deepEqual(names, ["begin_step", "predict", "explain", "ask", "finish_class", "read_layers", "read_node", "list_files", "read_file", "read_recording"]);
   assert.ok(names.every((n) => !/write|delete|remove|move|rename|exec|run|edit|create|propose|save|shell|bash/i.test(n)));
 });
 

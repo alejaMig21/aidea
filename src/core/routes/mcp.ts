@@ -7,7 +7,8 @@
 import { contractOf } from "../contract.ts";
 import { publicView, propose, proposePattern } from "../proposals.ts";
 import type { Proposal } from "../proposals.ts";
-import { TUTOR_TOOLS, parseQuestion } from "../tutor.ts";
+import { TUTOR_TOOLS } from "../tutor.ts";
+import { runTeachTool } from "../teach.ts";
 import { READ_TOOLS, runReadTool } from "../tutor-reads.ts";
 import type { Handler } from "../types.ts";
 
@@ -125,18 +126,20 @@ const handler: Handler = async (req, res, core) => {
         core.send(res, 200, toolText(id, read!.text, read!.isError));
         return true;
       }
-      if (name !== "ask") {
+      if (!TUTOR_TOOLS.some((t) => t.name === name)) {
         core.send(res, 200, rpcError(id, -32602, `Unknown tool: ${String(name)}`));
         return true;
       }
-      const parsed = parseQuestion(args);
-      if ("error" in parsed) {
-        core.send(res, 200, toolText(id, parsed.error, true));
+      const classId = core.permissions.conversationOf(token)?.classId;
+      const lesson = classId ? core.lessons.get(classId) : undefined;
+      if (!lesson) {
+        core.send(res, 200, toolText(id, "The class is not running", true));
         return true;
       }
+      // The question is withdrawn if Claude Code drops this request before it is answered.
       const gaveUp = new AbortController();
       res.on("close", () => gaveUp.abort());
-      const result = (await core.permissions.askQuestion(token, parsed.question, gaveUp.signal)) ?? { text: "The class is not running", isError: true as const };
+      const result = await runTeachTool(String(name), args, { core, token, lesson, gaveUp: gaveUp.signal });
       core.send(res, 200, toolText(id, result.text, result.isError));
       return true;
     }
