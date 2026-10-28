@@ -87,8 +87,9 @@ test("tool calls are reported and sub-agent activity is nested under the call th
 test("Claude Code is launched unmodified, in the Project folder, with the message on stdin and no shell", async () => {
   const message = "-p; rm -rf $(whoami) `id`";
   await chat({ project: shop, message }, "real-ok.jsonl");
-  // Everything but the pair of flags that routes permission requests to aidea (checked in the next test).
-  const aideaFlags = ["--mcp-config", "--permission-prompt-tool", "--allowedTools", "--disallowedTools"];
+  // Everything but the flags that route permission requests to aidea (checked in the next test) and the person's
+  // mode choice (checked in agent-options.test.ts).
+  const aideaFlags = ["--mcp-config", "--permission-prompt-tool", "--allowedTools", "--disallowedTools", "--permission-mode"];
   const withoutPermissionFlags = (args: string[]) => args.filter((a, i) => !aideaFlags.includes(a) && !aideaFlags.includes(args[i - 1]));
   assert.deepEqual(withoutPermissionFlags(calls[0].args), ["-p", "--output-format", "stream-json", "--verbose"]);
   assert.equal(calls[0].cwd, shop);

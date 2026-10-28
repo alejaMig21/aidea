@@ -25,6 +25,7 @@ after(() => {
 
 test("an agent that fails mid-reply ends the stream with an error event and the core keeps running", { timeout: 15_000 }, async () => {
   const failing: Adapter = {
+    options: { modes: [], models: [] },
     run: async function* () {
       yield { type: "session", sessionId: "s1" };
       throw new Error("boom at C:\\secret\\place");

@@ -15,6 +15,7 @@ let script: Call[] = [];
 let listTools = false;
 const seen: Seen[] = [];
 const asBuilder: Adapter = {
+  options: { modes: [], models: [] },
   run: async function* ({ permission }): AsyncGenerator<AgentEvent> {
     const url = JSON.parse(permission!.mcpConfig).mcpServers.aidea.url as string;
     let id = 1;

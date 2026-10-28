@@ -66,9 +66,27 @@ export function createParser() {
 
 export function createClaudeAdapter(spawnFn: SpawnFn = realSpawn): Adapter {
   return {
-    async *run({ cwd, message, sessionId, signal, permission }) {
+    // Declared here, not read from Claude Code: it documents these but offers no way to list the modes, and the
+    // model aliases need no probing. `dontAsk` and `bypassPermissions` are deliberately not offered.
+    options: {
+      modes: [
+        { id: "default", label: "Manual", meaning: "Asks before it edits files or runs commands.", available: true },
+        { id: "acceptEdits", label: "Accept edits", meaning: "Edits files without asking; still asks before running commands.", available: true },
+        { id: "plan", label: "Plan", meaning: "Reads and plans, and asks you to approve the plan before changing anything.", available: true },
+        { id: "auto", label: "Auto", meaning: "Decides by itself what is safe. Needs a supported plan, model, provider and Claude Code version, and an administrator can switch it off.", available: true },
+      ],
+      models: [
+        { id: "default", label: "Default" },
+        { id: "sonnet", label: "Sonnet" },
+        { id: "opus", label: "Opus" },
+        { id: "haiku", label: "Haiku" },
+      ],
+    },
+    async *run({ cwd, message, sessionId, mode, model, signal, permission }) {
       const args = ["-p", "--output-format", "stream-json", "--verbose"];
       if (sessionId) args.push("--resume", sessionId);
+      if (mode) args.push("--permission-mode", mode);
+      if (model && model !== "default") args.push("--model", model);
       // Permission requests that the person's own rules do not settle go to aidea's tool instead of being denied.
       if (permission) {
         args.push("--mcp-config", permission.mcpConfig, "--permission-prompt-tool", permission.tool);

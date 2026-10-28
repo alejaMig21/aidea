@@ -3,6 +3,7 @@ import type { ChildProcess } from "node:child_process";
 import type { Broker } from "./permissions.ts";
 import type { ProposalStore } from "./proposals.ts";
 import type { Recents } from "./recents.ts";
+import type { Preferences } from "./preferences.ts";
 
 export type CoreNode = {
   id: string;
@@ -32,8 +33,14 @@ export type AgentEvent =
 
 // An Agent adapter drives one agent product (Claude Code first) and reports aidea events.
 export type Adapter = {
+  // What this agent product offers: its Permission modes and its models. Declared by the adapter, never by the core or the UI.
+  options: {
+    modes: { id: string; label: string; meaning: string; available: boolean; reason?: string }[];
+    models: { id: string; label: string }[];
+  };
+  // `mode` and `model` are ids from `options`, chosen by the person for this message.
   // `permission` is how the agent can ask aidea for permission: an MCP configuration (JSON text) and the name of its tool.
-  run: (opts: { cwd: string; message: string; sessionId?: string; signal?: AbortSignal; permission?: { mcpConfig: string; tool: string; allowedTools: string[]; deniedTools: string[] } }) => AsyncIterable<AgentEvent>;
+  run: (opts: { cwd: string; message: string; sessionId?: string; mode?: string; model?: string; signal?: AbortSignal; permission?: { mcpConfig: string; tool: string; allowedTools: string[]; deniedTools: string[] } }) => AsyncIterable<AgentEvent>;
 };
 
 // A spawn-like process source; the real one launches `claude`, tests replay recorded streams.
@@ -52,6 +59,8 @@ export type Core = {
   proposals: ProposalStore;
   // The Projects the person opened before, newest first.
   recents: Recents;
+  // The person's mode and model choice for each Project.
+  preferences: Preferences;
   // Returns null when the body exceeds the size limit (64 KB unless a route asks for more).
   readBody: (req: IncomingMessage, maxBytes?: number) => Promise<string | null>;
   // Parses a JSON body; on failure it has already sent the 413 or 400 response and returns undefined.

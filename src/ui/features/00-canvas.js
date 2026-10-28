@@ -107,6 +107,7 @@ async function open(path) {
   const body = await res.json();
   if (!res.ok) { $("error").textContent = body.error; return; }
   current = body.id;
+  document.dispatchEvent(new CustomEvent("project-opened", { detail: { id: body.id } }));
   if (typeof hideHome === "function") hideHome();
   Object.assign(view, viewStart);
   apply();

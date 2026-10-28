@@ -41,3 +41,14 @@
 - The adapter describes what its provider offers. The Claude Code adapter declares, inside the adapter, the modes manual (`default`), accept edits (`acceptEdits`), plan (`plan`) and auto (`auto`, with its availability caveat in the description), and the models as the aliases `default`, `sonnet`, `opus`, `haiku` (no SDK package, no probing). `dontAsk` and `bypassPermissions` are not offered.
 - The choice is remembered per Project in the per-user store (outside any Project, like recents), applies to the next message, and is passed to Claude Code as `--permission-mode` and `--model` flags on each turn.
 - Known gap, not in scope: in plan mode the plan arrives through the `ExitPlanMode` tool and is not yet shown as a readable card.
+
+## Review notes
+
+- [x] The adapter interface describes modes (id, label, meaning, available, reason) and models (id, label): `Adapter.options` in `src/core/types.ts`.
+- [x] The Claude Code adapter declares manual/acceptEdits/plan/auto and default/sonnet/opus/haiku itself (no SDK, no probing); `dontAsk` and `bypassPermissions` are not offered.
+- [x] Routes `GET /agent-options?project=` and `POST /agent-options` (mode, model, tutorModel), validated against the adapter lists; an unavailable mode is refused with its reason.
+- [x] Remembered per Project in `~/.aidea/preferences.json` (override: `AIDEA_PREFERENCES_FILE`); survives a core restart; default is the first mode and first model.
+- [x] Applied to the next message as `--permission-mode <id>` and `--model <id>` (`--model` omitted for `default`).
+- [x] A fake adapter with other modes and models shows only those (test/agent-options.test.ts).
+- [x] UI checked in a browser at 1440x900: model chip and mode selector bottom-left of the chat card, Send bottom-right, Tutor model selector above "Start a class"; selections persist across reload; no console errors besides the missing favicon.
+- [ ] Known gap (not in scope): in plan mode the plan arrives through `ExitPlanMode` and is not yet shown as a readable card. `auto` is always listed as available because there is no way to detect availability before sending; Claude Code reports the failure itself.

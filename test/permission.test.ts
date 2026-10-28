@@ -18,6 +18,7 @@ const approve = (input: unknown = { command: "echo hi" }) => ({ name: "approve",
 const seen: { url?: string; answers: string[]; waiting?: Promise<void>; onAnswer?: () => void } = { answers: [] };
 let behaviour: "ask" | "ask-then-fail" | "give-up" = "ask";
 const asClaude: Adapter = {
+  options: { modes: [], models: [] },
   run: async function* ({ permission }): AsyncGenerator<AgentEvent> {
     const url = JSON.parse(permission!.mcpConfig).mcpServers.aidea.url as string;
     seen.url = url;

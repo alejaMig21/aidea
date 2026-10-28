@@ -1,4 +1,5 @@
 import type { Handler } from "../types.ts";
+import { currentChoice } from "./agent-options.ts";
 
 const MAX_MESSAGE_CHARS = 20_000;
 const SESSION_ID = /^[A-Za-z0-9][\w-]{0,99}$/;
@@ -45,7 +46,8 @@ const handler: Handler = async (req, res, core) => {
     conversation.close();
   });
   try {
-    for await (const event of core.adapter.run({ cwd: project.path, message, sessionId, signal: abort.signal, permission })) {
+    const { mode, model } = currentChoice(core, project.id);
+    for await (const event of core.adapter.run({ cwd: project.path, message, sessionId, mode, model, signal: abort.signal, permission })) {
       send(event);
     }
   } catch (e) {
