@@ -28,15 +28,13 @@ let requirementTraces = {}; // node id -> [{ to, broken }], from GET /traces
   document.head.append(style);
 }
 
-const reqShort = (t, max) => (t.length > max ? t.slice(0, max - 1) + "…" : t);
-
 // "As a <as>, I want <want>" with the person's words in the authored colour, cut as a whole at `max` characters.
 function reqStory(parts, max, x, y) {
   const t = el("text", { x, y, class: "req-line" });
   let left = max;
   for (const [text, bold] of parts) {
     if (left <= 0) break;
-    t.append(el("tspan", bold ? { class: "req-b" } : {}, reqShort(text, left)));
+    t.append(el("tspan", bold ? { class: "req-b" } : {}, notationClip(text, left)));
     left -= text.length;
   }
   return t;
@@ -51,14 +49,14 @@ function reqCard(n, r) {
     el("rect", { x, y, width: r.width, height: r.height, rx: 12 }),
     el("text", { x: x + 36, y: y + 22, class: "req-kicker" }, nfr ? "NON-FUNCTIONAL" : "USER STORY"),
     el("circle", { cx: x + 20, cy: y + 37, r: 4, class: "dot-authored" }),
-    el("text", { x: x + 36, y: y + 42, class: "req-title" }, reqShort(n.title, 30)),
+    el("text", { x: x + 36, y: y + 42, class: "req-title" }, notationClip(n.title, 30)),
   );
   if (nfr) {
     g.append(
-      el("text", { x: x + 36, y: y + 62, class: "req-line" }, reqShort(n.statement, 40)),
+      el("text", { x: x + 36, y: y + 62, class: "req-line" }, notationClip(n.statement, 40)),
       el("rect", { x: x + 36, y: y + 70, width: n.quality.length * 7 + 18, height: 18, rx: 9, class: "req-tag" }),
       el("text", { x: x + 45, y: y + 83, class: "req-tagtext" }, n.quality.toUpperCase()),
-      el("text", { x: x + 36, y: y + 104, class: "req-measure" }, reqShort(`Measure: ${n.measure}`, 42)),
+      el("text", { x: x + 36, y: y + 104, class: "req-measure" }, notationClip(`Measure: ${n.measure}`, 42)),
     );
     return g;
   }
@@ -70,7 +68,7 @@ function reqCard(n, r) {
     const top = y + 92 + 22 * i;
     g.append(
       el("rect", { x: x + 13, y: top + 1, width: 14, height: 14, rx: 4, class: "req-box" }),
-      el("text", { x: x + 36, y: top + 13, class: "req-crit" }, reqShort(c, 44)),
+      el("text", { x: x + 36, y: top + 13, class: "req-crit" }, notationClip(c, 44)),
     );
   });
   return g;
@@ -92,7 +90,7 @@ function reqTrace(n, r) {
     chip.append(
       el("title", {}, `${nfr ? "Architecture" : "Code"}: ${to}${broken ? " (not found)" : ""}`),
       el("rect", { x: chipX, y: cy - 12, width: REQ_CHIP_W, height: 24, rx: 8 }),
-      el("text", { x: chipX + 10, y: cy + 4 }, reqShort(to, 20)),
+      el("text", { x: chipX + 10, y: cy + 4 }, notationClip(to, 20)),
     );
     return [edge, chip];
   });

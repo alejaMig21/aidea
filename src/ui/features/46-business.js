@@ -46,7 +46,7 @@ function businessWrap(text, max = 30) {
     else lines[last] += " " + word;
   }
   const last = lines.length - 1;
-  if (lines[last].length > max) lines[last] = lines[last].slice(0, max - 1) + "…";
+  lines[last] = notationClip(lines[last], max);
   return lines;
 }
 

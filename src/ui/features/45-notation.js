@@ -44,6 +44,9 @@ const notationColours = [
   document.head.append(style);
 }
 
+// ---- Text that does not fit is cut with an ellipsis (the whole text stays in a tooltip where it matters).
+const notationClip = (text, max) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
+
 // ---- Animations switch: on by default, off when the system asks to reduce motion, remembered between sessions.
 const notationStored = () => { try { return localStorage.getItem(notationKey); } catch { return null; } };
 let notationOn = (notationStored() ?? (matchMedia("(prefers-reduced-motion: reduce)").matches ? "off" : "on")) === "on";

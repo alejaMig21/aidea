@@ -40,7 +40,6 @@
 
 const componentsMarks = { public: "+", private: "-", special: "~" };
 const componentsShort = (name) => name.split(".").pop();
-const componentsClip = (text, max) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
 
 function componentsLegend(unresolved) {
   const line = (d, extra = "") => `<path d="${d}" style="fill:none;stroke:var(--cp-line);stroke-width:1.4;${extra}"/>`;
@@ -106,7 +105,7 @@ function componentsDraw(world, nodes, layout, unresolved) {
     world.append(path);
     if (route.label) {
       const stub = route.to === null;
-      const text = stub ? componentsClip(route.name, 12) : route.label.text;
+      const text = stub ? notationClip(route.name, 12) : route.label.text;
       world.append(el("text", { x: route.label.x, y: route.label.y, class: "cp-label", "data-ref": route.from }, text));
       if (stub && route.resolution === "unresolved") {
         world.append(el("text", { x: route.label.x + text.length * 6.6 + 4, y: route.label.y, class: "cp-q", "data-ref": route.from }, "?"));

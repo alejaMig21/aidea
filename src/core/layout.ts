@@ -6,49 +6,8 @@ import type { CoreNode } from "./types.ts";
 
 export type Rect = { id: string; x: number; y: number; width: number; height: number };
 
-const COLUMN = 280;
-
 // Components and data: packages in columns with class boxes stacked inside (see components-layout.ts).
 export const layoutComponents = (nodes: CoreNode[]): Rect[] => layoutComponentsDiagram(nodes).rects;
-
-// Authored layers: root cards in a grid, four to a row. A Node with a `parent` on the layer sits one row below it,
-// siblings side by side and centred under it. A missing parent, or a parent chain that loops, makes a root.
-// Each root takes the width of its whole subtree and each grid row the height of its deepest one, so nothing overlaps.
-const CARD = 240;
-const GAP = COLUMN - CARD;
-const CHILD_ROW = 64 + 100;
-export function layoutAuthored(nodes: { id: string; parent?: unknown }[]): Rect[] {
-  const ids = new Set(nodes.map((n) => n.id));
-  const parentOf = new Map(nodes.map((n) => [n.id, ids.has(n.parent as string) ? (n.parent as string) : undefined]));
-  const inLoop = (id: string) => {
-    let at = parentOf.get(id);
-    for (let i = 0; at !== undefined && i < nodes.length; i++, at = parentOf.get(at)) if (at === id) return true;
-    return false;
-  };
-  const kids = new Map<string, string[]>();
-  const roots: string[] = [];
-  for (const { id } of nodes) {
-    const parent = parentOf.get(id);
-    if (parent === undefined || inLoop(id)) roots.push(id);
-    else kids.set(parent, [...(kids.get(parent) ?? []), id]);
-  }
-  const widthOf = (id: string): number => Math.max(CARD, (kids.get(id) ?? []).reduce((sum, k) => sum + widthOf(k) + GAP, -GAP));
-  const depthOf = (id: string): number => Math.max(-1, ...(kids.get(id) ?? []).map(depthOf)) + 1;
-  const at = new Map<string, Rect>();
-  const place = (id: string, left: number, y: number) => {
-    const width = widthOf(id);
-    at.set(id, { id, x: left + (width - CARD) / 2, y, width: CARD, height: 64 });
-    let x = left;
-    for (const k of kids.get(id) ?? []) { place(k, x, y + CHILD_ROW); x += widthOf(k) + GAP; }
-  };
-  for (let row = 0, y = 0; row < roots.length; row += 4) {
-    const inRow = roots.slice(row, row + 4);
-    let x = 0;
-    for (const id of inRow) { place(id, x, y); x += widthOf(id) + GAP; }
-    y += Math.max(...inRow.map(depthOf)) * CHILD_ROW + 80;
-  }
-  return nodes.map((n) => at.get(n.id)!);
-}
 
 // Business layer: the nine blocks of the canvas in its canonical arrangement on a five-column grid
 // (partners | activities over resources | value propositions | relationships over channels | segments),
@@ -115,9 +74,9 @@ export function layoutRequirements(nodes: { id: string; kind?: unknown; criteria
   return nodes.map((n) => at.get(n.id)!);
 }
 
-// What a layer's Nodes are laid out with: Requirements has its own two columns, the other authored layers the grid.
-export const layoutLayer = (layer: string, nodes: { id: string; parent?: unknown; block?: unknown }[]): Rect[] =>
-  layer === "requirements" ? layoutRequirements(nodes) : layer === "business" ? layoutBusiness(nodes).rects : layoutAuthored(nodes);
+// What the Nodes of Business and Requirements are laid out with (Architecture and Components have their own engines).
+export const layoutLayer = (layer: string, nodes: { id: string; kind?: unknown; criteria?: unknown; block?: unknown }[]): Rect[] =>
+  layer === "requirements" ? layoutRequirements(nodes) : layoutBusiness(nodes).rects;
 
 
 export type FlowEdge = { from: string; to: string; label?: string; exit?: string; back?: boolean };

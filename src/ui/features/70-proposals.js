@@ -63,8 +63,6 @@ function drawProposals() {
     g.addEventListener("click", open);
     g.addEventListener("keydown", (e) => { if (e.key === "Enter") open(); });
     layerGroup.append(g);
-    const parent = p.kind === "add" && authoredLayouts[p.layer]?.find((r) => r.id === p.node?.parent);
-    if (parent) layerGroup.prepend(authoredLink(parent, p.rect, "edge proposal-edge")); // behind the cards
   }
   markTabs();
 }

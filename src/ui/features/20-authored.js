@@ -19,8 +19,8 @@ authoredErrors.id = "authored-errors";
 authoredErrors.setAttribute("role", "alert");
 document.querySelector("main").append(layerBar, authoredErrors);
 
-// The card is 240 wide: a longer line is cut, and the whole text stays available as the tooltip of the card.
-const authoredShort = (t) => (t.length > 28 ? t.slice(0, 27) + "…" : t);
+// The card is 240 wide: a longer line is cut (notationClip), and the whole text stays available as the tooltip of the card.
+const authoredShort = (t) => notationClip(t, 28);
 
 function showRationale(n) {
   const h = document.createElement("h2");
@@ -52,19 +52,11 @@ function showRationale(n) {
   $("panel").replaceChildren(...parts);
 }
 
-// A connector from the bottom-centre of the parent card to the top-centre of the child: straight, or one elbow when they are not aligned.
-function authoredLink(parent, child, className) {
-  const x1 = parent.x + parent.width / 2, y1 = parent.y + parent.height;
-  const x2 = child.x + child.width / 2, y2 = child.y;
-  const mid = (y1 + y2) / 2;
-  return el("path", { class: className, "data-flow": "", "data-packets": 1, "data-ends": `${parent.id} ${child.id}`, d: x1 === x2 ? `M${x1} ${y1}V${y2}` : `M${x1} ${y1}V${mid}H${x2}V${y2}` });
-}
-
 function drawAuthored() {
   authoredGroup.replaceChildren();
   authoredErrors.replaceChildren();
   if (!authoredData) return;
-  AUTHORED_LAYERS.forEach(({ key, detail }) => {
+  AUTHORED_LAYERS.forEach(({ key }) => {
     const g = el("g", { "data-layer": key });
     if (key === "business" || key === "requirements") { // these layers draw themselves (46-business.js, 46-requirements.js)
       const draw = key === "business" ? drawBusiness : drawRequirements;
@@ -76,33 +68,7 @@ function drawAuthored() {
       authoredGroup.append(g);
       return;
     }
-    if (key === "architecture") { authoredGroup.append(g); return; } // drawn by 46-architecture.js (boundaries and relationships)
-    // Connectors go first, so they sit behind the cards.
-    authoredData.layers[key].nodes.forEach((n) => {
-      const parent = authoredLayouts[key].find((r) => r.id === n.parent);
-      if (parent) g.append(authoredLink(parent, authoredLayouts[key].find((r) => r.id === n.id), "edge"));
-    });
-    authoredData.layers[key].nodes.forEach((n) => {
-      // The core decides where each card sits.
-      const { x, y, width, height } = authoredLayouts[key].find((r) => r.id === n.id);
-      const node = el("g", { class: "anode", tabindex: 0, "data-node": n.id, "data-ref": n.id });
-      node.append(
-        el("title", {}, `${n.title}: ${detail(n) ?? ""}`),
-        el("rect", { x, y, width, height, rx: 10 }),
-        el("circle", { cx: x + 20, cy: y + 24, r: 4, class: "dot-authored" }),
-        el("text", { x: x + 34, y: y + 29 }, n.title),
-        el("text", { x: x + 16, y: y + 49, class: "node-sub" }, authoredShort(detail(n) ?? "")),
-      );
-      const select = () => {
-        authoredGroup.querySelectorAll(".selected").forEach((s) => s.classList.remove("selected"));
-        node.classList.add("selected");
-        showRationale(n);
-      };
-      node.addEventListener("click", select);
-      node.addEventListener("keydown", (e) => { if (e.key === "Enter") select(); });
-      g.append(node);
-    });
-    authoredGroup.append(g);
+    authoredGroup.append(g); // architecture: drawn into it by 46-architecture.js (boundaries and relationships)
   });
   architectureRender();
   const all = [...authoredData.errors, ...AUTHORED_LAYERS.flatMap(({ key }) => authoredData.layers[key].errors)];

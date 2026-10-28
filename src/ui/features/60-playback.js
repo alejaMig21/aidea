@@ -3,7 +3,7 @@
 const playbackStyle = document.createElement("style");
 playbackStyle.textContent = `
   #algorithm.has-recording .flow-step:not(.visited) { opacity: .4; }
-    #pane-algorithm { padding: 0; gap: 0; }
+  #pane-algorithm { padding: 0; gap: 0; }
   #pane-algorithm > header { display: flex; justify-content: space-between; align-items: center; height: 40px; padding: 0 14px; border-bottom: 1px solid var(--line); font-weight: 600; font-size: 13px; flex: none; }
   #pane-algorithm > header span { font: 400 12px var(--mono); color: var(--muted); }
   #pane-algorithm .body { padding: 14px; display: flex; flex-direction: column; gap: 8px; }
