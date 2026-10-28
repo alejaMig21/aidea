@@ -9,7 +9,7 @@
 const notationKey = "aidea.animations";
 const notationColours = [
   ["accent", "Active now, or in flight"], ["derived", "Visited, or derived from the code"], ["authored", "Authored by a person or the agent"],
-  ["danger", "Error or exception"], ["unresolved", "Unresolved or inferred: grey, dashed, never moving"],
+  ["danger", "Error or exception"], ["unresolved", "Unresolved: grey, dashed, never moving (inferred links are dashed but still flow)"],
 ];
 
 {
