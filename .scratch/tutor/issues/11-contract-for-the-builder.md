@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately; it does not need the Tutor)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Through the protocol: the builder's MCP tool list contains `read_contract` and it returns the accepted layers of a fixture project in the stated shape, excluding pending Proposals.
 - [ ] The builder's session receives the instruction to read the Contract first (asserted on the arguments given to the adapter) and a change to a layer by the builder is still a Proposal.

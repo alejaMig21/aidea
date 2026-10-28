@@ -4,7 +4,7 @@
 
 **Blocked by:** 02, 06
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Through the core protocol: the Architecture layout puts children inside their parent's boundary with a margin, roots outside it, no overlaps, identical results for the same input; relations are returned with routes and label positions.
 - [ ] Children are visibly inside their boundary; relationships show label and technology; an unknown kind is drawn as a generic box.

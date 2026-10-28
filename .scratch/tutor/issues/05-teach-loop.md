@@ -4,7 +4,7 @@
 
 **Blocked by:** 02, 04
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Through the protocol with a scripted Teacher: a predict question is posed before the explanation tool is accepted for that step (the order is enforced by the core, with an error the model can act on otherwise).
 - [x] A check is rejected if it has no committed correct answer.

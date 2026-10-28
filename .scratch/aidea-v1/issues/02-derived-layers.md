@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] A class appears as a Node with its methods and attributes as members.
 - [ ] Zooming to the Code layer shows the real source text for the selected Node.

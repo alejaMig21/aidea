@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately). Prerequisite: the repository is not under version control yet; initialise it first.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Opening the fixture Project through the protocol returns Nodes for its modules, classes and functions.
 - [x] Opened Projects appear in the Projects list; the Canvas pans and zooms in the desktop app. (Verified by the person in the Electron window on 2026-10-27: opened the shop fixture, panned and zoomed the Canvas, opened a function's graph and used the chat.)

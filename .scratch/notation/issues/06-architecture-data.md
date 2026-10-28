@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Through the core protocol: Nodes with `kind`, `description` and `relations` are accepted and returned by the authored-layer route; an unknown `kind`, a non-string `description`, a relation without `to` or `label`, or a relation to a missing Node is reported as an error naming the field and dropped; other Nodes of the file survive.
 - [ ] Old files without the new fields load and render exactly as before; all earlier authored-layer tests pass unchanged.

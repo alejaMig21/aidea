@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] A visible, keyboard-reachable control freezes and resumes all motion on any layer; while paused, Next hop and Previous hop move one packet at a time along its edge, and the position is deterministic (the same hop number gives the same place).
 - [ ] The paused state is remembered only for the session, is cleared when the layer or Project changes, and does not fight the global Animations switch or reduce-motion (either of those off means no motion at all and the stepping controls are hidden).

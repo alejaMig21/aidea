@@ -4,7 +4,7 @@
 
 **Blocked by:** 02
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Through the protocol with scripted fake Extractor and Auditor outputs: fixed Teacher prose and fixed extractor output give exactly the expected Propositions and chains, and running it twice gives the same graph with no duplicates.
 - [ ] Two Propositions with the same normalised name merge and keep both aliases and both provenances.

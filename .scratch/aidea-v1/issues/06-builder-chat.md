@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] A message sent through the protocol produces streamed reply events in order.
 - [x] Sub-agent messages are reported as nested under the call that started them.

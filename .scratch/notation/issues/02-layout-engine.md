@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Through the core protocol: laying out the same graph twice gives identical rectangles and routes.
 - [x] No two node rectangles overlap; edges do not pass through nodes; for a straight function the steps stay in one column, for an `if` the two branches sit side by side and rejoin below, for a loop the back edge goes around its body.

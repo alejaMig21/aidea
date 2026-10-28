@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] In the real desktop window, "Open folder" shows the folder picker and opens the chosen folder.
 - [ ] Cancelling the picker changes nothing.

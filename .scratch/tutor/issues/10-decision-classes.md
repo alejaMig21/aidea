@@ -4,7 +4,7 @@
 
 **Blocked by:** 05
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Through the protocol with scripted builder and Tutor: in Class mode a Blocking decision creates a decision class and the builder's Proposal does not become acceptable until it is answered or skipped; in Direct mode it is acceptable immediately.
 - [x] Code changes and non-blocking changes never start a class.

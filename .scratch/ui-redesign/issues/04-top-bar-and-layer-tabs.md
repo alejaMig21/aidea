@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] The switcher lists the current Project and the recents; choosing one switches Project.
 - [ ] "Open folder…" in the switcher behaves like the Home button.

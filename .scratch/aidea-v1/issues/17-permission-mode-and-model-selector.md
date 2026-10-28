@@ -6,7 +6,7 @@
 
 **Blocked by:** 06, 07
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] The Agent adapter interface can describe what its provider offers: a list of Permission modes (id, label, one-line meaning, whether it is available and, if not, why) and a list of models (id, label).
 - [ ] The Claude Code adapter fills that description from Claude Code itself where Claude Code exposes it (models), and declares what Claude Code documents but does not list (modes) inside the adapter, never in the core or the interface.

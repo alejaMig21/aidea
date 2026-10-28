@@ -13,7 +13,7 @@ What the mockup A shows, to reproduce:
 
 **Blocked by:** 04, 05, 08, 09 (done)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Screenshots of the work session at the mockup's size (1000x625 CSS px, device scale 2) put next to `A-...png` (and, for the tabs and the Algorithm column, `B-...png`) show the same layout, spacing, type sizes, colours, radii and wording. Differences are listed in the review notes.
 - [x] The popover shows CURRENT and RECENT with relative times and "Open folder...", and switching Project from it works.

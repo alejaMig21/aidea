@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Through the core protocol on fixtures: inheritance between classes of the Project is reported; a base class outside the Project is reported as external.
 - [ ] Imports between modules of the Project are reported, with the imported names when they are explicit.

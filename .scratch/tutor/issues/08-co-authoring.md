@@ -4,7 +4,7 @@
 
 **Blocked by:** 03, 05
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Through the protocol with a scripted Tutor: a Proposal tool call is refused if no question about that element was answered first; after an answer it creates a pending Proposal validated by the same rules as the builder's (bad fields refused with the same messages).
 - [ ] Accepting or rejecting works as for the builder's Proposals; the Proposal says it came from the Tutor.

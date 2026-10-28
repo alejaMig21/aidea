@@ -4,7 +4,7 @@
 
 **Blocked by:** 05, 08
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Fonts load with no internet connection.
 - [ ] Text, borders and focus rings are legible everywhere; text contrast is at least 4.5:1.

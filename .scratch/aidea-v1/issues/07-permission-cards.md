@@ -4,7 +4,7 @@
 
 **Blocked by:** 06
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] A permission request from the builder reaches the interface as a pending card.
 - [x] Approving lets the action run; rejecting denies it and the builder is told so.

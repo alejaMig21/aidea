@@ -4,7 +4,7 @@
 
 **Blocked by:** 12 (done)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Through the core protocol: on a Project whose Architecture has a Node with a `parent`, the child's rectangle is below the parent's and horizontally overlapping it; a root keeps its grid place; a `parent` that does not exist leaves the Node as a root.
 - [ ] The Layer response lets the interface draw the connector (the parent id of each Node is available), covered by a protocol test.

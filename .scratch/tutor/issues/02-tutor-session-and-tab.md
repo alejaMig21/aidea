@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Through the core protocol with a scripted fake adapter: starting a class creates a Tutor session; a question tool call reaches the interface as an event and waits; an answer with confidence and thought returns to the tool; "don't know" is a valid answer; the choice of model reaches the adapter.
 - [x] A question whose options or correct answer are missing is rejected with a message the model can act on.

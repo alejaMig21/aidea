@@ -4,7 +4,7 @@
 
 **Blocked by:** 04
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Dragging the chat edge resizes it; a button folds and unfolds it.
 - [ ] Same for the right slot.

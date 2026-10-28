@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Through the core protocol: opening a Project makes it appear first in the recents list.
 - [x] Reopening the same path moves it to the top without duplicating it.

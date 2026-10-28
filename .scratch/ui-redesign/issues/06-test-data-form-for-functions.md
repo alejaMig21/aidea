@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Through the core protocol: analysis of a function reports parameters in order with default and annotation.
 - [x] Suggestions come from the default, then the annotation, else none.

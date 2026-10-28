@@ -4,7 +4,7 @@
 
 **Blocked by:** 02
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Through the protocol: each read tool returns the expected content on a fixture project.
 - [x] A path outside the Project (parent traversal, absolute path elsewhere, a link pointing out, a different casing or a drive-relative form on Windows) is refused with a clear message and nothing is read.

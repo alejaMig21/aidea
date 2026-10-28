@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Through the core protocol: the authored-layer response lets the interface group problems by layer and name the item (id when present) without parsing free text; existing `errors` text keeps working for other consumers; all earlier authored-layer and proposal tests pass.
 - [ ] No red text is drawn over the Canvas on any layer; a layer with problems shows a count badge on its tab; the "Problems (N)" button exists only when N is greater than 0.

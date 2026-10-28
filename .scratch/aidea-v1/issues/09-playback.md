@@ -4,7 +4,7 @@
 
 **Blocked by:** 05
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Choosing a pure function and inputs records a trace and shows it on the Algorithm graph.
 - [x] Pause, step forward, step back and scrub move the highlighted step and displayed values.

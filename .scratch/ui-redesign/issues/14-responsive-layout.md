@@ -12,7 +12,7 @@ Rules:
 
 **Blocked by:** 12, 17 (done)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Headless measurements (no visible window) over widths 360, 520, 700, 900, 1100, 1440, 1920 and the four fold states show: no empty reserved space (visible columns fill the window), Canvas at least 360 px (320 only below the narrow breakpoint, where drawers apply), no horizontal overflow, the top bar and the chat input card fully inside the viewport. Results in the review notes.
 - [x] Screenshots at 520, 900 and 1440 px (read by the implementer next to the mockups) look right in both fold states.

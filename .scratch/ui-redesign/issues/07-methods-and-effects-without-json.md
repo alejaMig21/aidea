@@ -4,7 +4,7 @@
 
 **Blocked by:** 06
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Through the core protocol: analysis of a method reports the constructor parameters with defaults, annotations and suggestions.
 - [x] Playback of a method builds the instance from the constructor values.

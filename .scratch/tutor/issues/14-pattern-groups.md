@@ -4,7 +4,7 @@
 
 **Blocked by:** 11
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Through the protocol: a Pattern group is stored with the Architecture layer with validated roles; a violation fixture (a domain module importing an infrastructure module) is reported with the two Nodes and the rule.
 - [ ] A group with no violations reports none; a role pointing to a missing Node is reported as a problem like other bad data.

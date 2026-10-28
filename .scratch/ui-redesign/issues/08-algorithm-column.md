@@ -4,7 +4,7 @@
 
 **Blocked by:** 05, 06
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Opening an Algorithm shows and selects the Algorithm tab; leaving it removes the tab.
 - [ ] Form, own-Python switch with warning, and Playback controls are all in that column.

@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] The report lists, for each of (a) to (f), what was tried, the exact command-line options or settings used, the observed result and a confidence note.
 - [ ] The report gives a recommended launch recipe per role (Prober, Teacher, Extractor, Auditor): options, tools, model alias, and the expected cost of a typical class.

@@ -10,7 +10,7 @@ All wording is English, short, free of jargon, and not copied from the canvas's 
 
 **Blocked by:** None (can start immediately; ticket 04 is done)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] The decorative flow arrows, their packets and their legend entries are gone from the Business layer; the blocks still breathe softly and the animation switch still applies.
 - [ ] Every block shows its hint; an empty block shows it as a larger prompt; a block with notes keeps its notes fully visible and unclipped.

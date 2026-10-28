@@ -4,7 +4,7 @@
 
 **Blocked by:** 01, 02
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Through the core protocol: each flow step carries what the interface needs to choose its symbol (kind, labelled exits, input/output flag, exception type on exception edges); a construct without a symbol is reported as a generic step with its name.
 - [ ] Every symbol above is drawn from the data; no step is omitted; a function with `try`/`except`/`finally`, `with`, `break`, `continue`, a loop and a `match` renders without overlaps or crossing edges through nodes.

@@ -4,7 +4,7 @@
 
 **Blocked by:** 02, 03
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Zooming into a Node returns a framing centered on its Footprint.
 - [x] A Footprint with several separate parts returns a framing that contains all of them and flags the rest as dimmed.

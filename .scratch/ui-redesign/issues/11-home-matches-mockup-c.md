@@ -4,7 +4,7 @@
 
 **Blocked by:** 01, 02, 03 (done)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] A screenshot of Home at the same size as the mockup (1000x625 CSS px, device scale 2) put next to `C-home.png` shows the same layout, spacing, type sizes, colours, radii and wording. Differences are listed in the review notes.
 - [x] Home covers the whole window: no top bar, chat, side panel or Canvas visible while it is shown.

@@ -4,7 +4,7 @@
 
 **Blocked by:** 02
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Through the core protocol: creating with a valid parent and name creates the folder, opens it as a Project and records it in the recents.
 - [x] A name that already exists in the parent is refused and nothing is overwritten.

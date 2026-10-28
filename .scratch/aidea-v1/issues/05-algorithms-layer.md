@@ -4,7 +4,7 @@
 
 **Blocked by:** 02
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] A function with branches and loops in the fixture Project produces an Algorithm graph with matching steps and branches.
 - [x] Zooming from a class Node reaches the Algorithm graph of the chosen method.

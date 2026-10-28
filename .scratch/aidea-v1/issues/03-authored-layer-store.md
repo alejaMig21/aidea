@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Authored files in a Project appear as Nodes on the first three Layers.
 - [x] Selecting a Node shows its Rationale in the right-hand panel.

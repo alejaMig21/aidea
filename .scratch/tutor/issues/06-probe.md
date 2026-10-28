@@ -4,7 +4,7 @@
 
 **Blocked by:** 04, 05
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Through the protocol with a scripted Prober: no more than five questions are accepted per Probe; a question about an idea already in the graph is not asked.
 - [ ] "I already know this" skips a question and is Evidence; skipping the whole Probe starts the class anyway.

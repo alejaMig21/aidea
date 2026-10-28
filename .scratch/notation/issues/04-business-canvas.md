@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Through the core protocol: the Business layer layout places the nine blocks in the canonical arrangement, an empty block is present, notes are placed inside their block without overlap, and the result is identical for the same input.
 - [x] A note whose `block` is not one of the nine is reported as an error as today.

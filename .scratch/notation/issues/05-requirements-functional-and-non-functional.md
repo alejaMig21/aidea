@@ -4,7 +4,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Through the core protocol: a functional requirement with and without `criteria` is valid; a non-functional requirement without `as`/`want`/`so` is valid; a non-functional one without `statement`, an unknown `quality` or a missing `measure` is reported as an error naming the field and dropped, like other bad Nodes; old files still load.
 - [ ] Proposals can add and change both kinds and the new fields, validated by the same rules.

@@ -9,7 +9,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Each of the four defects has a before and after measurement or screenshot reading in the review notes (before may be "not reproducible").
 - [ ] Business: at 1000x700 and 1440x900 every note's text stays inside its note and every note inside its block, asserted by a headless script; long titles end with an ellipsis and show the full title in the tooltip.
