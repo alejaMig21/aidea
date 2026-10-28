@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 import { lstatSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { architecturePreview } from "./architecture.ts";
-import { loadAuthored, nodeProblem } from "./authored.ts";
+import { groupProblem, loadAuthored, nodeProblem, rationaleProblem, roleProblem } from "./authored.ts";
 import { frameOf, layoutLayer } from "./layout.ts";
 import { AUTHORED_LAYERS } from "./traces.ts";
 import type { AuthoredLayerKey } from "./traces.ts";
@@ -24,7 +24,10 @@ export type Proposal = {
   node?: Fields; // add: the whole Node; update: the Node as it will be once the change is accepted
   changes?: Fields; // update: what the builder asked to change
   status: "pending" | "accepted" | "rejected";
+  blocking?: true; // a Blocking decision (declaring a Pattern group); only marked here, the Tutor's classes act on it
 };
+// A Pattern group is proposed as an "add" whose nodeId is the group's id behind this prefix and whose `node` is the group.
+export const PATTERN_PREFIX = "pattern:";
 // The answer secret is the conversation's: only the interface that received the Proposal in its chat stream knows it.
 export type StoredProposal = Proposal & { secret: string };
 export type ProposalStore = Map<string, StoredProposal>;
@@ -107,6 +110,26 @@ export function propose(
   return { proposal };
 }
 
+// The builder's request to declare a Pattern group (an optional list in the Architecture file). Validated like other data.
+export function proposePattern(store: ProposalStore, project: Project, secret: string, group: unknown): { proposal: StoredProposal } | { error: string } {
+  const arch = loadAuthored(project.path).layers.architecture;
+  const pending = pendingOf(store, project.id, "architecture");
+  const ids = new Set<unknown>([...arch.nodes.map((n) => n.id), ...pending.filter((p) => p.kind === "add" && !p.nodeId.startsWith(PATTERN_PREFIX)).map((p) => p.nodeId)]);
+  const problem = groupProblem(group) ?? rationaleProblem((group as Fields).rationale);
+  if (problem) return { error: `Invalid group: ${problem}` };
+  const g = group as Fields;
+  for (const r of g.roles as unknown[]) {
+    const bad = roleProblem(g.kind as string, r, ids);
+    if (bad) return { error: `Invalid group: roles ${bad.message}` };
+  }
+  if (JSON.stringify(g).length > MAX_NODE_JSON_CHARS) return { error: "group is too large" };
+  const nodeId = PATTERN_PREFIX + String(g.id);
+  if (arch.patterns?.some((p) => p.id === g.id) || pending.some((p) => p.nodeId === nodeId)) return { error: `A Pattern group "${g.id}" already exists or is already proposed` };
+  const proposal: StoredProposal = { id: `prop-${++counter}`, project: project.id, layer: "architecture", kind: "add", nodeId, node: g, status: "pending", blocking: true, secret };
+  store.set(proposal.id, proposal);
+  return { proposal };
+}
+
 // What the interface and the builder may see: everything except the secret.
 export const publicView = ({ secret: _secret, ...proposal }: StoredProposal): Proposal => proposal;
 
@@ -146,7 +169,15 @@ export function apply(project: Project, p: Proposal): string | null {
   const nodes = doc.nodes as Fields[];
   const at = nodes.findIndex((n) => n.id === p.nodeId);
 
-  if (p.kind === "add") {
+  if (p.nodeId.startsWith(PATTERN_PREFIX)) {
+    const g = p.node!;
+    const patterns = (Array.isArray(doc.patterns) ? doc.patterns : (doc.patterns = [])) as Fields[];
+    const ids = new Set(nodes.map((n) => n.id));
+    const problem = groupProblem(g) ?? ((g.roles as unknown[]).map((r) => roleProblem(g.kind as string, r, ids)).find(Boolean)?.message ?? null);
+    if (problem) return `The Pattern group no longer fits the file: ${problem}`;
+    if (patterns.some((x) => x.id === g.id)) return `A Pattern group "${g.id}" already exists (the file changed since the proposal)`;
+    patterns.push(g);
+  } else if (p.kind === "add") {
     if (at !== -1) return `A Node with id "${p.nodeId}" already exists on the ${p.layer} layer (the file changed since the proposal)`;
     const problem = nodeProblem(p.layer, p.node, new Set(nodes.map((n) => n.id as string))) ?? parentProblem(p.layer, p.node!, new Set(nodes.map((n) => n.id))) ?? relationTargetProblem(p.layer, p.node!, new Set([...nodes.map((n) => n.id), p.nodeId]));
     if (problem) return `The Node no longer fits the file: ${problem}`;

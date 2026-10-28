@@ -113,7 +113,7 @@ test("permission requests are routed to aidea's own tool, whose address belongs 
   const allowed = args[args.indexOf("--allowedTools") + 1].split(",");
   // The authored files change only through Proposals: the builder's own file tools are denied there, card or no card.
   assert.deepEqual(args[args.indexOf("--disallowedTools") + 1].split(",").sort(), ["Edit(.aidea/**)", "MultiEdit(.aidea/**)", "Write(.aidea/**)"]);
-  assert.deepEqual(allowed.sort(), ["mcp__aidea__list_proposals", "mcp__aidea__propose_add_node", "mcp__aidea__propose_remove_node", "mcp__aidea__propose_update_node", "mcp__aidea__read_contract"]);
+  assert.deepEqual(allowed.sort(), ["mcp__aidea__list_proposals", "mcp__aidea__propose_add_node", "mcp__aidea__propose_pattern_group", "mcp__aidea__propose_remove_node", "mcp__aidea__propose_update_node", "mcp__aidea__read_contract"]);
 
   await chat({ project: shop, message: "two" }, "real-ok.jsonl");
   assert.notEqual(JSON.parse(calls[0].args[calls[0].args.indexOf("--mcp-config") + 1]).mcpServers.aidea.url, url);

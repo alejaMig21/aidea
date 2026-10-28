@@ -136,7 +136,8 @@ function clip(points: Point[], box: Rect, atStart: boolean): Point[] {
 }
 
 // What a pending Proposal list does to the layer: updates replace their Node, adds append, removals drop.
-export function architecturePreview(existing: Fields[], pending: { kind: string; nodeId: string; node?: Fields }[]) {
+export function architecturePreview(existing: Fields[], all: { kind: string; nodeId: string; node?: Fields }[]) {
+  const pending = all.filter((p) => !p.nodeId.startsWith("pattern:")); // a proposed Pattern group is not a Node
   const byId = new Map(pending.map((p) => [p.nodeId, p]));
   const kept = existing.filter((n) => byId.get(sameStr(n.id))?.kind !== "remove").map((n) => {
     const p = byId.get(sameStr(n.id));

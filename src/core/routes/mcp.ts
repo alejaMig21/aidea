@@ -5,7 +5,7 @@
 // Plain JSON over HTTP, one message per request. The address contains the token of a running conversation, so only
 // the Claude Code process we started can use it.
 import { contractOf } from "../contract.ts";
-import { publicView, propose } from "../proposals.ts";
+import { publicView, propose, proposePattern } from "../proposals.ts";
 import type { Proposal } from "../proposals.ts";
 import { TUTOR_TOOLS, parseQuestion } from "../tutor.ts";
 import type { Handler } from "../types.ts";
@@ -20,7 +20,7 @@ const NODE_HELP =
   "or \"non-functional\" (needs `statement`, `quality` (performance, security, usability, reliability, maintainability, compatibility, portability or safety) " +
   "and a measurable `measure`; `as`, `want`, `so` are not needed); architecture Nodes need `technology` and may have `parent` (the Node it is inside), `kind` (person, system, container or component), " +
   "a one-sentence `description`, `external` (true for a person or system outside the one being designed) and `relations`: [{ to, label, technology? }] naming other architecture Nodes that this one uses. Any Node may have " +
-  "`traces`: the ids of the Nodes in the layer below that realise it.";
+  "`traces`: the ids of the Nodes in the layer below that realise it. To mark architecture Nodes as one pattern (for example hexagonal) use propose_pattern_group.";
 
 const TOOLS = [
   {
@@ -36,6 +36,14 @@ const TOOLS = [
     name: "propose_add_node",
     description: `Proposes adding a Node to an authored layer. Nothing changes until the person accepts it. ${NODE_HELP}`,
     inputSchema: { type: "object", properties: { layer: { type: "string", enum: LAYERS }, node: { type: "object" } }, required: ["layer", "node"] },
+  },
+  {
+    name: "propose_pattern_group",
+    description:
+      "Proposes a Pattern group on the architecture layer: Nodes labelled with their role in a pattern. group = { id, name, kind, roles: [{ node, role }], rationale }. " +
+      "kind \"hexagonal\": roles domain, port, adapter, infrastructure. kind \"layered\": roles presentation, application, domain, data. `node` is the id of an architecture Node. " +
+      "This is a Blocking decision. Nothing changes until the person accepts it.",
+    inputSchema: { type: "object", properties: { group: { type: "object" } }, required: ["group"] },
   },
   {
     name: "propose_update_node",
@@ -155,7 +163,8 @@ const handler: Handler = async (req, res, core) => {
         return true;
       }
       const kind: Proposal["kind"] = name === "propose_add_node" ? "add" : name === "propose_update_node" ? "update" : "remove";
-      const result = propose(core.proposals, project, conversation.secret, kind, { layer: args.layer, node: args.node, id: args.id, changes: args.changes });
+      const result = name === "propose_pattern_group" ? proposePattern(core.proposals, project, conversation.secret, args.group)
+        : propose(core.proposals, project, conversation.secret, kind, { layer: args.layer, node: args.node, id: args.id, changes: args.changes });
       if ("error" in result) {
         core.send(res, 200, toolText(id, result.error, true));
         return true;

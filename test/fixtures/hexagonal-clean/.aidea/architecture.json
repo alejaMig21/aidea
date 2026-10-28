@@ -1,0 +1,13 @@
+{
+  "nodes": [
+    { "id": "core", "title": "Core", "technology": "Python", "traces": ["domain"], "rationale": { "why": "The rules of the shop live in one place.", "rejected": [] } },
+    { "id": "web", "title": "Web adapter", "technology": "Python", "traces": ["adapters"], "rationale": { "why": "Talks to the outside.", "rejected": [] } },
+    { "id": "store", "title": "Storage", "technology": "Python", "traces": ["infra"], "rationale": { "why": "Keeps orders.", "rejected": [] } }
+  ],
+  "patterns": [
+    {
+      "id": "hex", "name": "Hexagonal shop", "kind": "hexagonal",
+      "roles": [ { "node": "core", "role": "domain" }, { "node": "web", "role": "adapter" }, { "node": "store", "role": "infrastructure" } ]
+    }
+  ]
+}

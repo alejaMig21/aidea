@@ -99,4 +99,4 @@ export type Handler = (req: IncomingMessage, res: ServerResponse, core: Core) =>
 
 // Authored layers (ticket 03).
 export type AuthoredNode = { id: string; title: string; rationale: { why: string; rejected: { option: string; reason: string }[] }; [field: string]: unknown };
-export type AuthoredLayer = { nodes: AuthoredNode[]; errors: { file: string; message: string }[] };
+export type AuthoredLayer = { nodes: AuthoredNode[]; patterns?: Record<string, unknown>[]; errors: { file: string; message: string }[] };

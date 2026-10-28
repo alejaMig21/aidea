@@ -9,6 +9,8 @@
 // `block` is one of the nine Business Model Canvas blocks (BLOCKS below); `parent` is an optional string.
 // Architecture only: `parent` means "is inside"; `kind` is one of KINDS; `description` is one short sentence; `external` is a boolean (true: outside the system being drawn);
 // `relations` is a list of { to, label, technology? } naming other Nodes of the layer. A bad relation is dropped alone.
+// Architecture only: an optional top-level `patterns` list of Pattern groups, { id, name, kind, roles: [ { node, role } ] }; kind and role come from PATTERN_ROLES.
+// A bad role is dropped alone, a bad group is dropped with its problem, and the Nodes are never affected.
 // Extra fields are kept as they are. A bad Node is dropped with an error (except an unknown Architecture `kind`: the Node stays, the kind is ignored); a bad file never stops other files.
 import { lstatSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -19,6 +21,11 @@ const BLOCKS = [
   "key resources", "key activities", "key partnerships", "cost structure",
 ];
 const KINDS = ["person", "system", "container", "component"];
+// The roles a Node can play in a Pattern group, by kind of pattern. Layered roles are listed from the top layer to the bottom one.
+export const PATTERN_ROLES: Record<string, string[]> = {
+  hexagonal: ["domain", "port", "adapter", "infrastructure"],
+  layered: ["presentation", "application", "domain", "data"],
+};
 const MAX_FILE_BYTES = 1024 * 1024;
 
 type Fields = Record<string, unknown>;
@@ -70,7 +77,23 @@ function architectureDetailProblem(n: Fields): string | null {
   return null;
 }
 
-function rationaleProblem(r: unknown): string | null {
+// What is wrong with a Pattern group itself (not the contents of its roles), or null.
+export const groupProblem = (g: unknown): string | null =>
+  !isObject(g) ? "must be an object"
+  : !isNonEmptyString(g.id) ? '"id" must be a non-empty string'
+  : !isNonEmptyString(g.name) ? '"name" must be a non-empty string'
+  : !Object.hasOwn(PATTERN_ROLES, g.kind as string) ? `"kind" must be one of: ${Object.keys(PATTERN_ROLES).join(", ")}`
+  : !Array.isArray(g.roles) ? '"roles" must be an array'
+  : null;
+// What is wrong with one role of a group of `kind`; `ids` are the Nodes it may point at.
+export const roleProblem = (kind: string, r: unknown, ids: Set<unknown>): { field: string; message: string } | null =>
+  !isObject(r) ? { field: "", message: "must be an object" }
+  : !isNonEmptyString(r.node) ? { field: "node", message: '"node" must be a non-empty string' }
+  : !PATTERN_ROLES[kind].includes(r.role as string) ? { field: "role", message: `"role" must be one of: ${PATTERN_ROLES[kind].join(", ")}` }
+  : !ids.has(r.node) ? { field: "node", message: `"node" refers to unknown id "${r.node}"` }
+  : null;
+
+export function rationaleProblem(r: unknown): string | null {
   if (!isObject(r)) return '"rationale" must be an object';
   if (!isNonEmptyString(r.why)) return '"rationale.why" must be a non-empty string';
   if (!Array.isArray(r.rejected)) return '"rationale.rejected" must be an array';
@@ -190,7 +213,31 @@ function parseLayer(layer: string, source: string, file: string, problems: Autho
       }).map((k) => k.r);
     }
   }
+  if (layer === "architecture" && isObject(doc) && doc.patterns !== undefined) out.patterns = parsePatterns(doc.patterns, new Set(out.nodes.map((n) => n.id)), file, fail, problems);
   return out;
+}
+
+// The valid Pattern groups of an Architecture file. `ids` are its surviving Nodes.
+function parsePatterns(raw: unknown, ids: Set<unknown>, file: string, fail: (m: string) => void, problems: AuthoredProblem[]): Fields[] {
+  const flag = (field: string, message: string) => { fail(`${field}: ${message}`); problems.push({ layer: "architecture", file, field, message }); };
+  if (!Array.isArray(raw)) { flag("patterns", "The field \"patterns\" must be an array. It was ignored."); return []; }
+  const groups: Fields[] = [];
+  for (const [i, g] of raw.entries()) {
+    const bad = groupProblem(g) ?? (groups.some((k) => k.id === (g as Fields).id) ? `duplicate id "${(g as Fields).id}"` : null);
+    if (bad) {
+      const field = bad.match(/^"([^"]+)"/)?.[1];
+      flag(field ? `patterns[${i}].${field}` : `patterns[${i}]`, `${plainReason(bad)}. The Pattern group was ignored.`);
+      continue;
+    }
+    const roles = (g as Fields).roles as unknown[];
+    const kept = roles.filter((r, j) => {
+      const p = roleProblem((g as Fields).kind as string, r, ids);
+      if (p) flag(`patterns[${i}].roles[${j}]${p.field && `.${p.field}`}`, p.message.includes("unknown id") ? `It points to "${(r as Fields).node}", which does not exist. The role was ignored.` : `${plainReason(p.message)}. The role was ignored.`);
+      return !p;
+    });
+    groups.push({ ...(g as Fields), roles: kept });
+  }
+  return groups;
 }
 
 // Reads the files fresh on every call. Only regular files directly inside `<project>/.aidea/` are read.
