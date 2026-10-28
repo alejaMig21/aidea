@@ -31,7 +31,7 @@ const zoomBy = (f) => {
 $("zoom-in").onclick = () => zoomBy(1.2);
 $("zoom-out").onclick = () => zoomBy(1 / 1.2);
 $("zoom-fit").onclick = () => {
-  const b = $("world").getBBox(); // elements that are not displayed (other layers) are left out
+  const b = notationBBox(); // elements that are not displayed (other layers) are left out
   if (!b.width || !b.height) { Object.assign(view, viewStart); return apply(); }
   const r = svg.getBoundingClientRect();
   const w = r.width - 48, h = r.height - 140; // clear of the floating Layer tabs (top) and the zoom control (bottom)
@@ -83,7 +83,7 @@ async function draw(nodes) {
   world.replaceChildren();
   for (const n of nodes) {
     const parent = at.get(n.parent), r = at.get(n.id);
-    if (parent) world.append(el("path", { class: "edge", d: `M${parent.x + 9} ${parent.y + parent.height} V${r.y + 14} H${r.x}`, "data-ref": n.id }));
+    if (parent) world.append(el("path", { class: "edge", d: `M${parent.x + 9} ${parent.y + parent.height} V${r.y + 14} H${r.x}`, "data-ref": n.id, "data-flow": "", "data-packets": 1, "data-ends": `${n.parent} ${n.id}` }));
   }
   for (const n of nodes) {
     const r = at.get(n.id);

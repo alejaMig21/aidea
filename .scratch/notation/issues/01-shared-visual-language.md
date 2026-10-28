@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Colour tokens exist with one meaning each and are used by the kit; no layer redefines them.
 - [ ] A reusable way to mark an edge as flowing, an element as breathing and an edge as carrying packets, driven by data attributes or classes, with the packet following the edge's own path.
@@ -13,3 +13,18 @@
 - [ ] Hover and focus light an element's edges and dim the rest; keyboard focus does the same.
 - [ ] Each layer card has a "?" button with an accessible name that opens and closes a legend popover; layers can register their legend content; the popover is not clipped in narrow windows and closes with Escape.
 - [ ] Verified with a headless browser (no visible window): screenshots next to the prototype `.scratch/notation/prototype/index-hover-tilt.html`, differences listed in the review notes; packet positions sampled at two moments to prove motion; no console errors; the existing layouts (resizing, drawers) still work.
+
+## Review notes
+
+Verified with a headless Chrome script (1440x900, 420x800), screenshots compared with `index-hover-tilt.html`, core started on the `studio` fixture:
+
+- [x] Colour tokens: `--unresolved` added to `:root` next to the existing ones; `data-tone` maps each meaning once in `45-notation.js`; no layer redefines them.
+- [x] Data attributes drive the kit (`data-flow`, `data-packets`, `data-breathe`, `data-tone`, `data-ends`); packets use `animateMotion` + `mpath` so they follow the edge own path. Applied to the Architecture/Business/Requirements connectors and the Components edges.
+- [x] Animations switch in the top bar: off and back on, saved in localStorage (`aidea.animations`), survives reload, starts off under `prefers-reduced-motion`.
+- [x] Hidden-window pause: simulated `visibilitychange` sets `motion-paused` and pauses SMIL; not observed with a really hidden window.
+- [x] Unresolved (`data-tone="unresolved"`): dashed grey, no animation, no packets (checked computed style). No real unresolved edge exists yet, so this was checked by forcing the attribute.
+- [x] Hover and keyboard focus light the Node edges and dim the rest (Architecture); Components Nodes are not focusable today, so only hover applies there.
+- [x] "?" button with accessible name "Legend for <layer>", closed by default, Escape closes it, not clipped at 420 px wide. Layers register content with `notationRegisterLegend`.
+- [x] Packet positions sampled 700 ms apart on Architecture: (556,301) then (556,346). No console errors besides the pre-existing `/favicon.ico` 404. `npm run typecheck` and `npm test` pass (155 pass, 1 skipped).
+
+Differences from the prototype: packets have no outline ring and the glow is slightly smaller; the switch is a button (`aria-pressed`) not a checkbox; no "Quiz me" or step mode (out of scope here); legend is one popover on the Canvas card, not per panel; flow dashes apply to every connector including plain parent-child ones, as in the prototype; Fit now measures the world without packets (they sit at the origin until they move).

@@ -47,7 +47,7 @@ function authoredLink(parent, child, className) {
   const x1 = parent.x + parent.width / 2, y1 = parent.y + parent.height;
   const x2 = child.x + child.width / 2, y2 = child.y;
   const mid = (y1 + y2) / 2;
-  return el("path", { class: className, d: x1 === x2 ? `M${x1} ${y1}V${y2}` : `M${x1} ${y1}V${mid}H${x2}V${y2}` });
+  return el("path", { class: className, "data-flow": "", "data-packets": 1, "data-ends": `${parent.id} ${child.id}`, d: x1 === x2 ? `M${x1} ${y1}V${y2}` : `M${x1} ${y1}V${mid}H${x2}V${y2}` });
 }
 
 function drawAuthored() {
