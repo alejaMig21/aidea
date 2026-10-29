@@ -4,6 +4,7 @@ import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Adapter, AgentEvent } from "../src/core/types.ts";
+import { loadAuthored } from "../src/core/authored.ts";
 import { startCore } from "../src/core/server.ts";
 import { fixture } from "./helpers.ts";
 
@@ -68,7 +69,7 @@ async function setup(prefsFile?: string, learnerDir?: string) {
   };
   const proposals = async () => (await get(`/proposals?project=${encodeURIComponent(dir)}`)).proposals as any[];
   const decide = (p: any, decision: string) => post("/proposals/answer", { id: p.id, secret: p.secret, decision });
-  const architecture = () => JSON.parse(readFileSync(join(dir, ".aidea", "architecture.json"), "utf8")).nodes as any[];
+  const architecture = () => loadAuthored(dir).layers.architecture.nodes as any[]; // whichever way the layer is stored
   return { core, dir, post, get, setMode, build, classFor, proposals, decide, architecture };
 }
 

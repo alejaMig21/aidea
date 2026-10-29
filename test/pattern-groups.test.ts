@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Adapter, AgentEvent } from "../src/core/types.ts";
@@ -195,8 +195,12 @@ test("the builder can propose a Pattern group; it is validated, marked Blocking,
   assert.equal((await json(`/proposals?project=${q(dir)}`)).previews.architecture?.rects.length ?? 3, 3); // no Node was invented
 
   assert.equal((await post("/proposals/answer", { id: proposal.id, secret: proposal.secret, decision: "accept" })).status, 200);
-  const written = JSON.parse(readFileSync(archFile(dir), "utf8"));
-  assert.deepEqual(written.patterns.map((p: any) => p.id), ["hex"]);
-  assert.equal(written.nodes.length, 3);
+  // Stored as its own file (ADR 0005); the layer was converted to one file per Node.
+  const groupFiles = readdirSync(join(dir, ".aidea", "architecture", "patterns"));
+  assert.equal(groupFiles.length, 1);
+  assert.equal(JSON.parse(readFileSync(join(dir, ".aidea", "architecture", "patterns", groupFiles[0]), "utf8")).id, "hex");
+  const read = (await json(`/authored?project=${q(dir)}`)).layers.architecture;
+  assert.deepEqual(read.patterns.map((p: any) => p.id), ["hex"]);
+  assert.equal(read.nodes.length, 3);
   assert.deepEqual((await json(`/authored?project=${q(dir)}`)).problems, []);
 });

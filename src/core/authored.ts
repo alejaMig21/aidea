@@ -6,7 +6,10 @@
 //
 // A layer may also be stored one Node per file (ADR 0005): `.aidea/<layer>/<node-id>.json` holds one Node, and
 // `.aidea/architecture/patterns/<group-id>.json` one Pattern group. Both forms can sit side by side; an id found in both is
-// reported and the per-Node file wins. Nothing is written in the per-Node form yet.
+// reported and the per-Node file wins. A Node file is the Node's own JSON object, exactly as it would sit inside the layer's "nodes" list; a group file is
+// the group's JSON object. Files are read in file-name order, which is the order the layer is drawn in; accepted Proposals write them as
+// `<number>-<id>.json` (`001-web-app.json`) so the order of the old single file is kept, but any file name works when written by hand.
+// Accepting a Proposal on a layer still in its single file first writes every Node to its own file, then removes the single file.
 // Every Node has a unique non-empty string `id` and `title`, and a Rationale:
 //   "rationale": { "why": "...", "rejected": [ { "option": "...", "reason": "..." } ] }
 // `block` is one of the nine Business Model Canvas blocks (BLOCKS below); `parent` is an optional string.

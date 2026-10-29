@@ -4,6 +4,7 @@ import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Adapter, AgentEvent } from "../src/core/types.ts";
+import { loadAuthored } from "../src/core/authored.ts";
 import { startCore } from "../src/core/server.ts";
 import { fixture } from "./helpers.ts";
 
@@ -143,7 +144,7 @@ test("Proposals accept both kinds and refuse bad fields with the same rules", as
 
   const res = await post("/proposals/answer", { id: proposals[0].id, secret: proposals[0].secret, decision: "accept" });
   assert.equal(res.status, 200);
-  const nodes = JSON.parse(readFileSync(join(dir, ".aidea", "requirements.json"), "utf8")).nodes;
+  const nodes = loadAuthored(dir).layers.requirements.nodes as any[]; // whichever way the layer is stored
   assert.deepEqual(nodes.map((n: any) => n.id), ["us-request-quote", "nfr-safe"]);
 });
 

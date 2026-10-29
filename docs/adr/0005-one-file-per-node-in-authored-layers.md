@@ -13,4 +13,6 @@ Real-time cursors (seeing what each teammate does on a layer) are not part of th
 
 - Reading and writing authored layers, Proposals that accept a change and their tests change; the Node shape does not.
 - Architecture Pattern groups, which live at the top level of the layer today, need their own place in the same scheme.
+- A Node file holds the Node's own JSON object (what would sit in the layer's `nodes` list) and a Pattern group file the group's object, in `.aidea/architecture/patterns/`. Files are read in file-name order, which is the drawing order. Accepted Proposals write `<number>-<id>.json` so a converted layer keeps its old order; a hand-written file may have any name ending in `.json`.
+- The first accepted Proposal on a layer still in one file converts it: every Node is written to its own file, read back, and only then is the old file removed. A failure removes the files just written and leaves the old file as it was.
 - What each person has learned (Plan, Learner graph, Evidence) stays private to the person and outside the project. Only the Contract travels with the repo.

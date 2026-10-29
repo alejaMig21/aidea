@@ -4,6 +4,7 @@ import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Adapter, AgentEvent } from "../src/core/types.ts";
+import { loadAuthored } from "../src/core/authored.ts";
 import { TUTOR_INSTRUCTIONS } from "../src/core/tutor.ts";
 import { startCore } from "../src/core/server.ts";
 import { fixture } from "./helpers.ts";
@@ -62,7 +63,7 @@ async function newCore() {
     return out;
   };
   const proposals = async () => ((await (await fetch(`${core.url}/proposals?project=${encodeURIComponent(project)}`)).json()) as any).proposals as any[];
-  const layerFile = (layer: string) => JSON.parse(readFileSync(join(project, ".aidea", `${layer}.json`), "utf8"));
+  const layerFile = (layer: string) => loadAuthored(project).layers[layer] as any; // whichever way the layer is stored
   return { core, project, post, runClass, proposals, layerFile };
 }
 

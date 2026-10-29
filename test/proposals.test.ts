@@ -1,9 +1,10 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { cpSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Adapter, AgentEvent } from "../src/core/types.ts";
+import { loadAuthored } from "../src/core/authored.ts";
 import { startCore } from "../src/core/server.ts";
 import { fixture } from "./helpers.ts";
 
@@ -62,7 +63,8 @@ async function freshProject() {
   return dir;
 }
 const fileText = (dir: string, layer: string) => readFileSync(join(dir, ".aidea", `${layer}.json`), "utf8");
-const nodesOf = (dir: string, layer: string) => JSON.parse(fileText(dir, layer)).nodes as Record<string, unknown>[];
+// The Nodes of a layer as the loader reads them, whichever way the layer is stored.
+const nodesOf = (dir: string, layer: string) => loadAuthored(dir).layers[layer].nodes as unknown as Record<string, unknown>[];
 
 // One conversation in which the builder makes these tool calls; returns what the interface streamed and what the builder was told.
 async function builderCalls(project: string, calls: Call[], withToolList = false) {
@@ -275,7 +277,6 @@ test("a Proposal is never written through a link that leaves the Project", async
   assert.deepEqual(readdirNames(outside), []);
 });
 
-import { readdirSync } from "node:fs";
 const readdirNames = (dir: string) => readdirSync(dir);
 
 test("a Node's parent cannot be left dangling by a proposal, whatever order they are decided in", async () => {
@@ -297,6 +298,110 @@ test("a Node's parent cannot be left dangling by a proposal, whatever order they
   await answer(parent, "reject");
   assert.equal((await answer(child, "accept")).status, 409);
   assert.deepEqual(nodesOf(dir, "architecture").map((n) => n.id), ["web-app", "quote-db"]);
+});
+
+// ADR 0005, second step: accepted Proposals are written one file per Node.
+const snapshot = (dir: string) =>
+  new Map(readdirSync(join(dir, ".aidea"), { recursive: true }).map(String).filter((f) => f.endsWith(".json") && statSync(join(dir, ".aidea", f)).isFile()).sort().map((f) => [f, readFileSync(join(dir, ".aidea", f), "utf8")] as const));
+const layout = async (dir: string, layer: string) => (await get(`/layout?project=${encodeURIComponent(dir)}&layer=${layer}`)).json();
+const accept = async (dir: string, call: Call) => answer((await builderCalls(dir, [call])).proposals[0], "accept");
+const updateTech = (id: string, technology: string): Call => ({ name: "propose_update_node", arguments: { layer: "architecture", id, changes: { technology } } });
+const perNodeProject = async () => {
+  const dir = await freshProject();
+  assert.equal((await accept(dir, updateTech("web-app", "Node"))).status, 200); // converts the layer
+  return dir;
+};
+const changedFiles = (before: Map<string, string>, after: Map<string, string>) =>
+  [...new Set([...before.keys(), ...after.keys()])].filter((f) => before.get(f) !== after.get(f)).sort();
+
+test("the first accepted write converts a single-file layer to one file per Node and the drawn result stays the same", async () => {
+  const dir = await freshProject();
+  const old = JSON.parse(fileText(dir, "architecture"));
+  assert.equal((await accept(dir, updateTech("web-app", "Python + FastAPI"))).status, 200);
+  assert.equal(existsSync(join(dir, ".aidea", "architecture.json")), false);
+  assert.equal(readdirSync(join(dir, ".aidea", "architecture")).length, 2);
+  assert.deepEqual(nodesOf(dir, "architecture").map((n) => n.id), ["web-app", "quote-db"]); // the file order, not the alphabetical one
+  assert.deepEqual(nodesOf(dir, "architecture")[1], old.nodes[1]);
+  // The same drawing as the single-file layer with only that change made by hand.
+  const hand = await freshProject();
+  old.nodes[0].technology = "Python + FastAPI";
+  writeFileSync(join(hand, ".aidea", "architecture.json"), JSON.stringify(old));
+  assert.deepEqual(await layout(dir, "architecture"), await layout(hand, "architecture"));
+  assert.deepEqual((await (await get(`/authored?project=${encodeURIComponent(dir)}`)).json()).problems, []);
+});
+
+test("on a per-Node project an add, an update and a remove change only that Node's file", async () => {
+  const dir = await perNodeProject();
+  let was = snapshot(dir);
+  assert.equal((await accept(dir, addCache)).status, 200);
+  let now = snapshot(dir);
+  const added = changedFiles(was, now);
+  assert.equal(added.length, 1);
+  assert.match(added[0], /^architecture[\\/]003-cache\.json$/);
+  assert.deepEqual(JSON.parse(now.get(added[0])!), cache);
+
+  was = now;
+  assert.equal((await accept(dir, updateTech("cache", "Valkey"))).status, 200);
+  now = snapshot(dir);
+  assert.deepEqual(changedFiles(was, now), added);
+  assert.equal(nodesOf(dir, "architecture")[2].technology, "Valkey");
+
+  was = now;
+  assert.equal((await accept(dir, { name: "propose_remove_node", arguments: { layer: "architecture", id: "cache" } })).status, 200);
+  now = snapshot(dir);
+  assert.deepEqual(changedFiles(was, now), added);
+  assert.equal(now.size, was.size - 1);
+  assert.deepEqual(nodesOf(dir, "architecture").map((n) => n.id), ["web-app", "quote-db"]);
+});
+
+test("two Proposals for different Nodes accepted one after the other touch two different files", async () => {
+  const dir = await perNodeProject();
+  const start = snapshot(dir);
+  await accept(dir, addCache);
+  const mid = snapshot(dir);
+  await accept(dir, { name: "propose_add_node", arguments: { layer: "architecture", node: { ...cache, id: "queue", title: "Queue" } } });
+  const [a, b] = [changedFiles(start, mid), changedFiles(mid, snapshot(dir))];
+  assert.equal(a.length, 1);
+  assert.equal(b.length, 1);
+  assert.notEqual(a[0], b[0]);
+});
+
+test("a write that fails halfway leaves the layer as it was and says so", async () => {
+  const dir = await freshProject();
+  mkdirSync(join(dir, ".aidea", "architecture", "002-quote-db.json"), { recursive: true }); // the second file cannot be written here
+  const before = snapshot(dir);
+  const proposal = (await builderCalls(dir, [updateTech("web-app", "Go")])).proposals[0];
+  const res = await answer(proposal, "accept");
+  assert.equal(res.status, 409);
+  assert.match((await res.json()).error, /nothing was changed/i);
+  assert.deepEqual(snapshot(dir), before); // the single file is untouched and no half-converted file is left
+  assert.deepEqual(readdirSync(join(dir, ".aidea", "architecture")), ["002-quote-db.json"]);
+  assert.equal((await pending(dir)).length, 1);
+});
+
+test("a single-file layer with an entry that cannot get a file of its own is not converted", async () => {
+  const dir = await freshProject();
+  const doc = JSON.parse(fileText(dir, "architecture"));
+  doc.nodes.push("stray");
+  writeFileSync(join(dir, ".aidea", "architecture.json"), JSON.stringify(doc));
+  const before = snapshot(dir);
+  assert.equal((await accept(dir, addCache)).status, 409);
+  assert.deepEqual(snapshot(dir), before);
+});
+
+test("Proposals still work on a layer that mixes both forms", async () => {
+  const dir = await freshProject();
+  const [first, ...rest] = JSON.parse(fileText(dir, "architecture")).nodes;
+  mkdirSync(join(dir, ".aidea", "architecture"));
+  writeFileSync(join(dir, ".aidea", "architecture.json"), JSON.stringify({ nodes: [first] }));
+  for (const n of rest) writeFileSync(join(dir, ".aidea", "architecture", `${n.id}.json`), JSON.stringify(n));
+  assert.deepEqual(nodesOf(dir, "architecture").map((n) => n.id), ["web-app", "quote-db"]);
+  assert.equal((await accept(dir, updateTech("quote-db", "Postgres"))).status, 200);
+  assert.equal(existsSync(join(dir, ".aidea", "architecture.json")), false); // converted by the first write
+  assert.deepEqual(nodesOf(dir, "architecture").map((n) => n.id), ["web-app", "quote-db"]); // same order as before
+  assert.equal(nodesOf(dir, "architecture")[1].technology, "Postgres");
+  assert.equal((await accept(dir, addCache)).status, 200);
+  assert.deepEqual(nodesOf(dir, "architecture").map((n) => n.id).sort(), ["cache", "quote-db", "web-app"]);
 });
 
 test("a file already sitting where the temporary copy would go does not redirect the write", async (t) => {

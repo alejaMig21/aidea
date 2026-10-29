@@ -1,8 +1,8 @@
 // Proposals: changes the builder suggests to the authored layers. Nothing is written until the person accepts.
 // The builder never touches the files: it only calls tools that create a pending Proposal here.
 import { randomBytes } from "node:crypto";
-import { lstatSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { lstatSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { architecturePreview } from "./architecture.ts";
 import { groupProblem, loadAuthored, nodeProblem, rationaleProblem, roleProblem } from "./authored.ts";
 import { frameOf, layoutLayer } from "./layout.ts";
@@ -161,7 +161,33 @@ export function withPlaces(store: ProposalStore, project: Project) {
     });
 }
 
-// Writes an accepted Proposal into the layer's file. Returns a message when the file no longer fits the Proposal.
+// A Node or Pattern group being written, and the file that holds it when the layer is stored one file per Node (ADR 0005).
+type Entry = { value: Fields; path?: string };
+type Op = { kind: "put"; path: string; data: string; fresh: boolean } | { kind: "del"; path: string };
+const SINGLE_KEYS = ["nodes", "patterns"];
+const slug = (id: unknown) => String(id).replace(/[^A-Za-z0-9._-]+/g, "_").slice(0, 60);
+
+// The `.json` files directly inside `<layer folder>/<sub>`, parsed. A message when something there cannot be read as part of a layer.
+function readStored(root: string, sub: string): { entries: Entry[]; names: string[] } | string {
+  const dir = join(root, sub);
+  const unreadable = `The ${dir.slice(dir.lastIndexOf(".aidea"))} folder cannot be read as an authored layer: fix it, then accept again`;
+  try {
+    if (lstatSync(dir).isSymbolicLink()) return "A layer folder is a link that leaves the Project: nothing was written";
+    const names = readdirSync(dir, { withFileTypes: true }).filter((e) => e.isFile() && e.name.endsWith(".json")).map((e) => e.name).sort((a, b) => a.localeCompare(b, "en"));
+    const entries = names.map((name) => {
+      const value: unknown = JSON.parse(readFileSync(join(dir, name), "utf8"));
+      if (!isObject(value) || typeof value.id !== "string") throw new Error("not an item");
+      return { value, path: join(dir, name) };
+    });
+    return { entries, names };
+  } catch (e) {
+    return (e as NodeJS.ErrnoException).code === "ENOENT" ? { entries: [], names: [] } : unreadable;
+  }
+}
+
+// Writes an accepted Proposal. A layer stored one file per Node changes only the file of that Node; a layer still in its single file is
+// converted first: every Node gets its own file, and only when all of them are on disk is the old file removed.
+// A file is named `<number>-<id>.json`: the number keeps the order the layer is drawn in. Returns a message when nothing could be written.
 export function apply(project: Project, p: Proposal): string | null {
   const dir = join(project.path, ".aidea");
   const file = join(dir, `${p.layer}.json`);
@@ -170,51 +196,98 @@ export function apply(project: Project, p: Proposal): string | null {
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code !== "ENOENT") return "The .aidea folder cannot be read: nothing was written"; // no folder yet is fine: it is created below
   }
-  let doc: Fields = { nodes: [] };
+  const unfit = "The layer file cannot be read as an authored layer: fix it, then accept again";
+  let doc: Fields | undefined; // the single layer file, when there is one
   try {
     if (lstatSync(file).isSymbolicLink()) return "The layer file is a link that leaves the Project: nothing was written";
     const parsed: unknown = JSON.parse(readFileSync(file, "utf8"));
-    if (!isObject(parsed) || !Array.isArray(parsed.nodes)) return "The layer file cannot be read as an authored layer: fix it, then accept again";
+    if (!isObject(parsed) || !Array.isArray(parsed.nodes)) return unfit;
+    if (Object.keys(parsed).some((k) => !SINGLE_KEYS.includes(k)) || (parsed.patterns !== undefined && !Array.isArray(parsed.patterns))) return `${unfit} (it holds fields other than "nodes" and "patterns")`;
+    if ([...parsed.nodes, ...((parsed.patterns as unknown[]) ?? [])].some((x) => !isObject(x) || typeof x.id !== "string")) return `${unfit} (an entry has no id)`;
     doc = parsed;
   } catch (e) {
-    if ((e as NodeJS.ErrnoException).code !== "ENOENT") return "The layer file cannot be read as an authored layer: fix it, then accept again";
+    if ((e as NodeJS.ErrnoException).code !== "ENOENT") return unfit;
   }
-  const nodes = doc.nodes as Fields[];
-  const at = nodes.findIndex((n) => n.id === p.nodeId);
+  const root = join(dir, p.layer);
+  const stored = readStored(root, "");
+  const storedGroups = p.layer === "architecture" ? readStored(root, "patterns") : { entries: [], names: [] };
+  if (typeof stored === "string") return stored;
+  if (typeof storedGroups === "string") return storedGroups;
+  // An id kept in both forms: the per-Node file wins, as when reading.
+  const merge = (single: unknown, folder: Entry[]): Entry[] => [
+    ...((single as Fields[] | undefined) ?? []).filter((x) => !folder.some((f) => f.value.id === x.id)).map((value) => ({ value })),
+    ...folder,
+  ];
+  const nodes = merge(doc?.nodes, stored.entries);
+  const groups = merge(doc?.patterns, storedGroups.entries);
+  const vals = () => nodes.map((n) => n.value);
+  const at = nodes.findIndex((n) => n.value.id === p.nodeId);
+  const ops: Op[] = [];
+  let changed: Entry | undefined;
 
   if (p.nodeId.startsWith(PATTERN_PREFIX)) {
     const g = p.node!;
-    const patterns = (Array.isArray(doc.patterns) ? doc.patterns : (doc.patterns = [])) as Fields[];
-    const ids = new Set(nodes.map((n) => n.id));
-    const problem = groupProblem(g) ?? ((g.roles as unknown[]).map((r) => roleProblem(g.kind as string, r, ids)).find(Boolean)?.message ?? null);
+    const problem = groupProblem(g) ?? ((g.roles as unknown[]).map((r) => roleProblem(g.kind as string, r, new Set(vals().map((n) => n.id)))).find(Boolean)?.message ?? null);
     if (problem) return `The Pattern group no longer fits the file: ${problem}`;
-    if (patterns.some((x) => x.id === g.id)) return `A Pattern group "${g.id}" already exists (the file changed since the proposal)`;
-    patterns.push(g);
+    if (groups.some((x) => x.value.id === g.id)) return `A Pattern group "${g.id}" already exists (the file changed since the proposal)`;
+    groups.push((changed = { value: g }));
   } else if (p.kind === "add") {
     if (at !== -1) return `A Node with id "${p.nodeId}" already exists on the ${p.layer} layer (the file changed since the proposal)`;
-    const problem = nodeProblem(p.layer, p.node, new Set(nodes.map((n) => n.id as string))) ?? parentProblem(p.layer, p.node!, new Set(nodes.map((n) => n.id))) ?? relationTargetProblem(p.layer, p.node!, new Set([...nodes.map((n) => n.id), p.nodeId]));
+    const ids = new Set(vals().map((n) => n.id));
+    const problem = nodeProblem(p.layer, p.node, new Set(ids as Set<string>)) ?? parentProblem(p.layer, p.node!, ids) ?? relationTargetProblem(p.layer, p.node!, new Set([...ids, p.nodeId]));
     if (problem) return `The Node no longer fits the file: ${problem}`;
-    nodes.push(p.node!);
+    nodes.push((changed = { value: p.node! }));
   } else if (at === -1) {
     return `Node "${p.nodeId}" is no longer on the ${p.layer} layer (the file changed since the proposal)`;
   } else if (p.kind === "update") {
-    const merged = { ...nodes[at], ...p.changes };
-    const others = nodes.filter((_, i) => i !== at);
-    const problem = nodeProblem(p.layer, merged, new Set(others.map((n) => n.id as string))) ?? parentProblem(p.layer, merged, new Set(others.map((n) => n.id))) ?? relationTargetProblem(p.layer, merged, new Set(nodes.map((n) => n.id)));
+    const merged = { ...nodes[at].value, ...p.changes };
+    const others = vals().filter((_, i) => i !== at);
+    const problem = nodeProblem(p.layer, merged, new Set(others.map((n) => n.id as string))) ?? parentProblem(p.layer, merged, new Set(others.map((n) => n.id))) ?? relationTargetProblem(p.layer, merged, new Set(vals().map((n) => n.id)));
     if (problem) return `The change no longer fits the file: ${problem}`;
-    nodes[at] = merged;
+    nodes[at] = changed = { value: merged, path: nodes[at].path };
   } else {
-    const child = childOf(nodes, p.nodeId);
+    const child = childOf(vals(), p.nodeId);
     if (child) return `Node "${p.nodeId}" is now the parent of "${child}" (the file changed since the proposal)`;
-    nodes.splice(at, 1);
+    const [gone] = nodes.splice(at, 1);
+    if (gone.path) ops.push({ kind: "del", path: gone.path });
   }
 
-  mkdirSync(dir, { recursive: true });
-  const temporary = `${file}.tmp`;
-  writeFileSync(temporary, JSON.stringify(doc, null, 2) + "\n");
-  renameSync(temporary, file);
+  // Which files to write: the changed item, and (when converting) every item that has no file yet.
+  const stage = (entries: Entry[], sub: string, names: string[]) => {
+    let next = Math.max(0, ...names.map((n) => parseInt(n, 10) || 0)) + 1;
+    for (const e of entries) {
+      const fresh = !e.path;
+      if (!fresh && e !== changed) continue;
+      e.path ??= join(root, sub, `${String(next++).padStart(3, "0")}-${slug(e.value.id)}.json`);
+      ops.push({ kind: "put", path: e.path, data: JSON.stringify(e.value, null, 2) + "\n", fresh });
+    }
+  };
+  stage(nodes, "", stored.names);
+  stage(groups, "patterns", storedGroups.names);
+
+  const made: string[] = []; // files created by this write: removed again when it fails
+  let temporary: string | undefined;
+  try {
+    for (const op of ops) {
+      if (op.kind === "del") continue;
+      mkdirSync(dirname(op.path), { recursive: true });
+      temporary = `${op.path}.${randomBytes(4).toString("hex")}.tmp`;
+      writeFileSync(temporary, op.data, { flag: "wx" });
+      renameSync(temporary, op.path);
+      temporary = undefined;
+      if (op.fresh) made.push(op.path);
+    }
+    for (const op of ops) if (op.kind === "put" && readFileSync(op.path, "utf8") !== op.data) throw new Error("a file did not read back as written");
+    for (const op of ops) if (op.kind === "del") unlinkSync(op.path);
+    if (doc) unlinkSync(file); // last: the old single file goes only once every Node is on disk
+  } catch {
+    if (temporary) rmSync(temporary, { force: true });
+    for (const path of made) rmSync(path, { force: true });
+    return `The layer could not be written (is the folder read-only?): nothing was changed`;
+  }
   return null;
 }
+
 
 // The Architecture layer as it would be drawn with every pending Proposal applied (absent when none is pending).
 export function previewsOf(store: ProposalStore, project: Project) {
