@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { startCore } from "../src/core/server.ts";
+import { parseRoleAdapters, startCore } from "../src/core/server.ts";
 import type { Adapter } from "../src/core/types.ts";
 import { fixture } from "./helpers.ts";
 
@@ -45,4 +45,13 @@ test("an unknown adapter name is refused at start with a plain message", async (
     startCore({ port: 0, adapter: fake("a").adapter, roleAdapters: { chef: "default" } }),
     /Unknown role "chef"/,
   );
+});
+
+test("AIDEA_ROLE_ADAPTERS is read as role=agent pairs and a malformed pair is named in words", () => {
+  assert.deepEqual(parseRoleAdapters(" tutor = default , grader=b "), { tutor: "default", grader: "b" });
+  assert.deepEqual(parseRoleAdapters(undefined), {});
+  assert.throws(() => parseRoleAdapters("tutor"), /AIDEA_ROLE_ADAPTERS.*"tutor".*role=agent/);
+  assert.throws(() => parseRoleAdapters("tutor=default,=b"), /"=b"/);
+  assert.throws(() => parseRoleAdapters("tutor="), /"tutor="/);
+  assert.throws(() => parseRoleAdapters("a=b=c"), /"a=b=c"/);
 });

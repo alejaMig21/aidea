@@ -25,6 +25,17 @@ async function loadRoutes(): Promise<Handler[]> {
 // `preferencesFile` does the same for the mode and model chosen for each Project.
 // `learnerDir` is the per-user folder of the Learner's evidence and graph (memory only without it); `learnerModel` is the model of its Extractor and Auditor.
 // `adapters` are extra agent products by name and `roleAdapters` says which one serves a role (default: `adapter`, named "default"); the builder's adapter also declares the modes and models.
+// AIDEA_ROLE_ADAPTERS="tutor=default,grader=other": a comma-separated list of role=agent pairs.
+export function parseRoleAdapters(text: string | undefined): Record<string, string> {
+  const pairs: Record<string, string> = {};
+  for (const item of (text ?? "").split(",").map((s) => s.trim()).filter(Boolean)) {
+    const [role, agent, ...extra] = item.split("=").map((s) => s.trim());
+    if (!role || !agent || extra.length) throw new Error(`AIDEA_ROLE_ADAPTERS has "${item}", but each entry must look like role=agent (for example tutor=default)`);
+    pairs[role] = agent;
+  }
+  return pairs;
+}
+
 export async function startCore({ port, adapter: defaultAdapter = createClaudeAdapter(), adapters = {}, roleAdapters = {}, recentsFile, preferencesFile, learnerDir, learnerModel }: { port: number; adapter?: Adapter; adapters?: Record<string, Adapter>; roleAdapters?: Record<string, string>; recentsFile?: string; preferencesFile?: string; learnerDir?: string; learnerModel?: string }) {
   const named: Record<string, Adapter> = { ...adapters, default: defaultAdapter };
   for (const [role, name] of Object.entries(roleAdapters)) {
