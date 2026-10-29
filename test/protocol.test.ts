@@ -75,7 +75,7 @@ test("a request from a foreign Origin is rejected", async () => {
 
 test("a body that is not declared as JSON is refused with 415, so a cross-site form cannot send one", async () => {
   const body = JSON.stringify({ path: fixture("shop") });
-  for (const headers of [{}, { "content-type": "text/plain" }, { "content-type": "application/x-www-form-urlencoded" }]) {
+  for (const headers of [{} as Record<string, string>, { "content-type": "text/plain" }, { "content-type": "application/x-www-form-urlencoded" }]) {
     const res = await t.raw("POST", "/projects", headers, body);
     assert.equal(res.status, 415, JSON.stringify(headers));
     assert.match(JSON.parse(res.text).error, /application\/json/);
