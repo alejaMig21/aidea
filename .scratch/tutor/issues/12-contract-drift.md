@@ -4,9 +4,19 @@
 
 **Blocked by:** 05, 11
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Through the protocol on fixtures: each kind of difference is detected; a requirement not yet built is not reported as drift; a broken trace link is.
-- [ ] The difference list is deterministic and includes Node ids, kind and a plain-words explanation.
-- [ ] A drift question started from a difference carries the difference as the class topic and is recorded as Evidence.
-- [ ] Verified with a headless browser: screenshot of the drift list and of a marked Node; no console errors.
+- [x] Through the protocol on fixtures: each kind of difference is detected; a requirement not yet built is not reported as drift; a broken trace link is.
+- [x] The difference list is deterministic and includes Node ids, kind and a plain-words explanation.
+- [x] A drift question started from a difference carries the difference as the class topic and is recorded as Evidence.
+- [x] Verified with a headless browser: screenshot of the drift list and of a marked Node; no console errors.
+
+## Review notes
+
+- [x] `test/drift.test.ts` (7 tests, through the protocol on a generated project) written first and run RED (7 of 7), then green; 365 tests, 364 pass, 1 skipped; typecheck clean.
+- [x] `src/core/drift.ts` (`driftOf`): five kinds, each item `{id, type, layer, nodes, explanation, certainty?, evidence?}`, ordered by kind then id: `broken-trace` (any Trace link whose target is gone), `built-without-code` (a requirement with `built: true` and no `traces`), `missing-relationship` (a Node declares `relations` to another, both have code, no code dependency from the first to the second), `undeclared-dependency` (code of one Node depends on another that its `relations` do not name, and neither is inside the other), and the Pattern group violations of ticket 14. `GET /drift?project=` returns the list and `GET /contract` carries the same list as `drift`.
+- [x] What the person has not said is never contradicted: a requirement without links is "not built yet" (not drift) unless `built: true`; a Node that declares no `relations` has said nothing about what it may depend on; unplaceable calls (unresolved) make a missing relationship "possible"; dependencies matched only by name are "possible".
+- [x] `POST /tutor/classes {project, drift: <id>}` starts a class whose first message carries the difference (kind, layer, Nodes, explanation) and says it is information, not a verdict; an id not on the list is a 400. Its answers are ordinary Evidence (tested).
+- [x] UI `src/ui/features/53-drift.js`: a "Differences from the Contract" card in the Tutor column (plain kind label, explanation, "Show on <layer>", "Ask me about it"), a dashed red outline on the affected Nodes of Requirements and Architecture, and a legend line on both layers. The card says nothing is blocked. `built: true` is documented in the Node help the builder and the Tutor read.
+- [x] Verified in headless Chrome (no window, so nothing on any monitor) with a scripted Tutor on a generated project: the card lists the four kinds, the marks appear on both layers, "Ask me about it" starts the class with the difference as its topic; no console errors.
+- NOT done: there is no way yet for the person to mark a requirement as built in the interface; today `built: true` comes from a Proposal (`propose_update_node`) or by hand. A Node that traces to code only through a function is treated as the module that holds it, so two functions of one module are not told apart. Both calls of a language other than Python are out of reach until the language adapters exist (ADR 0004).

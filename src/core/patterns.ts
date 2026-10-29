@@ -26,9 +26,8 @@ const broken: Record<string, (from: string, to: string) => string | null> = {
   layered: (from, to) => (PATTERN_ROLES.layered.indexOf(from) > PATTERN_ROLES.layered.indexOf(to) ? `A ${from} Node may not depend on a ${to} Node (a lower layer on an upper one)` : null),
 };
 
-export function patternViolations(project: Project): PatternViolation[] {
-  const architecture = loadAuthored(project.path).layers.architecture;
-  if (!architecture.patterns?.length) return [];
+// Maps Architecture Nodes to the modules their `traces` name (a trace to a class or function stands for the module that holds it).
+export function architectureModules(project: Project, nodes: { id: string; traces?: unknown }[]) {
   const byId = new Map<string, CoreNode>(project.nodes.map((n) => [n.id, n]));
   const moduleOf = (id: string | null) => {
     let at = id === null ? undefined : byId.get(id);
@@ -36,12 +35,19 @@ export function patternViolations(project: Project): PatternViolation[] {
     return at?.id;
   };
   const nodesOfModule = new Map<string, string[]>();
-  for (const n of architecture.nodes) {
+  for (const n of nodes) {
     for (const t of (n.traces as string[] | undefined) ?? []) {
       const m = moduleOf(t);
       if (m !== undefined && !nodesOfModule.get(m)?.includes(n.id)) nodesOfModule.set(m, [...(nodesOfModule.get(m) ?? []), n.id]);
     }
   }
+  return { moduleOf, nodesOfModule };
+}
+
+export function patternViolations(project: Project): PatternViolation[] {
+  const architecture = loadAuthored(project.path).layers.architecture;
+  if (!architecture.patterns?.length) return [];
+  const { moduleOf, nodesOfModule } = architectureModules(project, architecture.nodes);
 
   const out: PatternViolation[] = [];
   for (const group of architecture.patterns) {

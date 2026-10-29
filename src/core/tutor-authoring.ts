@@ -11,7 +11,7 @@ import type { Core } from "./types.ts";
 export const NODE_HELP =
   "A Node has a unique `id`, a `title` and a `rationale` { why, rejected: [{ option, reason }] } that explains the decision and the alternatives " +
   "that were rejected. Business Nodes also need `block` (one of the nine Business Model Canvas blocks, such as \"value propositions\"); " +
-  "requirements Nodes have a `kind`, \"functional\" (the default: needs `as`, `want`, `so`; may have `criteria`, an array of Given/When/Then lines) " +
+  "requirements Nodes have a `kind`, \"functional\" (the default: needs `as`, `want`, `so`; may have `criteria`, an array of Given/When/Then lines, and `built: true` once the requirement has been built, so that missing code is reported as drift) " +
   "or \"non-functional\" (needs `statement`, `quality` (performance, security, usability, reliability, maintainability, compatibility, portability or safety) " +
   "and a measurable `measure`; `as`, `want`, `so` are not needed); architecture Nodes need `technology` and may have `parent` (the Node it is inside), `kind` (person, system, container or component), " +
   "a one-sentence `description`, `external` (true for a person or system outside the one being designed) and `relations`: [{ to, label, technology? }] naming other architecture Nodes that this one uses. Any Node may have " +

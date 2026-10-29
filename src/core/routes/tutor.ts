@@ -11,6 +11,7 @@ import { createLesson } from "../teach.ts";
 import { DECISION_INSTRUCTIONS, bindDecision, decisionMessage, heldDecision, unbindDecision } from "../decision-class.ts";
 import { currentChoice } from "./agent-options.ts";
 import { layerClassMessage } from "../layer-help.ts";
+import { driftClassMessage, driftOf } from "../drift.ts";
 import { LAYER_CONCEPTS, isLayer } from "../probe.ts";
 
 const MAX_MESSAGE_CHARS = 20_000;
@@ -46,9 +47,11 @@ const handler: Handler = async (req, res, core) => {
   if (topic !== undefined && (typeof topic !== "string" || topic.length > MAX_TOPIC_CHARS)) return reject(400, `topic must be text of at most ${MAX_TOPIC_CHARS} characters`);
   const layer = body?.layer;
   if (layer !== undefined && !isLayer(layer)) return reject(400, `layer must be one of ${Object.keys(LAYER_CONCEPTS).join(", ")}`);
+  const differences = body?.drift === undefined ? undefined : driftOf(project).find((d) => d.id === body.drift);
+  if (body?.drift !== undefined && !differences) return reject(400, "drift must be the id of a difference on the project's drift list (GET /drift)");
   const held = body?.decision === undefined ? undefined : heldDecision(core, project.id, body.decision);
   if (held && "error" in held) return reject(400, held.error);
-  const message = held ? decisionMessage(held.proposal) : layer ? layerClassMessage(layer) : body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
+  const message = held ? decisionMessage(held.proposal) : layer ? layerClassMessage(layer) : differences ? driftClassMessage(differences) : body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
   if (typeof message !== "string" || !message.trim() || message.length > MAX_MESSAGE_CHARS) {
     return reject(400, `message must be a non-empty string of at most ${MAX_MESSAGE_CHARS} characters`);
   }
