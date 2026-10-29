@@ -135,6 +135,7 @@ function componentsDraw(world, nodes, layout, unresolved, module = null) {
   componentsOpen = module;
   componentsMode = layout.mode ?? "detail";
   if (componentsMode === "overview") {
+    componentsTestsOpen = !!layout.tests?.open;
     componentsOverviewDraw(root, nodes, layout);
     componentsOverviewLegend(layout.pairs, unresolved, layout.tests);
   } else {
@@ -363,7 +364,8 @@ async function componentsLoad(module, tests = false) {
   componentsLoaded = performance.now() - started; // read by the headless checks: the time to open a module
 }
 let componentsLoaded = 0;
-componentsBack.onclick = () => componentsLoad(null);
+let componentsTestsOpen = false; // whether the overview last drawn had the tests block open (a module's detail has no such block)
+componentsBack.onclick = () => componentsLoad(null, componentsTestsOpen); // the tests block stays as the person left it in the overview
 // A click on an import row of a module's detail opens that module (the same as double clicking its box in the overview).
 // Read from pointerup like the Canvas does for selecting: the pointer is captured by the svg, so a click would not name the row.
 let componentsDown = null;
