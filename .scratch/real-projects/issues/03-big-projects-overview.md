@@ -1,0 +1,13 @@
+# 03: A big project opens as an overview of folders and modules
+
+**What to build:** Opening the person's own projects showed that the Components layer does not scale: it draws every module as a column side by side in one long row, with all its classes, methods and functions. Telegram (209 modules, about 4,800 Nodes) is a strip of about 40,000 px of which only two modules are visible at normal zoom, and Fit shrinks it to nothing; hubstaff-automation (about 600 modules, about 15,600 Nodes) is 193,000 SVG elements. Make a project with more than 40 modules open the Components layer as an **overview**: every module is one compact box (its name, how many classes and functions it holds) grouped under the label of its folder, laid out in wrapped rows that fit the screen instead of one strip; the imports and calls between modules are merged into one line per pair (with its count and its weakest Resolution, as in the detailed view) and only the lines of the module under the pointer or selected are lit, the rest are quiet. Opening a module (double click, or Enter on it) shows the detailed view of that module only (its classes, methods and functions as today, and stubs for what leaves it), with a visible control "All modules" to go back. A project with 40 modules or fewer looks exactly as today.
+
+**Blocked by:** None (the freeze and the build-folder problems are fixed).
+
+**Status:** ready-for-agent
+
+- [ ] Through the protocol on a generated project with 120 modules in 6 folders: the layout of the Components layer is the overview (one rectangle per module plus one per folder label, no per-class rectangles), is deterministic, fits a width that is about one screen (wrapped rows, not one strip), and merged routes are at most one per pair of modules; the detail of one module returns only that module's boxes and the routes that touch it.
+- [ ] A project with 40 modules or fewer returns the same layout as before (every existing test passes unchanged).
+- [ ] In the real interface the overview of Telegram and of hubstaff-automation draws in under 3 seconds and with fewer than 5,000 SVG elements, Fit shows every folder readably at 1920 and at 1280 pixels wide, hovering a module lights its lines, double click opens it, "All modules" returns, and no file of the person's folders changes (open them read-only).
+- [ ] The legend of the Components layer says what the overview shows and what it leaves out; the legend check (`test/legend-check.test.ts`) and the shared scale of sizes and colours (`docs/agents/ui-style.md`) are respected.
+- [ ] Verified live with the real app on the main screen, with screenshots of both projects at both sizes, and a short written verdict on what is better and what is worse than before.
