@@ -47,9 +47,13 @@ export type RunRequest = {
   timeoutMs: number;
 };
 export type RunResult = { outcome: Record<string, unknown>; interpreter: string };
+export type Example = { source: string; values: Record<string, string> }; // where a test calls it ("tests/test_x.py:7") and a literal text per parameter
 
 export type LanguageAdapter = {
   analyze(projectPath: string): Promise<Analysis>;
+  // examples(projectPath, file, qualifiedName) -> Example[]: arguments the Project's own tests pass, read statically
+  // (a test is never run); only literal arguments are offered, a call with any unreadable argument offers nothing.
+  examples?(projectPath: string, file: string, qualifiedName: string): Promise<Example[]>;
   flow?(file: string, qualifiedName: string): Promise<Flow>;
   run?(request: RunRequest): Promise<RunResult>;
 };
@@ -82,6 +86,7 @@ export function adapterFor(projectPath: string): LanguageAdapter {
       };
     },
     ...(mine.some((a) => a.flow) && { flow: async (file: string, name: string) => { const o = of(file, "draw an Algorithm graph for"); if (!o.adapter?.flow) throw o.says(); return o.adapter.flow(file, name); } }),
+    ...(mine.some((a) => a.examples) && { examples: async (path: string, file: string, name: string) => { const o = of(file, "read tests of"); return o.adapter?.examples ? o.adapter.examples(path, file, name) : []; } }),
     ...(mine.some((a) => a.run) && { run: async (req: RunRequest) => { const o = of(req.file, "run functions of"); if (!o.adapter?.run) throw o.says(); return o.adapter.run(req); } }),
   };
 }

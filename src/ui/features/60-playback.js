@@ -11,6 +11,7 @@ playbackStyle.textContent = `
   #pane-algorithm hr { border: 0; border-top: 1px solid #202531; margin: 8px 0 2px; width: 100%; }
   #pane-algorithm label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--label); }
   #pane-algorithm input:not([type]), #pane-algorithm input[type="text"] { padding: 6px 10px; font-size: 13px; }
+  #pane-algorithm label[hidden] { display: none; }
   #pane-algorithm .pb-row { display: flex; gap: 8px; align-items: center; }
   #pane-algorithm .pb-row > button { flex: 1; padding: 5px 10px; font-size: 13px; }
   #pane-algorithm .pb-row > button.step { flex: none; width: 29px; padding: 4px 0; }
@@ -190,6 +191,23 @@ function pbFields(node) {
   ];
 }
 
+// The arguments the Project's own tests pass to this function (read by the core without running them), as a choice that
+// fills the fields. Typing still works; when there is nothing to offer, or the core cannot say, the choice stays hidden.
+async function pbOfferTestInputs(box, node) {
+  if (!node.parameters?.length) return;
+  const graph = pbGraph, project = current;
+  const res = await fetch(`/playback/examples?project=${encodeURIComponent(project)}&node=${encodeURIComponent(node.id)}`).catch(() => null);
+  const found = res?.ok ? (await res.json().catch(() => null))?.examples : null;
+  if (!found?.length || graph !== pbGraph || project !== current || !box.isConnected) return;
+  const select = pbEl("select", { id: "pb-examples", onchange: (e) => {
+    const chosen = found[Number(e.target.value)];
+    if (!chosen) return;
+    for (const p of node.parameters) $(`pb-v-${p.name}`).value = chosen.values[p.name] ?? ""; // a parameter the test left out stays at its default
+  } }, pbEl("option", { value: "", textContent: "Choose one…" }), ...found.map((x, i) => pbEl("option", { value: i, textContent: `${Object.entries(x.values).map(([k, v]) => `${k}=${v}`).join(", ")}  (${x.source})` })));
+  box.replaceChildren("From the Project's tests", select);
+  box.hidden = false;
+}
+
 // Builds the panel: the inputs always, the controls once there is a recording.
 function pbRender() {
   if (!pbNode()) { rightSetTabEnabled("algorithm", false); return; } // the function is gone (another Project): nothing to show
@@ -200,8 +218,10 @@ function pbRender() {
       for (const p of items ?? []) $(`${prefix}${p.name}`).value = p.suggestion ?? "";
     }
   };
+  const fromTests = pbEl("label", { id: "pb-from-tests", hidden: true }); // filled below when the Project's tests call this function
   const parts = [
     pbEl("h3", { textContent: "Test data" }),
+    fromTests,
     ...pbFields(node),
     pbEl("p", { className: "pb-hint", textContent: "Numbers, text in quotes like \"hi\", or lists like [1, 2, 3]." }),
     pbEl("div", { className: "pb-row" }, pbEl("button", { textContent: "Use example", onclick: useExample }), pbEl("button", { id: "pb-record", className: "primary", textContent: "Record a run", onclick: pbRecord })),
@@ -232,6 +252,7 @@ function pbRender() {
     );
   }
   pbPane.replaceChildren(pbEl("header", {}, "Algorithm", pbEl("span", { textContent: pbGraph.node.split(".").pop() })), pbEl("div", { className: "body" }, ...parts));
+  pbOfferTestInputs(fromTests, node);
   if (pbRecording) {
     const inputs = pbRecording.input;
     for (const [texts, prefix] of [[inputs.values, "pb-v-"], [inputs.instanceValues, "pb-c-"], [inputs.effects, "pb-e-"]]) {

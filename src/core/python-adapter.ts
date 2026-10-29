@@ -1,6 +1,6 @@
 // The Python language adapter: the analysis scripts next to this file, run by python.ts. See adapters.ts for the interface.
 import { AdapterError } from "./adapters.ts";
-import type { Analysis, Flow, LanguageAdapter, RunRequest, RunResult } from "./adapters.ts";
+import type { Analysis, Example, Flow, LanguageAdapter, RunRequest, RunResult } from "./adapters.ts";
 import { projectPython, runPython } from "./python.ts";
 
 // Turns the exit code of a script into a failure the person can act on; anything else is a crash.
@@ -23,6 +23,11 @@ export const pythonAdapter: LanguageAdapter = {
     } catch (e) {
       explain(e, "Building the Algorithm graph took too long");
     }
+  },
+
+  // The arguments the Project's own tests pass to the function: read from their source, never run.
+  async examples(projectPath, file, qualifiedName): Promise<Example[]> {
+    return JSON.parse(await runPython("examples.py", [projectPath, file, qualifiedName], { timeoutMs: 30_000 }));
   },
 
   // The Project's own virtual environment is used by default when it has one. The interpreter is only ever found by

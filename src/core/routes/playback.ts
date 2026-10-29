@@ -18,6 +18,20 @@ let counter = 0;
 
 const handler: Handler = async (req, res, core) => {
   const url = new URL(req.url ?? "/", "http://core");
+  // Ready-made inputs: the arguments the Project's own tests pass to the function. Nothing offered is not an error.
+  if (url.pathname === "/playback/examples" && req.method === "GET") {
+    const found = locate(core, res, url.searchParams.get("project"), url.searchParams.get("node"));
+    if (!found) return true;
+    const adapter = adapterFor(found.project.path);
+    let examples: unknown[] = [];
+    try {
+      examples = adapter.examples ? await adapter.examples(found.project.path, found.file, moduleAndName(found.project, found.node).qualifiedName) : [];
+    } catch {
+      // tests that cannot be read offer nothing
+    }
+    core.send(res, 200, { examples });
+    return true;
+  }
   if (url.pathname !== "/playback") return false;
 
   if (req.method === "GET") {

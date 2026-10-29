@@ -4,6 +4,6 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] For a Python fixture with a test calling a function, the Playback form offers the test's arguments as a choice; typing still works; a test with arguments that cannot be read simply offers nothing.
+- [x] For a Python fixture with a test calling a function, the Playback form offers the test's arguments as a choice; typing still works; a test with arguments that cannot be read simply offers nothing.
