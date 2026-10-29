@@ -4,10 +4,16 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] On Business, Requirements, Architecture and Components, pausing shows no hop buttons, no counter and no "Nothing moves here" text; animations still stop and start again.
-- [ ] On Algorithms with a recording, pausing shows Previous and Next, which step through the recording, with the counter ("Step n / m") as today.
-- [ ] On Algorithms without a recording there are no hop buttons either.
-- [ ] Switching layer while paused shows or hides the controls to match the layer shown, and stepping state is reset as today.
-- [ ] Verified with a headless browser: screenshots of a paused authored layer and a paused Algorithms layer with a recording; no console errors.
+- [x] On Business, Requirements, Architecture and Components, pausing shows no hop buttons, no counter and no "Nothing moves here" text; animations still stop and start again.
+- [x] On Algorithms with a recording, pausing shows Previous and Next, which step through the recording, with the counter ("Step n / m") as today.
+- [x] On Algorithms without a recording there are no hop buttons either.
+- [x] Switching layer while paused shows or hides the controls to match the layer shown, and stepping state is reset as today.
+- [x] Verified with a headless browser: screenshots of a paused authored layer and a paused Algorithms layer with a recording; no console errors.
+
+## Review notes
+
+- [x] Only `src/ui/features/48-stepmode.js` changed. The hop machinery (stepping dot `#nt-hop`, edge highlight, `stepHop`, `stepEdges`, hop counter, "Nothing moves here") had no use left once hop buttons exist only for a recording, so it is deleted rather than hidden. Previous/Next/counter are shown only when paused and a recording is shown on Algorithms; the labels are "step" everywhere now.
+- [x] Red first in headless Chrome (no window): before the change every paused layer showed Previous hop, Next hop and either "Hop 0 / n" with a moving dot or "Nothing moves here"; after it only "Resume live" shows on Business, Requirements, Architecture, Components and Algorithms without a recording, and "Step 1 / 3" with Previous/Next on Algorithms with a real recording of `__init__` (Next goes to "Step 2 / 3", the trace table follows). Going back to Components resets to "Pause and step". No console errors. 384 tests, 383 pass, 1 skipped; typecheck clean.
+- NOT done: no automated test of the interface (the check is a headless script outside the suite); the pause itself on authored layers is unchanged (it still freezes dashes, glow and packets via the existing animation switch); one full-suite run failed once with a "bad port" fetch error in `decision-classes.test.ts` (random port the browser fetch refuses, unrelated) and passed on rerun.
