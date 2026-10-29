@@ -3,6 +3,7 @@
 //   new -> (predict answered) predicted -> (explain) explained -> (check right) closed
 //                                                    explained -> (check wrong) missed -> (explain again) explained
 import { evidenceOf } from "./learner.ts";
+import type { Evidence } from "./learner.ts";
 import { callRole } from "./learner-pipeline.ts";
 import { runAuthoringTool } from "./tutor-authoring.ts";
 import { itemFor, runPlanTool } from "./plan.ts";
@@ -31,6 +32,8 @@ export function createLesson() {
   let open: string | undefined;
   let finished = false;
   const elements = new Map<string, { questionId: string; text: string }>(); // layer elements the person has answered about (co-authoring)
+  let reviewDue: string | undefined; // the idea of a review question the first step waits for
+  let reviewIdea: string | undefined; // the same idea, until the question has been asked
   const texts: string[] = []; // every explanation, in order: the Teacher's prose for the Learner graph
 
   const stepOf = (id: unknown, call: string): Step | Failure => {
@@ -47,10 +50,28 @@ export function createLesson() {
     texts,
     elements,
     isFinished: () => finished,
+    setReview(idea: string) {
+      reviewDue = reviewIdea = idea;
+    },
+    // The review question: one, before the first step, about the idea the core chose.
+    review(args: Record<string, unknown>): Failure | { question: Question } {
+      if (!reviewIdea) return { error: reviewDue === undefined && !steps.size ? "No review question is due in this class. Go on with begin_step." : "The review question was already asked. Go on with begin_step." };
+      const parsed = parseQuestion(args);
+      if ("error" in parsed) return parsed;
+      const q = parsed.question;
+      if (q.kind === "text" && !nonEmpty(q.expected, MAX_PROSE)) return { error: "A text review question needs `expected`: the answer you have in mind, fixed before the question is shown" };
+      const idea = reviewIdea;
+      reviewIdea = undefined;
+      return { question: { ...q, phase: "review", idea } };
+    },
+    reviewAnswered() {
+      reviewDue = undefined;
+    },
     openStep: () => open,
 
     begin(args: Record<string, unknown>, item?: string): Failure | { stepId: string } {
       if (finished) return { error: "The class is finished. End your turn." };
+      if (reviewDue) return { error: "Ask the review question first, with review, as your first message said. begin_step is refused until the person has answered it (\"I don't know\" counts)." };
       const { stepId, title } = args;
       if (!nonEmpty(stepId, 100)) return { error: "begin_step needs a stepId: a short unique id for the step" };
       if (!nonEmpty(title, 200)) return { error: "begin_step needs a title: a few words naming the step" };
@@ -147,9 +168,9 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
   const conversation = core.permissions.conversationOf(token);
   if (!conversation?.classId) return err("The class is not running");
   const { classId, project } = conversation;
-  const record = (q: Question, a: Answer, questionId: string, graded?: boolean) => {
+  const record = (q: Question, a: Answer, questionId: string, graded?: boolean, extra: Partial<Evidence> = {}) => {
     try {
-      const e = evidenceOf(classId, questionId, project, q, a, graded);
+      const e = { ...evidenceOf(classId, questionId, project, q, a, graded), ...extra };
       core.learner.recordEvidence(e);
       return e;
     } catch (e) {
@@ -185,6 +206,40 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
     if ("error" in r) return err(r.error);
     conversation.emit({ type: "tutor_finished", summary: r.summary });
     return ok({ next: "The class is finished. End your turn." });
+  }
+
+  if (name === "review") {
+    const asked = lesson.review(args);
+    if ("error" in asked) return err(asked.error);
+    const q = asked.question;
+    const result = await core.permissions.askQuestion(token, q, gaveUp);
+    if (!result) return err("The class is not running");
+    if (!result.heard) return { text: result.text, isError: result.isError };
+    const { heard } = result;
+    const a = heard.answer;
+    const evidence = { phase: "review" as const, idea: q.idea };
+    let correct = false;
+    let feedback: string | undefined;
+    if (!a.dontKnow && q.kind === "choice") correct = a.option === q.correct;
+    else if (!a.dontKnow && q.kind === "text") {
+      try {
+        ({ correct, feedback } = await grade(core, q, a));
+      } catch (e) {
+        console.error(e);
+        record(q, a, heard.questionId, undefined, evidence); // the answer is kept; nothing is counted
+        lesson.reviewAnswered();
+        return ok({ next: "The grader could not judge this answer, so nothing was counted. Go on with begin_step." });
+      }
+    }
+    const entry = record(q, a, heard.questionId, q.kind === "text" && !a.dontKnow ? correct : undefined, evidence);
+    lesson.reviewAnswered();
+    return ok({
+      ...(JSON.parse(result.text) as object),
+      correct,
+      ...(feedback ? { feedback } : {}),
+      ...(entry?.sureAndWrong ? { sureAndWrong: true } : {}),
+      next: "Say one short line about it, without teaching the answer, and go on with begin_step.",
+    });
   }
 
   // predict and ask pose a question and wait for the person.

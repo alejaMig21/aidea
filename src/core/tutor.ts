@@ -13,6 +13,7 @@ export const TUTOR_INSTRUCTIONS = [
   "Choose the steps yourself from the topic you are given. Use the read tools to look at the person's own project when it makes the fact concrete. You cannot write files or run commands, and you do not need to.",
   "If a tool returns an error, read it, fix the call and continue. If it says the person did not answer or the class ended, do not ask again: end your turn.",
   "In a layer class you build a layer WITH the person, and their words come first. For each element of the layer (who the business is for, what a feature must do): (a) ask {kind: \"text\", prompt, element}, where element is a short tag such as \"business:customer-segments\", and ask in plain words with no jargon; this question needs no stepId. (b) Let them answer in their own words. (c) Turn that answer into propose_node {layer, node, element} or propose_change {layer, id, changes, element}; quote their words in the Node's rationale.why. Both tools are refused until they answered a question with the same element, and they only create a Proposal the person accepts or rejects. (d) Only then offer alternatives, as one more ask with the same element, starting \"Other ways to see this\". Never write the Node before you asked.",
+  "Review: when your first message asks for a review question, ask it with review (same arguments as ask) before the first begin_step, with no hint; the person may say they do not know.",
   "Keep going until the person has learned the topic, then call finish_class {summary} and end your turn.",
 ].join("\n");
 
@@ -63,6 +64,12 @@ export const TUTOR_TOOLS = [
     },
   },
   {
+    name: "review",
+    description:
+      "Asks the ONE review question your first message asked for, about an idea from an earlier class. Same arguments as ask (kind, prompt, options and correct, or expected), without stepId. Refused if no review question is due, or after it was asked. Returns whether the person got it right. Do not teach the answer; go on to begin_step.",
+    inputSchema: { type: "object", properties: { kind: { type: "string", enum: ["choice", "text"] }, prompt: { type: "string" }, options: { type: "array", items: { type: "string" } }, correct: { type: "string" }, expected: { type: "string" }, allowDontKnow: { type: "boolean" } }, required: ["kind", "prompt"] },
+  },
+  {
     name: "finish_class",
     description: "Ends the class once every step is closed. `summary` is one or two sentences on what was covered.",
     inputSchema: { type: "object", properties: { summary: { type: "string" } }, required: ["summary"] },
@@ -73,7 +80,7 @@ export const TUTOR_TOOLS = [
 
 // Where a question sits in the class: the step, whether it is the prediction or the check, and the attempt number (set by the core).
 // A probe question (ticket 06) has no step: it names the idea it measures, can be skipped, and knows its place in the Probe.
-type Where = { stepId?: string; item?: string; phase?: "predict" | "check"; attempt?: number; idea?: string; skippable?: true; probe?: { n: number; of: number } };
+type Where = { stepId?: string; item?: string; phase?: "predict" | "check" | "review"; attempt?: number; idea?: string; skippable?: true; probe?: { n: number; of: number } };
 // What stays in the core. `correct` is the committed answer (choice: the index of the right option).
 export type Question =
   | ({ kind: "choice"; prompt: string; options: string[]; correct: number; allowDontKnow: boolean } & Where)
@@ -106,7 +113,7 @@ export function parseQuestion(args: Record<string, unknown>): { question: Questi
 
 // What the interface is told about a question: never the committed answer.
 export const publicQuestion = (q: Question) => {
-  const where = { ...(q.stepId ? { stepId: q.stepId, phase: q.phase } : {}), ...(q.skippable ? { skippable: true, probe: q.probe } : {}) };
+  const where = { ...(q.stepId ? { stepId: q.stepId, phase: q.phase } : q.phase === "review" ? { phase: q.phase } : {}), ...(q.skippable ? { skippable: true, probe: q.probe } : {}) };
   return q.kind === "choice" ? { kind: q.kind, prompt: q.prompt, options: q.options, allowDontKnow: q.allowDontKnow, ...where } : { kind: q.kind, prompt: q.prompt, allowDontKnow: q.allowDontKnow, ...where };
 };
 

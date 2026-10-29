@@ -68,9 +68,10 @@
       : "Open a Project to start a class. The Tutor explains why each decision was made and asks you questions about your project.";
   }
 
+  const PHASE_LABELS = { predict: "Predict", review: "Review of an earlier class" };
   function collapse(card, summary) {
     card.className = "tutor-card tutor-done";
-    card.replaceChildren(...(card.dataset.phase === "predict" ? [el("p", { className: "tutor-label", textContent: "Predict" })] : []), el("p", { className: "tutor-prompt", textContent: card.dataset.prompt }), el("p", { className: "tutor-answered", textContent: summary }));
+    card.replaceChildren(...(PHASE_LABELS[card.dataset.phase] ? [el("p", { className: "tutor-label", textContent: PHASE_LABELS[card.dataset.phase] })] : []), el("p", { className: "tutor-prompt", textContent: card.dataset.prompt }), el("p", { className: "tutor-answered", textContent: summary }));
   }
 
   function questionCard(q) {
@@ -78,7 +79,7 @@
     const form = el("form", { className: "tutor-card" });
     form.dataset.prompt = q.prompt;
     form.dataset.phase = q.phase ?? "";
-    form.setAttribute("aria-label", q.phase === "predict" ? "Prediction from the Tutor" : "Question from the Tutor");
+    form.setAttribute("aria-label", q.phase === "predict" ? "Prediction from the Tutor" : q.phase === "review" ? "Review question from the Tutor" : "Question from the Tutor");
     const status = el("p", { className: "tutor-status" });
     status.setAttribute("role", "alert");
     const thought = el("textarea", { id: `tutor-thought-${n}`, rows: 2 });
@@ -122,7 +123,7 @@
       known.onclick = () => submit({ skip: true }, "You said: I already know this");
       buttons.append(known);
     }
-    if (q.phase === "predict") form.prepend(el("p", { className: "tutor-label", textContent: "Predict" }));
+    if (PHASE_LABELS[q.phase]) form.prepend(el("p", { className: "tutor-label", textContent: PHASE_LABELS[q.phase] }));
     if (q.probe) form.prepend(el("p", { className: "tutor-label", textContent: `Question ${q.probe.n} of ${q.probe.of}` }));
     form.append(...body, thoughtLabel, thought, buttons, status);
 

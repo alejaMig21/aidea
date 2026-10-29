@@ -4,7 +4,8 @@ import { dirname } from "node:path";
 // What the person picked for the builder of one Project. Ids are the adapter's own.
 export type Choice = { mode: string; model: string; tutorModel: string };
 // classMode: "class" holds the builder at a Blocking decision until a decision class is answered; absent means "direct".
-export type Stored = Partial<Choice> & { classMode?: "class" | "direct" };
+// reviewQuestion: false turns off the review question at the start of a class; absent means on.
+export type Stored = Partial<Choice> & { classMode?: "class" | "direct"; reviewQuestion?: boolean };
 export type Preferences = {
   // The stored choice for a Project (any field may be missing, or no longer offered by the adapter).
   get: (project: string) => Stored;

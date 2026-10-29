@@ -9,7 +9,8 @@ import type { Handler } from "../types.ts";
 import { TUTOR_INSTRUCTIONS } from "../tutor.ts";
 import { createLesson } from "../teach.ts";
 import { DECISION_INSTRUCTIONS, bindDecision, decisionMessage, heldDecision, unbindDecision } from "../decision-class.ts";
-import { currentChoice } from "./agent-options.ts";
+import { currentChoice, reviewQuestionOn } from "./agent-options.ts";
+import { pickReview, reviewMessage } from "../review.ts";
 import { layerClassMessage } from "../layer-help.ts";
 import { driftClassMessage, driftOf } from "../drift.ts";
 import { MAX_SELECTION, selectionMessage, validSelection } from "../select.ts";
@@ -54,7 +55,11 @@ const handler: Handler = async (req, res, core) => {
   if (selection !== undefined && !validSelection(selection)) return reject(400, `selection must be the selected text, at most ${MAX_SELECTION} characters`);
   const held = body?.decision === undefined ? undefined : heldDecision(core, project.id, body.decision);
   if (held && "error" in held) return reject(400, held.error);
-  const message = held ? decisionMessage(held.proposal) : layer ? layerClassMessage(layer) : difference ? driftClassMessage(difference) : selection ? selectionMessage(selection) : body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
+  const opening = held ? decisionMessage(held.proposal) : layer ? layerClassMessage(layer) : difference ? driftClassMessage(difference) : selection ? selectionMessage(selection) : body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
+  // One review question about an earlier idea opens a class, unless the person turned it off; a short decision class never has one.
+  const review = held || !reviewQuestionOn(core, project.id) ? undefined : pickReview(core, project.id, [topic, selection].filter((x) => typeof x === "string").join(" "));
+  const message = review && typeof opening === "string" ? `${opening}
+${reviewMessage(review)}` : opening;
   if (typeof message !== "string" || !message.trim() || message.length > MAX_MESSAGE_CHARS) {
     return reject(400, `message must be a non-empty string of at most ${MAX_MESSAGE_CHARS} characters`);
   }
@@ -67,6 +72,7 @@ const handler: Handler = async (req, res, core) => {
   const node = typeof body?.node === "string" ? body.node : undefined; // the Project Node the class is about, if any
   const texts: string[] = []; // the Teacher's prose, for the Learner graph
   const lesson = createLesson();
+  if (review) lesson.setReview(review.idea);
   core.lessons.set(classId, lesson);
   const conversation = core.permissions.open(send, project.id, "tutor", classId);
   if (held) bindDecision(classId, held.proposal.id);

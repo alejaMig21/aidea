@@ -340,7 +340,7 @@ test("the class takes its topic from the start request, and the Teacher's instru
   const opts = launches.find((l) => l.role === "tutor")!;
   assert.match(opts.message, /message queues/);
   assert.ok(opts.instructions!.length < 4000, `instructions are ${opts.instructions!.length} characters`);
-  for (const word of ["begin_step", "predict", "explain", "ask", "finish_class"]) assert.ok(opts.instructions!.includes(word), word);
+  for (const word of ["begin_step", "predict", "explain", "ask", "review", "finish_class"]) assert.ok(opts.instructions!.includes(word), word);
   assert.match(opts.instructions!, /Tutor of aidea/);
 });
 
@@ -353,5 +353,5 @@ test("the Teacher's tool list carries the loop tools next to the read tools", as
     yield { type: "text", text: "x" };
   };
   await t.runClass();
-  assert.deepEqual(names, ["begin_step", "predict", "explain", "ask", "finish_class", "propose_node", "propose_change", "get_plan", "set_plan", "read_layers", "read_node", "list_files", "read_file", "read_recording"]);
+  assert.deepEqual(names, ["begin_step", "predict", "explain", "ask", "review", "finish_class", "propose_node", "propose_change", "get_plan", "set_plan", "read_layers", "read_node", "list_files", "read_file", "read_recording"]);
 });

@@ -47,6 +47,12 @@
     l.append(head, Object.assign(document.createElement("span"), { textContent: says }));
     modeBox.append(l);
   }
+  // The review question at the start of a class: on unless the person turns it off (the choice is remembered for the Project).
+  const reviewBox = Object.assign(document.createElement("input"), { type: "checkbox", id: "review-question", checked: true, disabled: true });
+  const reviewLabel = document.createElement("label");
+  reviewLabel.style.cssText = "display:flex;gap:6px;align-items:flex-start;max-width:262px;margin-top:6px;font-size:13px;color:var(--text);text-align:left";
+  reviewLabel.append(reviewBox, "Start a class with one review question about an earlier idea");
+  modeBox.append(reviewLabel);
   tutorModel.after(modeBox);
 
   const fill = (select, list, chosen) => {
@@ -62,10 +68,11 @@
   async function load(project) {
     for (const s of [chatModel, chatMode, tutorModel]) s.disabled = true;
     for (const r of Object.values(modeRadios)) r.disabled = true;
+    reviewBox.disabled = true;
     try {
       const res = await fetch("/agent-options?project=" + encodeURIComponent(project));
       if (!res.ok || project !== current) return;
-      const { modes, models, choice, classMode } = await res.json();
+      const { modes, models, choice, classMode, reviewQuestion } = await res.json();
       fill(chatMode, modes, choice.mode);
       fill(chatModel, models, choice.model);
       fill(tutorModel, models, choice.tutorModel);
@@ -73,6 +80,8 @@
       for (const s of [chatModel, chatMode, tutorModel]) s.disabled = false;
       modeRadios[classMode === "class" ? "class" : "direct"].checked = true;
       for (const r of Object.values(modeRadios)) r.disabled = false;
+      reviewBox.checked = reviewQuestion !== false;
+      reviewBox.disabled = false;
     } catch { /* the selectors stay disabled until a Project opens */ }
   }
 
@@ -87,6 +96,11 @@
     else if (field === "mode") chatMode.title = chatMode.selectedOptions[0]?.title ?? "";
   };
   for (const r of Object.values(modeRadios)) r.onchange = save("classMode", r);
+  reviewBox.onchange = async () => {
+    if (!current) return;
+    const res = await fetch("/agent-options", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ project: current, reviewQuestion: reviewBox.checked }) });
+    if (!res.ok) load(current); // refused: show what is really stored
+  };
   chatMode.onchange = save("mode", chatMode);
   chatModel.onchange = save("model", chatModel);
   tutorModel.onchange = save("tutorModel", tutorModel);
