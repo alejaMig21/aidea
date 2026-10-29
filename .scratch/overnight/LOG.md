@@ -37,3 +37,6 @@ FLAKY TEST: `robustness.test.ts` (and sometimes others) fails with `fetch failed
 - Narration: each step of a run is told in one sentence. Prediction: optional "Guess first" before a step (off by default); Skip records nothing.
 - aidea on its own repo: opens in about 2 s; found a bug (a TS function answered "cannot be read as Python") and a typo ("0 classs"), both fixed; tickets 06 to 09 created.
 - FLAKY TEST ROOT CAUSE FIXED: `startCore` now never keeps a system-chosen port that fetch blocks.
+
+## 10. Live round on the second monitor (real Electron, real Claude Code, haiku)
+Window 1264x761. Hide Canvas, language line, "How aidea works" class with the real Tutor (asked to predict the three columns, then revealed and checked the answer; its text matched the app), real builder in Manual mode proposed two Business Nodes without any aidea permission card (only the person's own memory plugin asked), accepting one wrote `.aidea/business/001-business-payer.json` (one file per Node). Cost about $0.15. Found: a permission card overflows a narrow chat (ticket live-findings/07). Not covered live: decision-class hint, long waits, idea names, prediction, narration.
