@@ -38,6 +38,7 @@ const handler: Handler = async (req, res, core) => {
     const result = core.permissions.answerQuestion(id, secret, body ?? {});
     if (result === "answered") core.send(res, 200, { ok: true });
     else if (result === "forbidden") return reject(403, "That secret does not belong to this question");
+    else if (result === "expired") return reject(410, "The Tutor stopped waiting for this question. Nothing you answered before is lost: start a class on the same topic to go on.");
     else if (result === "unknown") return reject(404, "Unknown question, or it was already answered");
     else return reject(400, result.invalid);
     return true;

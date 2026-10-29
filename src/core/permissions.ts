@@ -28,6 +28,13 @@ export function createBroker() {
   const conversations = new Map<string, Conversation>(); // token -> conversation
   const requests = new Map<string, Request>(); // request id -> who is waiting
   let counter = 0;
+  // Questions nobody is waiting on any more (the Tutor gave up, or the class ended), kept so a late answer can be told why.
+  const gone = new Map<string, Conversation>();
+  const MAX_GONE = 200;
+  const markGone = (id: string, conversation: Conversation) => {
+    gone.set(id, conversation);
+    if (gone.size > MAX_GONE) gone.delete(gone.keys().next().value!);
+  };
 
   return {
     // A conversation starts, about one Project. `emit` sends an event to the person's chat stream.
@@ -43,6 +50,7 @@ export function createBroker() {
           for (const id of conversation.pending) {
             const request = requests.get(id);
             request?.resolve(request.onClose);
+            if (request?.question) markGone(id, conversation);
             requests.delete(id);
           }
           conversation.pending.clear();
@@ -114,6 +122,7 @@ export function createBroker() {
             if (!requests.delete(id)) return; // already answered
             conversation.pending.delete(id);
             resolve(withdrawn);
+            markGone(id, conversation);
             conversation.emit({ type: "tutor_question_expired", id });
           },
           { once: true },
@@ -122,8 +131,11 @@ export function createBroker() {
     },
 
     // The person answers a question. "invalid" carries a message for the interface; the question keeps waiting.
-    answerQuestion(id: string, secret: string, raw: Record<string, unknown>): "answered" | "unknown" | "forbidden" | { invalid: string } {
+    // "expired" when the Tutor stopped waiting or the class ended before this answer came.
+    answerQuestion(id: string, secret: string, raw: Record<string, unknown>): "answered" | "unknown" | "forbidden" | "expired" | { invalid: string } {
       const request = requests.get(id);
+      const past = gone.get(id);
+      if (past) return sameSecret(secret, past.secret) ? "expired" : "forbidden";
       if (!request?.question) return "unknown";
       if (!sameSecret(secret, request.conversation.secret)) return "forbidden";
       const parsed = parseAnswer(request.question, raw);

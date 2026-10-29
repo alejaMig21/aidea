@@ -137,6 +137,7 @@
           body: JSON.stringify({ id: q.id, secret: q.secret, thought: thought.value.trim() || undefined, ...reply }),
         });
         if (res.ok) { cards.delete(q.id); collapse(form, summaryText); return; }
+        if (res.status === 410) return expire(q.id); // the Tutor stopped waiting before this answer came
         status.textContent = (await res.json().catch(() => ({}))).error ?? "Could not send the answer";
       } catch (err) {
         status.textContent = `Could not reach the core: ${err.message}`;
@@ -166,6 +167,15 @@
     cards.delete(id);
     card.form.querySelectorAll("button, input, textarea").forEach((c) => { c.disabled = true; });
     card.form.querySelector(".tutor-status").textContent = "Expired: the Tutor stopped waiting for an answer";
+    // What the person already answered is kept; one click begins again on the same topic.
+    const again = el("button", { type: "button", textContent: "Start a class on the same topic" });
+    again.onclick = () => {
+      again.disabled = true;
+      running?.abort.abort();
+      const go = () => (running ? setTimeout(go, 50) : startClass());
+      go();
+    };
+    card.form.append(el("p", { className: "tutor-meta", textContent: "Your earlier answers are kept." }), again);
   }
 
   const UNREACHABLE = ["not_installed", "not_signed_in", "failed"];

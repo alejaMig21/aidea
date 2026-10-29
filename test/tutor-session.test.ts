@@ -250,7 +250,10 @@ test("if the Tutor stops waiting, the question is withdrawn and cannot be answer
   const q = (await toCheck(stream)) as any;
   assert.equal(q.type, "tutor_question");
   assert.deepEqual((await stream.next()).value, { type: "tutor_question_expired", id: q.id });
-  assert.equal((await answer(q, { option: 1 })).status, 404);
+  const late = await answer(q, { option: 1 });
+  assert.equal(late.status, 410);
+  assert.match((await late.json()).error, /stopped waiting.*start a class on the same topic/i);
+  assert.equal((await post("/tutor/answer", { id: q.id, secret: "0".repeat(q.secret.length), option: 1 })).status, 403); // the secret still guards it
   await drain(stream);
 });
 
@@ -274,7 +277,8 @@ test("ending the class while a question waits releases the Tutor and closes its 
   await gone;
   assert.equal(released.isError, true);
   assert.match(released.content[0].text, /class ended|withdrawn/i);
-  assert.equal((await answer(q, { option: 1 })).status, 404);
+  assert.equal((await answer(q, { option: 1 })).status, 410); // the class is over: a late answer gets the plain reason
+  assert.equal((await answer({ id: "q-none", secret: q.secret }, { option: 1 })).status, 404);
   await new Promise((r) => setTimeout(r, 100));
   assert.equal((await fetch(url, { method: "POST", body: "{}" })).status, 404);
 });
