@@ -88,7 +88,14 @@ export async function startCore({ port, adapter = createClaudeAdapter(), recents
     }
   });
 
-  await new Promise<void>((resolve) => server.listen(port, "127.0.0.1", resolve));
+  // Ports that fetch refuses to connect to ("bad port"): when the system picks one, a browser or test could never reach the core.
+  const blocked = (p: number) => [1719, 1720, 1723, 2049, 3659, 4045, 4190, 5060, 5061, 6000, 6566, 6679, 6697, 10080].includes(p) || (p >= 6665 && p <= 6669);
+  const listen = () => new Promise<void>((resolve) => server.listen(port, "127.0.0.1", resolve));
+  await listen();
+  while (port === 0 && blocked((server.address() as AddressInfo).port)) {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    await listen();
+  }
   const actualPort = (server.address() as AddressInfo).port;
   allowedHosts = new Set([`127.0.0.1:${actualPort}`, `localhost:${actualPort}`]);
   return {

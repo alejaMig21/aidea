@@ -30,3 +30,10 @@ Folder names are always 13 px on screen (cut to the box, full name as tooltip); 
 ## 8. Merged: opening feedback (real-projects/04), storage per Node read side (01), language adapter interface (01) and language detection (02)
 Opening a project shows "Reading the project..." and failures in words; analysis output byte-identical, 12% to 16% faster. `.aidea/<layer>/*.json` one file per Node is read next to the single file. A language line in the top bar says what is analysed and what is not (Python analysed; TS/JS counted, not yet analysed). 443 tests.
 FLAKY TEST: `robustness.test.ts` (and sometimes others) fails with `fetch failed: bad port` when the OS gives a port that fetch blocks (a fixed list). Not a product bug; the earlier unexplained red runs were this. Fix idea: retry `startCore` on a blocked port.
+
+## 9. Merged: guide (aidea-guide/01), TS/JS analysis (language-adapters/03), narration (run-in-plain-words/01), prediction (run-in-plain-words/02), aidea on its own repo (real-projects/02)
+- Guide: a "How aidea works" button starts a Tutor class about the app (quick tour when the Tutor is unavailable). Not yet run with the real model.
+- TS/JS: aidea's own `src` reads as 87 modules, 343 functions, 673 calls in 1.2 s (typescript moved to runtime dependencies; it is TypeScript 7 and its API is marked unstable). Flow and run for TS/JS are not built (tickets 04, 05).
+- Narration: each step of a run is told in one sentence. Prediction: optional "Guess first" before a step (off by default); Skip records nothing.
+- aidea on its own repo: opens in about 2 s; found a bug (a TS function answered "cannot be read as Python") and a typo ("0 classs"), both fixed; tickets 06 to 09 created.
+- FLAKY TEST ROOT CAUSE FIXED: `startCore` now never keeps a system-chosen port that fetch blocks.
