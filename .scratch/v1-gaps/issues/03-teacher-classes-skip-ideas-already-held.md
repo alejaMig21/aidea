@@ -7,4 +7,13 @@
 **Status:** ready-for-agent
 
 - [x] Through the protocol with scripted roles (`test/held-ideas.test.ts`): a step about a held idea is refused with a reason and a different step is accepted; an idea with weak or old Evidence is still taught; nothing changes for a person with an empty graph. "Held" is the Probe's rule (`heldIdea` in `probe.ts`) plus strong Evidence in this Project: a correct answer, confidence 70 or more, in the last 90 days. The Teacher reads `held_ideas` (name and statement only) and gives `idea` to `begin_step`.
-- [ ] Verified with the real Tutor on a short class (not done yet).
+- [x] Verified with the real Tutor on a short class (see the note below).
+
+## Real Tutor check (haiku, 2026-10-30)
+
+Same topic ("how a Python list keeps items when the same item is appended twice, and append to a list"), three runs, two ideas seeded as held (on the graph, correct answers with confidence 90 in this Project):
+
+- Without seeded ideas the Teacher's first step was "What append does to a list" (idea "append adds at the end").
+- With them seeded, the Teacher called `held_ideas` and its steps were "a list is an ordered container", "append changes the list itself" and "the list holds references to items": neither held idea was taught again.
+
+Limit seen: the check compares names (and aliases). When the Teacher words a held fact differently ("append adds one item at the end" against the held "append adds at the end") the core cannot refuse it; only the Teacher's own choice from the `held_ideas` list keeps it out. Not measured: more than three runs, and a Teacher that ignores the list.
