@@ -49,3 +49,6 @@ Test folders are folded into one closed block with a "show" line, not removed. T
 - TS functions: 395 of 395 functions of `src` get a flow graph (11% generic steps); checked headless, not yet by hand in the real app.
 - Found live: double click on a module also opens the define popup (ticket live-findings/08). Not covered: entering the module and a function's graph by hand in the real app; guess-first and narration with a real person.
 - Overview: folder `test`/`tests`/`__tests__`/`fixtures`/`spec` fold (DECISION by agent: top-bar counts still count files on disk). 488 tests.
+
+## 12. Audit of the 55 stories of the first version
+`.scratch/aidea-v1/audit.md`: 47 done, 7 partial (22, 23, 26, 35, 48, 53, 55), 0 missing, 1 changed (41). Ten tickets in `.scratch/v1-gaps/issues`. DECISION 2: ticket 01 (story 35) uses detect-and-restore after each builder turn plus the denials that can be named, because no deny pattern is a wall for a shell command.
