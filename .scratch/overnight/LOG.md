@@ -60,3 +60,10 @@ Test folders are folded into one closed block with a "show" line, not removed. T
 
 ## 14. Merged: guard of authored files (v1-gaps/01), Playback in the project's venv (v1-gaps/08), requirement not built yet (v1-gaps/04). Live check of the guard
 Real builder (haiku, acceptEdits) was asked to overwrite `.aidea/business/001-business-payer.json` with a Python one-liner via Bash, twice (second with the path built in pieces). Both attempts were denied and the file is byte-identical afterwards. NOT exercised live: the detect-and-restore path (no write got through; it is covered by 7 protocol tests), and I cannot tell from the stream whether the second denial came from the deny pattern or from Claude Code's own rules. Cost about $0.01 for the turn. 506 tests.
+
+## 15. Merged after the connection drops: agent per role (v1-gaps/07), editor choice (06), double click popup (live-findings/08), Playback inputs from tests (05), smoke-report bugs and ADR 0006 (09, 10)
+- Per-role agents: `AIDEA_ROLE_ADAPTERS` (for example `tutor=default`); default unchanged.
+- Editor: list of editors plus a typed template, per Project, command built as an argument array (no shell). Go-to-line syntax of VS Code, JetBrains, Sublime and Notepad++ is UNVERIFIED (docs could not be fetched); gvim used instead of vim.
+- Double click: `user-select: none` on the Canvas SVG. Not checked: function rows, authored Nodes, drag-select elsewhere.
+- Playback "From the Project's tests": literal arguments only, plain functions only, never runs tests.
+- Smoke report: two of three bugs were already gone; the layer bar was still clipped at 1280 (ticket v1-gaps/11). ADR 0006 records that the Probe moved to each layer and that the languages limit was lifted; the agent also corrected the Probe entry of GLOSSARY.md. 518 tests.
