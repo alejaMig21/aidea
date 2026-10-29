@@ -12,6 +12,7 @@ import { createProbes } from "./probe.ts";
 import { createPlans } from "./plan.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
+const ROLES = ["builder", "tutor", "prober", "extractor", "auditor", "grader", "definer"];
 const routesDir = fileURLToPath(new URL("./routes/", import.meta.url));
 
 // Every file in routes/ is a route module; adding a feature means adding a file there.
@@ -23,7 +24,15 @@ async function loadRoutes(): Promise<Handler[]> {
 // `recentsFile` is where the recent Projects are kept between runs; without it they stay in memory.
 // `preferencesFile` does the same for the mode and model chosen for each Project.
 // `learnerDir` is the per-user folder of the Learner's evidence and graph (memory only without it); `learnerModel` is the model of its Extractor and Auditor.
-export async function startCore({ port, adapter = createClaudeAdapter(), recentsFile, preferencesFile, learnerDir, learnerModel }: { port: number; adapter?: Adapter; recentsFile?: string; preferencesFile?: string; learnerDir?: string; learnerModel?: string }) {
+// `adapters` are extra agent products by name and `roleAdapters` says which one serves a role (default: `adapter`, named "default"); the builder's adapter also declares the modes and models.
+export async function startCore({ port, adapter: defaultAdapter = createClaudeAdapter(), adapters = {}, roleAdapters = {}, recentsFile, preferencesFile, learnerDir, learnerModel }: { port: number; adapter?: Adapter; adapters?: Record<string, Adapter>; roleAdapters?: Record<string, string>; recentsFile?: string; preferencesFile?: string; learnerDir?: string; learnerModel?: string }) {
+  const named: Record<string, Adapter> = { ...adapters, default: defaultAdapter };
+  for (const [role, name] of Object.entries(roleAdapters)) {
+    if (!ROLES.includes(role)) throw new Error(`Unknown role "${role}". Roles: ${ROLES.join(", ")}`);
+    if (!named[name]) throw new Error(`Unknown agent "${name}" for the ${role}. Available: ${Object.keys(named).join(", ")}`);
+  }
+  const pick = (role: string) => named[roleAdapters[role]] ?? defaultAdapter;
+  const adapter: Adapter = { options: pick("builder").options, run: (opts) => pick(opts.role ?? "builder").run(opts) };
   const routes = await loadRoutes();
   // Only the core's own address may talk to it: stops web pages from reaching it (CSRF, DNS rebinding).
   let allowedHosts = new Set<string>();
@@ -100,6 +109,7 @@ export async function startCore({ port, adapter = createClaudeAdapter(), recents
   allowedHosts = new Set([`127.0.0.1:${actualPort}`, `localhost:${actualPort}`]);
   return {
     url: `http://127.0.0.1:${actualPort}`,
+    adapter,
     close: () => server.close(),
   };
 }

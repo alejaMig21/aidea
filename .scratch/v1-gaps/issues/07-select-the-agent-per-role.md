@@ -4,6 +4,6 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] With two fake adapters, builder and Tutor can be routed to different ones by a setting; the default is unchanged; an unknown name is refused at start with a plain message.
+- [x] With two fake adapters, builder and Tutor can be routed to different ones by a setting; the default is unchanged; an unknown name is refused at start with a plain message.
