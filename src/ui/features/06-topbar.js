@@ -101,13 +101,22 @@ draw = async (nodes) => {
 
 // While a Project is being opened (the analysis of a big one takes seconds) one plain line says so.
 // The line belongs to the latest opening; it goes away when that Project is drawn or its failure is on screen.
+// After a minute (window.openingSlowMs, set by the headless checks) the line says it is slow; the request is never cancelled.
+let openingTimer = 0;
+const openingShow = () => {
+  $("opening").textContent = "Reading the project...";
+  $("opening").hidden = false;
+  clearTimeout(openingTimer);
+  openingTimer = setTimeout(() => { $("opening").textContent = "Still reading: over a minute so far."; }, window.openingSlowMs ?? 60000);
+};
+const openingHide = () => { clearTimeout(openingTimer); $("opening").hidden = true; };
 let openingLatest = 0, openingDrawn = Promise.resolve();
 const drawWithoutOpening = draw;
 draw = (nodes) => (openingDrawn = drawWithoutOpening(nodes));
 const openProjectWithoutLine = openProject;
 openProject = async (path) => {
   const mine = ++openingLatest;
-  $("opening").hidden = false;
+  openingShow();
   try {
     openingDrawn = Promise.resolve();
     await openProjectWithoutLine(path);
@@ -115,7 +124,7 @@ openProject = async (path) => {
   } catch {
     $("error").textContent = "Could not reach aidea to read the project. Try opening it again.";
   } finally {
-    if (mine === openingLatest) $("opening").hidden = true;
+    if (mine === openingLatest) openingHide();
   }
 };
 
@@ -127,7 +136,7 @@ async function refreshProject() {
   refreshing = true;
   const project = current, layer = authoredShown, saved = { ...view };
   const module = componentsOpen, testsOpen = !!componentsTests?.open, algo = algoOpenId, selected = codeSelected;
-  $("opening").hidden = false;
+  openingShow();
   $("refresh").disabled = true;
   try {
     const res = await fetch("/projects/refresh", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ project }) });
@@ -150,7 +159,7 @@ async function refreshProject() {
     $("error").textContent = "Could not reach aidea to read the project again, so what is drawn is the last version it read. Try Refresh again.";
   } finally {
     refreshing = false;
-    $("opening").hidden = true;
+    openingHide();
     $("refresh").disabled = false;
   }
 }
