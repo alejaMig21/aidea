@@ -24,6 +24,7 @@ export function holdIfBlocking(core: Core, p: StoredProposal): boolean {
 // The class running for each held decision, by class id (removed when the class ends).
 const decisions = new Map<string, string>();
 export const bindDecision = (classId: string, proposalId: string) => void decisions.set(classId, proposalId);
+export const decisionOf = (classId: string) => decisions.get(classId);
 export const unbindDecision = (classId: string) => void decisions.delete(classId);
 
 // A decision class can start only for a Proposal of this Project that is still held.

@@ -222,6 +222,45 @@ test("'Decide for me' makes it acceptable with the builder's Rationale untouched
   assert.deepEqual(entries.map((e: any) => [e.kind, e.decision]), [["decision-skip", p.id]]);
 });
 
+// A decision class where the check of one step is missed `misses` times, then answered correctly. Returns what the interface streamed.
+async function missedClass(misses: number) {
+  const t = await setup(undefined, mkdtempSync(join(tmpdir(), "aidea-decision-learner-")));
+  await t.setMode("class");
+  const [p] = (await t.build(addCache)).filter((e) => e.type === "proposal");
+  tutor = async function* (call) {
+    await call("begin_step", { stepId: "d", title: "Why a cache" });
+    await call("predict", { stepId: "d", prompt: "What would you choose, and why?" });
+    for (let i = 0; i <= misses; i++) {
+      await call("explain", { stepId: "d", text: "A cache keeps hot reads away from the database." });
+      await call("ask", { stepId: "d", kind: "choice", prompt: `What does a cache protect? (${i})`, options: ["The database", "The browser"], correct: "The database" });
+    }
+  };
+  // option 1 is wrong until `misses` wrong answers were given
+  let asked = 0;
+  const { events } = await t.classFor(p.id, (q) => (q.kind === "text" ? { text: "Redis" } : { option: asked++ < misses ? 1 : 0, confidence: 50 }));
+  return { t, p, events };
+}
+
+test("after three misses of the same step the class stays open and tells the interface to offer 'Decide for me'; not before, and nothing is Evidence for it", async () => {
+  const { t, p, events } = await missedClass(3);
+  const hints = events.filter((e) => e.type === "decision_hint");
+  assert.equal(hints.length, 1);
+  assert.equal(hints[0].proposal, p.id);
+  // the hint comes right after the third wrong check (1 prediction + 3 checks asked before it), and the class goes on after it
+  const before = events.slice(0, events.indexOf(hints[0])).filter((e) => e.type === "tutor_question");
+  assert.deepEqual(before.map((e) => e.kind), ["text", "choice", "choice", "choice"]);
+  assert.equal(events.slice(events.indexOf(hints[0])).some((e) => e.type === "tutor_question"), true);
+  assert.equal((await t.proposals())[0].status, "waiting-for-class"); // still held: the person decides what to do
+  const kinds = (await t.get(`/learner/evidence?project=${encodeURIComponent(t.dir)}`)).entries.map((e: any) => e.kind);
+  assert.equal(kinds.includes("decision-skip"), false);
+  assert.equal((await t.post("/proposals/skip-class", { id: p.id, secret: p.secret })).status, 200); // the button's action
+});
+
+test("two misses, or a class answered correctly, show no hint", async () => {
+  assert.equal((await missedClass(2)).events.some((e) => e.type === "decision_hint"), false);
+  assert.equal((await missedClass(0)).events.some((e) => e.type === "decision_hint"), false);
+});
+
 test("a decision class needs a held Proposal of that Project", async () => {
   const t = await setup();
   const [direct] = (await t.build(addCache)).filter((e) => e.type === "proposal"); // Direct mode: not held

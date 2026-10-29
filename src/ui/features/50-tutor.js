@@ -180,6 +180,7 @@
     else if (event.type === "tutor_finished") line("tutor-meta", `Class finished: ${event.summary}`);
     else if (event.type === "proposal") tutorProposal(event);
     else if (event.type === "proposal_refused") tutorRefused(event);
+    else if (event.type === "decision_hint") decisionHint(event);
     else if (event.type === "tutor_question") questionCard(event);
     else if (event.type === "tutor_question_expired") expire(event.id);
     else if (event.type === "error") { const p = el("p", { className: "tutor-error", textContent: event.message }); p.setAttribute("role", "alert"); log.append(p); }
@@ -207,6 +208,21 @@
       open.onclick = () => document.dispatchEvent(new CustomEvent("proposal-open", { detail: { id: event.proposalId } }));
       p.append(open);
     }
+    log.append(p);
+    pane.scrollTop = pane.scrollHeight;
+  }
+
+  // The person keeps missing the check of a decision class: one line offers the way out. The class goes on until they take it.
+  function decisionHint(event) {
+    const p = el("p", { className: "tutor-meta tutor-proposal", textContent: "Taking long? You can let the builder decide. " });
+    const decide = el("button", { type: "button", textContent: "Decide for me" });
+    decide.onclick = async () => {
+      decide.disabled = true;
+      const problem = await decideForMe(event.proposal);
+      if (problem) { decide.disabled = false; p.append(` ${problem}`); return; }
+      p.textContent = "The builder's proposal can be accepted now, on the Canvas.";
+    };
+    p.append(decide);
     log.append(p);
     pane.scrollTop = pane.scrollHeight;
   }

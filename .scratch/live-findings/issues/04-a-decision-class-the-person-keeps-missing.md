@@ -11,6 +11,6 @@
 
 **Status:** ready-for-agent
 
-- [ ] The behaviour is option 2 with three misses: the class stays open and, from the third miss of the same step, the Tutor column shows one line "Taking long? You can let the builder decide" with the "Decide for me" button next to it; nothing is recorded as Evidence for showing it.
-- [ ] Through the protocol with a scripted Teacher: the behaviour happens after exactly that number of misses and not before; a class answered correctly is unaffected.
+- [x] The behaviour is option 2 with three misses: the class stays open and, from the third miss of the same step, the Tutor column shows one line "Taking long? You can let the builder decide" with the "Decide for me" button next to it; nothing is recorded as Evidence for showing it. (Core emits `decision_hint` once, on the third miss of one step of a decision class; checked headless at 1920 and 1280 px with a scripted Teacher, no console errors; the button skips the class and the Proposal becomes acceptable.)
+- [x] Through the protocol with a scripted Teacher: the behaviour happens after exactly that number of misses and not before; a class answered correctly is unaffected. (`test/decision-classes.test.ts`)
 - [ ] Verified live with the real Claude Code on the second monitor.

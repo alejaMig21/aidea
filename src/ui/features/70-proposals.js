@@ -89,6 +89,16 @@ const node = (tag, props = {}, ...children) => {
 };
 const show = (v) => (typeof v === "string" ? v : JSON.stringify(v));
 
+// "Decide for me": skips the class of a held Proposal. Returns the problem as text, or null when it worked.
+async function decideForMe(id) {
+  const secret = proposalSecrets.get(id);
+  if (!secret) return "This interface does not hold the key to decide this proposal (it was made in another window or before a restart).";
+  const res = await fetch("/proposals/skip-class", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, secret }) });
+  if (!res.ok) return (await res.json().catch(() => ({}))).error ?? "Could not skip the class";
+  await refreshProposals();
+  return null;
+}
+
 // The details of one Proposal in the right-hand panel, with the person's decision.
 function showProposal(p) {
   const old = authoredData?.layers[p.layer]?.nodes.find((n) => n.id === p.nodeId);
@@ -122,11 +132,8 @@ function showProposal(p) {
   // A Blocking decision in Class mode: it cannot be accepted until the person answered the class (or chose "Decide for me").
   const waiting = p.status === "waiting-for-class";
   const skip = async () => {
-    const secret = proposalSecrets.get(p.id);
-    if (!secret) { message.textContent = "This interface does not hold the key to decide this proposal (it was made in another window or before a restart)."; return; }
-    const res = await fetch("/proposals/skip-class", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: p.id, secret }) });
-    if (!res.ok) { message.textContent = (await res.json().catch(() => ({}))).error ?? "Could not skip the class"; return; }
-    await refreshProposals();
+    const problem = await decideForMe(p.id);
+    if (problem) { message.textContent = problem; return; }
     const now = pendingProposals.find((q) => q.id === p.id);
     if (now) showProposal(now);
   };

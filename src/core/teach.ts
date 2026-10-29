@@ -4,6 +4,7 @@
 //                                                    explained -> (check wrong) missed -> (explain again) explained
 import { evidenceOf } from "./learner.ts";
 import type { Evidence } from "./learner.ts";
+import { decisionOf } from "./decision-class.ts";
 import { callRole } from "./learner-pipeline.ts";
 import { runAuthoringTool } from "./tutor-authoring.ts";
 import { itemFor, runPlanTool } from "./plan.ts";
@@ -12,7 +13,8 @@ import type { Answer, Question } from "./tutor.ts";
 import type { Core } from "./types.ts";
 
 type State = "new" | "predicted" | "explained" | "missed" | "closed";
-type Step = { title: string; item?: string; state: State; predicts: number; checks: number };
+type Step = { title: string; item?: string; state: State; predicts: number; checks: number; misses: number };
+const MISSES_BEFORE_HINT = 3; // a decision class that keeps being missed offers "Decide for me" (live-findings/04)
 type Failure = { error: string };
 
 const MAX_PROSE = 4000;
@@ -79,7 +81,7 @@ export function createLesson() {
       if (!nonEmpty(title, 200)) return { error: "begin_step needs a title: a few words naming the step" };
       if (open) return { error: `Step "${open}" is still open: ${WHAT_NEXT[steps.get(open)!.state]}. Finish it before beginning another step.` };
       if (steps.has(stepId)) return { error: `A step called "${stepId}" already exists. Use a new stepId for a new step.` };
-      steps.set(stepId, { title: title.trim(), ...(item ? { item } : {}), state: "new", predicts: 0, checks: 0 });
+      steps.set(stepId, { title: title.trim(), ...(item ? { item } : {}), state: "new", predicts: 0, checks: 0, misses: 0 });
       open = stepId;
       return { stepId };
     },
@@ -124,10 +126,13 @@ export function createLesson() {
       return { question: { ...q, stepId: args.stepId as string, ...(step.item ? { item: step.item } : {}), phase: "check", attempt: step.checks } };
     },
     // The verdict of a check: right closes the step, wrong leaves it open for a re-teach.
+    // Returns how many checks of this step have been missed so far.
     checked(stepId: string, correct: boolean) {
       const step = steps.get(stepId)!;
       step.state = correct ? "closed" : "missed";
       if (correct) open = undefined;
+      else step.misses++;
+      return step.misses;
     },
 
     finish(args: Record<string, unknown>): Failure | { summary: string } {
@@ -280,7 +285,9 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
   }
   const { correct, feedback } = verdict;
   const entry = record(q, a, heard.questionId, q.kind === "text" && !a.dontKnow ? correct : undefined);
-  lesson.checked(stepId, correct);
+  const misses = lesson.checked(stepId, correct);
+  const held = decisionOf(classId);
+  if (!correct && misses === MISSES_BEFORE_HINT && held) conversation.emit({ type: "decision_hint", proposal: held });
   const sureAndWrong = entry?.sureAndWrong === true;
   return ok({
     ...(JSON.parse(result.text) as object),
