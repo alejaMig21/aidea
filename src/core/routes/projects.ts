@@ -25,7 +25,16 @@ function folderNameProblem(name: unknown): string | undefined {
 
 // Analyzes the folder, registers it as a Project, remembers it in recents and answers 201.
 async function openAndRecord(core: Core, res: ServerResponse, path: string): Promise<true> {
-  const project = await openProject(path);
+  let project: Project;
+  try {
+    project = await openProject(path);
+  } catch (e) {
+    const slow = (e as { killed?: boolean }).killed;
+    core.send(res, 500, { error: slow
+      ? "Reading this project took longer than a minute, so it was stopped. Try opening a smaller folder, or the folder that holds the code itself."
+      : "Could not read this project. Try opening the folder again, or check that Python is installed and the folder holds Python code." });
+    return true;
+  }
   core.projects.set(project.id, project);
   core.recents.add(path);
   core.send(res, 201, project);
@@ -42,7 +51,7 @@ const handler: Handler = async (req, res, core) => {
     if (body === undefined) return true; // readJson already answered
     const path = body?.path;
     if (typeof path !== "string" || !isDirectory(path)) {
-      core.send(res, 400, { error: "path must be an existing directory" });
+      core.send(res, 400, { error: "That is not an existing folder. Try pasting the full path of a folder on this computer." });
       return true;
     }
     return openAndRecord(core, res, path);

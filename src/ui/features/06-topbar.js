@@ -97,3 +97,23 @@ draw = async (nodes) => {
   refreshSwitcherLabel();
   await drawWithoutSwitcher(nodes);
 };
+
+// While a Project is being opened (the analysis of a big one takes seconds) one plain line says so.
+// The line belongs to the latest opening; it goes away when that Project is drawn or its failure is on screen.
+let openingLatest = 0, openingDrawn = Promise.resolve();
+const drawWithoutOpening = draw;
+draw = (nodes) => (openingDrawn = drawWithoutOpening(nodes));
+const openProjectWithoutLine = openProject;
+openProject = async (path) => {
+  const mine = ++openingLatest;
+  $("opening").hidden = false;
+  try {
+    openingDrawn = Promise.resolve();
+    await openProjectWithoutLine(path);
+    await openingDrawn;
+  } catch {
+    $("error").textContent = "Could not reach aidea to read the project. Try opening it again.";
+  } finally {
+    if (mine === openingLatest) $("opening").hidden = true;
+  }
+};

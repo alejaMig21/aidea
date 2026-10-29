@@ -60,7 +60,7 @@ test("a file that does not parse is reported and the rest of the Project still o
 test("a path that is not an existing directory is rejected with a clear message", async () => {
   const res = await t.post("/projects", { path: fixture("shop") + "/does-not-exist" });
   assert.equal(res.status, 400);
-  assert.match((await res.json()).error, /existing directory/);
+  assert.match((await res.json()).error, /not an existing folder/);
 });
 
 test("a request body above the size limit is rejected", async () => {

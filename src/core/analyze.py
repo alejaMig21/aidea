@@ -191,4 +191,4 @@ def analyze(root):
 
 
 if __name__ == "__main__":
-    json.dump(analyze(sys.argv[1]), sys.stdout)
+    sys.stdout.write(json.dumps(analyze(sys.argv[1])))  # dumps uses the C encoder; dump streams through the slow Python one
