@@ -90,9 +90,10 @@ const node = (tag, props = {}, ...children) => {
 const show = (v) => (typeof v === "string" ? v : JSON.stringify(v));
 
 // "Decide for me": skips the class of a held Proposal. Returns the problem as text, or null when it worked.
+const proposalNoKey = "This window cannot decide this proposal any more, because the page was reloaded or the proposal was made in another window. Ask the builder for the change again here.";
 async function decideForMe(id) {
   const secret = proposalSecrets.get(id);
-  if (!secret) return "This interface does not hold the key to decide this proposal (it was made in another window or before a restart).";
+  if (!secret) return proposalNoKey;
   const res = await fetch("/proposals/skip-class", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, secret }) });
   if (!res.ok) return (await res.json().catch(() => ({}))).error ?? "Could not skip the class";
   await refreshProposals();
@@ -117,7 +118,7 @@ function showProposal(p) {
   const message = node("div", { className: "pb-error" });
   const decide = async (decision) => {
     const secret = proposalSecrets.get(p.id);
-    if (!secret) { message.textContent = "This interface does not hold the key to decide this proposal (it was made in another window or before a restart)."; return; }
+    if (!secret) { message.textContent = proposalNoKey; return; }
     const res = await fetch("/proposals/answer", {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: p.id, secret, decision }),
     });
