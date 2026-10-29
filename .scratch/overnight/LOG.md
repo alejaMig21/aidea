@@ -20,3 +20,6 @@ New `proposal_refused` event (reason pending/exists, layer, node id, waiting Pro
 
 ## 5. Big-project overview (real-projects/03)
 Components of a project with more than 40 modules is now an overview: one box per module under folder labels, merged lines (strongest 400 pairs), double click or Enter opens one module, "All modules" returns. Telegram: 1,783 SVG elements and 0.15 s (before: 30,000 elements, a strip of 40,000 px). hubstaff-automation: 3,301 elements, 0.3 s; whole open still 13 to 16 s (ticket 04). Zoom floor lowered 20% to 10% for all layers. NOT done: labels unreadable at Fit (ticket 05), focus from authored layers on overview, incoming relations in module detail. Also merged: plain idea names (live-findings/01; live measurement with the real model still pending).
+
+## 6. Decision-class hint (live-findings/04) and long waits (live-findings/05)
+04: third miss in a decision class shows "Taking long? You can let the builder decide" with "Decide for me" (DECISION 1). Not yet seen with the real model. 05: a late answer to a question the Tutor stopped waiting for gets a plain 410 and the card offers "Start a class on the same topic". NOT measured: real waits of 3, 10 and 30 minutes with the real Claude Code (no timeout of the core's own). 420 tests pass.
