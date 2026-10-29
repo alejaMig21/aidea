@@ -12,7 +12,6 @@
     #problems-pop li b { color: var(--text); font-weight: 600; }
     #problems-pop li small { display: block; margin-top: 2px; color: var(--muted); font: 400 11px var(--mono); }
     #layers .badge.problems { background: var(--danger); }
-    body.has-problems #layers { max-width: calc(100% - 190px); }
   `;
   document.head.append(style);
 }
