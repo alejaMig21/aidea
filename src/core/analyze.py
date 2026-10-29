@@ -10,7 +10,8 @@ import sys
 import playback  # sits next to this file; importing it runs nothing
 import relations  # likewise
 
-SKIP_DIRS = {"__pycache__", "venv", "node_modules"}
+# Folders that hold copies of code (build output, installers) or libraries (virtual environments), not the project's own code. Hidden folders are skipped too.
+SKIP_DIRS = {"__pycache__", "venv", "env", "node_modules", "dist", "build", "site-packages"}
 
 
 def attributes(cls):
