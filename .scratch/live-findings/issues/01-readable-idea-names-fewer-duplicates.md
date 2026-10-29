@@ -11,3 +11,16 @@
 - [x] A class whose Teacher prose states the same fact in three ways, run through the scripted roles, ends with one idea for it.
 - [ ] (NOT MEASURED: needs a real multi-step class transcript and a live Claude run, not cheap to script overnight; instruction wording is untested against the real model.) Verified live with the real Claude Code on the second monitor: a class like the one of the live run saves a handful of ideas with plain names (record the numbers before and after).
 - [x] Nothing changes for ideas already saved (no migration); `GLOSSARY.md` terms (Proposition, Learner graph) still hold.
+
+## Measured with the real model (haiku, 2026-10-30)
+
+Same four-message Teacher text about a shopping cart list, extractor run twice with the old and twice with the new instructions (`scratchpad` script, 4 calls):
+
+| | ideas | names with code punctuation | longest name |
+|---|---|---|---|
+| before, run 1 | 13 | 13 | 1 word (`list_keeps_repeats`) |
+| before, run 2 | 12 | 12 | 1 word |
+| after, run 1 | 8 | 0 | 8 words |
+| after, run 2 | 8 | 0 | 8 words |
+
+Names read as plain phrases and the count dropped by a third. The six-word limit is not always kept (one name had 8 words), and the same fact is still sometimes listed twice in different words (`a list keeps repeated items` and `two appends of same item give length two`), which the Auditor merges only when it links them. Not measured: the Auditor step and a full class through the interface.
