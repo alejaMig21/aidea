@@ -44,7 +44,8 @@ let pbIndex = 0;
 let pbPrevIndex = -1; // the step shown before, so the token knows which edge to travel
 let pbRenderedFor = null; // the graph the form was last built for: the form is rebuilt only when this changes
 let pbTimer = null;
-let pbGuessOn = false;     // "Guess first": off until the person turns it on
+let pbOwnPython = true;    // the "Project's own interpreter" box: on unless the person unticks it
+let pbGuessOn = false;    // "Guess first": off until the person turns it on
 let pbGuessResult = null;  // what to say once the guessed step is shown: { at: index of the step guessed, text }
 
 const pbStop = () => { clearInterval(pbTimer); pbTimer = null; };
@@ -142,7 +143,9 @@ async function pbRecord() {
   message.textContent = "";
   message.className = "pb-error";
   document.querySelectorAll("#pane-algorithm .pb-field-error").forEach((n) => { n.textContent = ""; });
-  const body = { project: current, node: pbGraph.node, useProjectPython: $("pb-own-python").checked };
+  pbOwnPython = $("pb-own-python").checked;
+  const body = { project: current, node: pbGraph.node };
+  if (!pbOwnPython) body.useProjectPython = false; // left out: the Project's own interpreter when it has one
   const read = (items, prefix) => Object.fromEntries(items.map((p) => [p.name, $(`${prefix}${p.name}`).value]));
   body.values = read(pbNode().parameters ?? [], "pb-v-");
   if (pbNode().constructorParameters) body.instanceValues = read(pbNode().constructorParameters, "pb-c-");
@@ -202,7 +205,7 @@ function pbRender() {
     ...pbFields(node),
     pbEl("p", { className: "pb-hint", textContent: "Numbers, text in quotes like \"hi\", or lists like [1, 2, 3]." }),
     pbEl("div", { className: "pb-row" }, pbEl("button", { textContent: "Use example", onclick: useExample }), pbEl("button", { id: "pb-record", className: "primary", textContent: "Record a run", onclick: pbRecord })),
-    pbEl("label", { className: "pb-check" }, pbEl("input", { id: "pb-own-python", type: "checkbox" }), "Use the Project's own interpreter (.venv, venv or env)"),
+    pbEl("label", { className: "pb-check" }, pbEl("input", { id: "pb-own-python", type: "checkbox", checked: pbOwnPython }), "Use the Project's own interpreter when it has one (.venv, venv or env)"),
     pbEl("p", { className: "pb-warning", textContent: "Recording runs this function for real, on your computer, with the Project's own code. Writing files, network access and new programs are blocked as a safety net, not as a guarantee: only play code you trust." }),
     pbEl("div", { id: "pb-message", className: "pb-error" }),
   ];
@@ -231,7 +234,6 @@ function pbRender() {
   pbPane.replaceChildren(pbEl("header", {}, "Algorithm", pbEl("span", { textContent: pbGraph.node.split(".").pop() })), pbEl("div", { className: "body" }, ...parts));
   if (pbRecording) {
     const inputs = pbRecording.input;
-    $("pb-own-python").checked = pbRecording.interpreter !== "default";
     for (const [texts, prefix] of [[inputs.values, "pb-v-"], [inputs.instanceValues, "pb-c-"], [inputs.effects, "pb-e-"]]) {
       for (const [name, text] of Object.entries(texts ?? {})) if ($(`${prefix}${name}`)) $(`${prefix}${name}`).value = text;
     }

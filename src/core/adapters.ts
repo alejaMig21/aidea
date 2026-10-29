@@ -43,7 +43,7 @@ export type RunRequest = {
   qualifiedName: string;
   file: string;
   input: Record<string, unknown>;
-  useProjectInterpreter: boolean;
+  useProjectInterpreter?: boolean; // true: required, false: never, absent: the Project's own when it has one
   timeoutMs: number;
 };
 export type RunResult = { outcome: Record<string, unknown>; interpreter: string };

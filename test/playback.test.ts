@@ -1,7 +1,8 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { projectPython } from "../src/core/python.ts";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fixture, startTestCore } from "./helpers.ts";
@@ -185,6 +186,47 @@ test("the person's own virtual environment is used only when asked for, and the 
   const rec = await used.json();
   assert.equal(rec.result, "3");
   assert.ok(rec.interpreter.includes(".venv"));
+});
+
+const bareCopy = async () => {
+  const dir = mkdtempSync(join(tmpdir(), "aidea-bare-"));
+  scratch.push(dir);
+  cpSync(project, dir, { recursive: true });
+  await t.post("/projects", { path: dir });
+  return dir;
+};
+
+test("a Project with a virtual environment plays with it by default, and the person can opt out", async () => {
+  const dir = await bareCopy();
+  execFileSync(process.env.AIDEA_PYTHON ?? "python", ["-m", "venv", "--without-pip", join(dir, "venv")]);
+  const auto = await (await t.post("/playback", { project: dir, node: "ops.drain", args: [130] })).json();
+  assert.equal(auto.result, "3");
+  assert.ok(auto.interpreter.startsWith(join(dir, "venv")));
+  const optedOut = await (await t.post("/playback", { project: dir, node: "ops.drain", args: [130], useProjectPython: false })).json();
+  assert.equal(optedOut.interpreter, "default");
+});
+
+test("a virtual environment whose interpreter does not work is reported in words", async () => {
+  const dir = await bareCopy();
+  const win = process.platform === "win32";
+  const fake = join(dir, ".venv", win ? "Scripts" : "bin", win ? "python.exe" : "python");
+  mkdirSync(join(fake, ".."), { recursive: true });
+  if (win) copyFileSync(process.execPath, fake); // a real program that is not Python
+  else { writeFileSync(fake, "#!/bin/sh\necho 'broken environment' >&2\nexit 1\n"); chmodSync(fake, 0o755); }
+  const res = await t.post("/playback", { project: dir, node: "ops.drain", args: [130] });
+  assert.equal(res.status, 422);
+  assert.match((await res.json()).error, /interpreter .*\.venv.* did not run/);
+});
+
+test("the Project's interpreter is found only at the usual places inside the Project folder", () => {
+  const dir = mkdtempSync(join(tmpdir(), "aidea-find-"));
+  scratch.push(dir);
+  assert.equal(projectPython(dir), undefined);
+  for (const [folder, exe] of [["venv", "bin/python"], [".venv", "Scripts/python.exe"]]) {
+    mkdirSync(join(dir, folder, exe, ".."), { recursive: true });
+    writeFileSync(join(dir, folder, exe), "");
+  }
+  assert.equal(projectPython(dir), join(dir, ".venv", "Scripts", "python.exe")); // .venv wins over venv
 });
 
 test("asking to play with bad input gives clear errors", async () => {

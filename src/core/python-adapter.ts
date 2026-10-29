@@ -25,9 +25,10 @@ export const pythonAdapter: LanguageAdapter = {
     }
   },
 
-  // The Project's own virtual environment holds a program that comes with the Project, so it is used only when asked for.
+  // The Project's own virtual environment is used by default when it has one. The interpreter is only ever found by
+  // projectPython at fixed places inside the Project folder; a request can switch it on or off, never name a path.
   async run({ projectPath, moduleId, qualifiedName, file, input, useProjectInterpreter, timeoutMs }: RunRequest): Promise<RunResult> {
-    const interpreter = useProjectInterpreter ? projectPython(projectPath) : undefined;
+    const interpreter = useProjectInterpreter === false ? undefined : projectPython(projectPath);
     if (useProjectInterpreter && !interpreter) throw new AdapterError("This Project has no virtual environment (.venv, venv or env) to use", 422);
     try {
       const out = await runPython("playback.py", [projectPath, moduleId, qualifiedName, file], {
@@ -38,6 +39,12 @@ export const pythonAdapter: LanguageAdapter = {
       });
       return { outcome: JSON.parse(out), interpreter: interpreter ?? "default" };
     } catch (e) {
+      const failure = e as { code?: number | string; killed?: boolean; stderr?: string };
+      // A venv whose Python cannot start or crashes (moved folder, deleted base Python) is not the function's fault.
+      if (interpreter && !failure.killed && failure.code !== 2 && failure.code !== 3) {
+        const why = String(failure.stderr ?? "").trim().split(/\r?\n/).pop() || String(failure.code ?? "unknown error");
+        throw new AdapterError(`The Project's interpreter ${interpreter} did not run: ${why}. Fix the environment, or play with aidea's own Python by unticking the option.`, 422);
+      }
       explain(e, "The function ran for too long and was stopped");
     }
   },

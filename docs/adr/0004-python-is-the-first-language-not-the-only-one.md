@@ -7,7 +7,7 @@ The direction, not yet scheduled: put the Python-specific work behind a language
 ## Where Python is coupled today
 
 - Five scripts next to `src/core/` (`analyze.py`, `flow.py`, `relations.py`, `effects.py`, `playback.py`, about 1150 lines), called only through `python.ts` from three routes (`projects.ts`, `algorithm.ts`, `playback.ts`). Everything else works on the JSON they return.
-- Interface text that names Python: only where the fact is Python-specific (the Components legend line on calls that cannot be traced); everything else says "project" or "code", and `test/language-neutral-text.test.ts` fails when a new mention appears. Playback still runs `playback.py` and its panel offers the project's own interpreter; core error messages about the parser still say "Python".
+- Interface text that names Python: only where the fact is Python-specific (the Components legend line on calls that cannot be traced); everything else says "project" or "code", and `test/language-neutral-text.test.ts` fails when a new mention appears. Playback still runs `playback.py` and it uses the project's own interpreter (.venv, venv or env inside the project folder) by default, and its panel lets the person untick that; core error messages about the parser still say "Python".
 
 ## Open points for when this is scheduled
 

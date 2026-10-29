@@ -84,7 +84,7 @@ const handler: Handler = async (req, res, core) => {
       qualifiedName,
       file,
       input,
-      useProjectInterpreter: wantsProjectPython === true,
+      useProjectInterpreter: wantsProjectPython,
       timeoutMs: Number(process.env.AIDEA_PLAYBACK_TIMEOUT_MS) || DEFAULT_RUN_TIMEOUT_MS,
     }));
   } catch (e) {

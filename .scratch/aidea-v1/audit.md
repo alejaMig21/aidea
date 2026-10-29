@@ -85,7 +85,7 @@ Legend: DONE = behaviour exists and a test or headless check shows it. PARTIAL =
 | Authored store with schema validation on load | Honoured (authored.ts; ADR 0005 changed the layout to one file per Node, old single files still read) |
 | Deriver needs nothing beyond the Project's Python | Honoured for Python (system `python`, no install). Now also TypeScript/JavaScript (ADR 0004; uses the `typescript` package as a runtime dependency) |
 | Trace link engine: Footprint, Broken links, Pattern violations | Honoured |
-| Playback in the Project's own Python environment | Deviation: default is aidea's interpreter; the Project's venv is used only when the person asks (test/playback.test.ts:170) |
+| Playback in the Project's own Python environment | DONE (v1-gaps ticket 08): the Project's venv (.venv, venv, env) is the default; unticking the option or `useProjectPython: false` uses aidea's Python; a broken interpreter is reported in words (test/playback.test.ts) |
 | Tutor: separate isolated session, Probe, predict-then-reveal, Practice deferred | Honoured, and extended (Tutor spec: Plan, Contract, drift) |
 | Learner graph: per-user, append-only, extractor + auditor + deterministic merger | Honoured (test/learner-graph.test.ts) |
 | Blocking decision definition | Honoured (decision-classes tests) |
