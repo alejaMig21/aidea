@@ -219,6 +219,18 @@ test("a construct without a symbol is a generic step that names it, and a genera
   assert.equal((await flowOf(dir, "src/load.js", "load")).steps[0].label, "load(paths, read)");
 });
 
+test("a class with a field, declared inside a function, is a generic step that names it", async () => {
+  const dir = project({
+    "c.ts": ["export function build(n: number) {", "  class Counter {", "    count = n;", "    bump() { this.count++ }", "  }", "  return new Counter();", "}"].join("\n"),
+  });
+  const g = await flowOf(dir, "c.ts", "build");
+  const cls = g.steps.find((s) => s.construct === "class");
+  assert.ok(cls, `no step for the class: ${steps(g).join(" / ")}`);
+  assert.equal(cls.generic, true);
+  assert.match(cls.label, /Counter/);
+  assert.deepEqual(steps(g).at(-2), "return | return new Counter()");
+});
+
 test("a classic for loop is a loop with yes and no exits, and a labelled break is one plain step that says so", async () => {
   const dir = project({
     "a.js": [
