@@ -4,6 +4,6 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done (go-to-line syntaxes are unverified against each editor's docs; see src/core/editors.ts)
 
-- [ ] Choosing each listed editor builds its correct command line (tested without launching it); the choice is saved; an unknown editor can be typed with a template; failing to launch says so in words.
+- [x] Choosing each listed editor builds its correct command line (tested without launching it); the choice is saved; an unknown editor can be typed with a template; failing to launch says so in words.

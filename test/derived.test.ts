@@ -91,6 +91,45 @@ test("open in my editor starts the configured editor on the Node's file and line
   });
 });
 
+test("the chosen editor is saved per Project, listed with its choices, and used by open in my editor", async () => {
+  const project = fixture("shop");
+  await open(project);
+  const q = `/editor-setting?project=${encodeURIComponent(project)}`;
+  const first = await (await t.get(q)).json();
+  assert.equal(first.editor, "vscode");
+  assert.ok(first.editors.some((e: { id: string }) => e.id === "idea"));
+  assert.equal((await post("/editor-setting", { project, editor: "emacs" })).status, 400);
+  assert.equal((await post("/editor-setting", { project, editor: "custom", template: "ed --line {line}" })).status, 400);
+  assert.equal((await post("/editor-setting", { project, editor: "custom", template: `"${process.execPath}" "${fixture("fake-editor/editor.js")}" at={line} {file}` })).status, 200);
+  const saved = await (await t.get(q)).json();
+  assert.equal(saved.editor, "custom");
+  const saved2 = process.env.FAKE_EDITOR_OUT;
+  const dir = mkdtempSync(join(tmpdir(), "aidea-editor-"));
+  process.env.FAKE_EDITOR_OUT = join(dir, "args.json");
+  try {
+    assert.equal((await post("/open-in-editor", { project, node: "cart.Cart.add" })).status, 200);
+    for (let i = 0; i < 100 && !existsSync(join(dir, "args.json")); i++) await new Promise((r) => setTimeout(r, 50));
+    assert.deepEqual(JSON.parse(readFileSync(join(dir, "args.json"), "utf-8")), ["at=5", `${realpathSync(project)}${sep}cart.py`]);
+  } finally {
+    if (saved2 === undefined) delete process.env.FAKE_EDITOR_OUT; else process.env.FAKE_EDITOR_OUT = saved2;
+    rmSync(dir, { recursive: true, force: true });
+    await post("/editor-setting", { project, editor: "vscode" });
+  }
+});
+
+test("open in my editor says in words when the chosen editor cannot start", async () => {
+  const project = fixture("shop");
+  await open(project);
+  await post("/editor-setting", { project, editor: "custom", template: "aidea-no-such-editor-xyz {file}" });
+  try {
+    const res = await post("/open-in-editor", { project, node: "cart.Cart.add" });
+    assert.equal(res.status, 502);
+    assert.match((await res.json()).error, /Could not start the editor/);
+  } finally {
+    await post("/editor-setting", { project, editor: "vscode" });
+  }
+});
+
 test("open in my editor rejects unknown Projects and Nodes and bad input", async () => {
   await open(fixture("shop"));
   assert.equal((await post("/open-in-editor", { project: fixture("shop") })).status, 400);

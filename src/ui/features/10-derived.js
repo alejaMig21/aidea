@@ -20,7 +20,34 @@ function showCodeBox(titleText, text, nodeId) {
       const r = await fetch("/open-in-editor", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ project: current, node: nodeId }) });
       $("error").textContent = r.ok ? "" : (await r.json()).error;
     };
-    head.append(btn);
+    const picker = document.createElement("select");
+    picker.className = "agent-opt";
+    picker.setAttribute("aria-label", "Editor to open the code in");
+    picker.disabled = true;
+    const template = Object.assign(document.createElement("input"), { type: "text", placeholder: 'my-editor --line {line} {file}', hidden: true });
+    template.setAttribute("aria-label", "Command for your editor; {file} is the file and {line} the line");
+    template.style.cssText = "flex:1 1 100%;min-width:0;font-size:13px";
+    const note = Object.assign(document.createElement("div"), { hidden: true });
+    note.style.cssText = "flex-basis:100%;font-size:12px;color:var(--muted)";
+    const saveEditor = async () => {
+      const body = { project: current, editor: picker.value, template: template.value };
+      const r = await fetch("/editor-setting", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      note.hidden = r.ok;
+      note.textContent = r.ok ? "" : (await r.json()).error;
+    };
+    picker.onchange = () => { template.hidden = picker.value !== "custom"; if (picker.value !== "custom") saveEditor(); };
+    template.onchange = saveEditor;
+    head.append(picker, btn);
+    head.style.flexWrap = "wrap";
+    fetch(`/editor-setting?project=${encodeURIComponent(current)}`).then((r) => r.ok ? r.json() : null).then((s) => {
+      if (!s) return;
+      picker.replaceChildren(...s.editors.map((e) => Object.assign(document.createElement("option"), { value: e.id, textContent: e.label })));
+      picker.value = s.editor;
+      template.value = s.template;
+      template.hidden = s.editor !== "custom";
+      picker.disabled = false;
+    }).catch(() => {});
+    head.append(template, note);
   }
   const pre = document.createElement("pre");
   pre.style.cssText = "margin:0;font:12px/1.4 var(--mono);white-space:pre";
