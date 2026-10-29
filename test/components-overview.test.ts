@@ -125,6 +125,27 @@ test("40 modules or fewer keep exactly the detailed layout", async () => {
   assert.deepEqual(body.rects, layoutComponentsDiagram(nodes).rects); // rectangles never depend on relationships
 });
 
+// A mixed project: Python (dotted names) and TypeScript (slashed names) in the same folders.
+function generateMixed(): string {
+  const root = mkdtempSync(join(tmpdir(), "aidea-mixed-"));
+  scratch.push(root);
+  mkdirSync(join(root, "src", "core"), { recursive: true });
+  for (let i = 0; i < 25; i++) {
+    writeFileSync(join(root, "src", "core", `p${i}.py`), `def f${i}():\n    return ${i}\n`);
+    writeFileSync(join(root, "src", "core", `t${i}.ts`), `export function g${i}() { return ${i}; }\n`);
+  }
+  return root;
+}
+
+test("in a mixed project one folder is one block, whatever the language of its modules", async () => {
+  const { nodes, body } = await open(generateMixed());
+  assert.equal(body.mode, "overview");
+  assert.deepEqual(body.rects.filter((r) => r.id.startsWith("folder:")).map((r) => r.id), ["folder:src/core"]);
+  const names = nodes.filter((n) => n.kind === "module").map((n) => n.name).sort();
+  assert.ok(names.includes("src.core.p0") && names.includes("src/core/t0"), "each module keeps its own language's name");
+  assert.equal(body.rects.length, 51);
+});
+
 test("the counts on a module box say 'classes', not 'classs'", () => {
   const source = readFileSync(new URL("../src/ui/features/47-components.js", import.meta.url), "utf8");
   const plural = new Function(`${/const componentsPlural = .*/.exec(source)![0]}; return componentsPlural;`)() as (n: number, word: string) => string;
