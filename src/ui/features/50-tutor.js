@@ -156,7 +156,7 @@
     };
 
     log.append(form);
-    cards.set(q.id, { form, first });
+    cards.set(q.id, { form, first, opts: running?.opts }); // the kind of class that asked (layer, decision, guide, drift, Probe...), to begin the same one again
     form.scrollIntoView?.({ block: "nearest" });
     first.focus();
   }
@@ -172,7 +172,7 @@
     again.onclick = () => {
       again.disabled = true;
       running?.abort.abort();
-      const go = () => (running ? setTimeout(go, 50) : startClass());
+      const go = () => (running ? setTimeout(go, 50) : startClass(card.opts));
       go();
     };
     card.form.append(el("p", { className: "tutor-meta", textContent: "Your earlier answers are kept." }), again);
@@ -268,7 +268,7 @@
   async function startClass(opts = {}) {
     if (!current || running) return;
     const project = current;
-    running = { abort: new AbortController(), project, skip: opts.skip, fallback: opts.fallback };
+    running = { abort: new AbortController(), project, skip: opts.skip, fallback: opts.fallback, opts };
     end.textContent = opts.endLabel ?? "End class";
     log.replaceChildren();
     log.hidden = false;
