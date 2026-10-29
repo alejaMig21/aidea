@@ -14,3 +14,6 @@ New top-bar button between the chat and right-panel ones. With the Canvas hidden
 
 ## 3. aidea tools asking permission (live-findings/02)
 Reproduced with the real Claude Code: in Plan mode `read_contract` produced a card. Cause: Plan mode asks for MCP tools that do not declare `readOnlyHint`. Fixed on the two reading tools, verified live (no card in Plan after the fix; none in Manual). `ExitPlanMode` card remains (Claude Code's own). Details in the ticket.
+
+## 4. Person told when a Proposal is refused (live-findings/03)
+New `proposal_refused` event (reason pending/exists, layer, node id, waiting Proposal id). Line with an "Open it" button in the chat (builder) and in the Tutor column (Tutor). Malformed calls emit nothing. Merged from agent worktree; 408 tests, typecheck clean. Live check on the main screen still to do together with the next UI items.
