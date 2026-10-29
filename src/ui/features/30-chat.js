@@ -153,6 +153,27 @@
         line.append(open);
       }
     }
+    else if (event.type === "authored_changed") {
+      // The builder changed the authored files without a Proposal: say which, and offer the way back.
+      const names = event.files.map((f) => f.file.replace(/^\.aidea\//, "")).join(", ");
+      const line = add("proposal-line", `Claude changed ${event.files.length === 1 ? "an authored file" : "authored files"} without a proposal: ${names}. `);
+      const restore = document.createElement("button");
+      restore.textContent = "Restore";
+      restore.onclick = async () => {
+        restore.disabled = true;
+        try {
+          const res = await fetch("/authored/restore", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: event.id }) });
+          const out = await res.json();
+          restore.replaceWith(Object.assign(document.createElement("span"), {
+            textContent: !res.ok ? out.error : out.skipped.length ? `Restored, except ${out.skipped.join(", ")}: you changed it since.` : "Restored.",
+          }));
+        } catch (err) {
+          restore.disabled = false;
+          restore.after(` Could not reach the core: ${err.message}`);
+        }
+      };
+      line.append(restore);
+    }
     else if (event.type === "decision_class") {
       add("proposal-line", "A decision is waiting for a class: the Tutor asks you about it before you can accept it. Open the Proposal to start it.");
       document.dispatchEvent(new CustomEvent("decision-class", { detail: event }));

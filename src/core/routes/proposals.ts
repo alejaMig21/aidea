@@ -1,5 +1,6 @@
 // The person's side of Proposals: see what is pending, accept or reject it.
 import { skipClass } from "../decision-class.ts";
+import { restore } from "../guard.ts";
 import { sameSecret } from "../permissions.ts";
 import { apply, previewsOf, withPlaces } from "../proposals.ts";
 import type { Handler } from "../types.ts";
@@ -63,6 +64,15 @@ const handler: Handler = async (req, res, core) => {
       skipClass(core, proposal);
       core.send(res, 200, { ok: true });
     }
+    return true;
+  }
+  // "Restore": put back the authored files a builder turn changed without a Proposal (reported by the chat stream).
+  if (req.method === "POST" && url.pathname === "/authored/restore") {
+    const body = (await core.readJson(req, res)) as Record<string, unknown> | null | undefined;
+    if (body === undefined) return true; // readJson already answered
+    const result = typeof body?.id === "string" ? restore(body.id) : null;
+    if (result) core.send(res, 200, { ok: true, ...result });
+    else core.send(res, 404, { error: "Unknown change, or it was already restored" });
     return true;
   }
   return false;

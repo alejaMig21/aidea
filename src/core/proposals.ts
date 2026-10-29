@@ -5,6 +5,7 @@ import { lstatSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, un
 import { dirname, join } from "node:path";
 import { architecturePreview } from "./architecture.ts";
 import { groupProblem, loadAuthored, nodeProblem, rationaleProblem, roleProblem } from "./authored.ts";
+import { coreWrote } from "./guard.ts";
 import { frameOf, layoutLayer } from "./layout.ts";
 import { AUTHORED_LAYERS } from "./traces.ts";
 import type { AuthoredLayerKey } from "./traces.ts";
@@ -280,6 +281,7 @@ export function apply(project: Project, p: Proposal): string | null {
     for (const op of ops) if (op.kind === "put" && readFileSync(op.path, "utf8") !== op.data) throw new Error("a file did not read back as written");
     for (const op of ops) if (op.kind === "del") unlinkSync(op.path);
     if (doc) unlinkSync(file); // last: the old single file goes only once every Node is on disk
+    coreWrote(project.path, [...ops.map((op) => op.path), ...(doc ? [file] : [])]); // these changes are the core's, not a builder's
   } catch {
     if (temporary) rmSync(temporary, { force: true });
     for (const path of made) rmSync(path, { force: true });

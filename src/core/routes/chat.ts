@@ -1,5 +1,6 @@
 import type { Handler } from "../types.ts";
 import { BUILDER_INSTRUCTIONS } from "../contract.ts";
+import { begin, finish } from "../guard.ts";
 import { currentChoice } from "./agent-options.ts";
 
 const MAX_MESSAGE_CHARS = 20_000;
@@ -37,8 +38,10 @@ const handler: Handler = async (req, res, core) => {
     mcpConfig: JSON.stringify({ mcpServers: { aidea: { type: "http", url: `http://${req.headers.host}/mcp/${conversation.token}` } } }),
     tool: "mcp__aidea__approve",
     allowedTools: ["propose_add_node", "propose_update_node", "propose_remove_node", "propose_pattern_group", "list_proposals", "read_contract"].map((t) => `mcp__aidea__${t}`),
-    deniedTools: ["Write", "Edit", "MultiEdit"].map((t) => `${t}(.aidea/**)`), // the authored files change only through Proposals
+    // The authored files change only through Proposals. A shell pattern is not a wall: the check after the turn (guard.ts) is.
+    deniedTools: [...["Write", "Edit", "MultiEdit", "NotebookEdit"].map((t) => `${t}(.aidea/**)`), "Bash(*.aidea*)"],
   };
+  const watch = begin(project.path);
 
   // If the interface goes away mid-reply, stop the agent and deny whatever is waiting.
   const abort = new AbortController();
@@ -57,6 +60,8 @@ const handler: Handler = async (req, res, core) => {
     send({ type: "error", code: "failed", message: "The builder stopped unexpectedly" });
   } finally {
     conversation.close();
+    const changed = finish(watch);
+    if (changed) send({ type: "authored_changed", ...changed });
   }
   res.end();
   return true;
