@@ -132,6 +132,10 @@ _Avoid_: Quiz
 A longer class, started from a layer's "Teach me through it" button, in which the Tutor builds that layer with the person, asking first and turning their answers into Proposals. Until the Tutor is available the button runs a fixed quick tour.
 _Avoid_: Tutorial, wizard
 
+**Guide class**:
+A class about aidea itself, started from the "How aidea works" button in the top bar. The Tutor teaches the parts of the app in order from one structure in the core (`guide.ts`), asking the person to try each part in the real interface; it is not part of the Project's Plan. Until the Tutor is available the button runs a fixed quick tour of the same content.
+_Avoid_: Onboarding, tutorial
+
 **Class mode**:
 A setting in which the tutor interrupts the agent on decisions so the user must predict first.
 _Avoid_: Learning mode

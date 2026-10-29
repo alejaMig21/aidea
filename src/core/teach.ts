@@ -52,6 +52,7 @@ export function createLesson() {
   return {
     texts,
     elements,
+    aboutAidea: false, // true in the "How aidea works" class: no Plan gate, and get_plan / set_plan are refused
     isFinished: () => finished,
     setReview(idea: string) {
       reviewDue = reviewIdea = idea;
@@ -200,12 +201,13 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
   const authored = await runAuthoringTool(name, args, { core, token, lesson, gaveUp });
   if (authored) return authored;
 
+  if (lesson.aboutAidea && (name === "get_plan" || name === "set_plan")) return err("This class is about aidea itself, so the Project's Plan is not used. Go on with begin_step, without an item.");
   if (name === "set_plan" && lesson.openStep()) return err(`Step "${lesson.openStep()}" is still open. Close it (its check must be answered correctly) before changing the Plan, so no question goes out about something the Plan no longer holds.`);
   const planned = runPlanTool(name, args, core, project, (e) => conversation.emit(e));
   if (planned) return planned.isError ? err(planned.text) : { text: planned.text };
 
   if (name === "begin_step") {
-    const planItem = itemFor(core, project, args.item);
+    const planItem = lesson.aboutAidea ? {} : itemFor(core, project, args.item);
     if ("error" in planItem) return err(planItem.error);
     const r = lesson.begin(args, planItem.item);
     if ("error" in r) return err(r.error);

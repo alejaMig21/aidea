@@ -44,15 +44,17 @@
     const s = steps[at];
     stepEl.textContent = `Step ${at + 1} of ${steps.length}: ${s.title}`;
     sayEl.textContent = s.say;
-    moreEl.replaceChildren(bold("Ask yourself:", s.question), mk("br"), bold("Example:", s.example));
+    moreEl.replaceChildren(bold("Ask yourself:", s.question), mk("br"), bold(s.exampleLabel ?? "Example:", s.example));
     back.disabled = at === 0;
     next.textContent = at === steps.length - 1 ? "Finish" : "Next";
   }
+  let guideTourOpen = false; // the tour of "How aidea works" stays open while the person moves between layers to try what it says
   function closeTour() {
     tour.hidden = true;
     note.hidden = true;
     if (businessWalkOpen) businessWalkSet(false);
-    if (tour.contains(document.activeElement) || document.activeElement === document.body) businessWalkOpener.focus();
+    if (tour.contains(document.activeElement) || document.activeElement === document.body) (guideTourOpen ? $("guide-open") : businessWalkOpener).focus();
+    guideTourOpen = false;
   }
   async function quickTour(layer, unavailable) {
     note.hidden = !unavailable;
@@ -83,10 +85,32 @@
   }
   businessWalkOpener.onclick = teach;
 
-  // Every layer has the button, except Code; leaving a layer ends its tour.
+  // "How aidea works" in the top bar: a Tutor class about the app (GET /guide has the same content as the quick tour). Same fallback as above.
+  async function guideTour(unavailable) {
+    const g = (await fetch("/guide").then((r) => (r.ok ? r.json() : null)).catch(() => null))?.guide;
+    if (!g) return;
+    steps = [{ title: g.name, say: g.what, question: g.question, example: g.example }, ...g.order.map((id) => ({ title: g.elements[id].name, say: g.elements[id].what, question: g.elements[id].question, example: g.elements[id].tryIt, exampleLabel: "Try it:" }))];
+    at = 0;
+    render();
+    note.hidden = !unavailable;
+    layoutCloseDrawer(); // in a narrow window the Tutor's drawer covers the Canvas, where the tour is
+    tour.hidden = false;
+    guideTourOpen = true;
+    next.focus();
+  }
+  $("guide-open").onclick = async () => {
+    const project = current;
+    closeTour();
+    if (!project || !window.tutorUi) return guideTour(false);
+    rightShowTab("tutor");
+    const unavailable = await window.tutorUi.startClass({ payload: { project, guide: true }, fallback: true });
+    if (unavailable && project === current) guideTour(true);
+  };
+
+  // Every layer has the button, except Code; leaving a layer ends its tour (the tour of the app stays).
   const showLayerWithoutClass = showLayer;
   showLayer = (which) => {
-    if (which !== authoredShown) { tour.hidden = true; note.hidden = true; }
+    if (which !== authoredShown && !guideTourOpen) { tour.hidden = true; note.hidden = true; }
     showLayerWithoutClass(which);
     businessWalkOpener.hidden = which === "code";
   };

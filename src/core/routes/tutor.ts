@@ -12,6 +12,7 @@ import { DECISION_INSTRUCTIONS, bindDecision, decisionMessage, heldDecision, rev
 import { currentChoice } from "./agent-options.ts";
 import { pickReview, reviewMessage } from "../review.ts";
 import { layerClassMessage } from "../layer-help.ts";
+import { guideClassMessage } from "../guide.ts";
 import { driftClassMessage, driftOf } from "../drift.ts";
 import { MAX_SELECTION, selectionMessage, validSelection } from "../select.ts";
 import { LAYER_CONCEPTS, isLayer } from "../probe.ts";
@@ -50,16 +51,18 @@ const handler: Handler = async (req, res, core) => {
   if (topic !== undefined && (typeof topic !== "string" || topic.length > MAX_TOPIC_CHARS)) return reject(400, `topic must be text of at most ${MAX_TOPIC_CHARS} characters`);
   const layer = body?.layer;
   if (layer !== undefined && !isLayer(layer)) return reject(400, `layer must be one of ${Object.keys(LAYER_CONCEPTS).join(", ")}`);
+  const guide = body?.guide;
+  if (guide !== undefined && guide !== true) return reject(400, "guide must be true");
   const difference = body?.drift === undefined ? undefined : driftOf(project).find((d) => d.id === body.drift);
   if (body?.drift !== undefined && !difference) return reject(400, "drift must be the id of a difference on the project's drift list (GET /drift)");
   const selection = body?.selection;
   if (selection !== undefined && !validSelection(selection)) return reject(400, `selection must be the selected text, at most ${MAX_SELECTION} characters`);
   const held = body?.decision === undefined ? undefined : heldDecision(core, project.id, body.decision);
   if (held && "error" in held) return reject(400, held.error);
-  const opening = held ? decisionMessage(held.proposal) : layer ? layerClassMessage(layer) : difference ? driftClassMessage(difference) : selection ? selectionMessage(selection) : body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
+  const opening = held ? decisionMessage(held.proposal) : guide ? guideClassMessage() : layer ? layerClassMessage(layer) : difference ? driftClassMessage(difference) : selection ? selectionMessage(selection) : body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
   // One review question about an earlier idea opens a FREE class (started with "Start a class"), unless the person turned it off. A class on a layer, on selected text,
-  // on a difference or on a decision is something the person asked for on purpose: a review before it would only be in the way.
-  const free = !held && !layer && !difference && !selection;
+  // on a difference, on a decision or on how aidea works is something the person asked for on purpose: a review before it would only be in the way.
+  const free = !held && !layer && !difference && !selection && !guide;
   const review = !free || !reviewQuestionOn(core, project.id) ? undefined : pickReview(core, project.id, typeof topic === "string" ? [topic] : []);
   const message = review && typeof opening === "string" ? opening + "\n" + reviewMessage(review) : opening;
   if (typeof message !== "string" || !message.trim() || message.length > MAX_MESSAGE_CHARS) {
@@ -75,6 +78,7 @@ const handler: Handler = async (req, res, core) => {
   const texts: string[] = []; // the Teacher's prose, for the Learner graph
   const lesson = createLesson();
   if (review) lesson.setReview(review.idea);
+  if (guide) lesson.aboutAidea = true; // a class about the app is not part of the Project's Plan
   core.lessons.set(classId, lesson);
   const conversation = core.permissions.open(send, project.id, "tutor", classId);
   if (held) bindDecision(classId, held.proposal.id);

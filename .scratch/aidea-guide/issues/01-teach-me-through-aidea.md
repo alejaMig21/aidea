@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] The app's teaching content is one structure served by the core, in plain words, with no jargon (checked by the same test as the layer content).
-- [ ] Through the protocol: the class starts with the app content as data, follows the teach loop, and the first step is about what the person sees first, not a lecture.
-- [ ] Without the Tutor the quick tour of the same content runs, says the Tutor is not available, and can be closed with Escape.
-- [ ] The button sits in the top bar without disturbing the layout, follows `docs/agents/ui-style.md`, and works at 1920 and 1280 pixels wide.
+- [x] The app's teaching content is one structure served by the core, in plain words, with no jargon (checked by the same test as the layer content).
+- [x] Through the protocol: the class starts with the app content as data, follows the teach loop, and the first step is about what the person sees first, not a lecture.
+- [x] Without the Tutor the quick tour of the same content runs, says the Tutor is not available, and can be closed with Escape.
+- [x] The button sits in the top bar without disturbing the layout, follows `docs/agents/ui-style.md`, and works at 1920 and 1280 pixels wide.
 - [ ] Verified live with the real Claude Code on the main screen: the class teaches something correct about the app and does not invent features (compare with the content).
