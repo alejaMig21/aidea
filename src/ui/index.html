@@ -48,7 +48,7 @@
   li button { width: 100%; text-align: left; background: transparent; color: var(--text); border: 1px solid transparent; }
   #error { position: absolute; left: 15px; bottom: 56px; /* above the Components note, which sits at the bottom edge */ max-width: 60%; z-index: 1; color: var(--danger); font-size: 13px; }
   #error:empty { display: none; }
-  svg#canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+  svg#canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; touch-action: none; user-select: none; } /* a double click opens things here: it must not select a word and offer "Just define" */
   svg.dragging { cursor: grabbing; }
   rect { stroke: var(--control); }
   text { fill: var(--text); font-size: 13px; font-weight: 500; pointer-events: none; }
