@@ -43,3 +43,9 @@ Window 1264x761. Hide Canvas, language line, "How aidea works" class with the re
 
 ## DECISION (real-projects/07)
 Test folders are folded into one closed block with a "show" line, not removed. The language line in the top bar is not changed (it counts files on disk); the overview line says how many test modules and pairs are folded. Recommended default taken.
+
+## 11. Merged: TS/JS flow (language-adapters/04, real-projects/06), overview follow-ups 07/08/09, card overflow (live-findings/07)
+- aidea reading its own source in the real app on the second monitor: drawn in 2.7 s with 986 SVG elements; language line "TypeScript 116, Python 39, JavaScript 34 files"; tests and fixtures fold into one closed block ("90 hidden", with a show link).
+- TS functions: 395 of 395 functions of `src` get a flow graph (11% generic steps); checked headless, not yet by hand in the real app.
+- Found live: double click on a module also opens the define popup (ticket live-findings/08). Not covered: entering the module and a function's graph by hand in the real app; guess-first and narration with a real person.
+- Overview: folder `test`/`tests`/`__tests__`/`fixtures`/`spec` fold (DECISION by agent: top-bar counts still count files on disk). 488 tests.
