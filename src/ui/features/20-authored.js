@@ -73,6 +73,7 @@ function drawAuthored() {
 // One layer at a time: the derived view is everything on the Canvas except the authored group.
 function showLayer(which) {
   authoredShown = which;
+  syncNoCode();
   const world = $("world");
   if (authoredGroup.parentNode !== world) world.append(authoredGroup);
   for (const child of world.children) {

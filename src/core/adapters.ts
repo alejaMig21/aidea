@@ -56,5 +56,7 @@ const adapters = new Map<string, LanguageAdapter>([["python", pythonAdapter]]);
 
 export const registerAdapter = (language: string, adapter: LanguageAdapter) => void adapters.set(language, adapter);
 
-// Today every Project is Python. Telling the language of a Project is the next step (ticket 02).
+export const hasAdapter = (language: string) => adapters.has(language);
+
+// Python is the only adapter, so it serves every Project; the languages a Project holds come from languages.ts.
 export const adapterFor = (_projectPath: string): LanguageAdapter => adapters.get("python")!;

@@ -12,7 +12,7 @@ let dir: string;
 const python = adapterFor("anything");
 const calls: string[] = [];
 
-const node = (id: string, kind: "module" | "function", parent: string | null) => ({ id, kind, name: id.split(".").pop()!, parent, file: "m.fake", line: 1, endLine: 2 });
+const node = (id: string, kind: "module" | "function", parent: string | null) => ({ id, kind, name: id.split(".").pop()!, parent, file: "m.py", line: 1, endLine: 2 });
 
 // A language that can analyse and draw a flow but cannot run anything.
 const fake: LanguageAdapter = {
@@ -28,7 +28,7 @@ const fake: LanguageAdapter = {
 
 before(async () => {
   dir = mkdtempSync(join(tmpdir(), "aidea-fake-"));
-  writeFileSync(join(dir, "m.fake"), "f\n");
+  writeFileSync(join(dir, "m.py"), "f\n"); // detected as Python, so the registered "python" adapter reads it
   registerAdapter("python", fake);
   t = await startTestCore();
 });

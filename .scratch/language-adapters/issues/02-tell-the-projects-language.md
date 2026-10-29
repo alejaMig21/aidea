@@ -4,9 +4,9 @@
 
 **Blocked by:** language-adapters 01.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Through the protocol: opening a project returns its languages with file counts and which have an adapter; ignored folders are not counted.
-- [ ] The interface shows one short line with that information, and a project with no analysable language shows an explanation on the Components layer.
-- [ ] A mixed project (Python plus JavaScript) is described correctly and still analyses the Python part.
-- [ ] Verified in the real app on the main screen at two window sizes, with `docs/agents/ui-style.md` respected.
+- [x] Through the protocol: opening a project returns its languages with file counts and which have an adapter; ignored folders are not counted.
+- [x] The interface shows one short line with that information, and a project with no analysable language shows an explanation on the Components layer.
+- [x] A mixed project (Python plus JavaScript) is described correctly and still analyses the Python part.
+- [x] Verified in the real app on the main screen at two window sizes, with `docs/agents/ui-style.md` respected.

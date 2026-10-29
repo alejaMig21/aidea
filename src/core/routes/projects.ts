@@ -1,14 +1,19 @@
 import { mkdirSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
 import { adapterFor } from "../adapters.ts";
+import { detectLanguages } from "../languages.ts";
 import type { ServerResponse } from "node:http";
 import type { Core, Handler, Project } from "../types.ts";
 
 
 async function openProject(path: string): Promise<Project> {
-  const { nodes, errors, relationships, unresolved } = await adapterFor(path).analyze(path);
+  const languages = detectLanguages(path);
+  // Nothing to analyse: no adapter is run, the Components layer is just empty.
+  const { nodes, errors, relationships, unresolved } = languages.some((l) => l.analysed)
+    ? await adapterFor(path).analyze(path)
+    : { nodes: [], errors: [], relationships: [], unresolved: 0 };
   // The full path is the id: two folders can share a name.
-  return { id: path, name: basename(path), path, nodes, errors, relationships, unresolved };
+  return { id: path, name: basename(path), path, nodes, errors, relationships, unresolved, languages };
 }
 
 const isDirectory = (path: string) => statSync(path, { throwIfNoEntry: false })?.isDirectory() === true;

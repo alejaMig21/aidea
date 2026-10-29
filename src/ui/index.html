@@ -103,8 +103,9 @@
   #switcher-button b { font-weight: 600; font-size: 13.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #switcher-button .muted { color: var(--muted); }
   #switcher-button .caret { font-size: 9px; color: var(--muted); flex: none; }
-  #opening { flex: none; font-size: 12px; color: var(--muted); } /* secondary text of the shared scale */
-  #fold-buttons { margin-left: auto; display: flex; gap: 12px; flex: none; }
+  #opening, #languages { min-width: 0; font-size: 12px; color: var(--muted); } /* secondary text of the shared scale */
+  #languages { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #no-code { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); width: min(420px, calc(100% - 30px)); margin: 0; text-align: left; font-size: 13.5px; line-height: 1.5; color: var(--text); }  #fold-buttons { margin-left: auto; display: flex; gap: 12px; flex: none; }
   @media (max-width: 480px) { #switcher-label { display: none; } #topbar { gap: 8px; padding: 0 8px; } #fold-buttons { gap: 8px; } }
   @media (max-width: 759px) { #switcher-menu { position: fixed !important; top: 49px !important; left: 8px !important; width: min(338px, calc(100vw - 16px)) !important; } }
   #fold-buttons button { width: 30px; height: 30px; padding: 0; display: grid; place-items: center; background: transparent; color: var(--text); border: 1px solid var(--control); }
@@ -221,6 +222,7 @@
     </div>
   </div>
   <span id="opening" role="status" hidden>Reading the project...</span>
+  <span id="languages"></span>
   <div id="fold-buttons" role="group" aria-label="Show or hide panels">
     <button type="button" id="fold-chat" aria-pressed="true" aria-label="Chat" title="Show or hide the chat"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M6 3v10"/></svg></button>
     <button type="button" id="fold-canvas" aria-pressed="true" aria-label="Canvas" title="Show or hide the Canvas"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M5 3v10M11 3v10"/></svg></button>
@@ -232,6 +234,7 @@
 <div id="sepc" role="separator" aria-orientation="vertical" aria-label="Resize chat" tabindex="0"></div>
 <main>
   <svg id="canvas" role="img" aria-label="Canvas"><g id="world"></g></svg>
+  <p id="no-code" hidden></p>
   <div id="error" role="alert"></div>
   <div id="zoom" role="group" aria-label="Zoom">
     <button type="button" id="zoom-out" aria-label="Zoom the Canvas out">&minus;</button>

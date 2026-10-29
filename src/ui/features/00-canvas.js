@@ -86,6 +86,24 @@ async function draw(nodes) {
   componentsDraw(world, nodes, layout, currentUnresolved);
 }
 
+// What the Project holds, in one line near its name ("Analysed: Python, 587 files. Not analysed yet: JavaScript, 12 files");
+// when nothing is analysable the Components layer says so instead of showing an empty canvas.
+const languageList = (list) => list.map((l) => `${l.label}, ${l.files} ${l.files === 1 ? "file" : "files"}`).join("; ");
+let noCodeWanted = false;
+const syncNoCode = () => { $("no-code").hidden = !noCodeWanted || authoredShown !== "components"; }; // only the Components layer is empty
+function showLanguages(languages) {
+  const done = languages.filter((l) => l.analysed), todo = languages.filter((l) => !l.analysed);
+  const line = [done.length && `Analysed: ${languageList(done)}.`, todo.length && `Not analysed yet: ${languageList(todo)}.`].filter(Boolean).join(" ");
+  $("languages").textContent = line;
+  $("languages").title = line;
+  const none = $("no-code");
+  noCodeWanted = done.length === 0;
+  syncNoCode();
+  none.textContent = todo.length
+    ? "aidea cannot read the code of this project yet, so there is nothing to draw on this layer."
+    : "No code was found in this project, so there is nothing to draw on this layer yet.";
+}
+
 // Projects
 let current = null;
 let currentUnresolved = 0; // relationships the analysis could not resolve, for the Components legend
@@ -97,6 +115,7 @@ async function openProject(path) {
   if (current !== body.id) authoredShown = "components"; // a different Project starts on the derived view, not on a layer it may not have yet
   current = body.id;
   currentUnresolved = body.unresolved ?? 0;
+  showLanguages(body.languages ?? []);
   document.dispatchEvent(new CustomEvent("project-opened", { detail: { id: body.id } }));
   if (typeof hideHome === "function") hideHome();
   Object.assign(view, viewStart);

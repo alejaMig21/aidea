@@ -49,6 +49,7 @@ export type Project = {
   id: string; name: string; path: string; nodes: CoreNode[]; errors: { file: string; message: string }[];
   relationships: Relationship[];
   unresolved: number; // how many entries of `relationships` are unresolved
+  languages: { language: string; label: string; files: number; analysed: boolean }[]; // by file count; `analysed`: an adapter reads it
 };
 
 // What the core tells the interface about a run of the builder agent.
