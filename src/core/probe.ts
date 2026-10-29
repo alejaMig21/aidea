@@ -123,8 +123,24 @@ export function parseTopics(raw: unknown): { topics: ProbeTopic[] } | { error: s
   return { topics };
 }
 
+// The idea on the Learner graph that a name (normalised) stands for, under its name or an alias. This is what "held" means for the Probe.
+export const heldIdea = (core: Core, idea: string) => core.learner.graph().propositions.find((p) => [p.name, ...p.aliases].some((n) => normalise(n) === idea));
+
+// A class goes further than the Probe: the graph holds what the Teacher taught, so an idea also needs strong Evidence in this Project before the Teacher is told to skip it:
+// a correct answer about it, given with confidence 70 or more (when a confidence was asked), in the last 90 days.
+const STRONG_CONFIDENCE = 70;
+const STRONG_DAYS = 90;
+export function heldStrongly(core: Core, project: string, idea: string) {
+  const held = heldIdea(core, idea);
+  if (!held) return undefined;
+  const names = new Set([held.name, ...held.aliases].map(normalise));
+  const since = new Date(Date.now() - STRONG_DAYS * 86_400_000).toISOString();
+  const strong = core.learner.evidence({ project }).some((e) => e.correct === true && (e.confidence ?? 100) >= STRONG_CONFIDENCE && e.time >= since && names.has(e.idea ?? e.item ?? ""));
+  return strong ? held : undefined;
+}
+
 type Reply = { text: string; isError?: true };
-const err = (text: string): Reply => ({ text, isError: true });
+const err =(text: string): Reply => ({ text, isError: true });
 const ok = (x: object): Reply => ({ text: JSON.stringify({ ok: true, ...x }) });
 
 // Runs one of the Prober's tools. Null when the tool is not one of its own.
@@ -157,7 +173,7 @@ export async function runProbeTool(name: string, args: Record<string, unknown>, 
   const idea = normalise(raw);
   if (!raw.trim() || raw.length > 200 || !idea) return err("ask needs `idea`: the short name of the concept this question measures, for example \"container\"");
   if (run.asked >= MAX_PROBE_QUESTIONS) return err(`You have already asked ${MAX_PROBE_QUESTIONS} questions, the most a Probe allows. Call probe_done now with what you found.`);
-  const held = core.learner.graph().propositions.find((p) => [p.name, ...p.aliases].some((n) => normalise(n) === idea));
+  const held = heldIdea(core, idea);
   if (held) return err(`The Learner graph already holds "${held.name}": the person has shown they understand it. Count it as known, and ask about a different concept (or call probe_done if nothing else is left).`);
   if (run.ideas.has(idea)) return err(`You already asked about "${raw.trim()}" in this Probe. Ask about a different concept, or call probe_done.`);
   const parsed = parseQuestion(args);

@@ -5,7 +5,8 @@
 import { evidenceOf } from "./learner.ts";
 import type { Evidence } from "./learner.ts";
 import { decisionOf } from "./decision-class.ts";
-import { callRole } from "./learner-pipeline.ts";
+import { callRole, normalise } from "./learner-pipeline.ts";
+import { heldStrongly } from "./probe.ts";
 import { runAuthoringTool } from "./tutor-authoring.ts";
 import { itemFor, runPlanTool } from "./plan.ts";
 import { answerForTutor, parseQuestion } from "./tutor.ts";
@@ -206,10 +207,21 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
   const planned = runPlanTool(name, args, core, project, (e) => conversation.emit(e));
   if (planned) return planned.isError ? err(planned.text) : { text: planned.text };
 
+  if (name === "held_ideas") {
+    const held = core.learner.graph().propositions.filter((p) => heldStrongly(core, project, normalise(p.name)));
+    return ok({ ideas: held.map((p) => ({ name: p.name, statement: p.statement })) }); // ideas only, never the person's answers
+  }
+
   if (name === "begin_step") {
     const planItem = lesson.aboutAidea ? {} : itemFor(core, project, args.item);
     if ("error" in planItem) return err(planItem.error);
-    const r = lesson.begin(args, planItem.item);
+    const idea = typeof args.idea === "string" ? normalise(args.idea) : "";
+    // The Probe's own rule (the graph holds the idea), plus strong Evidence: the Teacher is told to pick another step.
+    for (const name of [planItem.item, idea]) {
+      const held = name ? heldStrongly(core, project, name) : undefined;
+      if (held) return err(`The person already understands "${held.name}": they answered correctly about it and the Learner graph holds it. Do not teach it again. Pick a different idea for this step (held_ideas lists what to skip), or build on it in a step about something new.`);
+    }
+    const r = lesson.begin(args, planItem.item ?? (idea || undefined)); // without a Plan, the idea named is the step's item for its Evidence
     if ("error" in r) return err(r.error);
     conversation.emit({ type: "tutor_step", stepId: r.stepId, title: String(args.title).trim() });
     return ok({ stepId: r.stepId, next: "Now call predict for this step." });
