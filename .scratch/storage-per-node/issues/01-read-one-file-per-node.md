@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] Through the protocol on fixtures: a project stored per Node and the same project stored as one file per layer produce identical `/authored`, `/layout`, `/contract` and `/traces` results.
-- [ ] A Node id in both forms is reported as a problem naming both files; a malformed Node file is dropped with its error and the other files still load.
-- [ ] Pattern groups in their own files load, validate and draw as today; a group file that names a missing Node is a problem like other bad data.
+- [x] Through the protocol on fixtures: a project stored per Node and the same project stored as one file per layer produce identical `/authored`, `/layout`, `/contract` and `/traces` results.
+- [x] A Node id in both forms is reported as a problem naming both files; a malformed Node file is dropped with its error and the other files still load.
+- [x] Pattern groups in their own files load, validate and draw as today; a group file that names a missing Node is a problem like other bad data.
 - [ ] The Tutor's read tools, the Contract and the drift list see Nodes from both forms.
 - [ ] Existing projects (single file per layer) work unchanged, with every existing test passing.

@@ -4,6 +4,9 @@
 //   .aidea/requirements.json  { "nodes": [ { id, title, as, want, so, rationale } ] }
 //   .aidea/architecture.json  { "nodes": [ { id, title, technology, parent?, kind?, description?, relations?, rationale } ] }
 //
+// A layer may also be stored one Node per file (ADR 0005): `.aidea/<layer>/<node-id>.json` holds one Node, and
+// `.aidea/architecture/patterns/<group-id>.json` one Pattern group. Both forms can sit side by side; an id found in both is
+// reported and the per-Node file wins. Nothing is written in the per-Node form yet.
 // Every Node has a unique non-empty string `id` and `title`, and a Rationale:
 //   "rationale": { "why": "...", "rejected": [ { "option": "...", "reason": "..." } ] }
 // `block` is one of the nine Business Model Canvas blocks (BLOCKS below); `parent` is an optional string.
@@ -132,47 +135,70 @@ function plainReason(raw: string): string {
   return `The item ${raw}`;
 }
 
-function parseLayer(layer: string, source: string, file: string, problems: AuthoredProblem[]): AuthoredLayer {
+// One Node or Pattern group to parse, and where it came from. `index` is its place in a layer file; a per-Node file has none.
+type Item = { n: unknown; file: string; index?: number };
+// The per-Node files of a layer (`.aidea/<layer>/*.json`) and its Pattern group files, already read; a bad file is reported when it is read.
+type Folder = { nodes: Item[]; groups: Item[] };
+const noFolder = (): Folder => ({ nodes: [], groups: [] });
+
+// `source` is the layer file's text (undefined: there is none); `folder` adds the Nodes stored one per file.
+function parseLayer(layer: string, source: string | undefined, file: string, problems: AuthoredProblem[], folder: Folder = noFolder()): AuthoredLayer {
   const out: AuthoredLayer = { nodes: [], errors: [] };
-  const fail = (message: string) => out.errors.push({ file, message });
+  const fail = (message: string, at = file) => out.errors.push({ file: at, message });
   // Records the same event as a structured problem. `raw` is the error text without its "nodes[i]: " prefix.
-  const flag = (raw: string, at?: { index: number; id?: unknown }, tail = "The item was ignored.") => {
+  const flag = (raw: string, at?: { index?: number; id?: unknown; file?: string }, tail = "The item was ignored.") => {
     const field = raw.match(/^"([^"]+)"/)?.[1];
     problems.push({
-      layer, file,
-      ...(at && { index: at.index }),
+      layer, file: at?.file ?? file,
+      ...(at?.index !== undefined && { index: at.index }),
       ...(typeof at?.id === "string" && at.id !== "" && { id: at.id }),
       ...(field && { field }),
       message: at ? `${plainReason(raw)}. ${tail}` : `The file ${raw}. It was ignored.`,
     });
   };
+  const items: Item[] = [];
   let doc: unknown;
-  try {
-    doc = JSON.parse(source);
-  } catch (e) {
-    const message = `not valid JSON (${e instanceof Error ? e.message : e})`;
-    fail(message);
-    flag(`is ${message}`);
-    return out;
+  if (source !== undefined) {
+    try {
+      doc = JSON.parse(source);
+    } catch (e) {
+      const message = `not valid JSON (${e instanceof Error ? e.message : e})`;
+      fail(message);
+      flag(`is ${message}`);
+    }
+    if (doc !== undefined && (!isObject(doc) || !Array.isArray(doc.nodes))) {
+      fail('the file must be an object with a "nodes" array');
+      flag('must be an object with a "nodes" array');
+      doc = undefined;
+    }
+    if (isObject(doc)) {
+      // An id kept in both forms: the per-Node file wins and the layer file's copy is reported.
+      const perNode = new Map(folder.nodes.filter((it) => isObject(it.n) && isNonEmptyString(it.n.id)).map((it) => [(it.n as Fields).id, it.file] as const));
+      for (const [index, n] of (doc.nodes as unknown[]).entries()) {
+        const other = isObject(n) ? perNode.get(n.id) : undefined;
+        if (other === undefined) { items.push({ n, file, index }); continue; }
+        const id = (n as Fields).id as string;
+        fail(`nodes[${index}]: duplicate id "${id}": the Node is stored in both ${file} and ${other}; ${other} wins`);
+        flag(`duplicate id "${id}"`, { index, id }, `The same id is stored in both ${file} and ${other}; ${other} wins. This copy was ignored.`);
+      }
+    }
   }
-  if (!isObject(doc) || !Array.isArray(doc.nodes)) {
-    fail('the file must be an object with a "nodes" array');
-    flag('must be an object with a "nodes" array');
-    return out;
-  }
+  items.push(...folder.nodes);
   const seen = new Set<string>();
-  const indexOf = new Map<string, number>(); // where each surviving Node sits in the file
+  const where = new Map<string, Item>(); // where each surviving Node sits
   const relations = new Map<string, { r: Fields; i: number }[]>(); // architecture: the well-formed relations of each Node, with their place in the file
-  for (const [i, n0] of doc.nodes.entries()) {
-    let n = n0;
+  for (const it of items) {
+    let n = it.n;
+    const at = (id?: unknown) => ({ index: it.index, id, file: it.file });
+    const here = (m: string) => fail(it.index === undefined ? m : `nodes[${it.index}]: ${m}`, it.file);
     let keptHere: { r: Fields; i: number }[] | undefined;
     if (layer === "architecture" && isObject(n) && Array.isArray(n.relations)) {
       const kept: { r: Fields; i: number }[] = [];
       n.relations.forEach((r: unknown, j: number) => {
         const bad = relationProblem(r, j);
         if (bad) {
-          fail(`nodes[${i}]: ${bad}`);
-          flag(`"relations[${j}]" is wrong: ${bad}`, { index: i, id: n.id }, "The relation was ignored.");
+          here(bad);
+          flag(`"relations[${j}]" is wrong: ${bad}`, at((n as Fields).id), "The relation was ignored.");
         } else kept.push({ r: r as Fields, i: j });
       });
       n = { ...n, relations: kept.map((k) => k.r) };
@@ -181,63 +207,100 @@ function parseLayer(layer: string, source: string, file: string, problems: Autho
     if (layer === "architecture" && isObject(n) && n.kind !== undefined && !KINDS.includes(n.kind as string)) {
       // A file with an unknown kind keeps its Node: the kind is reported and ignored, so the Node is drawn as a generic box.
       // (A Proposal with a bad kind is still refused, by nodeProblem.)
-      fail(`nodes[${i}]: "kind" must be one of: ${KINDS.join(", ")} (ignored: drawn as a generic box)`);
-      flag(`"kind" must be one of: ${KINDS.join(", ")}`, { index: i, id: n.id }, "The kind was ignored and the item is drawn as a generic box.");
+      here(`"kind" must be one of: ${KINDS.join(", ")} (ignored: drawn as a generic box)`);
+      flag(`"kind" must be one of: ${KINDS.join(", ")}`, at(n.id), "The kind was ignored and the item is drawn as a generic box.");
       const { kind: _ignored, ...rest } = n;
       n = rest;
     }
     const problem = nodeProblem(layer, n, seen);
     if (problem) {
-      fail(`nodes[${i}]: ${problem}`);
-      flag(problem, { index: i, id: isObject(n) ? n.id : undefined });
+      here(problem);
+      flag(problem, at(isObject(n) ? n.id : undefined));
       continue;
     }
     if (keptHere) relations.set((n as Fields).id as string, keptHere); // only a Node that survives owns its relations
     seen.add((n as Fields).id as string);
-    indexOf.set((n as Fields).id as string, i);
+    where.set((n as Fields).id as string, it);
     out.nodes.push(n as AuthoredNode);
   }
   if (layer === "architecture") {
+    const place = (id: string) => ({ ...(where.get(id)!.index !== undefined && { index: where.get(id)!.index }), file: where.get(id)!.file });
     out.nodes = out.nodes.filter((n) => {
       if (n.parent === undefined || seen.has(n.parent as string)) return true;
-      fail(`node "${n.id}": "parent" refers to unknown id "${n.parent}"`);
-      problems.push({ layer, file, index: indexOf.get(n.id)!, id: n.id, field: "parent", message: `It sits inside "${n.parent}", which does not exist. The item was ignored.` });
+      const p = place(n.id);
+      fail(`node "${n.id}": "parent" refers to unknown id "${n.parent}"`, p.file);
+      problems.push({ layer, ...p, id: n.id, field: "parent", message: `It sits inside "${n.parent}", which does not exist. The item was ignored.` });
       return false;
     });
     for (const n of out.nodes.filter((n) => n.relations !== undefined)) {
       n.relations = relations.get(n.id)!.filter(({ r, i }) => {
         if (seen.has(r.to as string)) return true;
-        fail(`node "${n.id}": "relations[${i}].to" refers to unknown id "${r.to}"`);
-        problems.push({ layer, file, index: indexOf.get(n.id)!, id: n.id, field: `relations[${i}].to`, message: `It points to "${r.to}", which does not exist. The relation was ignored.` });
+        const p = place(n.id);
+        fail(`node "${n.id}": "relations[${i}].to" refers to unknown id "${r.to}"`, p.file);
+        problems.push({ layer, ...p, id: n.id, field: `relations[${i}].to`, message: `It points to "${r.to}", which does not exist. The relation was ignored.` });
         return false;
       }).map((k) => k.r);
     }
+    const groups: Item[] = [];
+    if (isObject(doc) && doc.patterns !== undefined) {
+      if (Array.isArray(doc.patterns)) groups.push(...doc.patterns.map((g, index) => ({ n: g, file, index })));
+      else { fail('patterns: The field "patterns" must be an array. It was ignored.'); problems.push({ layer, file, field: "patterns", message: 'The field "patterns" must be an array. It was ignored.' }); }
+    }
+    groups.push(...folder.groups);
+    if ((isObject(doc) && doc.patterns !== undefined) || groups.length) out.patterns = parsePatterns(groups, new Set(out.nodes.map((n) => n.id)), fail, problems);
   }
-  if (layer === "architecture" && isObject(doc) && doc.patterns !== undefined) out.patterns = parsePatterns(doc.patterns, new Set(out.nodes.map((n) => n.id)), file, fail, problems);
   return out;
 }
 
-// The valid Pattern groups of an Architecture file. `ids` are its surviving Nodes.
-function parsePatterns(raw: unknown, ids: Set<unknown>, file: string, fail: (m: string) => void, problems: AuthoredProblem[]): Fields[] {
-  const flag = (field: string, message: string) => { fail(`${field}: ${message}`); problems.push({ layer: "architecture", file, field, message }); };
-  if (!Array.isArray(raw)) { flag("patterns", "The field \"patterns\" must be an array. It was ignored."); return []; }
+// The valid Pattern groups of an Architecture layer. `ids` are its surviving Nodes.
+function parsePatterns(items: Item[], ids: Set<unknown>, fail: (m: string, file: string) => void, problems: AuthoredProblem[]): Fields[] {
   const groups: Fields[] = [];
-  for (const [i, g] of raw.entries()) {
+  for (const { n: g, file, index } of items) {
+    const path = (...rest: string[]) => [index === undefined ? "" : `patterns[${index}]`, ...rest].filter(Boolean).join(".") || "group";
+    const flag = (field: string, message: string) => { fail(`${field}: ${message}`, file); problems.push({ layer: "architecture", file, field, message }); };
     const bad = groupProblem(g) ?? (groups.some((k) => k.id === (g as Fields).id) ? `duplicate id "${(g as Fields).id}"` : null);
     if (bad) {
       const field = bad.match(/^"([^"]+)"/)?.[1];
-      flag(field ? `patterns[${i}].${field}` : `patterns[${i}]`, `${plainReason(bad)}. The Pattern group was ignored.`);
+      flag(field ? path(field) : path(), `${plainReason(bad)}. The Pattern group was ignored.`);
       continue;
     }
     const roles = (g as Fields).roles as unknown[];
     const kept = roles.filter((r, j) => {
       const p = roleProblem((g as Fields).kind as string, r, ids);
-      if (p) flag(`patterns[${i}].roles[${j}]${p.field && `.${p.field}`}`, p.message.includes("unknown id") ? `It points to "${(r as Fields).node}", which does not exist. The role was ignored.` : `${plainReason(p.message)}. The role was ignored.`);
+      if (p) flag(path(`roles[${j}]`, p.field), p.message.includes("unknown id") ? `It points to "${(r as Fields).node}", which does not exist. The role was ignored.` : `${plainReason(p.message)}. The role was ignored.`);
       return !p;
     });
     groups.push({ ...(g as Fields), roles: kept });
   }
   return groups;
+}
+
+// Reads `.aidea/<layer>/*.json` (one Node each) and, for Architecture, `.aidea/architecture/patterns/*.json` (one Pattern group each).
+// Only regular files are read; a folder that is a link is skipped. A bad file is reported on its own and the others still load.
+function readFolder(dir: string, layer: string, errors: AuthoredLayer["errors"], problems: AuthoredProblem[]): Folder {
+  const folder = noFolder();
+  const read = (sub: string, into: Item[]) => {
+    let names: string[];
+    try {
+      names = readdirSync(join(dir, layer, sub), { withFileTypes: true }).filter((e) => e.isFile() && e.name.endsWith(".json")).map((e) => e.name).sort((a, b) => a.localeCompare(b, "en"));
+    } catch {
+      return; // no such folder
+    }
+    for (const name of names) {
+      const file = `.aidea/${layer}/${sub}${name}`;
+      const path = join(dir, layer, sub, name);
+      const ignore = (message: string) => { errors.push({ file, message }); problems.push({ layer, file, message: `The file ${message}. It was ignored.` }); };
+      if (statSync(path).size > MAX_FILE_BYTES) { ignore("is larger than 1 MB"); continue; }
+      try {
+        into.push({ n: JSON.parse(readFileSync(path, "utf8")), file });
+      } catch (e) {
+        ignore(`is not valid JSON (${e instanceof Error ? e.message : e})`);
+      }
+    }
+  };
+  read("", folder.nodes);
+  if (layer === "architecture") read("patterns/", folder.groups);
+  return folder;
 }
 
 // Reads the files fresh on every call. Only regular files directly inside `<project>/.aidea/` are read.
@@ -255,6 +318,7 @@ export function loadAuthored(projectPath: string) {
   } catch {
     return { layers, errors, problems }; // no .aidea folder: nothing authored yet
   }
+  const files = new Map<string, string>(); // layer -> its single file's text, when there is a usable one
   for (const entry of entries.filter((e) => e.isFile() && e.name.endsWith(".json")).sort((a, b) => a.name.localeCompare(b.name, "en"))) {
     const file = `.aidea/${entry.name}`;
     const layer = entry.name.slice(0, -".json".length);
@@ -269,7 +333,16 @@ export function loadAuthored(projectPath: string) {
       problems.push({ layer, file, message: "The file is larger than 1 MB. It was ignored." });
       continue;
     }
-    layers[layer] = parseLayer(layer, readFileSync(path, "utf8"), file, problems);
+    files.set(layer, readFileSync(path, "utf8"));
+  }
+  for (const layer of Object.keys(layerChecks)) {
+    const tooBig = layers[layer].errors; // the "larger than 1 MB" error of its single file, kept next to the rest
+    const folderErrors: AuthoredLayer["errors"] = [];
+    const folder = readFolder(dir, layer, folderErrors, problems);
+    if (!files.has(layer) && !folder.nodes.length && !folder.groups.length && !folderErrors.length) continue;
+    layers[layer] = parseLayer(layer, files.get(layer), `.aidea/${layer}.json`, problems, folder);
+    layers[layer].errors.unshift(...tooBig);
+    layers[layer].errors.push(...folderErrors);
   }
   return { layers, errors, problems };
 }
