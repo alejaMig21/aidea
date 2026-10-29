@@ -76,7 +76,8 @@ const handler: Handler = async (req, res, core) => {
       try {
         const built = editorCommand(id, editorTemplate, found.file, found.node.line);
         editor = id === "vscode" ? defaultEditor() : built.command;
-        tail = built.args;      } catch (e) {
+        tail = built.args;
+      } catch (e) {
         core.send(res, 400, { error: e instanceof Error ? e.message : String(e) });
         return true;
       }
@@ -89,8 +90,8 @@ const handler: Handler = async (req, res, core) => {
     let child: ReturnType<typeof spawn> | undefined;
     const launched = await new Promise<string | null>((done) => {
       try {
-        child = spawn(editor, [...(process.env.AIDEA_EDITOR ? lead : []), ...tail], { // wrapper arguments belong to the AIDEA_EDITOR override only
- stdio: "ignore", detached: true });
+        // wrapper arguments belong to the AIDEA_EDITOR override only
+        child = spawn(editor, [...(process.env.AIDEA_EDITOR ? lead : []), ...tail], { stdio: "ignore", detached: true });
       } catch (e) {
         return done(e instanceof Error ? e.message : String(e));
       }
