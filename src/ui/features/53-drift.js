@@ -10,6 +10,7 @@
     #drift-card .row { display: flex; gap: 8px; margin-top: 6px; }
     #drift-card .row button { padding: 3px 10px; font-size: 12px; background: transparent; color: var(--text); border: 1px solid var(--control); }
     .anode.has-drift rect, .bnote.has-drift rect { stroke: var(--danger); stroke-width: 1.5; stroke-dasharray: 5 3; }
+    .anode.has-waiting rect, .bnote.has-waiting rect { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 3; }
   `;
   document.head.append(style);
 
@@ -23,16 +24,17 @@
     "missing-relationship": "Declared, not in the code",
     "undeclared-dependency": "In the code, not declared",
     pattern: "Pattern rule",
+    "not-built-yet": "Not built yet",
   };
   const mk = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids); return e; };
   let driftList = [], driftToken = 0;
 
   // The Nodes named by a difference carry a dashed outline on the layer it is about. Every redraw calls this again.
   function driftMark() {
-    document.querySelectorAll(".anode.has-drift, .bnote.has-drift").forEach((n) => n.classList.remove("has-drift"));
+    document.querySelectorAll(".anode.has-drift, .bnote.has-drift, .anode.has-waiting, .bnote.has-waiting").forEach((n) => n.classList.remove("has-drift", "has-waiting"));
     for (const d of driftList) {
       for (const id of d.nodes) {
-        authoredGroup.querySelector(`g[data-layer="${d.layer}"] [data-node="${id}"]`)?.classList.add("has-drift");
+        authoredGroup.querySelector(`g[data-layer="${d.layer}"] [data-node="${id}"]`)?.classList.add(d.type === "not-built-yet" ? "has-waiting" : "has-drift");
       }
     }
   }
@@ -64,9 +66,10 @@
   }
 
   const swatch = notationSwatch(`<rect x="4" y="4" width="36" height="16" rx="4" style="fill:none;stroke:var(--danger);stroke-width:1.5;stroke-dasharray:5 3"/>`);
+  const waiting = notationSwatch(`<rect x="4" y="4" width="36" height="16" rx="4" style="fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:2 3"/>`);
   for (const layer of ["business", "requirements", "architecture"]) {
     const legend = notationLegends[layer];
-    notationRegisterLegend(layer, { ...legend, shapes: [...legend.shapes, [swatch, "Dashed red outline: the code differs from what the Contract says about this Node (see the list in the Tutor column)", ".has-drift"]] });
+    notationRegisterLegend(layer, { ...legend, shapes: [...legend.shapes, [swatch, "Dashed red outline: the code differs from what the Contract says about this Node (see the list in the Tutor column)", ".has-drift"], ...(layer === "requirements" ? [[waiting, "Dotted grey outline: a requirement not built yet, only a question to ask (see the Tutor column)", ".has-waiting"]] : [])] });
   }
 
   const drawWithoutDrift = draw;

@@ -1,6 +1,6 @@
 // Drift: where the built code differs from the Contract. Computed fresh on every call from the authored layers and the derived
 // analysis; nothing is stored. A difference is information, never a block. What the person has not said is never contradicted:
-// a requirement with no link is "not built yet" (not drift) unless it is marked `built: true`, and a Node that declares no
+// a requirement with no link is only the soft "not built yet" (information, never an alarm) unless it is marked `built: true`, and a Node that declares no
 // `relations` has stated nothing about what it may depend on.
 import { loadAuthored } from "./authored.ts";
 import { architectureModules, patternViolations } from "./patterns.ts";
@@ -9,7 +9,7 @@ import type { Project } from "./types.ts";
 
 export type Drift = {
   id: string;
-  type: "broken-trace" | "built-without-code" | "missing-relationship" | "undeclared-dependency" | "pattern";
+  type: "broken-trace" | "built-without-code" | "missing-relationship" | "undeclared-dependency" | "pattern" | "not-built-yet";
   layer: "requirements" | "architecture" | "business";
   nodes: string[];
   explanation: string;
@@ -17,7 +17,7 @@ export type Drift = {
   evidence?: { kind: string; from: string; to: string; name: string; line: number }[];
 };
 
-const ORDER: Drift["type"][] = ["broken-trace", "built-without-code", "missing-relationship", "undeclared-dependency", "pattern"];
+const ORDER: Drift["type"][] = ["broken-trace", "built-without-code", "missing-relationship", "undeclared-dependency", "pattern", "not-built-yet"];
 const MAX_EVIDENCE = 5;
 
 export function driftOf(project: Project): Drift[] {
@@ -33,6 +33,10 @@ export function driftOf(project: Project): Drift[] {
   for (const r of authored.layers.requirements.nodes) {
     if (r.built === true && !((r.traces as unknown[] | undefined)?.length)) {
       out.push({ id: `built-without-code:${r.id}`, type: "built-without-code", layer: "requirements", nodes: [r.id], explanation: `Requirement "${r.id}" is marked as built, but it is not linked to any Architecture element or code.` });
+    }
+    // A softer kind: nothing contradicts the Contract, the requirement is just waiting. It is offered as a question, never as an alarm.
+    if (r.built !== true && r.kind !== "non-functional" && !((r.traces as unknown[] | undefined)?.length)) {
+      out.push({ id: `not-built-yet:${r.id}`, type: "not-built-yet", layer: "requirements", nodes: [r.id], explanation: `Requirement "${r.id}" is not linked to any Architecture element or code yet, so it looks like it has not been built.` });
     }
   }
 

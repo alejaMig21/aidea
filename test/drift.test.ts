@@ -1,6 +1,6 @@
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
-import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Adapter, AgentEvent } from "../src/core/types.ts";
@@ -84,6 +84,7 @@ test("each kind of difference is detected, and what the Contract allows is left 
     "broken-trace:r-lost>web.gone",
     "built-without-code:r-claimed",
     "missing-relationship:service>cache",
+    "not-built-yet:r-todo",
     "undeclared-dependency:ui>store",
   ]);
   for (const d of drift) {
@@ -98,15 +99,44 @@ test("each kind of difference is detected, and what the Contract allows is left 
   assert.match(crossing.explanation, /store/);
 });
 
-test("a requirement not built yet is not drift; one marked built with no code is; a broken link is", async () => {
+test("a requirement with no code is a soft 'not built yet' difference; it goes away once linked or marked built", async () => {
   const t = await newCore();
   const dir = drifting();
   await t.post("/projects", { path: dir });
-  const ids = (await t.get(`/drift?project=${encodeURIComponent(dir)}`)).drift.flatMap((d: any) => d.nodes);
-  assert.ok(!ids.includes("r-todo"));
+  const list = async () => (await t.get(`/drift?project=${encodeURIComponent(dir)}`)).drift as any[];
+  const soft = (await list()).find((d) => d.nodes.includes("r-todo"));
+  assert.equal(soft.type, "not-built-yet");
+  assert.equal(soft.layer, "requirements");
+  const ids = (await list()).flatMap((d) => d.nodes);
   assert.ok(!ids.includes("r-built"));
   assert.ok(ids.includes("r-claimed"));
   assert.ok(ids.includes("r-lost"));
+  // it sorts after every harder kind
+  const all = await list();
+  assert.ok(all.findIndex((d) => d.type === "not-built-yet") > all.findIndex((d) => d.type === "missing-relationship"));
+  // marking it built turns it into the harder "built without code" difference; linking it removes it
+  const file = join(dir, ".aidea", "requirements.json");
+  const reqs = JSON.parse(readFileSync(file, "utf8"));
+  reqs.nodes.find((r: any) => r.id === "r-todo").traces = ["web.handle"];
+  writeFileSync(file, JSON.stringify(reqs));
+  assert.ok(!(await list()).some((d) => d.nodes.includes("r-todo")));
+  // a non-functional requirement is never "not built yet"
+  reqs.nodes.push({ id: "r-nfr", title: "r-nfr", kind: "non-functional", rationale: why });
+  writeFileSync(file, JSON.stringify(reqs));
+  assert.ok(!(await list()).some((d) => d.nodes.includes("r-nfr")));
+});
+
+test("a class can be opened on a requirement that is not built yet", async () => {
+  const t = await newCore();
+  const dir = drifting();
+  const project = (await (await t.post("/projects", { path: dir })).json()).id;
+  const soft = (await t.get(`/drift?project=${encodeURIComponent(project)}`)).drift.find((d: any) => d.type === "not-built-yet");
+  teacher = async function* () { yield { type: "text", text: "done" }; };
+  launches.length = 0;
+  const res = await t.post("/tutor/classes", { project, drift: soft.id });
+  assert.equal(res.status, 200);
+  for await (const _ of res.body as any);
+  assert.match(launches.find((l) => l.role === "tutor")!.message, /r-todo/);
 });
 
 test("the list is deterministic and is the one the Contract carries", async () => {
