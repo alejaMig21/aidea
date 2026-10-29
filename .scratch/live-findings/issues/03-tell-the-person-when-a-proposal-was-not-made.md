@@ -4,9 +4,9 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Through the protocol: a Proposal refused because its id is already pending, or because the Node already exists, emits an event the interface can show, carrying the reason and the id of the waiting Proposal when there is one; the model still gets its error text.
-- [ ] A refusal for a malformed call (wrong field, unknown layer) emits no such event.
-- [ ] Both sources work: a Proposal from the Tutor's tools and one from the builder's tools.
-- [ ] Verified with a headless browser: the line appears in the Tutor column after a refused Tutor Proposal, its button opens the waiting Proposal, and a refused builder Proposal shows its line in the chat; no console errors.
+- [x] Through the protocol: a Proposal refused because its id is already pending, or because the Node already exists, emits an event the interface can show, carrying the reason and the id of the waiting Proposal when there is one; the model still gets its error text.
+- [x] A refusal for a malformed call (wrong field, unknown layer) emits no such event.
+- [x] Both sources work: a Proposal from the Tutor's tools and one from the builder's tools.
+- [x] Verified with a headless browser: the line appears in the Tutor column after a refused Tutor Proposal, its button opens the waiting Proposal, and a refused builder Proposal shows its line in the chat; no console errors.

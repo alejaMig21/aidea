@@ -179,6 +179,7 @@
     else if (event.type === "decision_ready") document.dispatchEvent(new CustomEvent("proposals-changed"));
     else if (event.type === "tutor_finished") line("tutor-meta", `Class finished: ${event.summary}`);
     else if (event.type === "proposal") tutorProposal(event);
+    else if (event.type === "proposal_refused") tutorRefused(event);
     else if (event.type === "tutor_question") questionCard(event);
     else if (event.type === "tutor_question_expired") expire(event.id);
     else if (event.type === "error") { const p = el("p", { className: "tutor-error", textContent: event.message }); p.setAttribute("role", "alert"); log.append(p); }
@@ -194,6 +195,19 @@
     review.onclick = () => document.dispatchEvent(new CustomEvent("proposal-open", { detail: { id: event.id } }));
     log.append(el("p", { className: "tutor-meta tutor-proposal" }, el("strong", { textContent: "From the Tutor: " }), `proposal to ${event.kind === "add" ? "add" : "change"} "${event.nodeId}" on the ${event.layer} layer. `, review));
     document.dispatchEvent(new CustomEvent("proposal-created", { detail: event }));
+    pane.scrollTop = pane.scrollHeight;
+  }
+
+  // A Proposal the Tutor tried to make and the core refused: one plain line with why, and the way to the one that is waiting.
+  function tutorRefused(event) {
+    const why = event.reason === "pending" ? "a proposal with that name is already waiting for you. Review it first. " : `the ${event.layer} layer already has it. `;
+    const p = el("p", { className: "tutor-meta tutor-proposal" }, `The Tutor tried to add "${event.nodeId}", but ${why}`);
+    if (event.proposalId) {
+      const open = el("button", { type: "button", textContent: "Open it" });
+      open.onclick = () => document.dispatchEvent(new CustomEvent("proposal-open", { detail: { id: event.proposalId } }));
+      p.append(open);
+    }
+    log.append(p);
     pane.scrollTop = pane.scrollHeight;
   }
 

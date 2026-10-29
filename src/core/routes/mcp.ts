@@ -6,7 +6,7 @@
 // the Claude Code process we started can use it.
 import { contractOf } from "../contract.ts";
 import { decisionTools, finishGate, holdIfBlocking, runDecisionTool } from "../decision-class.ts";
-import { publicView, propose, proposePattern } from "../proposals.ts";
+import { publicView, propose, proposePattern, refusedEvent } from "../proposals.ts";
 import type { Proposal } from "../proposals.ts";
 import { NODE_HELP } from "../tutor-authoring.ts";
 import { TUTOR_TOOLS } from "../tutor.ts";
@@ -193,6 +193,7 @@ const handler: Handler = async (req, res, core) => {
       const result = name === "propose_pattern_group" ? proposePattern(core.proposals, project, conversation.secret, args.group)
         : propose(core.proposals, project, conversation.secret, kind, { layer: args.layer, node: args.node, id: args.id, changes: args.changes });
       if ("error" in result) {
+        if (result.refusal) conversation.emit(refusedEvent(result.refusal, "builder"));
         core.send(res, 200, toolText(id, result.error, true));
         return true;
       }

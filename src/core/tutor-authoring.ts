@@ -2,7 +2,7 @@
 // The Tutor's tools go through the same `propose` as the builder's (same validation, same messages) but are refused
 // until the person has answered a question about the same element in this class. A Proposal still needs the person's accept.
 import { evidenceOf } from "./learner.ts";
-import { propose } from "./proposals.ts";
+import { propose, refusedEvent } from "./proposals.ts";
 import type { Proposal } from "./proposals.ts";
 import type { Lesson } from "./teach.ts";
 import { parseQuestion } from "./tutor.ts";
@@ -76,7 +76,10 @@ export async function runAuthoringTool(name: string, args: Record<string, unknow
   if (!project) return err("The Project is not open");
   const kind: Proposal["kind"] = name === "propose_node" ? "add" : "update";
   const result = propose(core.proposals, project, conversation.secret, kind, { layer: args.layer, node: args.node, id: args.id, changes: args.changes });
-  if ("error" in result) return err(result.error);
+  if ("error" in result) {
+    if (result.refusal) conversation.emit(refusedEvent(result.refusal, "tutor"));
+    return err(result.error);
+  }
   const p = result.proposal;
   p.source = { role: "tutor", classId: conversation.classId, questionId: heard.questionId };
   p.fromAnswer = heard.text;

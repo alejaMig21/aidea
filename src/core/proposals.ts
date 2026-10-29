@@ -38,6 +38,12 @@ export type ProposalStore = Map<string, StoredProposal>;
 
 export type ProposalRequest = { layer: unknown; id?: unknown; node?: unknown; changes?: unknown };
 
+// A refusal the person should hear about (not a mistake in the shape of the call): the id is taken by a waiting Proposal or by a Node.
+export type Refusal = { reason: "pending" | "exists"; layer: AuthoredLayerKey; nodeId: string; proposalId?: string };
+export type Refused = { error: string; refusal?: Refusal };
+// What the interface streams for it; the caller adds who tried (the Tutor or the builder).
+export const refusedEvent = (refusal: Refusal, source: "tutor" | "builder") => ({ type: "proposal_refused", ...refusal, source });
+
 // Architecture only: "parent" must be another Node of the layer, and a Node that is somebody's parent cannot go away.
 const parentProblem = (layer: string, node: Fields, otherIds: Set<unknown>) =>
   layer === "architecture" && node.parent !== undefined && !otherIds.has(node.parent) ? `"parent" refers to unknown id "${node.parent}"` : null;
@@ -61,7 +67,7 @@ export function propose(
   secret: string,
   kind: Proposal["kind"],
   request: ProposalRequest,
-): { proposal: StoredProposal } | { error: string } {
+): { proposal: StoredProposal } | Refused {
   const { layer } = request;
   if (!AUTHORED_LAYERS.includes(layer as AuthoredLayerKey)) return { error: `layer must be one of: ${AUTHORED_LAYERS.join(", ")}` };
   const key = layer as AuthoredLayerKey;
@@ -70,7 +76,6 @@ export function propose(
   }
   const existing = nodesOf(project, key);
   const pending = pendingOf(store, project.id, key);
-  const taken = (id: string) => pending.some((p) => p.nodeId === id);
   const adds = pending.filter((p) => p.kind === "add");
   const ids = new Set<unknown>([...existing.map((n) => n.id), ...adds.map((p) => p.nodeId)]); // what a parent may point at
 
@@ -82,8 +87,9 @@ export function propose(
     if (!isObject(request.node)) return { error: "node must be an object with an id, a title, the fields of the layer and a rationale" };
     if (JSON.stringify(request.node).length > MAX_NODE_JSON_CHARS) return { error: "node is too large" };
     nodeId = String(request.node.id);
-    if (existing.some((n) => n.id === nodeId)) return { error: `A Node with id "${nodeId}" already exists on the ${key} layer` };
-    if (pending.some((p) => p.kind === "add" && p.nodeId === nodeId)) return { error: `A proposal to add "${nodeId}" is already pending` };
+    if (existing.some((n) => n.id === nodeId)) return { error: `A Node with id "${nodeId}" already exists on the ${key} layer`, refusal: { reason: "exists", layer: key, nodeId } };
+    const waiting = pending.find((p) => p.kind === "add" && p.nodeId === nodeId);
+    if (waiting) return { error: `A proposal to add "${nodeId}" is already pending`, refusal: { reason: "pending", layer: key, nodeId, proposalId: waiting.id } };
     const problem = nodeProblem(key, request.node, new Set());
     if (problem) return { error: `Invalid node: ${problem}` };
     const parent = parentProblem(key, request.node, ids) ?? relationTargetProblem(key, request.node, new Set([...ids, nodeId]));
@@ -94,7 +100,8 @@ export function propose(
     nodeId = request.id;
     const current = existing.find((n) => n.id === nodeId);
     if (!current) return { error: `Node "${nodeId}" not found on the ${key} layer` };
-    if (taken(nodeId)) return { error: `A proposal for "${nodeId}" is already pending` };
+    const waiting = pending.find((p) => p.nodeId === nodeId);
+    if (waiting) return { error: `A proposal for "${nodeId}" is already pending`, refusal: { reason: "pending", layer: key, nodeId, proposalId: waiting.id } };
     if (kind === "update") {
       if (!isObject(request.changes) || Object.keys(request.changes).length === 0) return { error: "changes must be an object with the fields to change" };
       if (JSON.stringify(request.changes).length > MAX_NODE_JSON_CHARS) return { error: "changes is too large" };
@@ -115,7 +122,7 @@ export function propose(
 }
 
 // The builder's request to declare a Pattern group (an optional list in the Architecture file). Validated like other data.
-export function proposePattern(store: ProposalStore, project: Project, secret: string, group: unknown): { proposal: StoredProposal } | { error: string } {
+export function proposePattern(store: ProposalStore, project: Project, secret: string, group: unknown): { proposal: StoredProposal } | Refused {
   const arch = loadAuthored(project.path).layers.architecture;
   const pending = pendingOf(store, project.id, "architecture");
   const ids = new Set<unknown>([...arch.nodes.map((n) => n.id), ...pending.filter((p) => p.kind === "add" && !p.nodeId.startsWith(PATTERN_PREFIX)).map((p) => p.nodeId)]);
@@ -128,7 +135,9 @@ export function proposePattern(store: ProposalStore, project: Project, secret: s
   }
   if (JSON.stringify(g).length > MAX_NODE_JSON_CHARS) return { error: "group is too large" };
   const nodeId = PATTERN_PREFIX + String(g.id);
-  if (arch.patterns?.some((p) => p.id === g.id) || pending.some((p) => p.nodeId === nodeId)) return { error: `A Pattern group "${g.id}" already exists or is already proposed` };
+  const waiting = pending.find((p) => p.nodeId === nodeId);
+  const exists = arch.patterns?.some((p) => p.id === g.id);
+  if (exists || waiting) return { error: `A Pattern group "${g.id}" already exists or is already proposed`, refusal: { reason: exists ? "exists" : "pending", layer: "architecture", nodeId, proposalId: exists ? undefined : waiting?.id } };
   const proposal: StoredProposal = { id: `prop-${++counter}`, project: project.id, layer: "architecture", kind: "add", nodeId, node: g, status: "pending", blocking: true, secret };
   store.set(proposal.id, proposal);
   return { proposal };

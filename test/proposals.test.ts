@@ -146,6 +146,29 @@ test("accepting writes the Node to the authored file and it shows up on the laye
   assert.equal((await pending(dir)).length, 0);
 });
 
+test("a builder Proposal refused because the id is waiting or the Node exists tells the interface why; a malformed call does not", async () => {
+  const dir = await freshProject();
+  const { events, told } = await builderCalls(dir, [
+    addCache,
+    addCache, // the same id again: still waiting
+    { name: "propose_add_node", arguments: { layer: "architecture", node: { ...cache, id: "web-app" } } }, // already on the layer
+    { name: "propose_add_node", arguments: { layer: "code", node: cache } }, // malformed
+    { name: "propose_add_node", arguments: { layer: "architecture", node: { ...cache, id: "other", rationale: undefined } } }, // malformed
+  ]);
+  const waiting = events.find((e) => e.type === "proposal")!;
+  const refused = events.filter((e) => e.type === "proposal_refused");
+  assert.equal(refused.length, 2);
+  assert.deepEqual(
+    { reason: refused[0].reason, nodeId: refused[0].nodeId, layer: refused[0].layer, proposalId: refused[0].proposalId },
+    { reason: "pending", nodeId: "cache", layer: "architecture", proposalId: waiting.id },
+  );
+  assert.deepEqual({ reason: refused[1].reason, nodeId: refused[1].nodeId, proposalId: refused[1].proposalId }, { reason: "exists", nodeId: "web-app", proposalId: undefined });
+  assert.equal(refused[0].source, "builder");
+  assert.equal(refused[0].secret, undefined);
+  assert.match(told[1].text, /already pending/); // the builder still hears the error
+  assert.equal(told[1].isError, true);
+});
+
 test("invalid tool input is refused with a message the builder can act on, and creates no Proposal", async () => {
   const dir = await freshProject();
   const bad: [Call, RegExp][] = [

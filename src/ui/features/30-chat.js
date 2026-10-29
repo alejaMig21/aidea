@@ -142,6 +142,17 @@
       line.append(review);
       document.dispatchEvent(new CustomEvent("proposal-created", { detail: event }));
     }
+    else if (event.type === "proposal_refused") {
+      const line = add("proposal-line", event.reason === "pending"
+        ? `Claude tried to add "${event.nodeId}", but a proposal with that name is already waiting for you. Review it first. `
+        : `Claude tried to add "${event.nodeId}", but the ${event.layer} layer already has it. `);
+      if (event.proposalId) {
+        const open = document.createElement("button");
+        open.textContent = "Open it";
+        open.onclick = () => document.dispatchEvent(new CustomEvent("proposal-open", { detail: { id: event.proposalId } }));
+        line.append(open);
+      }
+    }
     else if (event.type === "decision_class") {
       add("proposal-line", "A decision is waiting for a class: the Tutor asks you about it before you can accept it. Open the Proposal to start it.");
       document.dispatchEvent(new CustomEvent("decision-class", { detail: event }));

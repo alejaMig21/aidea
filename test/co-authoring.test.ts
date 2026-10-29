@@ -128,6 +128,31 @@ test("an I don't know answer does not open the element, and a choice question ca
   assert.deepEqual(await t.proposals(), []);
 });
 
+test("a Tutor Proposal refused because the id is waiting or the Node exists tells the interface why; a malformed call does not", async () => {
+  const t = await newCore();
+  const seen: Record<string, any> = {};
+  tutor = async function* (call) {
+    await call("ask", askElement());
+    await call("propose_node", { layer: "business", node: segment, element: SEGMENTS });
+    seen.again = await call("propose_node", { layer: "business", node: segment, element: SEGMENTS });
+    seen.exists = await call("propose_node", { layer: "architecture", node: { id: "web-app", title: "X", technology: "x", rationale: segment.rationale }, element: SEGMENTS });
+    await call("propose_node", { layer: "code", node: segment, element: SEGMENTS });
+    await call("propose_node", { layer: "business", node: { id: "x", title: "X", rationale: segment.rationale }, element: SEGMENTS });
+    yield { type: "text", text: "done" };
+  };
+  const events = await t.runClass();
+  const waiting = events.find((e) => e.type === "proposal");
+  const refused = events.filter((e) => e.type === "proposal_refused");
+  assert.equal(refused.length, 2);
+  assert.deepEqual(
+    { reason: refused[0].reason, nodeId: refused[0].nodeId, layer: refused[0].layer, proposalId: refused[0].proposalId, source: refused[0].source },
+    { reason: "pending", nodeId: "freelancers", layer: "business", proposalId: waiting.id, source: "tutor" },
+  );
+  assert.deepEqual({ reason: refused[1].reason, nodeId: refused[1].nodeId, proposalId: refused[1].proposalId }, { reason: "exists", nodeId: "web-app", proposalId: undefined });
+  assert.equal(seen.again.isError, true);
+  assert.match(text(seen.again), /already pending/); // the model still gets its error text
+});
+
 test("bad fields are refused with the builder's messages", async () => {
   const t = await newCore();
   const bad: [string, any, RegExp][] = [
