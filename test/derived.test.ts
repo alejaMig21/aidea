@@ -99,6 +99,45 @@ test("open in my editor rejects unknown Projects and Nodes and bad input", async
   assert.equal((await post("/open-in-editor", { project: fixture("shop"), node: "cart.Nope" })).status, 404);
 });
 
+const refresh = (project: string) => t.post("/projects/refresh", { project });
+
+test("refreshing an open Project re-reads the code, keeps its id and does not reorder the recents", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "aidea-refresh-"));
+  const other = mkdtempSync(join(tmpdir(), "aidea-refresh-other-"));
+  cpSync(fixture("shop"), dir, { recursive: true });
+  try {
+    const before = await open(dir);
+    await open(other); // now the most recent
+    appendFileSync(join(dir, "cart.py"), "\n\nclass Wishlist:\n    pass\n");
+    const res = await refresh(before.id);
+    assert.equal(res.status, 200);
+    const after = await res.json();
+    assert.equal(after.id, before.id);
+    assert.ok(after.nodes.some((n: CoreNode) => n.id === "cart.Wishlist"));
+    assert.ok(!before.nodes.some((n: CoreNode) => n.id === "cart.Wishlist"));
+    // the layout (Components layer) is built from the refreshed Nodes
+    const layout = await (await t.get(`/layout?project=${encodeURIComponent(before.id)}&layer=components`)).json();
+    assert.ok(layout.rects.some((r: { id: string }) => r.id === "cart.Wishlist"));
+    const recents = await (await t.get("/recents")).json();
+    assert.equal(recents[0].path.toLowerCase(), other.toLowerCase());
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+    rmSync(other, { recursive: true, force: true });
+  }
+});
+
+test("refreshing a Project that is not open, or whose folder is gone, says so and keeps what was drawn", async () => {
+  assert.equal((await refresh(join(tmpdir(), "aidea-never-opened"))).status, 404);
+  const dir = mkdtempSync(join(tmpdir(), "aidea-refresh-gone-"));
+  cpSync(fixture("shop"), dir, { recursive: true });
+  const opened = await open(dir);
+  rmSync(dir, { recursive: true, force: true });
+  const res = await refresh(opened.id);
+  assert.equal(res.status, 400);
+  assert.match((await res.json()).error, /folder/i);
+  assert.equal((await t.get(`/layout?project=${encodeURIComponent(opened.id)}&layer=components`)).status, 200);
+});
+
 test("a file that resolves outside the Project folder is never served or opened", async () => {
   const outside = mkdtempSync(join(tmpdir(), "aidea-outside-"));
   const project = mkdtempSync(join(tmpdir(), "aidea-project-"));

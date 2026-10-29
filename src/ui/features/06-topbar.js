@@ -10,6 +10,7 @@ const closeSwitcher = () => { switcherMenu.hidden = true; switcherButton.setAttr
 // The button says "Project <name>", or that none is open.
 function setSwitcherName(name) {
   $("switcher-label").hidden = name === null;
+  $("refresh").hidden = name === null; // nothing to read again without an open Project
   $("switcher-name").textContent = name ?? "No project open";
 }
 async function refreshSwitcherLabel() {
@@ -117,3 +118,41 @@ openProject = async (path) => {
     if (mine === openingLatest) $("opening").hidden = true;
   }
 };
+
+// Refresh: the person edited code by hand, so the derived layers are read again. It runs on the button and when the window
+// regains focus (no file watcher). The view (layer, zoom, open module, selection) stays wherever the Node still exists.
+let refreshing = false;
+async function refreshProject() {
+  if (!current || refreshing || !$("home").hidden || !$("opening").hidden) return; // one at a time; Home covers the Project; a Project is being opened
+  refreshing = true;
+  const project = current, layer = authoredShown, saved = { ...view };
+  const module = componentsOpen, testsOpen = !!componentsTests?.open, algo = algoOpenId, selected = codeSelected;
+  $("opening").hidden = false;
+  $("refresh").disabled = true;
+  try {
+    const res = await fetch("/projects/refresh", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ project }) });
+    const body = await res.json();
+    if (project !== current) return;
+    if (!res.ok) { $("error").textContent = body.error; return; } // the old drawing stays
+    $("error").textContent = "";
+    currentUnresolved = body.unresolved ?? 0;
+    showLanguages(body.languages ?? []);
+    const has = (id) => id && body.nodes.some((n) => n.id === id);
+    componentsNodes = body.nodes;
+    if (has(module)) await componentsLoad(module);
+    else if (testsOpen) await componentsLoad(null, true);
+    else await draw(body.nodes);
+    if (layer === "algorithms") { if (!(has(algo) && await algoOpen(algo, true))) showLayer("components"); }
+    else if (has(selected) && !codeBox.hidden) await onSelect(selected);
+    else { codeBox.hidden = true; codeSelected = null; }
+    if (project === current) { Object.assign(view, saved); apply(); }
+  } catch {
+    $("error").textContent = "Could not reach aidea to read the project again, so what is drawn is the last version it read. Try Refresh again.";
+  } finally {
+    refreshing = false;
+    $("opening").hidden = true;
+    $("refresh").disabled = false;
+  }
+}
+$("refresh").onclick = refreshProject;
+window.addEventListener("focus", refreshProject);

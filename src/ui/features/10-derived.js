@@ -29,8 +29,10 @@ function showCodeBox(titleText, text, nodeId) {
   codeBox.hidden = false;
 }
 
+let codeSelected = null; // the Node whose source is shown, so a refresh can read it again
 async function onSelect(nodeId) {
   if (!current) return;
+  codeSelected = nodeId;
   const res = await fetch(`/source?project=${encodeURIComponent(current)}&node=${encodeURIComponent(nodeId)}`);
   const body = await res.json();
   if (!res.ok) { $("error").textContent = body.error; return; }

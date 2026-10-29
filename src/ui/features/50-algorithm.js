@@ -183,25 +183,32 @@ draw = async (nodes) => {
   await drawWithoutAlgorithms(nodes);
 };
 
-svg.addEventListener("dblclick", async (e) => {
+let algoOpenId = null; // the function whose graph is open, so a refresh can read it again
+async function algoOpen(id, keepView = false) {
   const project = current;
+  const request = ++algoRequest;
+  const res = await fetch(`/algorithm?project=${encodeURIComponent(project)}&node=${encodeURIComponent(id)}`);
+  const body = await res.json();
+  if (project !== current || request !== algoRequest) return false; // another Project or function was opened meanwhile
+  $("error").textContent = res.ok ? "" : body.error;
+  if (!res.ok) return false;
+  algoGraph = body;
+  algoOpenId = id;
+  codeBox.hidden = true; // the first click of the double-click opened the function's source over the graph
+  drawAlgorithm(body);
+  algoTab.disabled = false;
+  algoTab.textContent = `Algorithm: ${id.split(".").pop()}`;
+  document.dispatchEvent(new CustomEvent("algorithm-opened", { detail: body }));
+  showLayer("algorithms");
+  if (!keepView) fit(body.frame, 1); // a flow graph is never blown up past its natural size
+  return true;
+}
+
+svg.addEventListener("dblclick", async (e) => {
   // A function on the Components layer opens its Algorithm graph.
   const id = authoredShown === "components" ? e.target.getAttribute?.("data-id") : null;
   if (id && algoNodes.find((n) => n.id === id)?.kind === "function") {
-    const request = ++algoRequest;
-    const res = await fetch(`/algorithm?project=${encodeURIComponent(project)}&node=${encodeURIComponent(id)}`);
-    const body = await res.json();
-    if (project !== current || request !== algoRequest) return; // another Project or function was opened meanwhile
-    $("error").textContent = res.ok ? "" : body.error;
-    if (!res.ok) return;
-    algoGraph = body;
-    codeBox.hidden = true; // the first click of the double-click opened the function's source over the graph
-    drawAlgorithm(body);
-    algoTab.disabled = false;
-    algoTab.textContent = `Algorithm: ${id.split(".").pop()}`;
-    document.dispatchEvent(new CustomEvent("algorithm-opened", { detail: body }));
-    showLayer("algorithms");
-    fit(body.frame, 1); // a flow graph is never blown up past its natural size
+    await algoOpen(id);
     return;
   }
   // A step of the graph opens its source text.

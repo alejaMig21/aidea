@@ -61,6 +61,23 @@ const handler: Handler = async (req, res, core) => {
     }
     return openAndRecord(core, res, path);
   }
+  // Re-reads an open Project from disk (the person edited code by hand). Unlike opening, it leaves the recents alone,
+  // and on any failure the Project already held stays as it was.
+  if (req.method === "POST" && req.url === "/projects/refresh") {
+    const body = (await core.readJson(req, res)) as { project?: unknown } | null | undefined;
+    if (body === undefined) return true;
+    const old = typeof body?.project === "string" ? core.projects.get(body.project) : undefined;
+    if (!old) return (core.send(res, 404, { error: "That project is not open." }), true);
+    if (!isDirectory(old.path)) return (core.send(res, 400, { error: "The folder of this project is no longer there, so what is drawn is the last version aidea read." }), true);
+    try {
+      const project = await openProject(old.path);
+      core.projects.set(project.id, project);
+      core.send(res, 200, project);
+    } catch {
+      core.send(res, 500, { error: "Could not read the project again, so what is drawn is the last version aidea read. Try Refresh again." });
+    }
+    return true;
+  }
   if (req.method === "POST" && req.url === "/projects/new") {
     const body = (await core.readJson(req, res)) as { parent?: unknown; name?: unknown } | null | undefined;
     if (body === undefined) return true;
