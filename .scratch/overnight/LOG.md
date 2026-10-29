@@ -52,3 +52,8 @@ Test folders are folded into one closed block with a "show" line, not removed. T
 
 ## 12. Audit of the 55 stories of the first version
 `.scratch/aidea-v1/audit.md`: 47 done, 7 partial (22, 23, 26, 35, 48, 53, 55), 0 missing, 1 changed (41). Ten tickets in `.scratch/v1-gaps/issues`. DECISION 2: ticket 01 (story 35) uses detect-and-restore after each builder turn plus the denials that can be named, because no deny pattern is a wall for a shell command.
+
+## 13. Merged: refresh of derived layers (v1-gaps/02), Teacher skips held ideas (v1-gaps/03)
+- Refresh: top-bar Refresh button and refresh when the window regains focus; keeps open module and zoom; failure keeps the old drawing and says so. Not exercised: refresh on Algorithms layer or with the code box open.
+- DECISION 3 (made by the agent, kept): an idea counts as held for the Teacher only if it is on the Learner graph AND has strong Evidence = a correct answer in this Project, confidence 70 or more, in the last 90 days (`STRONG_CONFIDENCE`, `STRONG_DAYS` in `probe.ts`), because the graph holds what was taught, not what was understood. Change the two constants if you want it stricter or looser. Real-Tutor check not done yet.
+495 tests.
