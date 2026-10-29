@@ -17,3 +17,6 @@ Reproduced with the real Claude Code: in Plan mode `read_contract` produced a ca
 
 ## 4. Person told when a Proposal is refused (live-findings/03)
 New `proposal_refused` event (reason pending/exists, layer, node id, waiting Proposal id). Line with an "Open it" button in the chat (builder) and in the Tutor column (Tutor). Malformed calls emit nothing. Merged from agent worktree; 408 tests, typecheck clean. Live check on the main screen still to do together with the next UI items.
+
+## 5. Big-project overview (real-projects/03)
+Components of a project with more than 40 modules is now an overview: one box per module under folder labels, merged lines (strongest 400 pairs), double click or Enter opens one module, "All modules" returns. Telegram: 1,783 SVG elements and 0.15 s (before: 30,000 elements, a strip of 40,000 px). hubstaff-automation: 3,301 elements, 0.3 s; whole open still 13 to 16 s (ticket 04). Zoom floor lowered 20% to 10% for all layers. NOT done: labels unreadable at Fit (ticket 05), focus from authored layers on overview, incoming relations in module detail. Also merged: plain idea names (live-findings/01; live measurement with the real model still pending).
