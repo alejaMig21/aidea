@@ -55,6 +55,11 @@ export async function startCore({ port, adapter: defaultAdapter = createClaudeAd
       res.end(JSON.stringify(body));
     },
     readJson: async (req, res, maxBytes) => {
+      // A cross-site HTML form cannot send this content type without a preflight, which the Origin check refuses.
+      if (!/^application\/json\s*(;|$)/i.test(req.headers["content-type"] ?? "")) {
+        core.send(res, 415, { error: "Send the body as application/json" });
+        return undefined;
+      }
       const raw = await core.readBody(req, maxBytes);
       if (raw === null) {
         core.send(res, 413, { error: "Body too large" }, { connection: "close" });

@@ -157,7 +157,7 @@ test("requests that are not valid are rejected before anything is launched", asy
     assert.match(JSON.parse(text).error, pattern);
     assert.equal(calls.length, 0);
   }
-  const notJson = await fetch(core.url + "/chat", { method: "POST", body: "{nope" });
+  const notJson = await fetch(core.url + "/chat", { method: "POST", headers: { "content-type": "application/json" }, body: "{nope" });
   assert.equal(notJson.status, 400);
 });
 

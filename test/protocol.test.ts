@@ -73,6 +73,16 @@ test("a request from a foreign Origin is rejected", async () => {
   assert.equal(res.status, 403);
 });
 
+test("a body that is not declared as JSON is refused with 415, so a cross-site form cannot send one", async () => {
+  const body = JSON.stringify({ path: fixture("shop") });
+  for (const headers of [{}, { "content-type": "text/plain" }, { "content-type": "application/x-www-form-urlencoded" }]) {
+    const res = await t.raw("POST", "/projects", headers, body);
+    assert.equal(res.status, 415, JSON.stringify(headers));
+    assert.match(JSON.parse(res.text).error, /application\/json/);
+  }
+  assert.equal((await t.raw("POST", "/projects", { "content-type": "application/json; charset=utf-8" }, body)).status, 201);
+});
+
 test("a request with a foreign Host header is rejected", async () => {
   const res = await t.raw("GET", "/projects", { host: "evil.example" });
   assert.equal(res.status, 403);
