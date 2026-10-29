@@ -15,14 +15,24 @@ Decisions:
 
 **Blocked by:** 01 (the person approves the mockup first).
 
-**Status:** ready-for-agent
+**Status:** done (the live check with the real app on the second monitor is left to the lead)
 
-- [ ] The mockup (ticket 01) is approved and its changes, if any, are written under "Verdict" here.
-- [ ] The behaviour of every existing feature of the column still works as before: starting a class with or without a topic, the review question, the Probe (offer, skip, redo), probe/class cards with skip and "Don't know", the end/skip buttons, the Plan, Differences and Contract content, the layer class and decision class entries, selecting text, and narrow windows (drawers).
-- [ ] The Direct/Class setting still works from the Builder column and is remembered per Project; the review checkbox and Tutor model still work.
-- [ ] Verified with the real app at full screen on the second monitor: captures of the three columns side by side before and after, in the three states of the mockup; no console errors; the legend check and the language-neutral text test pass.
-- [ ] `docs/agents/ui-style.md` is updated if any role of text is added to the scale.
+- [x] The mockup (ticket 01) is approved and its changes, if any, are written under "Verdict" here.
+- [x] The behaviour of every existing feature of the column still works as before: starting a class with or without a topic, the review question, the Probe (offer, skip, redo), probe/class cards with skip and "Don't know", the end/skip buttons, the Plan, Differences and Contract content, the layer class and decision class entries, selecting text, and narrow windows (drawers).
+- [x] The Direct/Class setting still works from the Builder column and is remembered per Project; the review checkbox and Tutor model still work.
+- [ ] Verified with the real app at full screen on the second monitor: captures of the three columns side by side before and after, in the three states of the mockup; no console errors; the legend check and the language-neutral text test pass. (Done in headless Chrome at 1920x1080; the real Electron app on the second monitor is not done yet.)
+- [x] `docs/agents/ui-style.md` is updated if any role of text is added to the scale.
 
 ## Verdict
 
 The person approved the mockup as it is (ticket 01): branch `prototype/tutor-column`, commit `470a130`, file `src/ui/features/99-prototype-tutor-column.js` (read it with `git show prototype/tutor-column:src/ui/features/99-prototype-tutor-column.js`; its CSS and markup are the reference for sizes, spacing and structure, its stub data and wiring are not). No changes were asked.
+
+## Review notes
+
+- [x] Top of the column: topic field, one large "Start a class" button of the same width and one help line; the hard-coded `#6f788a` button style and the icon/title hero are gone (`src/ui/index.html`, `07-layout.js`, `50-tutor.js`). The Probe is one muted line under it with text links ("Architecture: not checked yet · Check what I know (3 to 5 questions) · Skip", "checked · Redo", "check skipped · Check what I know ..."), still tied to the layer on screen and still starting the real Probe (`51-probe.js`). The Known/partly/new counts of a finished check moved to the line's tooltip.
+- [x] Settings: Direct / Class is a segmented "Builder works" control at the foot of the Builder column (`35-agent-options.js`), same `POST /agent-options {classMode}`; "Tutor model" (visible label) and "Start with a review question" are one compact row in the Tutor column.
+- [x] Sections: new `48-tutor-sections.js` gives Plan, Differences and Contract one folded `<details>` with a one-line summary ("5 of 9 covered", "3" or "none", "2 of 6"); open or closed is kept in `localStorage` (`aidea.tutor-sections`, every access in try/catch); a class folds them and does not store that. The Plan is a numbered list in dependency order with a tick, "after 1 and 2" under each concept (the numbers of the list) and a progress bar.
+- [x] Questions: one prompt style for choice, text, predict, review and probe (13.5px, 600, `--text`); "What I thought (optional)" waits behind the link "Add what you thought" and the answer still sends `thought`; cards share the column width and keep its 16px margin.
+- [x] Width: default weights are Builder 380 and Tutor 540 (`layoutDefault` in `07-layout.js`); saved sizes still win, drag and drawers unchanged.
+- [x] Checked with a headless script outside the repo (playwright-core, scripted Teacher and Prober through the core's MCP tools, 1920x1080, then 700px): 42 checks pass, among them one left edge and one width for field, button, probe line, settings row and sections; no horizontal overflow at rest, with sections open, in a class and at 700px; folded state kept after reload and the page works when `localStorage` throws; Class/Direct, review checkbox and Tutor model stored; Probe link starts the Probe, Redo and Skip work; "Add what you thought" sends the thought; start with and without a topic, "Don't know", layer class and decision class entries reach `/tutor/classes`; saved sizes win over the new defaults; the separator still drags. Typecheck clean, 403 tests, 402 pass, 1 skipped (legend check and language-neutral text test included).
+- NOT done: the live check with the real Electron app on the second monitor; no automated test of the interface (the check is a headless script outside the suite); a person who ever resized or folded a column has all three numbers saved, so they keep the old 340/320 sizes and see the new defaults only after clearing them; folded sections are not reopened when a class ends (they stay folded until clicked); the selected-text entry (`54-select.js`) was not driven, only the same `startClass` path through the other entries; the textarea uses `--panel` with a `--control` border instead of the browser's default grey; the drift list was only seen empty ("none") because the `shop` fixture has no differences, so its restyled list (`.kind`, buttons) was not looked at; a decision class with a real Proposal was not run (a fake id gives the core's 400 and its message in the log).

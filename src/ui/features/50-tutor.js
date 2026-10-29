@@ -4,35 +4,36 @@
 {
   const style = document.createElement("style");
   style.textContent = `
-    #pane-tutor:is(.tutor-live, .tutor-over) { align-items: stretch; justify-content: flex-start; text-align: left; }
-    #pane-tutor:is(.tutor-live, .tutor-over) .tutor-empty, #pane-tutor.tutor-live #tutor-start { display: none; }
-    #pane-tutor.tutor-over #tutor-start { align-self: flex-start; }
+    #pane-tutor:is(.tutor-live, .tutor-over) .tutor-help, #pane-tutor.tutor-live :is(#tutor-start, #tutor-topic) { display: none; }
     #pane-tutor #tutor-end[hidden] { display: none; }
-    #pane-tutor.tutor-live #tutor-end { align-self: flex-start; background: transparent; color: var(--text); border: 1px solid var(--control); }
-    #tutor-log { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+    #pane-tutor.tutor-live #tutor-end { align-self: flex-start; background: transparent; color: var(--text); border: 1px solid var(--control); font-size: 13px; font-weight: 400; }
+    #tutor-log { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     #tutor-log[hidden] { display: none; }
-    #tutor-log .tutor-say { margin: 0; color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.45; }
+    #tutor-log .tutor-say { margin: 0; color: var(--text); font-size: 13.5px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.45; }
     #tutor-log .tutor-error { margin: 0; color: var(--danger); overflow-wrap: anywhere; }
-    #tutor-log .tutor-step { margin: 8px 0 0; font-size: 14px; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
-    #tutor-log .tutor-label { margin: 0; color: var(--accent); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
-    #tutor-topic { align-self: stretch; box-sizing: border-box; margin: 0 0 6px; padding: 6px 8px; font: inherit; font-size: 13px; max-width: 262px; width: 100%; background: var(--raised); color: var(--text); border: 1px solid var(--control); border-radius: 6px; }
-    #pane-tutor.tutor-live #tutor-topic { display: none; }
+    #tutor-log .tutor-step { margin: 4px 0 0; font-size: 14px; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+    #tutor-log .tutor-label { margin: 0; color: var(--accent); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
+    #tutor-topic { width: 100%; margin: 0; padding: 7px 10px; font-size: 13px; }
     #tutor-log .tutor-meta { margin: 0; color: var(--muted); font-size: 12px; }
-    #tutor-log .tutor-card { margin: 0; padding: 10px 12px; background: var(--raised); border: 1px solid var(--control); border-radius: 10px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+    #tutor-log .tutor-card { margin: 0; padding: 12px; background: var(--raised); border: 1px solid var(--control); border-radius: 10px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
     #tutor-log .tutor-card fieldset { margin: 0; padding: 0; border: 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-    #tutor-log .tutor-card legend, #tutor-log .tutor-card .tutor-prompt { padding: 0; font-weight: 600; overflow-wrap: anywhere; white-space: pre-wrap; }
-    #tutor-log .tutor-card label { display: flex; gap: 8px; align-items: baseline; overflow-wrap: anywhere; }
+    #tutor-log .tutor-card legend, #tutor-log .tutor-card .tutor-prompt { margin: 0; padding: 0; color: var(--text); font-size: 13.5px; font-weight: 600; overflow-wrap: anywhere; white-space: pre-wrap; }
+    #tutor-log .tutor-card label { display: flex; gap: 8px; align-items: baseline; color: var(--text); font-size: 13.5px; overflow-wrap: anywhere; }
     #tutor-log .tutor-card input[type=radio] { accent-color: var(--accent); flex: none; }
     #tutor-log .tutor-card .tutor-stops { flex-direction: row; flex-wrap: wrap; gap: 4px 12px; }
-    #tutor-log .tutor-card .tutor-stops legend { flex: 1 0 100%; font-weight: 400; color: var(--muted); }
-    #tutor-log .tutor-card .tutor-stops label { gap: 4px; align-items: center; }
-    #tutor-log .tutor-card textarea { width: 100%; box-sizing: border-box; min-height: 52px; resize: vertical; font: inherit; }
+    #tutor-log .tutor-card .tutor-stops legend { flex: 1 0 100%; font-size: 12px; font-weight: 400; color: var(--muted); }
+    #tutor-log .tutor-card .tutor-stops label { gap: 4px; align-items: center; font-size: 12px; color: var(--label); }
+    #tutor-log .tutor-card textarea { width: 100%; min-height: 64px; resize: vertical; font: inherit; font-size: 13px; padding: 7px 10px; color: var(--text); background: var(--panel); border: 1px solid var(--control); border-radius: 8px; }
+    #tutor-log .tutor-card textarea::placeholder { color: var(--muted); }
+    #tutor-log .tutor-card .tutor-thought label { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+    #tutor-log .tutor-card .tutor-link { align-self: flex-start; padding: 0; background: none; border: 0; border-radius: 0; font-size: 12px; font-weight: 400; color: var(--accent-soft); text-decoration: underline; text-underline-offset: 2px; }
     #tutor-log .tutor-card .tutor-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-    #tutor-log .tutor-card button[type=submit] { background: var(--accent); color: var(--on-accent); border: 0; }
+    #tutor-log .tutor-card .tutor-buttons button { padding: 6px 14px; font-size: 13px; }
+    #tutor-log .tutor-card button[type=submit] { background: var(--accent); color: var(--on-accent); border: 0; font-size: 13.5px; font-weight: 600; }
     #tutor-log .tutor-card button:disabled { opacity: .5; }
-    #tutor-log .tutor-card .tutor-dontknow { background: transparent; color: var(--text); border: 1px solid var(--control); }
+    #tutor-log .tutor-card .tutor-dontknow { background: transparent; color: var(--text); border: 1px solid var(--control); font-weight: 400; }
     #tutor-log .tutor-card .tutor-status { color: var(--danger); margin: 0; }
-    #tutor-log .tutor-card.tutor-done { gap: 2px; }
+    #tutor-log .tutor-card.tutor-done { gap: 4px; }
     #tutor-log .tutor-card.tutor-done .tutor-answered { color: var(--muted); margin: 0; overflow-wrap: anywhere; }
   `;
   document.head.append(style);
@@ -40,8 +41,7 @@
   const STOPS = [0, 30, 50, 70, 90, 100];
   const pane = $("pane-tutor");
   const start = $("tutor-start");
-  const emptyTitle = pane.querySelector("h2.tutor-empty");
-  const emptyText = pane.querySelector("p.tutor-empty");
+  const help = pane.querySelector(".tutor-help");
   const end = Object.assign(document.createElement("button"), { type: "button", id: "tutor-end", textContent: "End class", hidden: true });
   const log = Object.assign(document.createElement("div"), { id: "tutor-log", hidden: true });
   log.setAttribute("role", "log");
@@ -50,7 +50,7 @@
   topic.setAttribute("aria-label", "Topic of the class (optional)");
   start.before(topic);
   start.after(end);
-  end.after(log);
+  $("tutor-settings").after(log); // below the way to begin; the Probe line (51-probe.js) goes between the two
 
   let running = null; // { abort, project } while a class is open
   let counter = 0;
@@ -62,10 +62,7 @@
   function setAvailable(open) {
     if (running) return;
     start.disabled = !open;
-    emptyTitle.textContent = open ? "Start a class" : "The Tutor is not available yet";
-    emptyText.textContent = open
-      ? "The Tutor asks you questions about your project, one at a time, and waits for your answers."
-      : "Open a Project to start a class. The Tutor explains why each decision was made and asks you questions about your project.";
+    help.textContent = open ? "The Tutor asks you questions about your project, one at a time." : "Open a Project to start a class.";
   }
 
   const PHASE_LABELS = { predict: "Predict", review: "Review of an earlier class" };
@@ -82,9 +79,11 @@
     form.setAttribute("aria-label", q.phase === "predict" ? "Prediction from the Tutor" : q.phase === "review" ? "Review question from the Tutor" : "Question from the Tutor");
     const status = el("p", { className: "tutor-status" });
     status.setAttribute("role", "alert");
+    // What the person thought is optional, so it waits behind a link; the answer still sends it when it was written.
     const thought = el("textarea", { id: `tutor-thought-${n}`, rows: 2 });
-    const thoughtLabel = el("label", { htmlFor: thought.id, textContent: "What I thought (optional)" });
-    thoughtLabel.style.cssText = "display:block;margin-bottom:2px";
+    const thoughtBox = el("div", { className: "tutor-thought", hidden: true }, el("label", { htmlFor: thought.id, textContent: "What I thought (optional)" }), thought);
+    const thoughtLink = el("button", { type: "button", className: "tutor-link", textContent: "Add what you thought" });
+    thoughtLink.onclick = () => { thoughtLink.hidden = true; thoughtBox.hidden = false; thought.focus(); };
     const send = el("button", { type: "submit", textContent: "Send" });
     const buttons = el("div", { className: "tutor-buttons" }, send);
     let dontKnow;
@@ -109,9 +108,10 @@
       body = [options, stops];
       summary = () => `You answered: ${q.options[Number(form.elements[`tutor-option-${n}`].value)]} (confidence ${form.elements[`tutor-confidence-${n}`].value})`;
     } else {
-      const text = el("textarea", { id: `tutor-text-${n}`, rows: 3, required: true });
+      const text = el("textarea", { id: `tutor-text-${n}`, rows: 3, required: true, placeholder: "Your answer" });
+      text.setAttribute("aria-label", "Your answer");
       first = text;
-      body = [el("p", { className: "tutor-prompt", textContent: q.prompt }), el("label", { htmlFor: text.id, textContent: "Your answer" }), text];
+      body = [el("p", { className: "tutor-prompt", textContent: q.prompt }), text];
       summary = () => `You answered: ${text.value.trim()}`;
     }
     if (q.allowDontKnow) {
@@ -125,7 +125,7 @@
     }
     if (PHASE_LABELS[q.phase]) form.prepend(el("p", { className: "tutor-label", textContent: PHASE_LABELS[q.phase] }));
     if (q.probe) form.prepend(el("p", { className: "tutor-label", textContent: `Question ${q.probe.n} of ${q.probe.of}` }));
-    form.append(...body, thoughtLabel, thought, buttons, status);
+    form.append(...body, thoughtLink, thoughtBox, buttons, status);
 
     const submit = async (reply, summaryText) => {
       form.querySelectorAll("button, input, textarea").forEach((c) => { c.disabled = true; });
@@ -234,6 +234,7 @@
     log.hidden = false;
     pane.classList.remove("tutor-over");
     pane.classList.add("tutor-live");
+    pane.querySelectorAll("details.tutor-section[open]").forEach((d) => { d.open = false; }); // the sections stay folded during a class
     end.hidden = false;
     start.disabled = true;
     end.focus();

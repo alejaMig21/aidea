@@ -4,30 +4,23 @@
 {
   const style = document.createElement("style");
   style.textContent = `
-    #probe-offer { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 0 0 6px; }
-    #probe-offer .probe-status { margin: 0; font-size: 12px; color: var(--muted); }
-    #probe-offer .probe-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
-    #probe-offer button { margin: 0; }
-    #probe-offer button.probe-main { background: var(--accent); color: var(--on-accent); border: 0; }
+    #probe-offer { margin: 0; font-size: 12px; color: var(--muted); }
+    #probe-offer button { padding: 0; background: none; border: 0; border-radius: 0; font-size: 12px; font-weight: 400; color: var(--accent-soft); text-decoration: underline; text-underline-offset: 2px; }
     #pane-tutor.tutor-live #probe-offer { display: none; }
-    #pane-tutor.tutor-over #probe-offer { align-items: flex-start; }
   `;
   document.head.append(style);
 
-  const offer = Object.assign(document.createElement("div"), { id: "probe-offer", hidden: true });
-  offer.setAttribute("aria-label", "Check what you know before the class");
-  $("tutor-start").before(offer);
+  // One quiet line, not a button: the person may check what they know, and "Start a class" stays the main action.
+  const offer = Object.assign(document.createElement("p"), { id: "probe-offer", hidden: true });
+  $("tutor-head").after(offer);
 
   const post = (path, body) => fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   const layerKey = () => authoredShown; // the layer on screen: "components" is the derived view
   const layerName = (k) => k.charAt(0).toUpperCase() + k.slice(1);
   let token = 0; // a late answer for a layer or Project that is no longer on screen is ignored
 
-  function button(text, onclick, main) {
-    const b = Object.assign(document.createElement("button"), { type: "button", textContent: text, onclick });
-    if (main) b.className = "probe-main";
-    return b;
-  }
+  const link = (text, onclick) => Object.assign(document.createElement("button"), { type: "button", textContent: text, onclick });
+  const dot = () => document.createTextNode(" · ");
 
   async function refresh() {
     const mine = ++token;
@@ -39,24 +32,20 @@
       if (res.ok) result = (await res.json()).result;
     } catch { /* the offer is only a convenience: without the core it simply shows the unchecked state */ }
     if (mine !== token) return;
-    const status = Object.assign(document.createElement("p"), { className: "probe-status" });
-    const buttons = Object.assign(document.createElement("div"), { className: "probe-buttons" });
+    offer.title = "";
     if (result?.status === "done") {
       const c = { known: 0, partial: 0, unknown: 0 };
       for (const t of result.topics) c[t.status]++;
-      status.textContent = `${layerName(layer)} check: Known: ${c.known}, partly: ${c.partial}, new to you: ${c.unknown}`;
-      buttons.append(button("Redo the check", () => begin(layer)));
+      offer.title = `Known: ${c.known}, partly: ${c.partial}, new to you: ${c.unknown}`;
+      offer.replaceChildren(`${layerName(layer)}: checked`, dot(), link("Redo", () => begin(layer)));
     } else if (result?.status === "skipped") {
-      status.textContent = `${layerName(layer)} check skipped`;
-      buttons.append(button("Check what I know (5 questions)", () => begin(layer)));
+      offer.replaceChildren(`${layerName(layer)}: check skipped`, dot(), link("Check what I know (3 to 5 questions)", () => begin(layer)));
     } else {
-      status.textContent = `${layerName(layer)}: not checked yet`;
-      buttons.append(
-        button("Check what I know first (5 questions)", () => begin(layer), true),
-        button("Skip", async () => { await post("/tutor/probes/skip", { project, layer }).catch(() => null); refresh(); }),
+      offer.replaceChildren(
+        `${layerName(layer)}: not checked yet`, dot(), link("Check what I know (3 to 5 questions)", () => begin(layer)),
+        dot(), link("Skip", async () => { await post("/tutor/probes/skip", { project, layer }).catch(() => null); refresh(); }),
       );
     }
-    offer.replaceChildren(status, buttons);
     offer.hidden = false;
   }
 

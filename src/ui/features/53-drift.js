@@ -4,21 +4,17 @@
 {
   const style = document.createElement("style");
   style.textContent = `
-    #drift-card { align-self: stretch; margin-top: 8px; padding: 12px; text-align: left; background: var(--raised); border: 1px solid var(--line); border-radius: 10px; }
-    #drift-card[hidden] { display: none; }
-    #drift-card h2 { text-align: left; }
-    #drift-card p { max-width: none; margin: 4px 0 8px; font-size: 12px; }
-    #drift-card ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-    #drift-card li { font-size: 12px; color: var(--text); overflow-wrap: anywhere; }
-    #drift-card .kind { display: block; margin-bottom: 2px; font: 600 10.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-    #drift-card .row { display: flex; gap: 6px; margin-top: 4px; }
-    #drift-card .row button { padding: 2px 10px; font-size: 12px; background: transparent; color: var(--text); border: 1px solid var(--control); }
+    #drift-card ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+    #drift-card li { font-size: 13px; color: var(--label); overflow-wrap: anywhere; }
+    #drift-card .kind { display: block; margin-bottom: 2px; font: 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    #drift-card .row { display: flex; gap: 8px; margin-top: 6px; }
+    #drift-card .row button { padding: 3px 10px; font-size: 12px; background: transparent; color: var(--text); border: 1px solid var(--control); }
     .anode.has-drift rect, .bnote.has-drift rect { stroke: var(--danger); stroke-width: 1.5; stroke-dasharray: 5 3; }
   `;
   document.head.append(style);
 
-  const card = Object.assign(document.createElement("section"), { id: "drift-card", hidden: true });
-  card.setAttribute("aria-label", "Differences from the Contract");
+  const section = tutorSection("drift", "Differences");
+  const card = section.el;
   $("contract-card").before(card);
 
   const KINDS = {
@@ -51,8 +47,8 @@
       ask.onclick = () => window.tutorUi?.startClass({ payload: { project: current, drift: d.id } });
       return mk("li", {}, mk("span", { className: "kind", textContent: `${KINDS[d.type] ?? d.type}${d.certainty === "possible" ? " (possible)" : ""}` }), d.explanation, mk("div", { className: "row" }, show, ask));
     });
-    card.replaceChildren(
-      mk("h2", { textContent: "Differences from the Contract" }),
+    section.summarise(driftList.length ? String(driftList.length) : "none");
+    section.body.replaceChildren(
       mk("p", { textContent: driftList.length ? "Where your code is not what you agreed. It is only information: nothing is blocked, and either side may be the one to change." : "No differences found between your code and what you agreed." }),
       ...(items.length ? [mk("ul", {}, ...items)] : []),
     );

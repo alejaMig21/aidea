@@ -4,7 +4,7 @@
 // feature file shares one global scope.
 const layoutKey = "aidea.layout";
 const layoutCanvasMin = 360; // the Canvas is never squeezed below this (wide windows)
-const layoutCanvasFr = 800; // the Canvas weight; the panes' weights (340, 320 by default) are on the same scale
+const layoutCanvasFr = 800; // the Canvas weight; the panes' weights (380, 540 by default) are on the same scale
 const layoutPaneMin = { chat: 268, right: 288 }; // 260 and 280 px cards plus their 8px window margin
 const layoutNarrowBelow = 760; // narrower windows show the panes as drawers
 const layoutStep = 20;
@@ -69,26 +69,26 @@ function rightSetTabEnabled(id, enabled) {
   if (!enabled && b.getAttribute("aria-selected") === "true") rightSelectTab(rightTabs.firstChild.dataset.tab);
 }
 
-// The Tutor tab is always present. Its entry point stays disabled until the Tutor exists.
+// The Tutor tab is always present. Its entry point stays disabled until the Tutor exists. The head of the column is the topic field
+// (50-tutor.js), the "Start a class" button and one line of help; the other files add the rest below it.
 {
   const pane = document.createElement("div");
-  const tile = Object.assign(document.createElement("div"), { className: "tile tutor-empty", textContent: "?" });
-  tile.setAttribute("aria-hidden", "true");
-  const title = Object.assign(document.createElement("h2"), { className: "tutor-empty", textContent: "The Tutor is not available yet" });
-  const text = Object.assign(document.createElement("p"), { className: "tutor-empty",
-    textContent: "When it is, it will explain why each decision was made and ask you questions about your project.",
-  });
+  const help = Object.assign(document.createElement("p"), { className: "tutor-help", textContent: "Open a Project to start a class." });
   const start = Object.assign(document.createElement("button"), { type: "button", id: "tutor-start", textContent: "Start a class", disabled: true });
-  pane.append(tile, title, text, start);
+  const head = Object.assign(document.createElement("div"), { id: "tutor-head" });
+  head.append(start, help);
+  pane.append(head);
   rightRegisterTab("tutor", "Tutor", pane);
 }
 
 
 // ---- Sizes and folded state. A pane's size is a flex weight (fr), so every visible column grows and shrinks with the window.
 // Folded (by the person or automatically) means a 0 track with its separator hidden. Automatic folds are never saved.
-const layoutState = { chat: 340, right: 320, chatFolded: false, rightFolded: false };
+// The defaults give the Tutor room (Builder 380, Tutor 540); a size the person saved by resizing wins over them.
+const layoutDefault = { chat: 380, right: 540 };
+const layoutState = { ...layoutDefault, chatFolded: false, rightFolded: false };
 try { Object.assign(layoutState, JSON.parse(localStorage.getItem(layoutKey) || "{}")); } catch {}
-for (const n of ["chat", "right"]) if (!(layoutState[n] > 0)) layoutState[n] = n === "chat" ? 340 : 320;
+for (const n of ["chat", "right"]) if (!(layoutState[n] > 0)) layoutState[n] = layoutDefault[n];
 const layoutSave = () => { try { localStorage.setItem(layoutKey, JSON.stringify(layoutState)); } catch {} };
 
 const layoutPanes = {
