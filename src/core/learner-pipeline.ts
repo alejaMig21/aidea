@@ -39,12 +39,13 @@ const EXTRACT_INSTRUCTIONS =
 const AUDIT_INSTRUCTIONS =
   "You get a list of idea names with statements. Report groups of names that state the same fact, even in different words (synonyms, abbreviations, rewordings, one saying a bit more than another). Merge when a question about one would be answered by the other. Never group related but different facts. Use the names exactly as given. Answer with the JSON only.";
 
-const plain = (name: string) => name.replace(/\s*[_`(){}[\]<>=;:.]+\s*/g, " ").trim();
-const isObj =(x: unknown): x is Record<string, any> => typeof x === "object" && x !== null && !Array.isArray(x);
+const inPlainWords = (name: string) => name.replace(/\s*[_`(){}[\]<>=;:.]+\s*/g, " ").trim();
+const isObj = (x: unknown): x is Record<string, any> => typeof x === "object" && x !== null && !Array.isArray(x);
 const text = (x: unknown, max: number): x is string => typeof x === "string" && x.trim().length > 0 && x.length <= max;
 const index = (x: unknown, count: number) => Number.isInteger(x) && (x as number) >= 0 && (x as number) < count;
 
-// Rejects the whole output on the first record that does not match the schema.
+// Rejects the whole output on the first record that does not match the schema. On success the output is cleaned IN PLACE:
+// the names and aliases of its propositions are rewritten into plain words, and the same object is returned.
 export function validateExtracted(x: unknown, messages: number): Extracted {
   const bad = (why: string): never => {
     throw new Error(`invalid Extractor output: ${why}`);
@@ -59,8 +60,8 @@ export function validateExtracted(x: unknown, messages: number): Extracted {
   }
   // Code-looking names become plain words; chains look names up by normalise(), which already ignores these characters.
   for (const p of x.propositions) {
-    p.name = plain(p.name);
-    if (p.aliases) p.aliases = p.aliases.map(plain);
+    p.name = inPlainWords(p.name);
+    if (p.aliases) p.aliases = p.aliases.map(inPlainWords);
   }
   return x as Extracted;
 }

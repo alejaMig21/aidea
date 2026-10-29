@@ -146,7 +146,7 @@ export function heldStrongly(core: Core, project: string, idea: string) {
 }
 
 type Reply = { text: string; isError?: true };
-const err =(text: string): Reply => ({ text, isError: true });
+const err = (text: string): Reply => ({ text, isError: true });
 const ok = (x: object): Reply => ({ text: JSON.stringify({ ok: true, ...x }) });
 
 // Runs one of the Prober's tools. Null when the tool is not one of its own.
