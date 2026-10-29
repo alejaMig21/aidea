@@ -9,6 +9,7 @@ Defined by use in `src/ui/index.html` and the feature files. Pick the size by th
 | Size | Role |
 |---|---|
 | 11px | labels: uppercase, `letter-spacing: .08em`, `--muted` (the `h2` of a column, a card's kind) |
+| 11px, `--accent` | the name of the phase of a question card (Predict, Review of an earlier class): uppercase, same letter-spacing |
 | 12px | secondary text: hints, descriptions, metadata, buttons inside cards |
 | 13px | controls and diagram text |
 | 13.5px | reading text: the chat, a question, an explanation, anything the person reads or answers |

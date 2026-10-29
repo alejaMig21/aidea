@@ -26,7 +26,7 @@
     #tutor-log .tutor-card textarea { width: 100%; min-height: 64px; resize: vertical; font: inherit; font-size: 13px; padding: 7px 10px; color: var(--text); background: var(--panel); border: 1px solid var(--control); border-radius: 8px; }
     #tutor-log .tutor-card textarea::placeholder { color: var(--muted); }
     #tutor-log .tutor-card .tutor-thought label { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
-    #tutor-log .tutor-card .tutor-link { align-self: flex-start; padding: 0; background: none; border: 0; border-radius: 0; font-size: 12px; font-weight: 400; color: var(--accent-soft); text-decoration: underline; text-underline-offset: 2px; }
+    #tutor-log .tutor-card .tutor-link { align-self: flex-start; }
     #tutor-log .tutor-card .tutor-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
     #tutor-log .tutor-card .tutor-buttons button { padding: 6px 14px; font-size: 13px; }
     #tutor-log .tutor-card button[type=submit] { background: var(--accent); color: var(--on-accent); border: 0; font-size: 13.5px; font-weight: 600; }

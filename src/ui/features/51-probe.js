@@ -5,7 +5,6 @@
   const style = document.createElement("style");
   style.textContent = `
     #probe-offer { margin: 0; font-size: 12px; color: var(--muted); }
-    #probe-offer button { padding: 0; background: none; border: 0; border-radius: 0; font-size: 12px; font-weight: 400; color: var(--accent-soft); text-decoration: underline; text-underline-offset: 2px; }
     #pane-tutor.tutor-live #probe-offer { display: none; }
   `;
   document.head.append(style);

@@ -2,7 +2,7 @@
 // What is open is remembered in this browser only; the page works the same when the browser keeps nothing. During a class every
 // section stays folded (50-tutor.js closes them). Each section's own file fills the body and the summary.
 const tutorSectionsKey = "aidea.tutor-sections";
-const tutorSectionsOpen = () => { try { return JSON.parse(localStorage.getItem(tutorSectionsKey) || "{}"); } catch { return {}; } };
+const tutorSectionsRead = () => { try { const s = JSON.parse(localStorage.getItem(tutorSectionsKey) || "{}"); return s && typeof s === "object" ? s : {}; } catch { return {}; } };
 
 {
   const style = document.createElement("style");
@@ -15,6 +15,8 @@ const tutorSectionsOpen = () => { try { return JSON.parse(localStorage.getItem(t
     details.tutor-section > summary .tutor-summary { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--muted); }
     details.tutor-section > .tutor-section-body { padding: 2px 12px 12px; display: flex; flex-direction: column; gap: 10px; overflow-wrap: anywhere; }
     details.tutor-section .tutor-section-body p { margin: 0; color: var(--muted); font-size: 12px; }
+    /* A text link of the Tutor column (the Probe line, "Add what you thought"): docs/agents/ui-style.md */
+    #pane-tutor .tutor-link, #probe-offer button { padding: 0; background: none; border: 0; border-radius: 0; font-size: 12px; font-weight: 400; color: var(--accent-soft); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
   `;
   document.head.append(style);
 }
@@ -24,13 +26,15 @@ const tutorSectionsOpen = () => { try { return JSON.parse(localStorage.getItem(t
 function tutorSection(id, title) {
   const el = Object.assign(document.createElement("details"), { id: `${id}-card`, className: "tutor-section", hidden: true });
   const summary = Object.assign(document.createElement("span"), { className: "tutor-summary" });
-  el.append(Object.assign(document.createElement("summary"), { textContent: title }), Object.assign(document.createElement("div"), { className: "tutor-section-body" }));
-  el.firstChild.append(summary);
-  el.open = tutorSectionsOpen()[id] === true;
+  const head = Object.assign(document.createElement("summary"), { textContent: title });
+  const body = Object.assign(document.createElement("div"), { className: "tutor-section-body" });
+  head.append(summary);
+  el.append(head, body);
+  el.open = tutorSectionsRead()[id] === true;
   // A class folds every section on its own; that is not the person's choice and is not remembered.
   el.addEventListener("toggle", () => {
     if ($("pane-tutor").classList.contains("tutor-live")) return;
-    try { localStorage.setItem(tutorSectionsKey, JSON.stringify({ ...tutorSectionsOpen(), [id]: el.open })); } catch { /* nothing is remembered; the page still works */ }
+    try { localStorage.setItem(tutorSectionsKey, JSON.stringify({ ...tutorSectionsRead(), [id]: el.open })); } catch { /* nothing is remembered; the page still works */ }
   });
-  return { el, body: el.lastChild, summarise: (text) => { summary.textContent = text; } };
+  return { el, body, summarise: (text) => { summary.textContent = text; } };
 }

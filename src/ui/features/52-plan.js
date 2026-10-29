@@ -60,7 +60,7 @@
         n.append(mark);
       }
       const li = mk("li", { className: isDone ? "covered" : "" }, n, mk("span", { textContent: c.name }));
-      const needs = c.dependsOn.map((d) => number.get(planNorm(d))).filter(Boolean);
+      const needs = c.dependsOn.map((d) => number.get(planNorm(d))).filter(Boolean).sort((a, b) => a - b);
       if (needs.length) li.append(mk("span", { className: "needs", textContent: planAfter(needs) }));
       return li;
     });

@@ -90,24 +90,28 @@
       for (const b of Object.values(modeButtons)) b.disabled = false;
       reviewBox.checked = reviewQuestion !== false;
       reviewBox.disabled = false;
-    } catch { /* the selectors stay disabled until a Project opens */ }
+    } catch { pressMode(""); /* the selectors stay disabled until a Project opens, and no choice is shown as if it were stored */ }
   }
 
   const save = (field, select) => async () => {
     if (!current) return;
-    const res = await fetch("/agent-options", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ project: current, [field]: select.value }),
-    });
-    if (!res.ok) load(current); // refused: show what is really stored
-    else if (field === "mode") chatMode.title = chatMode.selectedOptions[0]?.title ?? "";
+    try {
+      const res = await fetch("/agent-options", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ project: current, [field]: select.value }),
+      });
+      if (!res.ok) load(current); // refused: show what is really stored
+      else if (field === "mode") chatMode.title = chatMode.selectedOptions[0]?.title ?? "";
+    } catch { load(current); } // the core could not be reached: show what was stored
   };
   for (const b of Object.values(modeButtons)) b.onclick = () => { pressMode(b.dataset.mode); save("classMode", { value: b.dataset.mode })(); };
   reviewBox.onchange = async () => {
     if (!current) return;
-    const res = await fetch("/agent-options", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ project: current, reviewQuestion: reviewBox.checked }) });
-    if (!res.ok) load(current); // refused: show what is really stored
+    try {
+      const res = await fetch("/agent-options", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ project: current, reviewQuestion: reviewBox.checked }) });
+      if (!res.ok) load(current); // refused: show what is really stored
+    } catch { load(current); }
   };
   chatMode.onchange = save("mode", chatMode);
   chatModel.onchange = save("model", chatModel);

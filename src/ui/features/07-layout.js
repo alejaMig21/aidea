@@ -87,9 +87,21 @@ function rightSetTabEnabled(id, enabled) {
 // The defaults give the Tutor room (Builder 380, Tutor 540); a size the person saved by resizing wins over them.
 const layoutDefault = { chat: 380, right: 540 };
 const layoutState = { ...layoutDefault, chatFolded: false, rightFolded: false };
-try { Object.assign(layoutState, JSON.parse(localStorage.getItem(layoutKey) || "{}")); } catch {}
-for (const n of ["chat", "right"]) if (!(layoutState[n] > 0)) layoutState[n] = layoutDefault[n];
-const layoutSave = () => { try { localStorage.setItem(layoutKey, JSON.stringify(layoutState)); } catch {} };
+// A size is the person's own only once they have dragged a separator: folding a pane used to save all three numbers as if they were choices, and the
+// defaults could then never reach anyone who had used the app. Saves from before the marks count as the person's own when they differ from the old defaults.
+const layoutSized = { chat: false, right: false };
+try {
+  const saved = JSON.parse(localStorage.getItem(layoutKey) || "{}");
+  for (const f of ["chatFolded", "rightFolded"]) layoutState[f] = saved[f] === true;
+  for (const n of ["chat", "right"]) {
+    if (saved[n] > 0 && (saved.sized ? saved.sized[n] === true : saved[n] !== { chat: 340, right: 320 }[n])) { layoutState[n] = saved[n]; layoutSized[n] = true; }
+  }
+} catch {}
+const layoutSave = () => {
+  try {
+    localStorage.setItem(layoutKey, JSON.stringify({ chatFolded: layoutState.chatFolded, rightFolded: layoutState.rightFolded, sized: layoutSized, ...(layoutSized.chat ? { chat: layoutState.chat } : {}), ...(layoutSized.right ? { right: layoutState.right } : {}) }));
+  } catch {}
+};
 
 const layoutPanes = {
   chat: { sep: $("sepc"), el: $("chat"), button: $("fold-chat"), fold: "chatFolded", cls: "chat-folded", other: "right", edge: (x) => x },
@@ -153,6 +165,7 @@ function layoutSet(name, px) {
   const t = Math.min(layoutMax(name), Math.max(layoutPaneMin[name], px));
   const available = layoutWidth() - (layoutShown.chat ? layoutSeparatorWidth : 0) - (layoutShown.right ? layoutSeparatorWidth : 0);
   layoutState[name] = Math.round(t * (layoutCanvasFr + (layoutShown[other] ? layoutState[other] : 0)) / Math.max(1, available - t) * 100) / 100;
+  layoutSized[name] = true;
   layoutApply();
   layoutSave();
 }
