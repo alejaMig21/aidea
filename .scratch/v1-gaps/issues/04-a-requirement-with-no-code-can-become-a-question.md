@@ -4,6 +4,6 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] A requirement without code appears in the Differences list as not built yet, visibly softer than a Broken link (dotted grey outline, not red dashed); the Tutor can open a class on it (protocol test; live the class opens). Linking it to code removes it; marking it built swaps it for the harder "marked built, no code" difference. Verified live at 1920 and 1280.

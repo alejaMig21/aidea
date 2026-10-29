@@ -4,7 +4,7 @@
 
 **Blocked by:** language-adapters 01.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Through the protocol on a small TypeScript fixture and a small plain JavaScript fixture: the expected modules, classes, functions, methods, imports and inheritance are returned with their Resolution, and the same Node and relationship shapes as the Python adapter.
 - [x] A syntax error in one file is reported as a problem for that file and the others are still analysed.

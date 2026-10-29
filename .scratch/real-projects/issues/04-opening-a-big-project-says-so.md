@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] While `POST /projects` is running the interface shows the line, and removes it when the project is drawn; opening a second project while the first is still loading shows the second.
 - [x] A failure (bad path, analysis error, timeout) shows a plain sentence with what to try, not an empty screen.

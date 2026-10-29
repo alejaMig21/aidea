@@ -4,6 +4,6 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] A project with a `.venv` or `venv` runs Playback with its interpreter; without one the behaviour is unchanged and the panel says which interpreter runs; an interpreter that does not work is reported in words.

@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Every existing test passes unchanged; the routes no longer import the Python module directly.
 - [x] A test registers a fake adapter and shows the routes use it (analysis, flow and run), and that an adapter that does not support an operation answers with a plain-words error instead of a crash.

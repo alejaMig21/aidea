@@ -4,7 +4,7 @@
 
 **Blocked by:** language-adapters 03.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Opening the aidea repository shows its modules, classes and functions on the Components layer, with the imports between files.
 - [x] A written report (in this ticket) says what is readable, what is too big or too noisy, and what a person learning from this repository would still miss; each gap that matters becomes a ticket.
