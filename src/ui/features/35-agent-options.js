@@ -50,7 +50,7 @@
   // The review question at the start of a class: on unless the person turns it off (the choice is remembered for the Project).
   const reviewBox = Object.assign(document.createElement("input"), { type: "checkbox", id: "review-question", checked: true, disabled: true });
   const reviewLabel = document.createElement("label");
-  reviewLabel.style.cssText = "display:flex;gap:6px;align-items:flex-start;max-width:262px;margin-top:6px;font-size:13px;color:var(--text);text-align:left";
+  reviewLabel.style.cssText = "display:flex;flex-direction:row;gap:6px;align-items:flex-start;max-width:262px;margin-top:6px;font-size:13px;color:var(--text);text-align:left";
   reviewLabel.append(reviewBox, "Start a class with one review question about an earlier idea");
   modeBox.append(reviewLabel);
   tutorModel.after(modeBox);

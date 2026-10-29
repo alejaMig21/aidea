@@ -160,3 +160,9 @@ test("requests that are not valid are rejected before anything is launched", asy
   const notJson = await fetch(core.url + "/chat", { method: "POST", body: "{nope" });
   assert.equal(notJson.status, 400);
 });
+
+test("a message of several lines reaches Claude Code on stdin exactly as written, blank lines and indentation included", async () => {
+  const message = "Please do these:\n1. add a cart\n2. add a total\n\n   3. indented line\n4. last one";
+  await chat({ project: shop, message }, "real-ok.jsonl");
+  assert.equal(calls[0].stdin, message);
+});

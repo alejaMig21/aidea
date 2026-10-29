@@ -6,10 +6,18 @@
   log.setAttribute("role", "log");
   const form = document.createElement("form");
   const label = Object.assign(document.createElement("label"), { htmlFor: "chat-input", textContent: "Ask the builder" });
-  const input = document.createElement("input");
+  const input = document.createElement("textarea"); // several lines: a pasted list keeps its line breaks
   input.id = "chat-input";
+  input.rows = 1;
   input.placeholder = "Describe what to build or change";
   input.required = true;
+  // The box is one line until the text needs more, then grows up to its CSS maximum and scrolls.
+  const fit = () => { input.style.height = "auto"; input.style.height = `${input.scrollHeight}px`; };
+  input.addEventListener("input", fit);
+  // Enter sends; Shift+Enter makes a new line; Enter that confirms an input-method composition does neither.
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); }
+  });
   const send = document.createElement("button");
   send.textContent = "Send";
   form.append(label, input, send);
@@ -153,6 +161,7 @@
     if (!current) { add("error", "Open a Project first."); return; }
     const project = current;
     input.value = "";
+    fit();
     send.disabled = true;
     add("you", message);
     try {

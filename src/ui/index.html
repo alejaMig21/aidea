@@ -145,8 +145,10 @@
   #chat-foot { flex: none; border-top: 1px solid var(--line); padding: 14px 11px 11px; }
   #chat-foot form { gap: 6px; background: var(--raised); border: 1px solid #262d3f; border-radius: 12px; padding: 10px 12px; }
   #chat-foot label { color: var(--muted); font-size: 12px; }
-  #chat-foot input { border: 0; background: transparent; padding: 4px 0; font-size: 13px; width: 100%; }
-  #chat-foot input:focus-visible { outline-offset: 4px; }
+  #chat-foot :is(input, textarea) { font: inherit; color: var(--text); border: 0; background: transparent; padding: 4px 0; font-size: 13px; width: 100%; }
+  #chat-foot textarea { display: block; box-sizing: border-box; resize: none; max-height: 160px; overflow-y: auto; line-height: 1.45; } /* one line until the text needs more; the script sets the height */
+  #chat-foot textarea::placeholder { color: #757b8a; }
+  #chat-foot :is(input, textarea):focus-visible { outline-offset: 4px; }
   #chat-foot button { align-self: flex-end; font-weight: 600; font-size: 13.5px; padding: 4px 14px; }
   #chat button:disabled { opacity: .5; }
   /* Model chip and Permission mode selector: native selects drawn as chips (fill #252c40 on the card). */
