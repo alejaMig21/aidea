@@ -7,10 +7,10 @@
 2. After the same number of misses the class stays open but the Tutor column shows a line "Taking long? You can let the builder decide" with the "Decide for me" button next to it.
 3. Leave it as it is.
 
-**Blocked by:** The person's choice among the options above.
+**Blocked by:** None (the person was asleep: option 2 was chosen by the assistant, as it recommended, and is logged in `.scratch/overnight/LOG.md` for the person to change).
 
-**Status:** needs-info
+**Status:** ready-for-agent
 
-- [ ] The chosen behaviour is written here with its number of misses and what is recorded as Evidence.
+- [ ] The behaviour is option 2 with three misses: the class stays open and, from the third miss of the same step, the Tutor column shows one line "Taking long? You can let the builder decide" with the "Decide for me" button next to it; nothing is recorded as Evidence for showing it.
 - [ ] Through the protocol with a scripted Teacher: the behaviour happens after exactly that number of misses and not before; a class answered correctly is unaffected.
 - [ ] Verified live with the real Claude Code on the second monitor.

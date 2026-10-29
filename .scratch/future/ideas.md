@@ -20,3 +20,11 @@ Order: teamwork storage any time; language adapters, then the engine, then the l
 - A deployment view for networks and infrastructure (C4 has one; today Architecture does not draw where each part runs).
 - Reconstruct the layers of an existing project: a Tutor class that reads the code and proposes Business, Requirements and Architecture, each Proposal citing the files it rests on.
 - The Tutor reading sources the person attaches (a folder, a web page), read-only and treated as untrusted data.
+
+## Added by the person on 2026-10-29 (overnight session)
+
+- **A visual debugger for people who are not engineers.** Debuggers have a thousand options and most people only use "next step" and read the variables. Close that gap: say in plain words what each step did, and let the person guess the next value before stepping (tickets in `.scratch/run-in-plain-words`). Later: show a variable's history, jump to the step where a value changed, explain an exception where it happened.
+- **The Tutor teaches aidea itself.** A "Teach me through aidea" class for the app's own parts (ticket in `.scratch/aidea-guide`). Later: short contextual hints the first time a part is used, and an end-of-class pointer to the part of the app that fits.
+- **aidea understands the aidea repository.** Needs the TypeScript and JavaScript adapter (`.scratch/language-adapters`), then a report of what is useful when reading a real, large repository (`.scratch/real-projects/issues/02`).
+- **The person's own projects** (`hubstaff-automation`, `Telegram`): work with aidea on them; first a read-only viability check (`.scratch/real-projects/issues/01`).
+- The bridge between the person and their own apps: while aidea is being built that gap still exists, so at the moment of truth the person needs to understand everything that happens. Whatever is built should favour showing what happens over hiding it.
