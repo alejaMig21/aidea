@@ -1,6 +1,6 @@
 // Focus zoom: zooming into a Node frames the Footprint of its Trace links on the layer below.
 import { loadAuthored } from "../authored.ts";
-import { layoutComponentsDiagram } from "../components-layout.ts";
+import { OVERVIEW_ABOVE, layoutComponentsDiagram, layoutComponentsOverview, layoutModuleDetail } from "../components-layout.ts";
 import { frameOf, layoutBusiness } from "../layout.ts";
 import { layoutArchitecture } from "../architecture.ts";
 import { AUTHORED_LAYERS, LAYERS, layerBelow, layoutOf, traceLinks } from "../traces.ts";
@@ -53,8 +53,19 @@ const handler: Handler = async (req, res, core) => {
     }
     const blocks = layer === "business" ? { blocks: layoutBusiness(authored.layers.business.nodes).blocks } : {};
     if (layer === "components") {
+      const module = url.searchParams.get("module");
+      if (module !== null) { // the detail of one module of a big project
+        const detail = layoutModuleDetail(project.nodes, project.relationships, module);
+        if (!detail) core.send(res, 404, { error: "Not a module of this project" });
+        else core.send(res, 200, { layer, mode: "detail", ...detail, unresolved: project.unresolved });
+        return true;
+      }
+      if (project.nodes.filter((n) => n.kind === "module").length > OVERVIEW_ABOVE) {
+        core.send(res, 200, { layer, mode: "overview", ...layoutComponentsOverview(project.nodes, project.relationships), unresolved: project.unresolved });
+        return true;
+      }
       const { rects, compartments, routes } = layoutComponentsDiagram(project.nodes, project.relationships);
-      core.send(res, 200, { layer, rects, compartments, routes, unresolved: project.unresolved });
+      core.send(res, 200, { layer, mode: "detail", rects, compartments, routes, unresolved: project.unresolved });
       return true;
     }
     core.send(res, 200, layer === "architecture" ? { layer, ...layoutArchitecture(authored.layers.architecture.nodes) } : { layer, rects: layoutOf(layer, project, authored), ...blocks });

@@ -11,7 +11,7 @@ const apply = () => {
 const svg = $("canvas");
 svg.addEventListener("wheel", (e) => {
   e.preventDefault();
-  const k = Math.min(4, Math.max(0.2, view.k * (e.deltaY < 0 ? 1.1 : 1 / 1.1)));
+  const k = Math.min(4, Math.max(0.1, view.k * (e.deltaY < 0 ? 1.1 : 1 / 1.1))); // 0.1: the overview of a big project is wider than a screen at 0.2
   const r = svg.getBoundingClientRect();
   const px = e.clientX - r.left, py = e.clientY - r.top;
   view.x = px - ((px - view.x) / view.k) * k;
@@ -22,7 +22,7 @@ svg.addEventListener("wheel", (e) => {
 // Zoom control: buttons zoom about the centre of the Canvas; Fit frames what is drawn on the visible layer.
 const zoomBy = (f) => {
   const r = svg.getBoundingClientRect();
-  const k = Math.min(4, Math.max(0.2, view.k * f));
+  const k = Math.min(4, Math.max(0.1, view.k * f));
   view.x = r.width / 2 - ((r.width / 2 - view.x) / view.k) * k;
   view.y = r.height / 2 - ((r.height / 2 - view.y) / view.k) * k;
   view.k = k;
@@ -36,7 +36,7 @@ $("zoom-fit").onclick = () => {
   const r = svg.getBoundingClientRect();
   const credit = $("business-credit"), creditH = credit && !credit.hidden ? credit.offsetHeight + 8 : 0; // the Business credit line sits above the zoom control
   const w = r.width - 48, h = r.height - 140 - creditH; // clear of the floating Layer tabs (top) and the zoom control (bottom)
-  view.k = Math.min(1, Math.max(0.2, Math.min(w / b.width, h / b.height)));
+  view.k = Math.min(1, Math.max(0.1, Math.min(w / b.width, h / b.height)));
   view.x = (r.width - b.width * view.k) / 2 - b.x * view.k;
   view.y = 70 + (h - b.height * view.k) / 2 - b.y * view.k;
   apply();

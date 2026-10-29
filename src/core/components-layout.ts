@@ -93,6 +93,130 @@ export function layoutComponentsDiagram(nodes: CoreNode[], relationships: Relati
   return { rects, compartments, routes: routesFor(relationships, byId, at, boxOfNode, columns, moduleOf) };
 }
 
+// ---- Overview: a project with more than OVERVIEW_ABOVE modules is too big to draw box by box (Telegram: 6,000 boxes in a strip
+// 40,000 px wide). Each module becomes one compact box, boxes are grouped in a block per folder, and blocks wrap into rows.
+// Relationships are merged to one line per ordered pair of modules and only the strongest MAX_PAIRS are kept.
+export const OVERVIEW_ABOVE = 40;
+const MAX_PAIRS = 400;
+const MOD_W = 200, MOD_H = 56, MOD_GAP = 12, BLOCK_PAD = 14, LABEL_H = 30, BLOCK_GAP = 24, LANE_COLS = 4, MIN_TARGET = 1800, ASPECT = 1.1;
+
+export type ComponentsOverview = {
+  rects: Rect[]; // a block per folder (id `folder:<path>`, "." for the project root) then a box per module
+  counts: Record<string, { classes: number; functions: number }>; // per module id; functions include methods
+  routes: ComponentsRoute[]; // module to module; points are [start, control, end] of a gentle quadratic curve
+  pairs: { total: number; shown: number };
+};
+
+// The module each Node belongs to (a module is its own), for every Node at once.
+function moduleIndex(nodes: CoreNode[]): Map<string, string> {
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const index = new Map<string, string>();
+  for (const n of nodes) {
+    let at: CoreNode | undefined = n;
+    for (let i = 0; at && i < 64 && at.kind !== "module"; i++) at = at.parent ? byId.get(at.parent) : undefined;
+    if (at?.kind === "module") index.set(n.id, at.id);
+  }
+  return index;
+}
+
+const folderOf = (file: string) => file.split("/").slice(0, -1).join("/") || ".";
+const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0); // no locale: the same order on every machine
+
+export function layoutComponentsOverview(nodes: CoreNode[], relationships: Relationship[] = []): ComponentsOverview {
+  const moduleOf = moduleIndex(nodes);
+  const modules = nodes.filter((n) => n.kind === "module");
+  const counts: ComponentsOverview["counts"] = Object.fromEntries(modules.map((m) => [m.id, { classes: 0, functions: 0 }]));
+  for (const n of nodes) {
+    const c = counts[moduleOf.get(n.id) ?? ""];
+    if (c && n.kind === "class") c.classes++;
+    else if (c && n.kind === "function") c.functions++;
+  }
+
+  const groups = new Map<string, CoreNode[]>();
+  for (const m of modules) groups.set(folderOf(m.file), [...(groups.get(folderOf(m.file)) ?? []), m]);
+  // The blocks stand in lanes of LANE_COLS modules across, each block going to the shortest lane (in path order), so the whole
+  // project is about as wide as a screen and fills it (a strip, or rows with holes, would shrink to nothing under Fit).
+  // The lanes make the width: MIN_TARGET at least, more as the project grows so that it keeps a screen's shape.
+  const laneW = 2 * BLOCK_PAD + LANE_COLS * MOD_W + (LANE_COLS - 1) * MOD_GAP;
+  const target = Math.max(MIN_TARGET, Math.sqrt(modules.length * (MOD_W + MOD_GAP) * (MOD_H + MOD_GAP) * 1.7 * ASPECT)); // 1.7: blocks leave holes, measured on two real projects
+  const lanes = Array.from({ length: Math.max(1, Math.round(target / (laneW + BLOCK_GAP))) }, () => 0); // height used so far in each lane
+
+  const folders: Rect[] = [], boxes: Rect[] = [];
+  for (const dir of [...groups.keys()].sort(byText)) {
+    const members = groups.get(dir)!.sort((a, b) => byText(a.name, b.name));
+    // A big folder is wider (up to the whole width) so that it does not stand taller than everything else; it takes `span` lanes side by side.
+    const cols = Math.min(LANE_COLS * lanes.length, members.length, Math.ceil(Math.sqrt(members.length * 2)));
+    const rows = Math.ceil(members.length / cols), span = Math.ceil(cols / LANE_COLS);
+    const width = 2 * BLOCK_PAD + cols * MOD_W + (cols - 1) * MOD_GAP;
+    const height = LABEL_H + BLOCK_PAD + rows * MOD_H + (rows - 1) * MOD_GAP;
+    let lane = 0, y = Infinity;
+    for (let i = 0; i + span <= lanes.length; i++) {
+      const top = Math.max(...lanes.slice(i, i + span));
+      if (top < y) { y = top; lane = i; }
+    }
+    const x = lane * (laneW + BLOCK_GAP);
+    lanes.fill(y + height + BLOCK_GAP, lane, lane + span);
+    folders.push({ id: `folder:${dir}`, x, y, width, height });
+    members.forEach((m, i) => boxes.push({
+      id: m.id, x: x + BLOCK_PAD + (i % cols) * (MOD_W + MOD_GAP), y: y + LABEL_H + Math.floor(i / cols) * (MOD_H + MOD_GAP), width: MOD_W, height: MOD_H,
+    }));
+  }
+  const rects = [...folders, ...boxes];
+  const at = new Map(boxes.map((r) => [r.id, r]));
+  const nameOf = new Map(modules.map((m) => [m.id, short(m.name)]));
+
+  // One entry per ordered pair of modules: the strongest kind, the number of relationships and the weakest resolution among them.
+  const KINDS: Relationship["kind"][] = ["calls", "inherits", "imports"];
+  const pairs = new Map<string, { from: string; to: string; kinds: Set<string>; count: number; resolution: Resolution }>();
+  for (const rel of relationships) {
+    const from = moduleOf.get(rel.from), to = rel.to ? moduleOf.get(rel.to) : undefined;
+    if (!from || !to || from === to || !at.has(from) || !at.has(to)) continue;
+    const key = `${from}\n${to}`, mine = pairs.get(key);
+    if (!mine) { pairs.set(key, { from, to, kinds: new Set([rel.kind]), count: 1, resolution: rel.resolution }); continue; }
+    mine.kinds.add(rel.kind);
+    mine.count++;
+    if (WEAKEST.indexOf(rel.resolution) > WEAKEST.indexOf(mine.resolution)) mine.resolution = rel.resolution;
+  }
+  const strongest = [...pairs.values()].sort((a, b) => b.count - a.count || byText(a.from, b.from) || byText(a.to, b.to)).slice(0, MAX_PAIRS);
+  const round = (n: number) => Math.round(n * 10) / 10;
+  const routes: ComponentsRoute[] = strongest.map((p) => {
+    const a = at.get(p.from)!, b = at.get(p.to)!;
+    const ac = { x: a.x + a.width / 2, y: a.y + a.height / 2 }, bc = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+    const dx = bc.x - ac.x, dy = bc.y - ac.y, len = Math.hypot(dx, dy) || 1;
+    const bend = Math.min(60, len * 0.12); // A to B and B to A bend to opposite sides, so a pair never hides behind its reverse
+    const ctrl = { x: (ac.x + bc.x) / 2 - (dy / len) * bend, y: (ac.y + bc.y) / 2 + (dx / len) * bend };
+    const onEdge = (r: Rect, from: Point, toward: Point) => { // where the line from the centre towards `toward` leaves the box
+      const ux = toward.x - from.x, uy = toward.y - from.y;
+      const t = Math.min(ux ? r.width / 2 / Math.abs(ux) : Infinity, uy ? r.height / 2 / Math.abs(uy) : Infinity);
+      return { x: round(from.x + ux * t), y: round(from.y + uy * t) };
+    };
+    return {
+      kind: KINDS.find((k) => p.kinds.has(k))!, resolution: p.resolution, from: p.from, to: p.to,
+      name: `${nameOf.get(p.from)} → ${nameOf.get(p.to)}`, count: p.count, ends: [p.from, p.to],
+      points: [onEdge(a, ac, ctrl), { x: round(ctrl.x), y: round(ctrl.y) }, onEdge(b, bc, ctrl)],
+    };
+  });
+  return { rects, counts, routes, pairs: { total: pairs.size, shown: routes.length } };
+}
+
+// The detailed layout of one module: its classes, methods and functions. What leaves the module is a stub, a resolved
+// relationship to another module labelled with that module's name (resolved ones only). Null when the id is not a module.
+export function layoutModuleDetail(nodes: CoreNode[], relationships: Relationship[], moduleId: string): ComponentsLayout | null {
+  const moduleOf = moduleIndex(nodes);
+  if (moduleOf.get(moduleId) !== moduleId) return null;
+  const mine = nodes.filter((n) => moduleOf.get(n.id) === moduleId);
+  const ids = new Set(mine.map((n) => n.id));
+  const nameOf = new Map(nodes.filter((n) => n.kind === "module").map((m) => [m.id, short(m.name)]));
+  const rels: Relationship[] = [];
+  for (const rel of relationships) {
+    if (!ids.has(rel.from)) continue;
+    if (rel.to === null || ids.has(rel.to)) rels.push(rel);
+    // Only the certain ones: a call matched by name only can point at dozens of modules and would bury the module under stubs.
+    else if (rel.resolution === "resolved") rels.push({ ...rel, to: null, name: nameOf.get(moduleOf.get(rel.to) ?? "") ?? rel.name });
+  }
+  return layoutComponentsDiagram(mine, rels);
+}
+
 // The weakest resolution wins when several relationships merge: a route never claims more than its least certain part.
 const WEAKEST: Resolution[] = ["resolved", "inferred", "unresolved"];
 

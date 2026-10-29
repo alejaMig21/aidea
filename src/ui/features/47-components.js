@@ -22,6 +22,15 @@
     .cp-edge[data-kind="imports"] { stroke-dasharray: 6 4; }
     .cp-edge[data-resolution="inferred"] { stroke-dasharray: 6 4; }
     .cp-q { fill: var(--muted); font: 600 12px var(--mono); }
+    /* Overview of a big project: a block per folder, a compact box per module, one faint line per pair (lit when its module is hovered or focused). */
+    .cp-ov-folder { fill: color-mix(in srgb, var(--panel) 70%, transparent); stroke: var(--control); }
+    .cp-ov-label { font: 600 13px var(--mono); fill: var(--derived); pointer-events: none; }
+    rect[data-id].cp-ov-module { cursor: pointer; } rect[data-id].cp-ov-module:is(:hover, :focus) { stroke: var(--accent); outline: none; }
+    .cp-ov-name { font: 600 13px var(--sans); pointer-events: none; } .cp-ov-counts { font: 400 12px var(--mono); fill: var(--muted); pointer-events: none; }
+    .cp-ov-edge { fill: none; stroke: var(--cp-line); stroke-width: 1.4; opacity: .15; pointer-events: stroke; }
+    .cp-ov-edge[data-kind="imports"], .cp-ov-edge[data-resolution="inferred"] { stroke-dasharray: 6 4; }
+    #components-note { position: absolute; left: 15px; bottom: 15px; z-index: 1; padding: 6px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; font-size: 12px; color: var(--muted); }
+    #zoom #components-back { color: var(--text); font-weight: 500; }
   `;
   document.head.append(style);
   // Arrow heads, one per tone, so the head matches its line: a hollow triangle (inheritance) and an open arrow.
@@ -44,7 +53,7 @@ const componentsShort = (name) => name.split(".").pop();
 const componentsFit = (text, room, char = 7.4) => notationClip(text, Math.max(3, Math.floor(room / char)));
 const componentsTip = (t, full, shown) => (shown !== full && t.append(el("title", {}, full)), t);
 
-function componentsLegend(unresolved) {
+function componentsLegend(unresolved, module = null) {
   const line = (d, extra = "") => `<path d="${d}" style="fill:none;stroke:var(--cp-line);stroke-width:1.4;${extra}"/>`;
   const grey = "stroke:var(--unresolved);";
   notationRegisterLegend("components", {
@@ -76,17 +85,68 @@ function componentsLegend(unresolved) {
       "Imports of modules outside the Project",
       "Calls made in a class body or in a decorator",
       "Aliases (f = g): a call through the new name is not followed to g; it shows as unresolved",
+      ...(module ? ["The detail of one module: what leaves it is a short line labelled with the module it goes to; what comes into it from other modules, and calls to other modules matched by name only, are not drawn (open that module to see its side)"] : []),
     ],
   });
   notationRenderLegend();
 }
 
-// Draws the whole layer into `world`. `layout` is the core's answer, `nodes` the Project's Nodes.
-function componentsDraw(world, nodes, layout, unresolved) {
+// The legend of the overview of a big project: what it shows and, as plainly, what it leaves out.
+function componentsOverviewLegend(pairs, unresolved) {
+  const line = (extra = "") => `<path d="M2 12H36" style="fill:none;stroke:var(--cp-line);stroke-width:1.4;${extra}"/><path d="M33 7L41 12L33 17" style="fill:none;stroke:var(--cp-line);stroke-width:1.4"/>`;
+  notationRegisterLegend("components", {
+    shapes: [
+      [notationSwatch(`<rect x="2" y="2" width="40" height="20" rx="5" style="fill:var(--panel);stroke:var(--control)"/>`), "Folder: a block holding the modules of one folder, named by its path", ".cp-ov-folder"],
+      [notationSwatch(`<rect x="3" y="5" width="38" height="14" rx="3" style="fill:var(--raised);stroke:var(--control)"/>`), "Module: one box with its name and how many classes and functions it holds. Double click it, or press Enter on it, to open its detail", ".cp-ov-module"],
+    ],
+    arrows: [
+      [notationSwatch(line()), "A call or an import between two modules, one line per pair, with the arrow on the module that is used. Only the lines of the module under the pointer (or focused) are lit; the others are faint. Solid: calls; dashed: imports, or calls matched by name only", ".cp-ov-edge"],
+    ],
+    colours: [["derived", "Teal: folder paths, read from the code"]],
+    notShown: [
+      "Classes, methods and functions: open a module (All modules brings you back)",
+      pairs.total > pairs.shown ? `Only the ${pairs.shown} strongest of ${pairs.total} module pairs are drawn; ${pairs.total - pairs.shown} are hidden` : `All ${pairs.total} module pairs are drawn`,
+      `Relationships that cannot be followed (unresolved, ${unresolved} in this Project): they show in the detail of the module they leave`,
+      "Imports of modules outside the Project, and calls to libraries and built-in functions",
+      "Several relationships between the same two modules are one line (its tooltip says how many)",
+    ],
+  });
+  notationRenderLegend();
+}
+
+// Draws the whole layer into `world` (one group, so it can be replaced alone). `layout` is the core's answer, `nodes` the Project's Nodes.
+// A big project answers with mode "overview" (see componentsOverviewDraw); a small one, or one module of a big one, with "detail".
+function componentsDraw(world, nodes, layout, unresolved, module = null) {
+  world.querySelector(":scope > #cp-root")?.remove();
+  const root = el("g", { id: "cp-root" });
+  world.append(root);
+  componentsNodes = nodes;
+  componentsOpen = module;
+  componentsMode = layout.mode ?? "detail";
+  if (componentsMode === "overview") {
+    componentsOverviewDraw(root, nodes, layout);
+    componentsOverviewLegend(layout.pairs, unresolved);
+  } else {
+    componentsDetailDraw(root, nodes, layout);
+    componentsLegend(unresolved, module);
+  }
+  componentsPairs = layout.pairs ?? null;
+  componentsChrome();
+  notationUnlight(); // what was under the pointer is gone
+  if ((componentsMode === "overview" || module) && authoredShown === "components") {
+    $("zoom-fit").click();
+    if (module && view.k < 0.6) { // a long module shrunk to fit is unreadable: start at its top at a readable size, Fit still frames all of it
+      const b = notationBBox(), r = svg.getBoundingClientRect();
+      view.k = 0.6; view.x = (r.width - b.width * 0.6) / 2 - b.x * 0.6; view.y = 130 - b.y * 0.6; apply();
+    }
+  }
+}
+
+function componentsDetailDraw(world, nodes, layout) {
   const at = new Map(layout.rects.map((r) => [r.id, r]));
   const node = new Map(nodes.map((n) => [n.id, n]));
 
-  for (const m of nodes.filter((n) => n.kind === "module")) {
+  for (const m of nodes.filter((n) => n.kind === "module" && at.has(n.id))) {
     const r = at.get(m.id);
     const pkgName = componentsShort(m.name), pkgShown = componentsFit(pkgName, r.width - 24);
     const tabW = Math.min(r.width, pkgShown.length * 7.4 + 32);
@@ -157,7 +217,81 @@ function componentsDraw(world, nodes, layout, unresolved) {
       world.append(row(mr, componentsMarks[m.markers?.visibility ?? "public"], label, `${m.markers?.abstract ? "cp-abstract" : ""} ${m.markers?.static ? "cp-static" : ""}`, n.id));
     }
   }
-  componentsLegend(unresolved);
 }
+
+// ---- Overview of a big project (the core says mode "overview"): a block per folder, a box per module, one faint line per pair.
+const componentsPlural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+function componentsOverviewDraw(world, nodes, layout) {
+  const at = new Map(layout.rects.map((r) => [r.id, r]));
+  for (const route of layout.routes) {
+    const [a, c, b] = route.points;
+    const path = el("path", {
+      class: "cp-ov-edge", d: `M${a.x} ${a.y}Q${c.x} ${c.y} ${b.x} ${b.y}`, "data-kind": route.kind, "data-resolution": route.resolution,
+      "data-ref": route.from, "data-ends": route.ends.join(" "), "marker-end": "url(#cp-open-base)",
+    });
+    path.append(el("title", {}, `${route.kind} ${route.name}${route.count > 1 ? ` (x${route.count})` : ""}: ${route.resolution}`));
+    world.append(path);
+  }
+  for (const r of layout.rects) {
+    if (!r.id.startsWith("folder:")) continue;
+    const dir = r.id.slice(7), label = dir === "." ? "(project root)" : dir;
+    world.append(el("rect", { x: r.x, y: r.y, width: r.width, height: r.height, rx: 8, class: "cp-ov-folder" }));
+    world.append(componentsTip(el("text", { x: r.x + 14, y: r.y + 20, class: "cp-ov-label" }, componentsFit(label, r.width - 28)), label, componentsFit(label, r.width - 28)));
+  }
+  for (const m of nodes.filter((n) => n.kind === "module" && at.has(n.id))) {
+    const r = at.get(m.id), c = layout.counts[m.id] ?? { classes: 0, functions: 0 };
+    const name = componentsShort(m.name), counts = `${componentsPlural(c.classes, "class")} · ${componentsPlural(c.functions, "function")}`;
+    const box = el("rect", {
+      x: r.x, y: r.y, width: r.width, height: r.height, rx: 6, class: "cp-ov-module", "data-id": m.id, "data-ref": m.id,
+      tabindex: 0, role: "button", "aria-label": `${m.name}, ${counts}. Press Enter to open it`,
+    });
+    box.append(el("title", {}, `${m.name}: ${counts}`));
+    world.append(
+      box,
+      el("text", { x: r.x + 10, y: r.y + 24, class: "cp-ov-name", "data-ref": m.id }, componentsFit(name, r.width - 20, 8.4)),
+      el("text", { x: r.x + 10, y: r.y + 43, class: "cp-ov-counts", "data-ref": m.id }, counts),
+    );
+  }
+}
+
+// What the overview and the detail of a module add to the Canvas: the "All modules" button (next to Fit) and the line about the pair cap.
+let componentsNodes = [], componentsMode = "detail", componentsOpen = null, componentsPairs = null;
+const componentsBack = Object.assign(document.createElement("button"), { type: "button", id: "components-back", textContent: "All modules", hidden: true });
+componentsBack.setAttribute("aria-label", "Back to the overview of all modules");
+$("zoom").prepend(componentsBack);
+const componentsNote = Object.assign(document.createElement("div"), { id: "components-note", hidden: true });
+document.querySelector("main").append(componentsNote);
+function componentsChrome() {
+  const here = authoredShown === "components";
+  componentsBack.hidden = !(here && componentsOpen);
+  const pairs = componentsPairs;
+  componentsNote.hidden = !(here && componentsMode === "overview" && pairs);
+  if (pairs) componentsNote.textContent = pairs.total > pairs.shown ? `Showing the ${pairs.shown} strongest of ${pairs.total} module pairs; ${pairs.total - pairs.shown} hidden` : `${componentsPlural(pairs.total, "module pair")}`;
+}
+const componentsShowLayerPlain = showLayer;
+showLayer = (which) => { componentsShowLayerPlain(which); componentsChrome(); };
+
+// Opens the detail of one module (id) or, with null, the overview again. Only the Components drawing is replaced.
+async function componentsLoad(module) {
+  const project = current, started = performance.now();
+  const res = await fetch(`/layout?project=${encodeURIComponent(project)}&layer=components${module ? `&module=${encodeURIComponent(module)}` : ""}`);
+  const layout = await res.json();
+  if (project !== current) return;
+  $("error").textContent = res.ok ? "" : layout.error;
+  if (!res.ok) return;
+  componentsDraw($("world"), componentsNodes, layout, currentUnresolved, module);
+  componentsLoaded = performance.now() - started; // read by the headless checks: the time to open a module
+}
+let componentsLoaded = 0;
+componentsBack.onclick = () => componentsLoad(null);
+svg.addEventListener("dblclick", (e) => {
+  const box = componentsMode === "overview" && authoredShown === "components" ? e.target.closest?.(".cp-ov-module") : null;
+  if (box) componentsLoad(box.dataset.id);
+});
+svg.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && e.target.classList?.contains("cp-ov-module")) componentsLoad(e.target.dataset.id);
+});
+// A module that keeps the focus (after a click or Tab) keeps its lines lit when the pointer leaves the Canvas.
+svg.addEventListener("pointerleave", () => { if (document.activeElement?.classList?.contains("cp-ov-module")) notationLight({ target: document.activeElement }); });
 
 componentsLegend(0);
