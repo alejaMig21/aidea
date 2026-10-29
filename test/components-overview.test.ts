@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CoreNode } from "../src/core/types.ts";
@@ -123,4 +123,10 @@ test("40 modules or fewer keep exactly the detailed layout", async () => {
   const { nodes, body } = await open(root);
   assert.equal(body.mode, "detail");
   assert.deepEqual(body.rects, layoutComponentsDiagram(nodes).rects); // rectangles never depend on relationships
+});
+
+test("the counts on a module box say 'classes', not 'classs'", () => {
+  const source = readFileSync(new URL("../src/ui/features/47-components.js", import.meta.url), "utf8");
+  const plural = new Function(`${/const componentsPlural = .*/.exec(source)![0]}; return componentsPlural;`)() as (n: number, word: string) => string;
+  assert.deepEqual([plural(0, "class"), plural(1, "class"), plural(3, "function"), plural(1, "function")], ["0 classes", "1 class", "3 functions", "1 function"]);
 });

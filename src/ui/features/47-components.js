@@ -222,7 +222,7 @@ function componentsDetailDraw(world, nodes, layout) {
 }
 
 // ---- Overview of a big project (the core says mode "overview"): a block per folder, a box per module, one faint line per pair.
-const componentsPlural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+const componentsPlural = (n, word) => `${n} ${word}${n === 1 ? "" : word.endsWith("s") ? "es" : "s"}`;
 function componentsOverviewDraw(world, nodes, layout) {
   const at = new Map(layout.rects.map((r) => [r.id, r]));
   for (const route of layout.routes) {

@@ -68,6 +68,27 @@ test("an adapter that cannot draw a flow answers in plain words, not with a cras
   }
 });
 
+test("in a project that holds two languages, a function of the language without a flow is told so, not sent to the other language", async () => {
+  const mixed = mkdtempSync(join(tmpdir(), "aidea-mixed-"));
+  try {
+    writeFileSync(join(mixed, "m.py"), "f\n");
+    writeFileSync(join(mixed, "n.ts"), "export function g() { return 1; }\n");
+    assert.equal((await t.post("/projects", { path: mixed })).status, 201);
+    const q = (node: string) => `project=${encodeURIComponent(mixed)}&node=${node}`;
+    const ts = await t.get(`/algorithm?${q("n.g")}`);
+    assert.equal(ts.status, 422);
+    assert.match((await ts.json()).error, /TypeScript/);
+    assert.equal((await t.get(`/algorithm?${q("m.f")}`)).status, 200); // the Python function still draws
+    registerAdapter("python", { ...fake, async run() { return { outcome: { steps: [] }, interpreter: "fake" }; } });
+    const run = await t.post("/playback", { project: mixed, node: "n.g" });
+    assert.equal(run.status, 422);
+    assert.match((await run.json()).error, /TypeScript/);
+  } finally {
+    registerAdapter("python", fake);
+    rmSync(mixed, { recursive: true, force: true });
+  }
+});
+
 test("a run goes to the adapter with the project, the function and the inputs", async () => {
   let seen: unknown;
   registerAdapter("python", { ...fake, async run(req) { seen = req; return { outcome: { steps: [] }, interpreter: "fake" }; } });

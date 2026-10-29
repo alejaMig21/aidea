@@ -25,7 +25,7 @@
 import type { Project } from "./types.ts";
 import { pythonAdapter } from "./python-adapter.ts";
 import { typescriptAdapter } from "./typescript-adapter.ts";
-import { detectLanguages } from "./languages.ts";
+import { detectLanguages, languageOfFile } from "./languages.ts";
 
 export class AdapterError extends Error {
   status: number;
@@ -63,14 +63,16 @@ export const hasAdapter = (language: string) => adapters.has(language);
 
 // The adapter for a Project: the one of the language it holds (languages.ts), or Python when none is analysed.
 // ponytail: a Project with several analysed languages merges their analyses (module ids that collide across
-// languages, such as util.py and util.js, are not told apart) and takes flow and run from the first adapter that has
-// them, whatever the file; route each call by file extension when ticket 04 gives a second flow.
+// languages, such as util.py and util.js, are not told apart); flow and run go to the adapter of the file's language.
 export function adapterFor(projectPath: string): LanguageAdapter {
   const mine = [...new Set(detectLanguages(projectPath).filter((l) => l.analysed).map((l) => adapters.get(l.language)!))];
   if (mine.length === 0) return adapters.get("python")!;
   if (mine.length === 1) return mine[0];
-  const flow = mine.find((a) => a.flow)?.flow;
-  const run = mine.find((a) => a.run)?.run;
+  // The adapter of the file's language does the work; a language without it says so in plain words.
+  const of = (file: string, what: string) => {
+    const own = languageOfFile(file);
+    return { adapter: own && adapters.get(own.language), says: () => new AdapterError(`aidea cannot ${what} ${own?.label ?? "this kind of file"} code yet`, 422) };
+  };
   return {
     async analyze(path) {
       const all = await Promise.all(mine.map((a) => a.analyze(path)));
@@ -79,6 +81,7 @@ export function adapterFor(projectPath: string): LanguageAdapter {
         relationships: all.flatMap((a) => a.relationships), unresolved: all.reduce((n, a) => n + a.unresolved, 0),
       };
     },
-    ...(flow && { flow }), ...(run && { run }),
+    ...(mine.some((a) => a.flow) && { flow: async (file: string, name: string) => { const o = of(file, "draw an Algorithm graph for"); if (!o.adapter?.flow) throw o.says(); return o.adapter.flow(file, name); } }),
+    ...(mine.some((a) => a.run) && { run: async (req: RunRequest) => { const o = of(req.file, "run functions of"); if (!o.adapter?.run) throw o.says(); return o.adapter.run(req); } }),
   };
 }

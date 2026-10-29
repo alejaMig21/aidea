@@ -12,6 +12,11 @@ const LANGUAGES: Record<string, { label: string; extensions: string[] }> = {
 };
 const byExtension = new Map(Object.entries(LANGUAGES).flatMap(([language, { extensions }]) => extensions.map((e) => [e, language] as const)));
 
+export const languageOfFile = (file: string) => {
+  const language = byExtension.get(file.slice(file.lastIndexOf(".")).toLowerCase());
+  return language ? { language, label: LANGUAGES[language].label } : undefined;
+};
+
 export type ProjectLanguage = { language: string; label: string; files: number; analysed: boolean };
 
 // Most files first; ties keep the order of LANGUAGES.
