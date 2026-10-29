@@ -144,3 +144,28 @@ test("held_ideas gives the Teacher the held ideas only, never the person's answe
   assert.doesNotMatch(text(held), /SECRET ANSWER/);
   assert.deepEqual(Object.keys(JSON.parse(text(held)).ideas[0]).sort(), ["name", "statement"]);
 });
+
+test("a Plan whose every open concept is held does not trap the class: the last held concept is allowed, and the Teacher is told why", async () => {
+  const t = await newCore([prop("Worker")], [row("worker")]);
+  const seen: Record<string, any> = {};
+  teacher = async function* (call) {
+    await call("set_plan", { concepts: [{ name: "Worker", dependsOn: [] }] });
+    seen.only = await call("begin_step", { stepId: "s1", title: "Workers", item: "Worker" });
+    yield { type: "text", text: "done" };
+  };
+  await t.runClass();
+  assert.equal(seen.only.isError, undefined, text(seen.only));
+  assert.match(text(seen.only), /already understands|held/i, "the Teacher is told the concept is held");
+});
+
+test("a held Plan concept is still refused while another Plan concept is not held", async () => {
+  const t = await newCore([prop("Worker")], [row("worker")]);
+  const seen: Record<string, any> = {};
+  teacher = async function* (call) {
+    await call("set_plan", { concepts: [{ name: "Worker", dependsOn: [] }, { name: "Retry", dependsOn: [] }] });
+    seen.held = await call("begin_step", { stepId: "s1", title: "Workers", item: "Worker" });
+    yield { type: "text", text: "done" };
+  };
+  await t.runClass();
+  assert.equal(seen.held.isError, true);
+});

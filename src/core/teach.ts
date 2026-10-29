@@ -217,14 +217,27 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
     if ("error" in planItem) return err(planItem.error);
     const idea = typeof args.idea === "string" ? normalise(args.idea) : "";
     // The Probe's own rule (the graph holds the idea), plus strong Evidence: the Teacher is told to pick another step.
+    // A held Plan concept is refused only while another Plan concept that is not held remains; otherwise the class could never reach finish_class.
+    const plan = core.plans.get(project);
+    const othersLeft = (item: string) => plan?.concepts.some((c) => normalise(c.name) !== item && !heldStrongly(core, project, normalise(c.name)));
+    let allHeld: string | undefined;
     for (const name of [planItem.item, idea]) {
       const held = name ? heldStrongly(core, project, name) : undefined;
-      if (held) return err(`The person already understands "${held.name}": they answered correctly about it and the Learner graph holds it. Do not teach it again. Pick a different idea for this step (held_ideas lists what to skip), or build on it in a step about something new.`);
+      if (!held) continue;
+      if (name === planItem.item && !othersLeft(name)) {
+        allHeld = held.name;
+        continue;
+      }
+      return err(`The person already understands "${held.name}": they answered correctly about it and the Learner graph holds it. Do not teach it again. Pick a different idea for this step (held_ideas lists what to skip), or build on it in a step about something new.`);
     }
     const r = lesson.begin(args, planItem.item ?? (idea || undefined)); // without a Plan, the idea named is the step's item for its Evidence
     if ("error" in r) return err(r.error);
     conversation.emit({ type: "tutor_step", stepId: r.stepId, title: String(args.title).trim() });
-    return ok({ stepId: r.stepId, next: "Now call predict for this step." });
+    return ok({
+      stepId: r.stepId,
+      ...(allHeld ? { held: `The person already understands "${allHeld}", but every remaining Plan concept is held, so this step is allowed. Make it a short review or build on it, then call finish_class.` } : {}),
+      next: "Now call predict for this step.",
+    });
   }
 
   if (name === "explain") {
