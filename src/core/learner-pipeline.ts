@@ -32,12 +32,15 @@ export const AUDIT_SCHEMA = {
   required: ["links"],
 };
 const EXTRACT_INSTRUCTIONS =
-  "Read numbered messages from a teacher. List the separate ideas (propositions) they state as claims: a short name, one self-contained statement, optional other names, and the number of the message that states it. " +
+  "Read numbered messages from a teacher. List the separate ideas (propositions) they state as claims: a name, one self-contained statement, optional other names, and the number of the message that states it. " +
+  "A name is a short phrase in plain words, at most six words, like 'a list keeps repeated items': no underscores, no code, no punctuation. An idea is one fact that could be asked about on its own. " +
+  "If the same fact is said several times or in several ways, list it once. A class of a few steps has a handful of ideas, not twenty: skip small details. " +
   "List reasoning chains: premises (by name) that lead to a conclusion (by name), with the message number. Use only names you listed. Skip examples, greetings and questions. Answer with the JSON only.";
 const AUDIT_INSTRUCTIONS =
-  "You get a list of idea names with statements. Report groups of names that mean the same idea (synonyms, abbreviations, rewordings). Never group related but different ideas. Use the names exactly as given. Answer with the JSON only.";
+  "You get a list of idea names with statements. Report groups of names that state the same fact, even in different words (synonyms, abbreviations, rewordings, one saying a bit more than another). Merge when a question about one would be answered by the other. Never group related but different facts. Use the names exactly as given. Answer with the JSON only.";
 
-const isObj = (x: unknown): x is Record<string, any> => typeof x === "object" && x !== null && !Array.isArray(x);
+const plain = (name: string) => name.replace(/\s*[_`(){}[\]<>=;:.]+\s*/g, " ").trim();
+const isObj =(x: unknown): x is Record<string, any> => typeof x === "object" && x !== null && !Array.isArray(x);
 const text = (x: unknown, max: number): x is string => typeof x === "string" && x.trim().length > 0 && x.length <= max;
 const index = (x: unknown, count: number) => Number.isInteger(x) && (x as number) >= 0 && (x as number) < count;
 
@@ -53,6 +56,11 @@ export function validateExtracted(x: unknown, messages: number): Extracted {
   }
   for (const c of x.chains) {
     if (!isObj(c) || !Array.isArray(c.premises) || !c.premises.length || !c.premises.every((p: unknown) => text(p, 200)) || !text(c.conclusion, 200) || !index(c.message, messages)) return bad("a chain needs premises, a conclusion and a message number");
+  }
+  // Code-looking names become plain words; chains look names up by normalise(), which already ignores these characters.
+  for (const p of x.propositions) {
+    p.name = plain(p.name);
+    if (p.aliases) p.aliases = p.aliases.map(plain);
   }
   return x as Extracted;
 }

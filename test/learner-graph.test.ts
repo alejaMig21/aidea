@@ -91,7 +91,7 @@ test("fixed Teacher prose and fixed extractor output give exactly the expected g
   const ex = launches.find((l) => l.role === "extractor")!;
   assert.equal(ex.model, "haiku");
   assert.ok(ex.message.includes("A queue holds work.") && ex.message.includes("Consumers may see a message twice."));
-  assert.ok(ex.instructions!.length < 1500, "kept short: on Windows it goes on the command line");
+  assert.ok(ex.instructions!.length < 4000, "kept short: on Windows it goes on the command line");
   assert.ok(ex.schema, "the Extractor's output is constrained by a schema");
   assert.ok(launches.find((l) => l.role === "auditor"));
 
@@ -360,4 +360,36 @@ test("the Claude adapter launches the Extractor with no tools, a schema, and rea
   for (const f of ["--strict-mcp-config", "--no-session-persistence", "--disable-slash-commands"]) assert.ok(args.includes(f), f);
   for (const f of ["--mcp-config", "--allowedTools", "--resume"]) assert.ok(!args.includes(f), f);
   assert.deepEqual((out[0] as any).structured, { ok: 1 });
+});
+
+test("names with underscores or code punctuation are saved as plain words, and chains still find them", async () => {
+  const t = await newCore();
+  teacher = say("append adds to the end.", "so the list keeps order.");
+  extractorOut = () => ok({
+    propositions: [prop("append_adds_to_end", "append puts an item at the end.", 0, ["list.append()"]), prop("list_keeps_order", "A list keeps the order of its items.", 1)],
+    chains: [{ premises: ["append_adds_to_end"], conclusion: "list_keeps_order", message: 1 }],
+  });
+  auditorOut = () => ok({ links: [] });
+  launches.length = 0;
+  await t.runClass();
+  const graph = await t.get("/learner/graph");
+  assert.deepEqual(graph.propositions.map((p: any) => [p.name, p.aliases]), [["append adds to end", ["list append"]], ["list keeps order", []]]);
+  assert.equal(graph.chains.length, 1);
+  const ex = launches.find((l) => l.role === "extractor")!;
+  assert.ok(ex.instructions!.length < 4000);
+  assert.match(ex.instructions!, /plain words/);
+  assert.match(launches.find((l) => l.role === "auditor")!.instructions!, /same fact/);
+});
+
+test("a fact the Teacher states three ways ends as one idea, named by the merger", async () => {
+  const t = await newCore();
+  teacher = say("A list keeps repeats.", "A list never drops an item.", "A list keeps all the info.");
+  extractorOut = () => ok({ propositions: [prop("list keeps full info", "A list keeps everything put in it.", 2), prop("list keeps repeats", "A list keeps repeated items.", 0), prop("list never drops", "A list never drops an item.", 1)], chains: [] });
+  auditorOut = () => ok({ links: [{ names: ["list keeps full info", "list never drops", "list keeps repeats"] }] });
+  const done = (await t.runClass()).at(-1);
+  assert.equal(done.ideas, 1);
+  const [only, ...rest] = (await t.get("/learner/graph")).propositions;
+  assert.equal(rest.length, 0);
+  assert.equal(only.name, "list keeps repeats");
+  assert.deepEqual(only.aliases.sort(), ["list keeps full info", "list never drops"]);
 });

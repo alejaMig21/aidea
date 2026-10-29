@@ -4,10 +4,10 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** implemented, live measurement pending (fourth box)
 
-- [ ] Through the protocol with a scripted Extractor and Auditor: names with underscores or code punctuation are rejected with a message the model can act on, or normalised to words, and the rule is stated in the Extractor's instructions (kept under 4000 characters).
-- [ ] The Auditor is told to merge ideas that say the same fact; a scripted Auditor link merges them into one idea with both names as aliases (as today) and the merger, not the model, picks the name.
-- [ ] A class whose Teacher prose states the same fact in three ways, run through the scripted roles, ends with one idea for it.
-- [ ] Verified live with the real Claude Code on the second monitor: a class like the one of the live run saves a handful of ideas with plain names (record the numbers before and after).
-- [ ] Nothing changes for ideas already saved (no migration); `GLOSSARY.md` terms (Proposition, Learner graph) still hold.
+- [x] Through the protocol with a scripted Extractor and Auditor: names with underscores or code punctuation are rejected with a message the model can act on, or normalised to words, and the rule is stated in the Extractor's instructions (kept under 4000 characters). (Normalised in `validateExtracted`; tested in `test/learner-graph.test.ts`.)
+- [x] The Auditor is told to merge ideas that say the same fact; a scripted Auditor link merges them into one idea with both names as aliases (as today) and the merger, not the model, picks the name.
+- [x] A class whose Teacher prose states the same fact in three ways, run through the scripted roles, ends with one idea for it.
+- [ ] (NOT MEASURED: needs a real multi-step class transcript and a live Claude run, not cheap to script overnight; instruction wording is untested against the real model.) Verified live with the real Claude Code on the second monitor: a class like the one of the live run saves a handful of ideas with plain names (record the numbers before and after).
+- [x] Nothing changes for ideas already saved (no migration); `GLOSSARY.md` terms (Proposition, Learner graph) still hold.
