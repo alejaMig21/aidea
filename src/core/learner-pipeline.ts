@@ -119,7 +119,7 @@ export function mergeGraph(current: Graph, input: { classId: string; node?: stri
   return { propositions, chains: [...chains.values()] };
 }
 
-export async function callRole(adapter: Adapter, role: "extractor" | "auditor" | "grader", instructions: string, message: string, schema: object, model: string): Promise<unknown> {
+export async function callRole(adapter: Adapter, role: "extractor" | "auditor" | "grader" | "definer", instructions: string, message: string, schema: object, model: string): Promise<unknown> {
   const cwd = join(tmpdir(), "aidea-learner");
   mkdirSync(cwd, { recursive: true });
   let structured: unknown;

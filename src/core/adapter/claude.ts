@@ -94,7 +94,7 @@ export function createClaudeAdapter(spawnFn: SpawnFn = realSpawn): Adapter {
       if (sessionId) args.push("--resume", sessionId);
       if (mode) args.push("--permission-mode", mode);
       if (model && model !== "default") args.push("--model", model);
-      if (role === "tutor" || role === "prober" || role === "extractor" || role === "auditor" || role === "grader") {
+      if (role === "tutor" || role === "prober" || role === "extractor" || role === "auditor" || role === "grader" || role === "definer") {
         // Measured recipe (research 03): these flags leave only the core's tools, no plugins, skills, hooks or CLAUDE.md.
         // One process serves the whole class: a resumed session loses this isolation, so nothing is persisted or resumed.
         args.push("--system-prompt", instructions ?? "", "--setting-sources", "", "--strict-mcp-config", "--disable-slash-commands", "--tools", "", "--no-session-persistence");

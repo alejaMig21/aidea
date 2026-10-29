@@ -72,9 +72,9 @@ export type Adapter = {
   // `role` is "builder" (the default) or "tutor": the Tutor runs isolated, with its own instructions as the whole system prompt
   // and only `tools` (an MCP configuration and the tools it may use), never the person's plugins or settings.
   // "prober" runs the Probe: the Tutor's isolated recipe with its own tools (ask, known_ideas, probe_done, the read tools).
-  // "extractor", "auditor" and "grader" (which grades one free-text answer) are one-shot roles; the first two build the Learner graph. They have no tools, `instructions` as the whole system prompt, and `schema`
+  // "extractor", "auditor", "grader" (which grades one free-text answer) and "definer" (which explains a selected text) are one-shot roles; the first two build the Learner graph. They have no tools, `instructions` as the whole system prompt, and `schema`
   // (a JSON Schema) constrains the answer, which comes back as `structured` on the result event.
-  run: (opts: { role?: "builder" | "tutor" | "prober" | "extractor" | "auditor" | "grader"; schema?: object; tools?: { mcpConfig: string; allowedTools: string[] }; cwd: string; message: string; sessionId?: string; mode?: string; model?: string; signal?: AbortSignal; instructions?: string; permission?: { mcpConfig: string; tool: string; allowedTools: string[]; deniedTools: string[] } }) => AsyncIterable<AgentEvent>;
+  run: (opts: { role?: "builder" | "tutor" | "prober" | "extractor" | "auditor" | "grader" | "definer"; schema?: object; tools?: { mcpConfig: string; allowedTools: string[] }; cwd: string; message: string; sessionId?: string; mode?: string; model?: string; signal?: AbortSignal; instructions?: string; permission?: { mcpConfig: string; tool: string; allowedTools: string[]; deniedTools: string[] } }) => AsyncIterable<AgentEvent>;
 };
 
 // A spawn-like process source; the real one launches `claude`, tests replay recorded streams.
