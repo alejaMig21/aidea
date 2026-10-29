@@ -59,11 +59,13 @@ const TOOLS = [
     name: "read_contract",
     description: "Returns the Contract: what the person accepted on the Business, Requirements and Architecture layers (pending Proposals are not in it). Read it before you build, and follow it.",
     inputSchema: { type: "object", properties: {} },
+    annotations: { readOnlyHint: true }, // Plan mode asks for any MCP tool that does not say it only reads
   },
   {
     name: "list_proposals",
     description: "Lists the proposals made for this Project and whether the person has accepted, rejected or not yet decided each one.",
     inputSchema: { type: "object", properties: {} },
+    annotations: { readOnlyHint: true },
   },
 ];
 
