@@ -24,6 +24,12 @@ playbackStyle.textContent = `
   #pane-algorithm .pb-check { flex-direction: row; align-items: center; gap: 6px; }
   #pane-algorithm input[type="range"] { flex: 1; min-width: 0; padding: 0; accent-color: var(--accent); }
   #pane-algorithm #pb-position { font-size: 12px; color: var(--muted); }
+  #pane-algorithm #pb-guess:empty { display: none; }
+  #pane-algorithm #pb-guess form { margin: 4px 0 0; padding: 10px 12px; background: var(--raised); border-radius: 8px; display: flex; flex-direction: column; gap: 8px; }
+  #pane-algorithm #pb-guess .pb-prompt { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--text); }
+  #pane-algorithm #pb-guess .pb-option { flex-direction: row; align-items: center; gap: 8px; font: 13px var(--mono); color: var(--text); }
+  #pane-algorithm #pb-guess .pb-confidence { font-size: 12px; }
+  #pane-algorithm #pb-guess .pb-result { margin: 4px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--text); }
 `;
 document.head.append(playbackStyle);
 
@@ -38,6 +44,8 @@ let pbIndex = 0;
 let pbPrevIndex = -1; // the step shown before, so the token knows which edge to travel
 let pbRenderedFor = null; // the graph the form was last built for: the form is rebuilt only when this changes
 let pbTimer = null;
+let pbGuessOn = false;     // "Guess first": off until the person turns it on
+let pbGuessResult = null;  // what to say once the guessed step is shown: { at: index of the step guessed, text }
 
 const pbStop = () => { clearInterval(pbTimer); pbTimer = null; };
 
@@ -70,6 +78,8 @@ function pbShowEntry() {
   $("pb-position").textContent = `${pbIndex + 1} / ${pbRecording.visits.length}`;
   $("pb-slider").value = pbIndex;
   $("pb-narration").textContent = pbRecording.narration?.[pbIndex] ?? ""; // told by the core from the recording; nothing is invented here
+  if (pbGuessResult?.at === pbIndex - 1) $("pb-guess").replaceChildren(pbEl("p", { className: "pb-result", textContent: pbGuessResult.text, role: "status" })); // the verdict on the guess that led here
+  pbGuessResult = null;
   const names = Object.keys(entry.locals);
   const rows = names.map((name) => pbEl("div", {}, pbEl("span", { textContent: name }), pbEl("span", { textContent: entry.locals[name] })));
   const last = pbIndex === pbRecording.visits.length - 1;
@@ -81,7 +91,38 @@ function pbShowEntry() {
   $("pb-play").textContent = pbTimer ? "Pause" : "Play";
 }
 
+// Guess first: a forward step asks "what will it be?" before it shows the step. Skip, Escape, another step button or
+// turning the mode off all go on without a guess; a question the core cannot make (nothing changes) just steps.
+const pbGuessBox = () => $("pb-guess");
+function pbGuessClose() { if (pbGuessBox()) pbGuessBox().replaceChildren(); }
+async function pbStepForward() {
+  pbStop();
+  if (pbGuessBox()?.firstChild?.tagName === "FORM") { pbGo(pbIndex + 1); return; } // asked again while a question is open: skip it
+  const at = pbIndex, id = pbRecording.id;
+  const asked = pbGuessOn && at < pbRecording.visits.length - 1 ? await fetch(`/playback/predict?id=${id}&step=${at}`) : null;
+  if (!asked?.ok || pbRecording?.id !== id || pbIndex !== at) { pbGo(pbIndex + 1); return; }
+  const q = await asked.json();
+  const go = (result) => { pbGuessResult = result && { at, text: result }; pbGo(at + 1); $("pb-forward").focus(); };
+  const confidence = pbEl("select", { id: "pb-confidence" }, ...[["Not sure", 30], ["Maybe", 50], ["Fairly sure", 70], ["Certain", 90]].map(([t, v]) => pbEl("option", { value: v, textContent: t, selected: v === 50 })));
+  const form = pbEl("form", { onsubmit: async (e) => {
+    e.preventDefault();
+    const option = Number(new FormData(form).get("guess"));
+    const res = await post("/playback/predict", { id, step: at, option, confidence: Number(confidence.value) });
+    if (!res.ok || pbRecording?.id !== id) { go(null); return; }
+    const a = await res.json();
+    go(a.correct ? `Right: ${a.name} is ${a.answer}.` : `Not quite: ${a.name} is ${a.answer}.`);
+  }, onkeydown: (e) => { if (e.key === "Escape") go(null); } },
+    pbEl("p", { className: "pb-prompt", textContent: q.prompt }),
+    ...q.options.map((o, i) => pbEl("label", { className: "pb-option" }, pbEl("input", { type: "radio", name: "guess", value: i, required: true, checked: i === 0 }), o)),
+    pbEl("label", { className: "pb-confidence" }, "How sure are you?", confidence),
+    pbEl("div", { className: "pb-row" }, pbEl("button", { type: "submit", className: "primary", textContent: "Check" }), pbEl("button", { type: "button", textContent: "Skip", onclick: () => go(null) })),
+  );
+  pbGuessBox().replaceChildren(form);
+  form.querySelector("input").focus();
+}
+
 function pbGo(index) {
+  pbGuessClose();
   pbIndex = Math.max(0, Math.min(pbRecording.visits.length - 1, index));
   pbShowStep();
 }
@@ -172,8 +213,10 @@ function pbRender() {
       pbEl("div", { className: "pb-row" },
         pbEl("button", { className: "step", textContent: "‹", title: "Step back", onclick: () => { pbStop(); pbGo(pbIndex - 1); } }),
         pbEl("input", { id: "pb-slider", type: "range", min: 0, max: pbRecording.visits.length - 1, value: pbIndex, oninput: (e) => { pbStop(); pbGo(Number(e.target.value)); } }),
-        pbEl("button", { className: "step", textContent: "›", title: "Step forward", onclick: () => { pbStop(); pbGo(pbIndex + 1); } }),
+        pbEl("button", { id: "pb-forward", className: "step", textContent: "›", title: "Step forward", onclick: pbStepForward }),
       ),
+      pbEl("label", { className: "pb-check" }, pbEl("input", { id: "pb-guess-on", type: "checkbox", checked: pbGuessOn, onchange: (e) => { pbGuessOn = e.target.checked; if (!pbGuessOn) pbGuessClose(); } }), "Guess first: predict the next step before it shows"),
+      pbEl("div", { id: "pb-guess" }),
       pbEl("div", { className: "pb-row" },
         pbEl("button", { textContent: "⏮", title: "Back to the start", onclick: () => { pbStop(); pbGo(0); } }),
         pbEl("button", { id: "pb-play", className: "primary", textContent: "Play", onclick: pbPlayPause }),

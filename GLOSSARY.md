@@ -117,7 +117,7 @@ The Tutor's map for one project: the concepts the person must understand, in the
 _Avoid_: Curriculum, roadmap
 
 **Evidence**:
-The record of each answer the person gave in a class: whether it was right, how sure they were and what they thought. It is kept apart from the Learner graph, which holds only ideas the Tutor taught.
+The record of each answer the person gave in a class: whether it was right, how sure they were and what they thought. It is kept apart from the Learner graph, which holds only ideas the Tutor taught. A guess made before a step of a Recording ("Guess first" in Playback) is Evidence too, about that run.
 _Avoid_: Score, grade
 
 **Review question**:

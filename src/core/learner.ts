@@ -15,7 +15,7 @@ export type Proposition = { id: string; name: string; statement: string; aliases
 export type Chain = { id: string; premises: string[]; conclusion: string; provenance: Provenance[] };
 export type Graph = { propositions: Proposition[]; chains: Chain[] };
 export type Evidence = {
-  classId: string; questionId: string; project: string; kind: "choice" | "text" | "probe-skip" | "decision-skip";
+  classId: string; questionId: string; project: string; kind: "choice" | "text" | "probe-skip" | "decision-skip" | "run-prediction";
   correct: boolean | null; confidence: number | null; answer: string | null; thought: string | null; dontKnow: boolean; time: string;
   // Present for answers given inside the teach loop: the step, "predict" or "check", the attempt number, and a wrong answer given with confidence 70 or more.
   stepId?: string; phase?: "predict" | "check" | "probe" | "review"; attempt?: number; sureAndWrong?: true;
@@ -25,6 +25,8 @@ export type Evidence = {
   item?: string;
   // kind "decision-skip": the person chose "Decide for me" for this Proposal instead of a decision class.
   decision?: string;
+  // kind "run-prediction": a guess made before a step of a Playback recording (the class id is `run:<recording>`). Never an idea of the Learner graph.
+  run?: { recording: string; step: number; name: string };
 };
 // A class waiting for its pipeline: the Teacher's prose, in the order it was said.
 export type PendingClass = { classId: string; project: string; node?: string; texts: string[] };

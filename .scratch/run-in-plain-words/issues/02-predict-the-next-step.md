@@ -4,9 +4,9 @@
 
 **Blocked by:** run-in-plain-words 01.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Through the protocol: a route records a run prediction as Evidence with the right shape, validated like other answers; the correct option is never sent to the interface before the guess.
-- [ ] The options are deterministic for a recording and always include the true value exactly once.
-- [ ] In the interface the mode is off by default, can be turned on and off while stepping, and works with the keyboard.
-- [ ] Verified in the real app on the main screen with a recording of a fixture function: guess right, guess wrong, skip.
+- [x] Through the protocol: a route records a run prediction as Evidence with the right shape, validated like other answers; the correct option is never sent to the interface before the guess.
+- [x] The options are deterministic for a recording and always include the true value exactly once.
+- [x] In the interface the mode is off by default, can be turned on and off while stepping, and works with the keyboard.
+- [x] Verified in the real app on the main screen with a recording of a fixture function: guess right, guess wrong, skip.

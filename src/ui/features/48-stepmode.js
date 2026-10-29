@@ -61,6 +61,7 @@ function stepSet(on) {
 
 function stepMove(direction) {
   if (!stepRecording()) return;
+  if (direction > 0 && pbGuessOn) { pbStepForward(); return; } // "Guess first" asks before it shows the step
   pbStop(); pbGo(pbIndex + direction); // the Playback token and the trace table follow
 }
 
