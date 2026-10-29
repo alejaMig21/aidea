@@ -29,10 +29,12 @@ function readAll(dir: string): Files {
 }
 
 const turns = new Set<{ dir: string; before: Files }>(); // turns running now
-const reverts = new Map<string, Revert>();
+const reverts = new Map<string, Revert>(); // a way back is kept until it is used, the Project's next turn begins, or it is the oldest of MAX_REVERTS
+const MAX_REVERTS = 20;
 
 // Called as a turn begins; give the result to `finish` when it ends.
 export function begin(dir: string) {
+  for (const [id, r] of reverts) if (r.dir === dir) reverts.delete(id); // the person has moved on: the last turn's way back expires
   const turn = { dir, before: readAll(dir) };
   turns.add(turn);
   return turn;
@@ -63,6 +65,7 @@ export function finish(turn: ReturnType<typeof begin>): { id: string; files: Cha
   if (!files.length) return null;
   const id = randomBytes(16).toString("hex");
   reverts.set(id, { dir: turn.dir, before: turn.before, after, changes: files });
+  while (reverts.size > MAX_REVERTS) reverts.delete(reverts.keys().next().value!);
   return { id, files };
 }
 
@@ -79,6 +82,7 @@ export function restore(id: string): { restored: string[]; skipped: string[] } |
     const left = r.after.get(file);
     if ((now && !left) || (!now && left) || (now && left && !now.equals(left))) { skipped.push(file); continue; }
     const path = join(r.dir, file);
+    try { if (lstatSync(path).isSymbolicLink()) { skipped.push(file); continue; } } catch { /* nothing there yet */ }
     const was = r.before.get(file);
     if (was) { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, was); } else rmSync(path, { force: true });
     restored.push(file);

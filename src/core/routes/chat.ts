@@ -41,7 +41,7 @@ const handler: Handler = async (req, res, core) => {
     // The authored files change only through Proposals. A shell pattern is not a wall: the check after the turn (guard.ts) is.
     deniedTools: [...["Write", "Edit", "MultiEdit", "NotebookEdit"].map((t) => `${t}(.aidea/**)`), "Bash(*.aidea*)"],
   };
-  const watch = begin(project.path);
+  let watch: ReturnType<typeof begin> | undefined;
 
   // If the interface goes away mid-reply, stop the agent and deny whatever is waiting.
   const abort = new AbortController();
@@ -50,6 +50,7 @@ const handler: Handler = async (req, res, core) => {
     conversation.close();
   });
   try {
+    watch = begin(project.path);
     const { mode, model } = currentChoice(core, project.id);
     for await (const event of core.adapter.run({ cwd: project.path, message, sessionId, mode, model, signal: abort.signal, permission, instructions: BUILDER_INSTRUCTIONS })) {
       send(event);
@@ -60,7 +61,7 @@ const handler: Handler = async (req, res, core) => {
     send({ type: "error", code: "failed", message: "The builder stopped unexpectedly" });
   } finally {
     conversation.close();
-    const changed = finish(watch);
+    const changed = watch && finish(watch);
     if (changed) send({ type: "authored_changed", ...changed });
   }
   res.end();
