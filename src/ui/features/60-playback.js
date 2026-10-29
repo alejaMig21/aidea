@@ -177,7 +177,7 @@ function pbRender() {
       ),
       pbEl("div", { id: "pb-values", className: "pb-values" }),
       pbEl("pre", { id: "pb-output" }),
-      pbEl("p", { className: "pb-warning", textContent: `Interpreter used:${pbRecording.interpreter}` }),
+      pbEl("p", { className: "pb-warning", textContent: `Interpreter used: ${pbRecording.interpreter}` }),
     );
   }
   pbPane.replaceChildren(pbEl("header", {}, "Algorithm", pbEl("span", { textContent: pbGraph.node.split(".").pop() })), pbEl("div", { className: "body" }, ...parts));

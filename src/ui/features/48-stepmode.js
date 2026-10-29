@@ -36,6 +36,7 @@ notationToggle.after(stepGroup);
 let stepOn = false;
 const stepRecording = () => (authoredShown === "algorithms" && pbRecording?.visits.length ? pbRecording : null); // a replay on the flowchart steps by Playback step
 
+document.addEventListener("algorithm-opened", () => queueMicrotask(stepUi)); // a new function drops the recording: the step controls go with it
 function stepUi() {
   const rec = stepRecording();
   stepGroup.hidden = !notationOn;

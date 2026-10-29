@@ -55,7 +55,8 @@ const ALLOWED: Record<string, Record<string, string>> = {
 
 const chrome = [process.env.CHROME_PATH, "C:/Program Files/Google/Chrome/Application/chrome.exe", "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe", "/usr/bin/google-chrome", "/usr/bin/chromium", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"]
   .find((p) => p && existsSync(p));
-const skip = chrome ? false : "Chrome was not found (set CHROME_PATH to its executable)";
+if (!chrome && process.env.AIDEA_REQUIRE_CHROME) throw new Error("AIDEA_REQUIRE_CHROME is set but Chrome was not found (set CHROME_PATH to its executable)");
+const skip = chrome ? false : "Chrome was not found (set CHROME_PATH to its executable; set AIDEA_REQUIRE_CHROME=1 to fail instead of skipping)";
 
 // A stand-in for the builder that proposes one Node to add and one to remove, so the Proposal shapes get drawn.
 const proposer: Adapter = {
@@ -124,7 +125,7 @@ before(async () => {
 after(() => {
   proxy?.close();
   core?.close();
-  for (const dir of scratch) rmSync(dir, { recursive: true, force: true });
+  for (const dir of scratch) rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }); // Chrome helpers may hold the profile folder a moment
 });
 
 const short = (text: string) => (text.length > 48 ? `${text.slice(0, 48)}...` : text);
