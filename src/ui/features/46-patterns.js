@@ -26,12 +26,12 @@ let patternViolations = [];
     ...legend,
     shapes: [
       ...legend.shapes,
-      [notationSwatch(`<rect x="3" y="3" width="38" height="18" rx="4" style="fill:none;stroke:var(--authored);stroke-dasharray:2 4"/>`), "Pattern group: a dotted boundary around Nodes that realise one pattern (for example hexagonal); each member is tagged with its role"],
+      [notationSwatch(`<rect x="3" y="3" width="38" height="18" rx="4" style="fill:none;stroke:var(--authored);stroke-dasharray:2 4"/>`), "Pattern group: a dotted boundary around Nodes that realise one pattern (for example hexagonal); each member is tagged with its role", ".pattern-boundary"],
     ],
     arrows: [
       ...legend.arrows,
-      [notationSwatch(`<path d="M2 12H34" style="stroke:var(--danger);stroke-width:2;stroke-dasharray:6 4"/><path d="M42 12L33 7.5V16.5Z" style="fill:var(--danger)"/>`), "Red dashed arrow: the code breaks the pattern's rule (for example the domain depends on infrastructure). Hover for the rule and the evidence"],
-      [notationSwatch(`<path d="M2 12H34" style="stroke:var(--unresolved);stroke-width:2;stroke-dasharray:6 4"/><path d="M42 12L33 7.5V16.5Z" style="fill:var(--unresolved)"/>`), "Grey dashed arrow with ?: the analysis could only guess (matched by name), so the violation is possible, not certain"],
+      [notationSwatch(`<path d="M2 12H34" style="stroke:var(--danger);stroke-width:2;stroke-dasharray:6 4"/><path d="M42 12L33 7.5V16.5Z" style="fill:var(--danger)"/>`), "Red dashed arrow: the code breaks the pattern's rule (for example the domain depends on infrastructure). Hover for the rule and the evidence", ".pattern-violation:not(.possible)"],
+      [notationSwatch(`<path d="M2 12H34" style="stroke:var(--unresolved);stroke-width:2;stroke-dasharray:6 4"/><path d="M42 12L33 7.5V16.5Z" style="fill:var(--unresolved)"/>`), "Grey dashed arrow with ?: the analysis could only guess (matched by name), so the violation is possible, not certain", ".pattern-violation.possible"],
     ],
     notShown: [...legend.notShown, "Rules of a pattern other than the ones in its kind (hexagonal: domain never depends on adapters or infrastructure; layered: lower layers never depend on upper ones)"],
   });

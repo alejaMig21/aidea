@@ -49,19 +49,19 @@ function componentsLegend(unresolved) {
   const grey = "stroke:var(--unresolved);";
   notationRegisterLegend("components", {
     shapes: [
-      [notationSwatch(`<path d="M3 22V6H15V9H41V22z" style="fill:var(--panel);stroke:var(--control)"/>`), "Package: a module, holding its classes and functions"],
-      [notationSwatch(`<rect x="3" y="2" width="38" height="20" rx="3" style="fill:var(--raised);stroke:var(--control)"/><path d="M3 9H41M3 15H41" style="stroke:var(--control)"/>`), "Class: name, attributes, methods"],
-      [notationSwatch(`<rect x="3" y="6" width="38" height="12" rx="3" style="fill:var(--raised);stroke:var(--control)"/>`), "Function: a small box inside its package"],
-      [notationSwatch(`<text x="2" y="16" style="fill:var(--label);font:12px var(--mono)">+ - ~</text>`), "Visibility: + public, - private, ~ special (dunder). Derived from the naming convention (underscores), not part of UML"],
-      [notationSwatch(`<text x="2" y="16" style="fill:var(--label);font:12px var(--sans);text-decoration:underline">name</text>`), "Underlined: static or class method"],
-      [notationSwatch(`<text x="2" y="16" style="fill:var(--label);font:italic 12px var(--sans)">Name</text>`), "Italic: abstract class or method"],
+      [notationSwatch(`<path d="M3 22V6H15V9H41V22z" style="fill:var(--panel);stroke:var(--control)"/>`), "Package: a module, holding its classes and functions", ".cp-pkg"],
+      [notationSwatch(`<rect x="3" y="2" width="38" height="20" rx="3" style="fill:var(--raised);stroke:var(--control)"/><path d="M3 9H41M3 15H41" style="stroke:var(--control)"/>`), "Class: name, attributes, methods", ".cp-class"],
+      [notationSwatch(`<rect x="3" y="6" width="38" height="12" rx="3" style="fill:var(--raised);stroke:var(--control)"/>`), "Function: a small box inside its package", ".cp-func"],
+      [notationSwatch(`<text x="2" y="16" style="fill:var(--label);font:12px var(--mono)">+ - ~</text>`), "Visibility: + public, - private, ~ special (dunder). Derived from the naming convention (underscores), not part of UML", ".cp-mark"],
+      [notationSwatch(`<text x="2" y="16" style="fill:var(--label);font:12px var(--sans);text-decoration:underline">name</text>`), "Underlined: static or class method", ".cp-static"],
+      [notationSwatch(`<text x="2" y="16" style="fill:var(--label);font:italic 12px var(--sans)">Name</text>`), "Italic: abstract class or method", ".cp-abstract"],
     ],
     arrows: [
-      [notationSwatch(line("M2 12H30") + `<path d="M30 6L42 12L30 18z" style="fill:var(--canvas);stroke:var(--cp-line);stroke-width:1.3"/>`), "Inheritance: the hollow triangle points to the base class"],
-      [notationSwatch(line("M2 12H36", "stroke-dasharray:6 4") + line("M33 7L41 12L33 17")), "Import between packages, labelled import"],
-      [notationSwatch(line("M2 12H36") + line("M33 7L41 12L33 17")), "A call. Solid: resolved, the target is certain; the dot travels in its direction"],
-      [notationSwatch(line("M2 12H36", "stroke-dasharray:6 4") + line("M33 7L41 12L33 17")), "Dashed: inferred, matched by name only (several classes may share it)"],
-      [notationSwatch(`<path d="M2 12H30" style="fill:none;${grey}stroke-width:1.4;stroke-dasharray:5 4"/><path d="M27 7L35 12L27 17" style="fill:none;${grey}stroke-width:1.4"/><text x="37" y="16" style="fill:var(--muted);font:600 12px var(--mono)">?</text>`), `Grey dashed with ?: unresolved, never animated. ${unresolved} in this Project. Python decides the target at run time (getattr, a function held in a variable), so aidea cannot say where it goes`],
+      [notationSwatch(line("M2 12H30") + `<path d="M30 6L42 12L30 18z" style="fill:var(--canvas);stroke:var(--cp-line);stroke-width:1.3"/>`), "Inheritance: the hollow triangle points to the base class", '.cp-edge[data-kind="inherits"]'],
+      [notationSwatch(line("M2 12H36", "stroke-dasharray:6 4") + line("M33 7L41 12L33 17")), "Import between packages, labelled import", '.cp-edge[data-kind="imports"]'],
+      [notationSwatch(line("M2 12H36") + line("M33 7L41 12L33 17")), "A call. Solid: resolved, the target is certain; the dot travels in its direction", '.cp-edge[data-kind="calls"][data-resolution="resolved"]'],
+      [notationSwatch(line("M2 12H36", "stroke-dasharray:6 4") + line("M33 7L41 12L33 17")), "Dashed: inferred, matched by name only (several classes may share it)", '.cp-edge[data-kind="calls"][data-resolution="inferred"]'],
+      [notationSwatch(`<path d="M2 12H30" style="fill:none;${grey}stroke-width:1.4;stroke-dasharray:5 4"/><path d="M27 7L35 12L27 17" style="fill:none;${grey}stroke-width:1.4"/><text x="37" y="16" style="fill:var(--muted);font:600 12px var(--mono)">?</text>`), `Grey dashed with ?: unresolved, never animated. ${unresolved} in this Project. Python decides the target at run time (getattr, a function held in a variable), so aidea cannot say where it goes`, '.cp-edge[data-resolution="unresolved"]'],
     ],
     colours: [
       ["derived", "Teal: read from the code (package names)"],
@@ -132,7 +132,7 @@ function componentsDraw(world, nodes, layout, unresolved) {
   for (const n of nodes.filter((x) => at.has(x.id) && x.kind !== "module" && (x.kind === "class" || node.get(x.parent)?.kind === "module"))) {
     const r = at.get(n.id);
     const isClass = n.kind === "class";
-    world.append(el("rect", { x: r.x, y: r.y, width: r.width, height: r.height, rx: 6, "data-id": n.id, "data-ref": n.id }));
+    world.append(el("rect", { x: r.x, y: r.y, width: r.width, height: r.height, rx: 6, class: isClass ? "cp-class" : "cp-func", "data-id": n.id, "data-ref": n.id }));
     const name = componentsShort(n.name);
     if (!isClass) {
       const full = `${componentsMarks[n.markers?.visibility ?? "public"]} ƒ ${name}()`, shown = componentsFit(full, r.width - 20);

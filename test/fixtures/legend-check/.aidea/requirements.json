@@ -1,0 +1,28 @@
+{
+  "nodes": [
+    {
+      "id": "r-checkout", "title": "Checkout", "as": "a customer", "want": "to pay for my order", "so": "I receive it",
+      "criteria": ["Given a full cart, when I pay, then I get a receipt", "Given a declined card, when I pay, then I see why"],
+      "traces": ["render.make", "shapes.Circle", "ghost.fn"],
+      "rationale": { "why": "Payment is the core of selling online.", "rejected": [] }
+    },
+    {
+      "id": "r-audit", "title": "Audit trail", "as": "the owner", "want": "to see every order change", "so": "I can settle disputes", "built": true,
+      "rationale": { "why": "Marked as built before any code was linked.", "rejected": [] }
+    },
+    {
+      "id": "r-wish", "title": "Gift wrapping", "as": "a customer", "want": "to wrap my order", "so": "it is ready to give",
+      "rationale": { "why": "Planned, not built yet.", "rejected": [] }
+    },
+    {
+      "id": "r-fast", "title": "Fast pages", "kind": "non-functional", "statement": "Pages answer quickly.", "quality": "performance", "measure": "95% of pages under 300 ms",
+      "traces": ["web"],
+      "rationale": { "why": "Slow shops lose customers.", "rejected": [] }
+    },
+    {
+      "id": "r-safe", "title": "Safe payments", "kind": "non-functional", "statement": "Card data never touches our server.", "quality": "security", "measure": "No card number in any log",
+      "traces": ["ghost.node"],
+      "rationale": { "why": "Card data is a liability.", "rejected": [] }
+    }
+  ]
+}

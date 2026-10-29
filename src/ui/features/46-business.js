@@ -116,9 +116,9 @@ showLayer = (which) => {
 
 notationRegisterLegend("business", {
   shapes: [
-    [notationSwatch(`<rect x="4" y="3" width="36" height="18" rx="5" style="fill:var(--raised);stroke:var(--control)"/><circle cx="33" cy="9" r="3" style="fill:var(--selected)"/>`), "One of the nine blocks; its place on the canvas is part of its meaning, and the number is its order"],
-    [notationSwatch(`<rect x="6" y="6" width="32" height="12" rx="3" style="fill:#f2b45a22;stroke:#f2b45a99"/>`), "A sticky note: one idea in plain words, inside the block it belongs to"],
-    [notationSwatch(`<rect x="4" y="3" width="36" height="18" rx="5" style="fill:none;stroke:var(--control);stroke-dasharray:4 3"/>`), "The blocks fill in over time; an empty one is normal, it is a question still to answer"],
+    [notationSwatch(`<rect x="4" y="3" width="36" height="18" rx="5" style="fill:var(--raised);stroke:var(--control)"/><circle cx="33" cy="9" r="3" style="fill:var(--selected)"/>`), "One of the nine blocks; its place on the canvas is part of its meaning, and the number is its order", ".bblock"],
+    [notationSwatch(`<rect x="6" y="6" width="32" height="12" rx="3" style="fill:#f2b45a22;stroke:#f2b45a99"/>`), "A sticky note: one idea in plain words, inside the block it belongs to", ".bnote"],
+    [notationSwatch(`<rect x="4" y="3" width="36" height="18" rx="5" style="fill:var(--raised);stroke:var(--control)"/><rect x="9" y="10" width="26" height="3" rx="1" style="fill:var(--label)"/>`), "The blocks fill in over time; an empty one shows a question to answer, and that is normal", ".bprompt"],
   ],
   colours: [
     ["authored", "Amber: written by a person or the agent (block names and sticky notes)"],

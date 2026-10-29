@@ -1,0 +1,44 @@
+{
+  "nodes": [
+    {
+      "id": "customer", "title": "Customer", "technology": "Browser", "kind": "person", "description": "Buys cakes online.",
+      "relations": [{ "to": "web", "label": "Orders with", "technology": "HTTPS" }],
+      "rationale": { "why": "The main user.", "rejected": [] }
+    },
+    {
+      "id": "shop", "title": "Shop", "technology": "Python", "kind": "system", "description": "Everything we build.",
+      "rationale": { "why": "One boundary around what we own.", "rejected": [] }
+    },
+    {
+      "id": "web", "title": "Web adapter", "technology": "Python", "kind": "container", "parent": "shop", "description": "Talks to the outside.", "traces": ["adapters"],
+      "relations": [
+        { "to": "core", "label": "Places orders through" },
+        { "to": "mailer", "label": "Sends receipts", "technology": "SMTP" }
+      ],
+      "rationale": { "why": "Keeps the outside away from the rules.", "rejected": [] }
+    },
+    {
+      "id": "core", "title": "Core", "technology": "Python", "kind": "component", "parent": "shop", "description": "The rules of the shop.", "traces": ["domain"],
+      "relations": [{ "to": "store", "label": "Saves orders", "technology": "function call" }],
+      "rationale": { "why": "The rules live in one place.", "rejected": [] }
+    },
+    {
+      "id": "store", "title": "Storage", "technology": "Python", "kind": "container", "parent": "shop", "description": "Keeps orders.", "traces": ["infra"],
+      "rationale": { "why": "One place for persistence.", "rejected": [] }
+    },
+    {
+      "id": "mailer", "title": "Mail service", "technology": "SMTP", "kind": "system", "external": true, "description": "External service that delivers email.",
+      "rationale": { "why": "Not worth building our own.", "rejected": [] }
+    },
+    {
+      "id": "plan", "title": "Reporting", "technology": "TBD", "kind": "container", "description": "Planned, linked to code that does not exist.", "traces": ["ghost.report"],
+      "rationale": { "why": "Planned for later.", "rejected": [] }
+    }
+  ],
+  "patterns": [
+    {
+      "id": "hex", "name": "Hexagonal shop", "kind": "hexagonal",
+      "roles": [{ "node": "core", "role": "domain" }, { "node": "web", "role": "adapter" }, { "node": "store", "role": "infrastructure" }]
+    }
+  ]
+}

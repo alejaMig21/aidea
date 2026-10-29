@@ -1,0 +1,12 @@
+{
+  "nodes": [
+    { "id": "kp", "title": "Payment processor", "block": "key partnerships", "rationale": { "why": "We do not move money ourselves.", "rejected": [] } },
+    { "id": "ka", "title": "Take and ship orders", "block": "key activities", "rationale": { "why": "The daily work of the shop.", "rejected": [] } },
+    { "id": "kr", "title": "Product catalogue", "block": "key resources", "rationale": { "why": "Without it there is nothing to sell.", "rejected": [] } },
+    { "id": "vp", "title": "Order online in two minutes", "block": "value propositions", "traces": ["ghost.fn"], "rationale": { "why": "Customers do not want to call.", "rejected": [] } },
+    { "id": "cr", "title": "Answer by email within a day", "block": "customer relationships", "rationale": { "why": "Small shop, personal service.", "rejected": [] } },
+    { "id": "ch", "title": "Own website", "block": "channels", "rationale": { "why": "No marketplace fees.", "rejected": [] } },
+    { "id": "cs", "title": "Home bakers", "block": "customer segments", "rationale": { "why": "They buy small amounts often.", "rejected": [] } },
+    { "id": "co", "title": "Hosting and payment fees", "block": "cost structure", "rationale": { "why": "The two costs that grow with sales.", "rejected": [] } }
+  ]
+}

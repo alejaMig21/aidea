@@ -77,7 +77,7 @@ function drawAlgorithm(graph) {
   graph.routes.forEach((route, i) => {
     const exception = Boolean(graph.edges[i].exception);
     const edge = el("path", {
-      class: `flow-edge${exception ? " exception" : ""}`, id: `flow-edge-${i}`, "data-edge": i, "data-flow": "",
+      class: `flow-edge${exception ? " exception" : ""}${graph.edges[i].back ? " back" : ""}`, id: `flow-edge-${i}`, "data-edge": i, "data-flow": "",
       "data-ends": `${route.from} ${route.to}`, d: "M" + route.points.map((p) => `${p.x} ${p.y}`).join(" L"),
     });
     // Control flowing forward carries one packet (the shared motion kit); the way back of a loop is only dashes.
@@ -146,21 +146,21 @@ function flowReplay(visits, index, previous) {
   const arrow = (colour, dash) => notationSwatch(`<path d="M2 12H36" style="stroke:${colour};stroke-width:1.6;${dash ? "stroke-dasharray:5 4" : ""}"/><path d="M34 7L42 12L34 17" style="fill:none;stroke:${colour};stroke-width:1.5"/>`);
   notationRegisterLegend("algorithms", {
     shapes: [
-      [sw(`<rect x="3" y="5" width="38" height="14" rx="7"/>`), "Rounded: start, end and return"],
-      [sw(`<rect x="3" y="5" width="38" height="14" rx="7" style="stroke:var(--danger);fill:#ff8a8018"/>`), "Rounded, red: raise (the function stops with an error)"],
-      [sw(`<rect x="3" y="5" width="38" height="14" rx="3"/>`), "Rectangle: a step that does something"],
-      [sw(`<polygon points="22,1 41,12 22,23 3,12" style="stroke:var(--accent)"/>`), "Diamond: a decision (if, match) or a loop test, with labelled exits"],
-      [sw(`<polygon points="10,5 41,5 34,19 3,19"/>`), "Slanted: input or output (print, input, open, network and file calls)"],
-      [sw(`<rect x="3" y="5" width="38" height="14" rx="3"/><rect x="6" y="8" width="32" height="8" rx="2" style="fill:none"/>`), "Double frame: with"],
-      [sw(`<polygon points="3,5 33,5 41,12 33,19 3,19"/>`), "Pointed: break or continue"],
-      [sw(`<rect x="3" y="5" width="38" height="14" rx="3" style="stroke-dasharray:1 3"/>`), "Dotted, tagged finally: inside a finally block"],
-      [sw(`<rect x="3" y="5" width="38" height="14" rx="3" style="stroke-dasharray:3 3"/>`), "Dashed, with its name above: a construct with no symbol (lambda, comprehension, pass...), shown as a generic step"],
+      [sw(`<rect x="3" y="5" width="38" height="14" rx="7"/>`), "Rounded: start, end and return", ".flow-start, .flow-end, .flow-return"],
+      [sw(`<rect x="3" y="5" width="38" height="14" rx="7" style="stroke:var(--danger);fill:#ff8a8018"/>`), "Rounded, red: raise (the function stops with an error)", ".flow-raise"],
+      [sw(`<rect x="3" y="5" width="38" height="14" rx="3"/>`), "Rectangle: a step that does something", ".flow-step-step:has(> rect.sh):not(.c-with, .generic)"],
+      [sw(`<polygon points="22,1 41,12 22,23 3,12" style="stroke:var(--label)"/>`), "Diamond: a decision (if, match) or a loop test, with labelled exits", ".flow-branch, .flow-loop"],
+      [sw(`<polygon points="10,5 41,5 34,19 3,19"/>`), "Slanted: input or output (print, input, open, network and file calls)", ".flow-step-step:has(> polygon.sh):not(.c-break, .c-continue)"],
+      [sw(`<rect x="3" y="5" width="38" height="14" rx="3"/><rect x="6" y="8" width="32" height="8" rx="2" style="fill:none"/>`), "Double frame: with", ".c-with"],
+      [sw(`<polygon points="3,5 33,5 41,12 33,19 3,19"/>`), "Pointed: break or continue", ".c-break, .c-continue"],
+      [sw(`<rect x="3" y="5" width="38" height="14" rx="3" style="stroke-dasharray:1 3"/>`), "Dotted, tagged finally: inside a finally block", ".in-finally"],
+      [sw(`<rect x="3" y="5" width="38" height="14" rx="3" style="stroke-dasharray:3 3"/>`), "Dashed, with its name above: a construct with no symbol (lambda, comprehension, pass...), shown as a generic step", ".generic"],
     ],
     arrows: [
-      [arrow("#4a546c"), "Control moves to the next step; the dashes flow in that direction"],
-      [notationSwatch(`<path d="M30 20H40V6H8" style="fill:none;stroke:#4a546c;stroke-width:1.6"/><path d="M12 1L5 6L12 11" style="fill:none;stroke:#4a546c;stroke-width:1.5"/>`), "Arrow going back up: the loop repeats"],
-      [arrow("var(--danger)", true), "Red dashed, labelled with an exception type: control goes to that handler"],
-      [notationSwatch(`<circle cx="22" cy="12" r="7" style="fill:var(--accent)"/>`), "Playback token: it travels the edges the real run took; the active step glows, visited steps turn teal. With no Playback shown, small dots travel the edges instead and the start breathes"],
+      [arrow("#4a546c"), "Control moves to the next step; the dashes flow in that direction", ".flow-edge:not(.exception, .back)"],
+      [notationSwatch(`<path d="M30 20H40V6H8" style="fill:none;stroke:#4a546c;stroke-width:1.6"/><path d="M12 1L5 6L12 11" style="fill:none;stroke:#4a546c;stroke-width:1.5"/>`), "Arrow going back up: the loop repeats", ".flow-edge.back"],
+      [arrow("var(--danger)", true), "Red dashed, labelled with an exception type: control goes to that handler", ".flow-edge.exception"],
+      [notationSwatch(`<circle cx="22" cy="12" r="7" style="fill:var(--accent)"/>`), "Playback token: it travels the edges the real run took; the active step glows, visited steps turn teal. With no Playback shown, small dots travel the edges instead and the start breathes", ".flow-token"],
     ],
     colours: [
       ["accent", "Blue: active now (the Playback token, the step it is on) or in flight (the dots on the edges)"],

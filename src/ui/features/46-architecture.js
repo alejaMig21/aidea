@@ -29,16 +29,16 @@ showLayer = (which) => { showLayerWithoutArchitecture(which); svg.dataset.shown 
 
 notationRegisterLegend("architecture", {
   shapes: [
-    [notationSwatch(`<circle cx="22" cy="7" r="4" style="fill:none;stroke:var(--authored)"/><path d="M13 21q0-9 9-9q9 0 9 9z" style="fill:none;stroke:var(--authored)"/>`), "Person: someone who uses the system"],
-    [notationSwatch(`<rect x="4" y="4" width="36" height="16" rx="4" style="fill:var(--raised);stroke:var(--control)"/><circle cx="10" cy="9" r="2" style="fill:var(--authored)"/>`), "Container: something that runs. Name, [kind: technology], one line"],
-    [notationSwatch(`<rect x="3" y="3" width="38" height="18" rx="4" style="fill:none;stroke:#4b5365;stroke-dasharray:5 3"/>`), "Dashed boundary: what it encloses is part of it. Boundaries are a convention of C4 tooling, not required by the C4 authors"],
-    [notationSwatch(`<rect x="4" y="4" width="36" height="16" rx="4" style="fill:var(--panel);stroke:#4b5365;stroke-dasharray:4 3"/>`), "External person or system (marked external), outside the boundary"],
-    [notationSwatch(`<rect x="4" y="4" width="36" height="16" rx="4" style="fill:var(--proposal);stroke:var(--accent);stroke-dasharray:4 3"/>`), "Proposal: suggested by the agent, not accepted yet"],
+    [notationSwatch(`<circle cx="22" cy="7" r="4" style="fill:none;stroke:var(--authored)"/><path d="M13 21q0-9 9-9q9 0 9 9z" style="fill:none;stroke:var(--authored)"/>`), "Person: someone who uses the system", ".anode:has(.arch-person)"],
+    [notationSwatch(`<rect x="4" y="4" width="36" height="16" rx="4" style="fill:var(--raised);stroke:var(--control)"/><circle cx="10" cy="9" r="2" style="fill:var(--authored)"/>`), "Container: something that runs. Name, [kind: technology], one line", ".anode:not(.arch-boundary, .arch-external, .proposal):not(:has(.arch-person))"],
+    [notationSwatch(`<rect x="3" y="3" width="38" height="18" rx="4" style="fill:none;stroke:#4b5365;stroke-dasharray:5 3"/>`), "Dashed boundary: what it encloses is part of it. Boundaries are a convention of C4 tooling, not required by the C4 authors", ".arch-boundary"],
+    [notationSwatch(`<rect x="4" y="4" width="36" height="16" rx="4" style="fill:var(--panel);stroke:#4b5365;stroke-dasharray:4 3"/>`), "External person or system (marked external), outside the boundary", ".arch-external"],
+    [notationSwatch(`<rect x="4" y="4" width="36" height="16" rx="4" style="fill:var(--proposal);stroke:var(--accent);stroke-dasharray:4 3"/>`), "Proposal: suggested by the agent, not accepted yet", ".proposal"],
   ],
-  arrows: [[notationSwatch(`<path d="M2 12H34" style="stroke:#4a546c;stroke-width:1.6;stroke-dasharray:7 5"/><path d="M42 12L33 7.5V16.5Z" style="fill:#4a546c"/>`), "One-way relationship with a verb and the technology; dashes flow and a dot travels in its direction"]],
+  arrows: [[notationSwatch(`<path d="M2 12H34" style="stroke:#4a546c;stroke-width:1.6;stroke-dasharray:7 5"/><path d="M42 12L33 7.5V16.5Z" style="fill:#4a546c"/>`), "One-way relationship with a verb and the technology; dashes flow and a dot travels in its direction", "path.edge"]],
   colours: [
     ["authored", "Amber: written by a person or the agent (the dot, a person, a pattern group)"],
-    ["accent", "Blue: suggested by the agent and not accepted yet (a Proposal)"],
+    ["accent", "Blue: suggested by the agent and not accepted yet (a Proposal); also the dot that travels along a relationship"],
     ["danger", "Red: a broken link, a difference from the Contract, a pattern rule broken, or a Proposal to remove"],
     ["unresolved", "Grey: only a guess, a possible pattern violation that is not certain"],
   ],

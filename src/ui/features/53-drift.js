@@ -68,9 +68,9 @@
   }
 
   const swatch = notationSwatch(`<rect x="4" y="4" width="36" height="16" rx="4" style="fill:none;stroke:var(--danger);stroke-width:1.5;stroke-dasharray:5 3"/>`);
-  for (const layer of ["requirements", "architecture"]) {
+  for (const layer of ["business", "requirements", "architecture"]) {
     const legend = notationLegends[layer];
-    notationRegisterLegend(layer, { ...legend, shapes: [...legend.shapes, [swatch, "Dashed red outline: the code differs from what the Contract says about this Node (see the list in the Tutor column)"]] });
+    notationRegisterLegend(layer, { ...legend, shapes: [...legend.shapes, [swatch, "Dashed red outline: the code differs from what the Contract says about this Node (see the list in the Tutor column)", ".has-drift"]] });
   }
 
   const drawWithoutDrift = draw;

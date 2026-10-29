@@ -9,6 +9,9 @@
 // Legends: notationRegisterLegend(layerKey, { shapes, arrows, colours, notShown }) with shapes/arrows as [[notationSwatch(svgInner), "text"], ...],
 // colours as [["accent|derived|visited|authored|danger|unresolved", "text"], ...] (only the tones that layer really draws; none = no "Colours" section) and notShown as ["text", ...].
 // A layer's declared colours are read back with notationLegends[layerKey].colours.
+// A shapes/arrows row may carry a third element: a CSS selector for what that row explains in the layer's drawn SVG, e.g. [swatch, "text", ".bblock"].
+// test/legend-check.test.ts opens a Project that draws everything and fails when a row's selector matches nothing, or something drawn matches no row.
+// A row that explains a state no drawing can show (so no selector can match it) says so: [swatch, "text", null, "why no selector"].
 const notationKey = "aidea.animations";
 
 {

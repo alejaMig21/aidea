@@ -43,7 +43,7 @@ function reqStory(parts, max, x, y) {
 function reqCard(n, r) {
   const nfr = n.kind === "non-functional";
   const { x, y } = r;
-  const g = el("g", { class: "anode req", tabindex: 0, "data-node": n.id, "data-ref": n.id });
+  const g = el("g", { class: `anode req ${nfr ? "req-nfr" : "req-fn"}`, tabindex: 0, "data-node": n.id, "data-ref": n.id });
   g.append(
     el("title", {}, nfr ? `${n.title}: ${n.statement} (${n.quality}; measure: ${n.measure})` : `${n.title}: As ${n.as}, I want ${n.want}, so that ${n.so}`),
     el("rect", { x, y, width: r.width, height: r.height, rx: 12 }),
@@ -146,12 +146,12 @@ draw = async (nodes) => {
 
 notationRegisterLegend("requirements", {
   shapes: [
-    [notationSwatch(`<rect x="4" y="3" width="36" height="18" rx="5" style="fill:var(--raised);stroke:var(--control)"/><rect x="9" y="7" width="26" height="3" rx="1" style="fill:var(--authored)"/>`), "Functional: a user story (As a, I want, so that) with its acceptance criteria"],
-    [notationSwatch(`<rect x="4" y="4" width="14" height="14" rx="4" style="fill:var(--bar);stroke:var(--control)"/><rect x="22" y="9" width="18" height="4" rx="2" style="fill:var(--muted)"/>`), "A Given / When / Then criterion in the checklist"],
-    [notationSwatch(`<rect x="4" y="3" width="36" height="18" rx="5" style="fill:var(--raised);stroke:var(--control)"/><rect x="9" y="12" width="22" height="6" rx="3" style="fill:var(--authored);opacity:.55"/>`), "Non-functional: a statement, its quality tag and how it is measured"],
-    [notationSwatch(`<rect x="4" y="5" width="36" height="14" rx="5" style="fill:var(--raised);stroke:var(--derived)"/>`), "Trace chip: the code (teal) or the Architecture element (amber) the requirement points at; grey dashed when it is not found"],
+    [notationSwatch(`<rect x="4" y="3" width="36" height="18" rx="5" style="fill:var(--raised);stroke:var(--control)"/><rect x="9" y="7" width="26" height="3" rx="1" style="fill:var(--authored)"/>`), "Functional: a user story (As a, I want, so that) with its acceptance criteria", ".req-fn"],
+    [notationSwatch(`<rect x="4" y="4" width="14" height="14" rx="4" style="fill:var(--bar);stroke:var(--control)"/><rect x="22" y="9" width="18" height="4" rx="2" style="fill:var(--muted)"/>`), "A Given / When / Then criterion in the checklist", ".req-box"],
+    [notationSwatch(`<rect x="4" y="3" width="36" height="18" rx="5" style="fill:var(--raised);stroke:var(--control)"/><rect x="9" y="12" width="22" height="6" rx="3" style="fill:var(--authored);opacity:.55"/>`), "Non-functional: a statement, its quality tag and how it is measured", ".req-nfr"],
+    [notationSwatch(`<rect x="4" y="5" width="36" height="14" rx="5" style="fill:var(--raised);stroke:var(--derived)"/>`), "Trace chip: the code (teal) or the Architecture element (amber) the requirement points at; grey dashed when it is not found", ".req-chip"],
   ],
-  arrows: [[notationSwatch(`<path d="M2 12H36" style="stroke:var(--derived);stroke-width:1.6;stroke-dasharray:7 5"/><path d="M34 7L42 12L34 17" style="fill:none;stroke:var(--derived);stroke-width:1.5"/>`), "Trace link: from the card, past its criteria, to its target; the dot travels that way"]],
+  arrows: [[notationSwatch(`<path d="M2 12H36" style="stroke:var(--derived);stroke-width:1.6;stroke-dasharray:7 5"/><path d="M34 7L42 12L34 17" style="fill:none;stroke:var(--derived);stroke-width:1.5"/>`), "Trace link: from the card, past its criteria, to its target; the dot travels that way", ".req-edge"]],
   colours: [
     ["authored", "Amber: written by a person or the agent (the card's dot, the words of the story, the quality tag, a link to Architecture)"],
     ["derived", "Teal: found in the code (a link to code)"],
