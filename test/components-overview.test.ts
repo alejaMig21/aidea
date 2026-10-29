@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CoreNode } from "../src/core/types.ts";
 import { layoutComponentsDiagram } from "../src/core/components-layout.ts";
+import { frameOf } from "../src/core/layout.ts";
 import { startTestCore } from "./helpers.ts";
 
 // A project with more than 40 modules opens the Components layer as an overview (one box per module, grouped by folder);
@@ -152,6 +153,23 @@ test("a dynamic import that cannot be followed is an unresolved row with the rea
   const rows = body.imports!["m0"].rows;
   assert.deepEqual(rows.map((r) => [r.label, r.target, r.resolution]).sort(), [["dynamic import in load()", null, "unresolved"], ["m1", "m1", "resolved"]].sort());
   assert.match(rows.find((r) => r.target === null)!.why!, /decided at run time/);
+});
+
+test("zooming into an Architecture node over a big project frames the overview box of the module that holds the code, and dims the other boxes", async () => {
+  const root = generate(120, 6, 3);
+  const { nodes, body } = await open(root);
+  const target = nodes.find((n) => n.kind === "function" && n.id.startsWith("pkg0.m0."))!;
+  mkdirSync(join(root, ".aidea"));
+  writeFileSync(join(root, ".aidea", "architecture.json"), JSON.stringify({ nodes: [{ id: "a1", title: "A", technology: "Python", traces: [target.id], rationale: { why: "w", rejected: [] } }] }));
+  await t.post("/projects", { path: root });
+  const res = await t.post("/focus", { project: root, layer: "architecture", node: "a1" });
+  assert.equal(res.status, 200);
+  const focus = await res.json();
+  assert.equal(focus.layer, "components");
+  const box = body.rects.find((r) => r.id === "pkg0.m0")!;
+  assert.deepEqual(focus.frame, frameOf([box]), "the frame is over the module's box in the overview");
+  assert.ok(!focus.dimmed.includes("pkg0.m0") && focus.dimmed.includes("pkg1.m1"));
+  assert.ok(focus.dimmed.every((id: string) => body.rects.some((r) => r.id === id)), "only boxes that are drawn are dimmed");
 });
 
 test("asking for the detail of something that is not a module is a 404", async () => {

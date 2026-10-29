@@ -1,6 +1,6 @@
 // Focus zoom: zooming into a Node frames the Footprint of its Trace links on the layer below.
 import { loadAuthored } from "../authored.ts";
-import { OVERVIEW_ABOVE, layoutComponentsDiagram, layoutComponentsOverview, layoutModuleDetail } from "../components-layout.ts";
+import { OVERVIEW_ABOVE, folderOf, layoutComponentsDiagram, layoutComponentsOverview, layoutModuleDetail, moduleIndex } from "../components-layout.ts";
 import { frameOf, layoutBusiness } from "../layout.ts";
 import { layoutArchitecture } from "../architecture.ts";
 import { AUTHORED_LAYERS, LAYERS, layerBelow, layoutOf, traceLinks } from "../traces.ts";
@@ -100,17 +100,21 @@ const handler: Handler = async (req, res, core) => {
     // A functional requirement whose links all lead to code zooms to Components, not to Architecture.
     const below = layerBelow[layer];
     const target = layoutOf(below, project, authored).some((r) => footprint.includes(r.id)) ? below : "components";
+    trails.set(project, [...(trails.get(project) ?? []), { layer, node: body!.node as string }]);
+    const sent = { layer: target, origin: { layer, node: body!.node }, footprint, broken };
+    if (target === "components" && project.nodes.filter((n) => n.kind === "module").length > OVERVIEW_ABOVE) {
+      // A big project is drawn as an overview (a box per module, a block per folder): the frame and the dimming are over those boxes.
+      const { rects } = layoutComponentsOverview(project.nodes, project.relationships);
+      const moduleOf = moduleIndex(project.nodes);
+      const lit = new Set(footprint.map((f) => moduleOf.get(f)).filter((m): m is string => m !== undefined));
+      if (!rects.some((r) => lit.has(r.id))) lit.add("tests:folded"); // the code is in a test folder, which the overview folds into one block
+      const litFolders = new Set(project.nodes.filter((n) => lit.has(n.id)).map((n) => `folder:${folderOf(n.file)}`));
+      core.send(res, 200, { ...sent, mode: "overview", frame: frameOf(rects.filter((r) => lit.has(r.id))), dimmed: rects.filter((r) => !lit.has(r.id) && !litFolders.has(r.id)).map((r) => r.id) });
+      return true;
+    }
     const rects = layoutOf(target, project, authored);
     const isLit = litBy(project, footprint);
-    trails.set(project, [...(trails.get(project) ?? []), { layer, node: body!.node as string }]);
-    core.send(res, 200, {
-      layer: target,
-      origin: { layer, node: body!.node },
-      footprint,
-      frame: frameOf(rects.filter((r) => footprint.includes(r.id))),
-      dimmed: rects.filter((r) => !isLit(r.id)).map((r) => r.id),
-      broken,
-    });
+    core.send(res, 200, { ...sent, frame: frameOf(rects.filter((r) => footprint.includes(r.id))), dimmed: rects.filter((r) => !isLit(r.id)).map((r) => r.id) });
     return true;
   }
 

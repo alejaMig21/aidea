@@ -142,7 +142,7 @@ export type ComponentsOverview = {
 };
 
 // The module each Node belongs to (a module is its own), for every Node at once.
-function moduleIndex(nodes: CoreNode[]): Map<string, string> {
+export function moduleIndex(nodes: CoreNode[]): Map<string, string> {
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const index = new Map<string, string>();
   for (const n of nodes) {
@@ -153,7 +153,7 @@ function moduleIndex(nodes: CoreNode[]): Map<string, string> {
   return index;
 }
 
-const folderOf = (file: string) => file.split("/").slice(0, -1).join("/") || ".";
+export const folderOf = (file: string) => file.split("/").slice(0, -1).join("/") || ".";
 const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0); // no locale: the same order on every machine
 const TEST_NAMES = new Set(["test", "tests", "__tests__", "fixtures", "spec", "specs"]);
 const isTestFolder = (dir: string) => dir.split("/").some((part) => TEST_NAMES.has(part.toLowerCase()));
