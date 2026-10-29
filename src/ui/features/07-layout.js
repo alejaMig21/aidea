@@ -19,6 +19,10 @@ const layoutEdge = 8; // the margin between a card and the window's edge
     #sepc:hover, #sepr:hover, #sepc:focus-visible, #sepr:focus-visible, #sepc.dragging, #sepr.dragging { background: var(--accent); outline: none; }
     body.chat-folded #chat, body.chat-folded #sepc, body.right-folded #right, body.right-folded #sepr { display: none; }
     body.chat-folded main { margin-left: ${layoutEdge}px; } body.right-folded main { margin-right: ${layoutEdge}px; }
+    /* With the Canvas hidden the two panes share its room and the separator between them is the chat one; one pane alone has nothing to separate from. */
+    body.canvas-folded main, body.canvas-folded #sepr { display: none; }
+    body.canvas-folded.chat-folded #sepc, body.canvas-folded.right-folded #sepc { display: none; }
+    #fold-canvas:disabled { opacity: .45; cursor: default; }
     .drawer-close, #scrim { display: none; }
     body.narrow { --canvas-min: 0px; }
     body.narrow #scrim:not([hidden]) { display: block; position: fixed; inset: 51px 0 0 0; z-index: 15; background: rgba(0, 0, 0, .5); }
@@ -86,20 +90,20 @@ function rightSetTabEnabled(id, enabled) {
 // Folded (by the person or automatically) means a 0 track with its separator hidden. Automatic folds are never saved.
 // The defaults give the Tutor room (Builder 380, Tutor 540); a size the person saved by resizing wins over them.
 const layoutDefault = { chat: 380, right: 540 };
-const layoutState = { ...layoutDefault, chatFolded: false, rightFolded: false };
+const layoutState = { ...layoutDefault, chatFolded: false, rightFolded: false, canvasFolded: false };
 // A size is the person's own only once they have dragged a separator: folding a pane used to save all three numbers as if they were choices, and the
 // defaults could then never reach anyone who had used the app. Saves from before the marks count as the person's own when they differ from the old defaults.
 const layoutSized = { chat: false, right: false };
 try {
   const saved = JSON.parse(localStorage.getItem(layoutKey) || "{}");
-  for (const f of ["chatFolded", "rightFolded"]) layoutState[f] = saved[f] === true;
+  for (const f of ["chatFolded", "rightFolded", "canvasFolded"]) layoutState[f] = saved[f] === true;
   for (const n of ["chat", "right"]) {
     if (saved[n] > 0 && (saved.sized ? saved.sized[n] === true : saved[n] !== { chat: 340, right: 320 }[n])) { layoutState[n] = saved[n]; layoutSized[n] = true; }
   }
 } catch {}
 const layoutSave = () => {
   try {
-    localStorage.setItem(layoutKey, JSON.stringify({ chatFolded: layoutState.chatFolded, rightFolded: layoutState.rightFolded, sized: layoutSized, ...(layoutSized.chat ? { chat: layoutState.chat } : {}), ...(layoutSized.right ? { right: layoutState.right } : {}) }));
+    localStorage.setItem(layoutKey, JSON.stringify({ chatFolded: layoutState.chatFolded, rightFolded: layoutState.rightFolded, canvasFolded: layoutState.canvasFolded, sized: layoutSized, ...(layoutSized.chat ? { chat: layoutState.chat } : {}), ...(layoutSized.right ? { right: layoutState.right } : {}) }));
   } catch {}
 };
 
@@ -109,6 +113,7 @@ const layoutPanes = {
 };
 let layoutShown = { chat: true, right: true }; // what is really on screen: the person's choice minus automatic folds
 let layoutNarrow = false;
+let layoutCanvasHidden = false; // the person's choice, unless it would leave nothing on screen or the window shows drawers
 let layoutDrawer = null; // "chat" | "right" | null, only in narrow windows
 let layoutOpener = null; // the button that opened the drawer, which gets the focus back
 let layoutLastOpened = "chat"; // the pane the person opened last is the one auto-fold keeps
@@ -116,11 +121,12 @@ let layoutLastOpened = "chat"; // the pane the person opened last is the one aut
 const layoutWidth = () => document.documentElement.clientWidth;
 // A side without a pane leaves the Canvas an 8px margin; a side with one costs its track minimum plus the separator.
 const layoutSide = (shown, name) => (shown[name] ? layoutPaneMin[name] + layoutSeparatorWidth : layoutEdge);
-const layoutNeed = (shown) => layoutCanvasMin + layoutSide(shown, "chat") + layoutSide(shown, "right");
+const layoutNeed = (shown) => (layoutCanvasHidden ? 0 : layoutCanvasMin) + layoutSide(shown, "chat") + layoutSide(shown, "right");
 const layoutTrack = (name) => layoutPanes[name].el.offsetWidth + layoutEdge; // the card plus its 8px window margin
 
 function layoutResolve() {
   layoutNarrow = layoutWidth() < layoutNarrowBelow;
+  layoutCanvasHidden = !layoutNarrow && layoutState.canvasFolded && !(layoutState.chatFolded && layoutState.rightFolded);
   if (layoutNarrow) { layoutShown = { chat: false, right: false }; return; }
   layoutDrawer = null;
   layoutShown = { chat: !layoutState.chatFolded, right: !layoutState.rightFolded };
@@ -130,18 +136,23 @@ function layoutResolve() {
 // Most a pane's track may take: the window minus the Canvas minimum, the other side and this separator.
 function layoutMax(name) {
   const other = layoutPanes[name].other;
-  return Math.max(layoutPaneMin[name], layoutWidth() - layoutCanvasMin - layoutSeparatorWidth - (layoutShown[other] ? layoutTrack(other) + layoutSeparatorWidth : layoutEdge));
+  return Math.max(layoutPaneMin[name], layoutWidth() - (layoutCanvasHidden ? 0 : layoutCanvasMin) - layoutSeparatorWidth - (layoutShown[other] ? layoutTrack(other) + layoutSeparatorWidth : layoutEdge));
 }
 
 function layoutApply() {
   layoutResolve();
   const body = document.body;
   const track = (name) => (layoutShown[name] ? `minmax(${layoutPaneMin[name]}px, ${layoutState[name]}fr)` : "0px");
-  const canvasMin = layoutNarrow ? 0 : layoutCanvasMin + layoutEdge * ((layoutShown.chat ? 0 : 1) + (layoutShown.right ? 0 : 1));
+  const canvasMin = layoutNarrow || layoutCanvasHidden ? 0 : layoutCanvasMin + layoutEdge * ((layoutShown.chat ? 0 : 1) + (layoutShown.right ? 0 : 1));
   body.style.setProperty("--chat-track", track("chat"));
   body.style.setProperty("--right-track", track("right"));
-  body.style.setProperty("--canvas-track", `minmax(${canvasMin}px, ${layoutCanvasFr}fr)`);
+  body.style.setProperty("--canvas-track", layoutCanvasHidden ? "0px" : `minmax(${canvasMin}px, ${layoutCanvasFr}fr)`);
   body.classList.toggle("narrow", layoutNarrow);
+  body.classList.toggle("canvas-folded", layoutCanvasHidden);
+  const canvasButton = $("fold-canvas");
+  canvasButton.disabled = layoutNarrow || (layoutState.chatFolded && layoutState.rightFolded);
+  canvasButton.setAttribute("aria-pressed", String(!layoutCanvasHidden));
+  canvasButton.title = layoutNarrow ? "The Canvas stays on screen in a narrow window" : canvasButton.disabled ? "The Canvas stays on screen while both side panels are hidden" : "Show or hide the Canvas";
   $("scrim").hidden = !layoutDrawer;
   for (const [name, p] of Object.entries(layoutPanes)) {
     const open = layoutNarrow && layoutDrawer === name;
@@ -164,7 +175,7 @@ function layoutSet(name, px) {
   const other = layoutPanes[name].other;
   const t = Math.min(layoutMax(name), Math.max(layoutPaneMin[name], px));
   const available = layoutWidth() - (layoutShown.chat ? layoutSeparatorWidth : 0) - (layoutShown.right ? layoutSeparatorWidth : 0);
-  layoutState[name] = Math.round(t * (layoutCanvasFr + (layoutShown[other] ? layoutState[other] : 0)) / Math.max(1, available - t) * 100) / 100;
+  layoutState[name] = Math.round(t * ((layoutCanvasHidden ? 0 : layoutCanvasFr) + (layoutShown[other] ? layoutState[other] : 0)) / Math.max(1, available - t) * 100) / 100;
   layoutSized[name] = true;
   layoutApply();
   layoutSave();
@@ -203,6 +214,7 @@ for (const [name, p] of Object.entries(layoutPanes)) {
     if (layoutNarrow) { layoutDrawer === name ? layoutCloseDrawer() : layoutOpenDrawer(name); return; }
     // Hiding is the person's choice and is saved; showing a pane that had no room makes auto-fold take the other one.
     layoutState[p.fold] = layoutShown[name];
+    if (layoutState.chatFolded && layoutState.rightFolded) layoutState.canvasFolded = false; // the last pane to go leaves the Canvas, never an empty window
     if (!layoutShown[name]) layoutLastOpened = name;
     layoutApply();
     layoutSave();
@@ -222,6 +234,12 @@ for (const [name, p] of Object.entries(layoutPanes)) {
     layoutSet(name, layoutTrack(name) + layoutStep * dir * (name === "chat" ? 1 : -1));
   };
 }
+
+$("fold-canvas").onclick = () => {
+  layoutState.canvasFolded = !layoutCanvasHidden;
+  layoutApply();
+  layoutSave();
+};
 
 layoutApply();
 window.addEventListener("resize", layoutApply);

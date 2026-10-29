@@ -4,11 +4,11 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Hiding the Canvas gives its room to the visible side panes, in proportion to their sizes; showing it again restores the previous sizes.
-- [ ] The choice survives a reload and is saved with the other layout choices; a saved state with every pane folded is repaired to show the Canvas.
-- [ ] The last visible pane cannot be folded: its button is disabled with a plain title (or the Canvas comes back, as written above).
-- [ ] Keyboard and screen reader: the new button is a toggle with `aria-pressed`, a label, and the separator keys of the remaining panes still work.
-- [ ] Animations and the Canvas's own state (zoom, selected layer, open legend) are not lost by hiding and showing it again.
-- [ ] Verified with a headless browser: screenshots with the Canvas hidden, with chat and right visible, with only one visible, and after a reload; the narrow-window case; no console errors.
+- [x] Hiding the Canvas gives its room to the visible side panes, in proportion to their sizes; showing it again restores the previous sizes.
+- [x] The choice survives a reload and is saved with the other layout choices; a saved state with every pane folded is repaired to show the Canvas.
+- [x] The last visible pane cannot be folded: its button is disabled with a plain title (or the Canvas comes back, as written above).
+- [x] Keyboard and screen reader: the new button is a toggle with `aria-pressed`, a label, and the separator keys of the remaining panes still work.
+- [x] Animations and the Canvas's own state (zoom, selected layer, open legend) are not lost by hiding and showing it again.
+- [x] Verified with a headless browser: screenshots with the Canvas hidden, with chat and right visible, with only one visible, and after a reload; the narrow-window case; no console errors.
