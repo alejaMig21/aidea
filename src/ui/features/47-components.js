@@ -49,10 +49,10 @@ function componentsLegend(unresolved) {
   const grey = "stroke:var(--unresolved);";
   notationRegisterLegend("components", {
     shapes: [
-      [notationSwatch(`<path d="M3 22V6H15V9H41V22z" style="fill:var(--panel);stroke:var(--control)"/>`), "Package: a Python module, holding its classes and functions"],
+      [notationSwatch(`<path d="M3 22V6H15V9H41V22z" style="fill:var(--panel);stroke:var(--control)"/>`), "Package: a module, holding its classes and functions"],
       [notationSwatch(`<rect x="3" y="2" width="38" height="20" rx="3" style="fill:var(--raised);stroke:var(--control)"/><path d="M3 9H41M3 15H41" style="stroke:var(--control)"/>`), "Class: name, attributes, methods"],
       [notationSwatch(`<rect x="3" y="6" width="38" height="12" rx="3" style="fill:var(--raised);stroke:var(--control)"/>`), "Function: a small box inside its package"],
-      [notationSwatch(`<text x="2" y="16" style="fill:var(--label);font:12px var(--mono)">+ - ~</text>`), "Visibility: + public, - private, ~ special (dunder). Derived from Python naming (underscores), not part of UML"],
+      [notationSwatch(`<text x="2" y="16" style="fill:var(--label);font:12px var(--mono)">+ - ~</text>`), "Visibility: + public, - private, ~ special (dunder). Derived from the naming convention (underscores), not part of UML"],
       [notationSwatch(`<text x="2" y="16" style="fill:var(--label);font:12px var(--sans);text-decoration:underline">name</text>`), "Underlined: static or class method"],
       [notationSwatch(`<text x="2" y="16" style="fill:var(--label);font:italic 12px var(--sans)">Name</text>`), "Italic: abstract class or method"],
     ],
@@ -70,7 +70,7 @@ function componentsLegend(unresolved) {
     ],
     notShown: [
       "Composition and aggregation are not inferred: guessing them from code gives too many false positives",
-      "Calls to libraries and Python builtins are left out",
+      "Calls to libraries and built-in functions are left out",
       "Nested functions are not Nodes: their calls count for the function around them",
       "A call from several methods of one class to another class is drawn once, between the two boxes",
       "Imports of modules outside the Project",

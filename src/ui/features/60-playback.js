@@ -136,9 +136,9 @@ function pbFieldGroup(title, items, prefix, errorKey, label, hint) {
 function pbFields(node) {
   const typed = (p) => (p.annotation ? `${p.name}: ${p.annotation}` : p.name);
   return [
-    ...pbFieldGroup("Instance (constructor)", node.constructorParameters, "pb-c-", (n) => `constructor.${n}`, typed, "a Python value, such as 3 or [1, 2]"),
-    ...pbFieldGroup(node.constructorParameters ? "Arguments of the method" : "Arguments", node.parameters, "pb-v-", (n) => n, typed, "a Python value, such as 3 or [1, 2]"),
-    ...pbFieldGroup("Data for external effects", node.effects, "pb-e-", (n) => `effect:${n}`, (p) => `${p.name} gives back`, "a Python value, such as \"text\""),
+    ...pbFieldGroup("Instance (constructor)", node.constructorParameters, "pb-c-", (n) => `constructor.${n}`, typed, "a value, such as 3 or [1, 2]"),
+    ...pbFieldGroup(node.constructorParameters ? "Arguments of the method" : "Arguments", node.parameters, "pb-v-", (n) => n, typed, "a value, such as 3 or [1, 2]"),
+    ...pbFieldGroup("Data for external effects", node.effects, "pb-e-", (n) => `effect:${n}`, (p) => `${p.name} gives back`, "a value, such as \"text\""),
   ];
 }
 
@@ -157,7 +157,7 @@ function pbRender() {
     ...pbFields(node),
     pbEl("p", { className: "pb-hint", textContent: "Numbers, text in quotes like \"hi\", or lists like [1, 2, 3]." }),
     pbEl("div", { className: "pb-row" }, pbEl("button", { textContent: "Use example", onclick: useExample }), pbEl("button", { id: "pb-record", className: "primary", textContent: "Record a run", onclick: pbRecord })),
-    pbEl("label", { className: "pb-check" }, pbEl("input", { id: "pb-own-python", type: "checkbox" }), "Use the Project's own Python (.venv, venv or env)"),
+    pbEl("label", { className: "pb-check" }, pbEl("input", { id: "pb-own-python", type: "checkbox" }), "Use the Project's own interpreter (.venv, venv or env)"),
     pbEl("p", { className: "pb-warning", textContent: "Recording runs this function for real, on your computer, with the Project's own code. Writing files, network access and new programs are blocked as a safety net, not as a guarantee: only play code you trust." }),
     pbEl("div", { id: "pb-message", className: "pb-error" }),
   ];
@@ -177,7 +177,7 @@ function pbRender() {
       ),
       pbEl("div", { id: "pb-values", className: "pb-values" }),
       pbEl("pre", { id: "pb-output" }),
-      pbEl("p", { className: "pb-warning", textContent: `Python used: ${pbRecording.interpreter}` }),
+      pbEl("p", { className: "pb-warning", textContent: `Interpreter used:${pbRecording.interpreter}` }),
     );
   }
   pbPane.replaceChildren(pbEl("header", {}, "Algorithm", pbEl("span", { textContent: pbGraph.node.split(".").pop() })), pbEl("div", { className: "body" }, ...parts));
