@@ -1,5 +1,7 @@
 Status: ready-for-agent
 
+> Note, 2026-10-29: two statements below were superseded. User story 41 (the Probe at project creation) is now a Probe before the first class of each layer, and the Out of Scope line on languages other than Python was lifted by ADR 0004. See `docs/adr/0006-two-changes-since-the-v1-spec.md`.
+
 # aidea v1: layered canvas workspace with an AI builder and a tutor
 
 ## Problem Statement

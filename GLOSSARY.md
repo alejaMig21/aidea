@@ -161,7 +161,7 @@ The screen shown when no Project is open. It lists the Recent projects and expla
 _Avoid_: Start page, dashboard, launcher
 
 **Probe**:
-The tutor's initial assessment of what the user already understands, scoped to what a new project's goal depends on.
+The tutor's short assessment (at most five questions) of what the user already understands, given before the first class of each layer and skipping what the Learner graph already shows.
 _Avoid_: Entrance exam, placement test
 
 **Learner graph**:

@@ -4,6 +4,6 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] A short ADR records both changes and the spec points to it.
+- [x] A short ADR records both changes and the spec points to it. (`docs/adr/0006-two-changes-since-the-v1-spec.md`; dated note at the top of the spec; the Probe entry in `GLOSSARY.md` updated to match.)
