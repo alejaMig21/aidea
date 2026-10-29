@@ -78,7 +78,7 @@ const handler: Handler = async (req, res, core) => {
   const texts: string[] = []; // the Teacher's prose, for the Learner graph
   const lesson = createLesson();
   if (review) lesson.setReview(review.idea);
-  if (guide) lesson.aboutAidea = true; // a class about the app is not part of the Project's Plan
+  if (guide) lesson.setAboutAidea(); // a class about the app is not part of the Project's Plan
   core.lessons.set(classId, lesson);
   const conversation = core.permissions.open(send, project.id, "tutor", classId);
   if (held) bindDecision(classId, held.proposal.id);

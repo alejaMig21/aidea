@@ -34,6 +34,7 @@ export function createLesson() {
   const steps = new Map<string, Step>();
   let open: string | undefined;
   let finished = false;
+  let aboutAidea = false;
   const elements = new Map<string, { questionId: string; text: string }>(); // layer elements the person has answered about (co-authoring)
   let reviewDue: string | undefined; // the idea of a review question the first step waits for
   let reviewIdea: string | undefined; // the same idea, until the question has been asked
@@ -53,7 +54,13 @@ export function createLesson() {
   return {
     texts,
     elements,
-    aboutAidea: false, // true in the "How aidea works" class: no Plan gate, and get_plan / set_plan are refused
+    // true in the "How aidea works" class: no Plan gate, get_plan / set_plan are refused, and so are proposals
+    get aboutAidea() {
+      return aboutAidea;
+    },
+    setAboutAidea() {
+      aboutAidea = true;
+    },
     isFinished: () => finished,
     setReview(idea: string) {
       reviewDue = reviewIdea = idea;
@@ -224,7 +231,7 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
     for (const name of [planItem.item, idea]) {
       const held = name ? heldStrongly(core, project, name) : undefined;
       if (!held) continue;
-      if (name === planItem.item && !othersLeft(name)) {
+      if (name && name === planItem.item && !othersLeft(name)) {
         allHeld = held.name;
         continue;
       }
