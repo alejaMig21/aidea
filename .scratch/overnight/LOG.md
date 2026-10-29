@@ -23,3 +23,6 @@ Components of a project with more than 40 modules is now an overview: one box pe
 
 ## 6. Decision-class hint (live-findings/04) and long waits (live-findings/05)
 04: third miss in a decision class shows "Taking long? You can let the builder decide" with "Decide for me" (DECISION 1). Not yet seen with the real model. 05: a late answer to a question the Tutor stopped waiting for gets a plain 410 and the card offers "Start a class on the same topic". NOT measured: real waits of 3, 10 and 30 minutes with the real Claude Code (no timeout of the core's own). 420 tests pass.
+
+## 7. Overview readable at Fit (real-projects/05)
+Folder names are always 13 px on screen (cut to the box, full name as tooltip); module names and counts appear only when zoomed in enough. Telegram readable at 1920 and 1280; hubstaff at 1280 readable but squeezed (one-module folders cut to a few letters, first label close to the "Teach me through it" button). Folders unchanged.
