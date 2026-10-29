@@ -54,12 +54,15 @@ const relationTargetProblem = (layer: string, node: Fields, ids: Set<unknown>) =
   const at = node.relations.findIndex((r) => !ids.has((r as Fields).to));
   return at === -1 ? null : `"relations[${at}].to" refers to unknown id "${(node.relations[at] as Fields).to}"`;
 };
+// The first thing wrong with a Node: its own fields, its parent, or where its relations point.
+const fitProblem = (layer: AuthoredLayerKey, node: unknown, nodeIds: Set<string>, parentIds: Set<unknown>, targetIds: Set<unknown>) =>
+  nodeProblem(layer, node, nodeIds) ?? parentProblem(layer, node as Fields, parentIds) ?? relationTargetProblem(layer, node as Fields, targetIds);
 const childOf = (nodes: { id?: unknown; parent?: unknown }[], id: string) => nodes.find((n) => n.parent === id)?.id;
 
 let counter = 0;
 const nodesOf = (project: Project, layer: AuthoredLayerKey) => loadAuthored(project.path).layers[layer].nodes as Fields[];
-const pendingOf = (store: ProposalStore, project: string, layer: AuthoredLayerKey) =>
-  [...store.values()].filter((p) => p.project === project && p.layer === layer && p.status === "pending");
+const pendingOf = (store: ProposalStore, project: string, layer?: AuthoredLayerKey) =>
+  [...store.values()].filter((p) => p.project === project && (!layer || p.layer === layer) && p.status === "pending");
 
 // Checks the builder's request and, when it is sound, keeps it as a pending Proposal. Otherwise says what is wrong.
 export function propose(
@@ -72,7 +75,7 @@ export function propose(
   const { layer } = request;
   if (!AUTHORED_LAYERS.includes(layer as AuthoredLayerKey)) return { error: `layer must be one of: ${AUTHORED_LAYERS.join(", ")}` };
   const key = layer as AuthoredLayerKey;
-  if ([...store.values()].filter((p) => p.project === project.id && p.status === "pending").length >= MAX_PENDING_PER_PROJECT) {
+  if (pendingOf(store, project.id).length >= MAX_PENDING_PER_PROJECT) {
     return { error: "Too many proposals are waiting for the person: wait for them to decide" };
   }
   const existing = nodesOf(project, key);
@@ -91,10 +94,8 @@ export function propose(
     if (existing.some((n) => n.id === nodeId)) return { error: `A Node with id "${nodeId}" already exists on the ${key} layer`, refusal: { reason: "exists", layer: key, nodeId } };
     const waiting = pending.find((p) => p.kind === "add" && p.nodeId === nodeId);
     if (waiting) return { error: `A proposal to add "${nodeId}" is already pending`, refusal: { reason: "pending", layer: key, nodeId, proposalId: waiting.id } };
-    const problem = nodeProblem(key, request.node, new Set());
+    const problem = fitProblem(key, request.node, new Set(), ids, new Set([...ids, nodeId]));
     if (problem) return { error: `Invalid node: ${problem}` };
-    const parent = parentProblem(key, request.node, ids) ?? relationTargetProblem(key, request.node, new Set([...ids, nodeId]));
-    if (parent) return { error: `Invalid node: ${parent}` };
     node = request.node;
   } else {
     if (typeof request.id !== "string" || !request.id) return { error: "id must be the id of an existing Node" };
@@ -109,7 +110,7 @@ export function propose(
       if (request.changes.id !== undefined && request.changes.id !== nodeId) return { error: 'The "id" of a Node cannot be changed: remove it and add a new one' };
       changes = request.changes;
       node = { ...current, ...changes };
-      const problem = nodeProblem(key, node, new Set()) ?? parentProblem(key, node, new Set([...ids].filter((i) => i !== nodeId))) ?? relationTargetProblem(key, node, ids);
+      const problem = fitProblem(key, node, new Set(), new Set([...ids].filter((i) => i !== nodeId)), ids);
       if (problem) return { error: `Invalid change: ${problem}` };
     } else {
       const child = childOf([...existing, ...adds.map((p) => ({ id: p.nodeId, ...p.node }))], nodeId);
@@ -238,7 +239,7 @@ export function apply(project: Project, p: Proposal): string | null {
   } else if (p.kind === "add") {
     if (at !== -1) return `A Node with id "${p.nodeId}" already exists on the ${p.layer} layer (the file changed since the proposal)`;
     const ids = new Set(vals().map((n) => n.id));
-    const problem = nodeProblem(p.layer, p.node, new Set(ids as Set<string>)) ?? parentProblem(p.layer, p.node!, ids) ?? relationTargetProblem(p.layer, p.node!, new Set([...ids, p.nodeId]));
+    const problem = fitProblem(p.layer, p.node, new Set(ids as Set<string>), ids, new Set([...ids, p.nodeId]));
     if (problem) return `The Node no longer fits the file: ${problem}`;
     nodes.push((changed = { value: p.node! }));
   } else if (at === -1) {
@@ -246,7 +247,7 @@ export function apply(project: Project, p: Proposal): string | null {
   } else if (p.kind === "update") {
     const merged = { ...nodes[at].value, ...p.changes };
     const others = vals().filter((_, i) => i !== at);
-    const problem = nodeProblem(p.layer, merged, new Set(others.map((n) => n.id as string))) ?? parentProblem(p.layer, merged, new Set(others.map((n) => n.id))) ?? relationTargetProblem(p.layer, merged, new Set(vals().map((n) => n.id)));
+    const problem = fitProblem(p.layer, merged, new Set(others.map((n) => n.id as string)), new Set(others.map((n) => n.id)), new Set(vals().map((n) => n.id)));
     if (problem) return `The change no longer fits the file: ${problem}`;
     nodes[at] = changed = { value: merged, path: nodes[at].path };
   } else {
