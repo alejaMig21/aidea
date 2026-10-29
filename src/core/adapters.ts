@@ -24,6 +24,8 @@
 // error is a crash and is not caught.
 import type { Project } from "./types.ts";
 import { pythonAdapter } from "./python-adapter.ts";
+import { typescriptAdapter } from "./typescript-adapter.ts";
+import { detectLanguages } from "./languages.ts";
 
 export class AdapterError extends Error {
   status: number;
@@ -52,11 +54,31 @@ export type LanguageAdapter = {
   run?(request: RunRequest): Promise<RunResult>;
 };
 
-const adapters = new Map<string, LanguageAdapter>([["python", pythonAdapter]]);
+// TypeScript and JavaScript are read by one adapter (typescript-adapter.ts).
+const adapters = new Map<string, LanguageAdapter>([["python", pythonAdapter], ["typescript", typescriptAdapter], ["javascript", typescriptAdapter]]);
 
 export const registerAdapter = (language: string, adapter: LanguageAdapter) => void adapters.set(language, adapter);
 
 export const hasAdapter = (language: string) => adapters.has(language);
 
-// Python is the only adapter, so it serves every Project; the languages a Project holds come from languages.ts.
-export const adapterFor = (_projectPath: string): LanguageAdapter => adapters.get("python")!;
+// The adapter for a Project: the one of the language it holds (languages.ts), or Python when none is analysed.
+// ponytail: a Project with several analysed languages merges their analyses (module ids that collide across
+// languages, such as util.py and util.js, are not told apart) and takes flow and run from the first adapter that has
+// them, whatever the file; route each call by file extension when ticket 04 gives a second flow.
+export function adapterFor(projectPath: string): LanguageAdapter {
+  const mine = [...new Set(detectLanguages(projectPath).filter((l) => l.analysed).map((l) => adapters.get(l.language)!))];
+  if (mine.length === 0) return adapters.get("python")!;
+  if (mine.length === 1) return mine[0];
+  const flow = mine.find((a) => a.flow)?.flow;
+  const run = mine.find((a) => a.run)?.run;
+  return {
+    async analyze(path) {
+      const all = await Promise.all(mine.map((a) => a.analyze(path)));
+      return {
+        nodes: all.flatMap((a) => a.nodes), errors: all.flatMap((a) => a.errors),
+        relationships: all.flatMap((a) => a.relationships), unresolved: all.reduce((n, a) => n + a.unresolved, 0),
+      };
+    },
+    ...(flow && { flow }), ...(run && { run }),
+  };
+}

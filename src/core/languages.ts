@@ -3,6 +3,7 @@
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { hasAdapter } from "./adapters.ts";
+import { SKIP_DIRS } from "./typescript-adapter.ts";
 
 const LANGUAGES: Record<string, { label: string; extensions: string[] }> = {
   python: { label: "Python", extensions: [".py"] },
@@ -10,7 +11,6 @@ const LANGUAGES: Record<string, { label: string; extensions: string[] }> = {
   javascript: { label: "JavaScript", extensions: [".js", ".jsx", ".mjs", ".cjs"] },
 };
 const byExtension = new Map(Object.entries(LANGUAGES).flatMap(([language, { extensions }]) => extensions.map((e) => [e, language] as const)));
-const SKIP_DIRS = new Set(["__pycache__", "venv", "env", "node_modules", "dist", "build", "site-packages"]);
 
 export type ProjectLanguage = { language: string; label: string; files: number; analysed: boolean };
 

@@ -25,8 +25,8 @@ test("opening a project returns its languages with file counts and which have an
   const p = await open(["a.py", "pkg/b.py", "web/app.ts", "web/view.tsx", "web/main.js", "README.md"]);
   assert.deepEqual(p.languages, [
     { language: "python", label: "Python", files: 2, analysed: true },
-    { language: "typescript", label: "TypeScript", files: 2, analysed: false },
-    { language: "javascript", label: "JavaScript", files: 1, analysed: false },
+    { language: "typescript", label: "TypeScript", files: 2, analysed: true },
+    { language: "javascript", label: "JavaScript", files: 1, analysed: true },
   ]);
 });
 
@@ -35,16 +35,16 @@ test("dependency and build folders are not counted", async () => {
   assert.deepEqual(p.languages.map((l) => [l.language, l.files]), [["python", 1]]);
 });
 
-test("a mixed project still analyses its Python part", async () => {
+test("a mixed project analyses the files of every language it holds", async () => {
   const p = await open(["a.py", "b.js", "c.js"]);
-  assert.deepEqual(p.nodes.filter((n) => n.kind === "module").map((n) => n.file), ["a.py"]);
-  assert.deepEqual(p.languages.map((l) => [l.language, l.files, l.analysed]), [["javascript", 2, false], ["python", 1, true]]);
+  assert.deepEqual(p.nodes.filter((n) => n.kind === "module").map((n) => n.file).sort(), ["a.py", "b.js", "c.js"]);
+  assert.deepEqual(p.languages.map((l) => [l.language, l.files, l.analysed]), [["javascript", 2, true], ["python", 1, true]]);
 });
 
-test("a project with no analysable language opens with no nodes", async () => {
-  const p = await open(["app.js", "lib/util.js"]);
+test("a project with no code of a known language opens with no nodes", async () => {
+  const p = await open(["README.md", "docs/notes.txt"]);
   assert.deepEqual(p.nodes, []);
-  assert.deepEqual(p.languages, [{ language: "javascript", label: "JavaScript", files: 2, analysed: false }]);
+  assert.deepEqual(p.languages, []);
 });
 
 test("an empty folder has no languages", async () => {
