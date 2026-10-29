@@ -56,8 +56,10 @@ const handler: Handler = async (req, res, core) => {
   const held = body?.decision === undefined ? undefined : heldDecision(core, project.id, body.decision);
   if (held && "error" in held) return reject(400, held.error);
   const opening = held ? decisionMessage(held.proposal) : layer ? layerClassMessage(layer) : difference ? driftClassMessage(difference) : selection ? selectionMessage(selection) : body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
-  // One review question about an earlier idea opens a class, unless the person turned it off; a short decision class never has one.
-  const review = held || !reviewQuestionOn(core, project.id) ? undefined : pickReview(core, project.id, [topic, selection, ...(layer ? LAYER_CONCEPTS[layer] : []), difference?.explanation, ...(difference?.nodes ?? [])].filter((x): x is string => typeof x === "string"));
+  // One review question about an earlier idea opens a FREE class (started with "Start a class"), unless the person turned it off. A class on a layer, on selected text,
+  // on a difference or on a decision is something the person asked for on purpose: a review before it would only be in the way.
+  const free = !held && !layer && !difference && !selection;
+  const review = !free || !reviewQuestionOn(core, project.id) ? undefined : pickReview(core, project.id, typeof topic === "string" ? [topic] : []);
   const message = review && typeof opening === "string" ? opening + "\n" + reviewMessage(review) : opening;
   if (typeof message !== "string" || !message.trim() || message.length > MAX_MESSAGE_CHARS) {
     return reject(400, `message must be a non-empty string of at most ${MAX_MESSAGE_CHARS} characters`);

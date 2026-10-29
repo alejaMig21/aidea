@@ -96,7 +96,7 @@ test("fixed Teacher prose and fixed extractor output give exactly the expected g
   assert.ok(launches.find((l) => l.role === "auditor"));
 
   const graph = await t.get("/learner/graph");
-  const prov = (message: number) => [{ classId: learner.classId, message, node: "n-orders" }];
+  const prov = (message: number) => [{ classId: learner.classId, message, node: "n-orders", project }]; // the Project of the class travels with the idea
   assert.deepEqual(graph.propositions, [
     { id: "queue-absorbs-bursts", name: "Queue absorbs bursts", statement: QUEUE.statement, aliases: [], provenance: prov(0) },
     { id: "idempotent-consumers", name: "Idempotent consumers", statement: IDEMP.statement, aliases: [], provenance: prov(1) },

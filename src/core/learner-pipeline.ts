@@ -69,8 +69,8 @@ type Item = { names: string[]; statement: string; provenance: Provenance[]; id?:
 // The only writer of the graph, and a pure function: the same graph and input give the same result.
 // `links` are groups of names the Auditor says are one idea. The canonical name is the first seen (ideas already in the
 // graph first, then this class by message, shorter name first), never the Auditor's choice.
-export function mergeGraph(current: Graph, input: { classId: string; node?: string } & Extracted, links: string[][]): Graph {
-  const prov = (message: number): Provenance => ({ classId: input.classId, message, ...(input.node ? { node: input.node } : {}) });
+export function mergeGraph(current: Graph, input: { classId: string; node?: string; project?: string } & Extracted, links: string[][]): Graph {
+  const prov = (message: number): Provenance => ({ classId: input.classId, message, ...(input.node ? { node: input.node } : {}), ...(input.project ? { project: input.project } : {}) });
   const items: Item[] = current.propositions.map((p) => ({ names: [p.name, ...p.aliases], statement: p.statement, provenance: p.provenance, id: p.id }));
   const fresh = input.propositions.map((p) => ({ names: [p.name, ...(p.aliases ?? [])], statement: p.statement, provenance: [prov(p.message)] }));
   fresh.sort((a, b) => a.provenance[0].message - b.provenance[0].message || a.names[0].length - b.names[0].length);
@@ -145,7 +145,7 @@ export function createLearner(dir: string | undefined, adapter: Adapter, model =
       const current = store.graph();
       const names = [...current.propositions.map((x) => `${x.name}: ${x.statement}`), ...extracted.propositions.map((x) => `${x.name}: ${x.statement}`)];
       const links = names.length < 2 ? [] : validateLinks(await callRole(adapter, "auditor", AUDIT_INSTRUCTIONS, names.map((n) => `- ${n}`).join("\n"), AUDIT_SCHEMA, model));
-      const next = mergeGraph(current, { classId: p.classId, node: p.node, ...extracted }, links);
+      const next = mergeGraph(current, { classId: p.classId, node: p.node, project: p.project, ...extracted }, links);
       store.commit(next);
       store.dropPending(p.classId);
       return { status: "saved", ideas: next.propositions.filter((x) => x.provenance.some((v) => v.classId === p.classId)).length };

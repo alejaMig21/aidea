@@ -13,12 +13,13 @@ type RunOptions = Parameters<Adapter["run"]>[0];
 
 // A stand-in for Claude Code: the Teacher is a script over the core's MCP tools; the other roles return empty data.
 let teacher: (call: Call, opts: RunOptions) => AsyncGenerator<AgentEvent> = async function* () {};
+let extracted: unknown = { propositions: [], chains: [] };
 const launches: RunOptions[] = [];
 const fakeAgent: Adapter = {
   options: { modes: [{ id: "default", label: "Manual", meaning: "", available: true }], models: [{ id: "haiku", label: "Haiku" }] },
   run: async function* (opts): AsyncGenerator<AgentEvent> {
     launches.push(opts);
-    if (opts.role === "extractor") return yield { type: "result", text: "", structured: { propositions: [], chains: [] }, usage: {} };
+    if (opts.role === "extractor") return yield { type: "result", text: "", structured: extracted, usage: {} };
     if (opts.role === "auditor") return yield { type: "result", text: "", structured: { links: [] }, usage: {} };
     if (opts.role === "grader") return yield { type: "result", text: "", structured: { correct: true, feedback: "ok" }, usage: {} };
     if (opts.role !== "tutor") return;
@@ -31,13 +32,22 @@ const fakeAgent: Adapter = {
 
 const project = fixture("shop");
 const cores: Awaited<ReturnType<typeof startCore>>[] = [];
+// A spec is "Name", "Name|alias", with an optional "@this" (taught in this Project), "@other" (in another Project) or "#c9" (a class id, for ideas saved before
+// the Project was recorded: the Project then comes from the Evidence of that class). Without any of them the Project is unknown.
+const other = "C:/somewhere/else";
 const prop = (spec: string) => {
-  const [name, ...aliases] = spec.split("|");
-  return JSON.stringify({ op: "put", proposition: { id: name.toLowerCase().replaceAll(" ", "-"), name, statement: `${name} is an idea taught before.`, aliases, provenance: [{ classId: "c1", message: 0 }] } }) + "\n";
+  const [head, classId = "c1"] = spec.split("#");
+  const [names, where] = head.split("@");
+  const [name, ...aliases] = names.split("|");
+  const project_ = where === "this" ? { project } : where === "other" ? { project: other } : {};
+  return JSON.stringify({ op: "put", proposition: { id: name.toLowerCase().replaceAll(" ", "-"), name, statement: `${name} is an idea taught before.`, aliases, provenance: [{ classId, message: 0, ...project_ }] } }) + "\n";
 };
+const evidenceRow = (classId: string, forProject: string) =>
+  JSON.stringify({ classId, questionId: "q-1", project: forProject, kind: "text", correct: null, confidence: null, answer: null, thought: null, dontKnow: false, time: "2026-01-01T00:00:00.000Z" }) + "\n";
 
-async function newCore(known: string[] = [], dir = mkdtempSync(join(tmpdir(), "aidea-review-"))) {
+async function newCore(known: string[] = [], dir = mkdtempSync(join(tmpdir(), "aidea-review-")), evidenceRows: [string, string][] = []) {
   if (known.length) writeFileSync(join(dir, "propositions.jsonl"), known.map(prop).join(""));
+  if (evidenceRows.length) writeFileSync(join(dir, "evidence.jsonl"), evidenceRows.map(([c, p]) => evidenceRow(c, p)).join(""));
   const preferencesFile = join(dir, "preferences.json");
   const core = await startCore({ port: 0, adapter: fakeAgent, learnerDir: dir, preferencesFile });
   cores.push(core);
@@ -192,15 +202,85 @@ test("the person can always say they do not know, whatever the Teacher asked for
   assert.equal((await t.evidence())[0].dontKnow, true);
 });
 
-test("a layer class, a drift class and a class on an idea known by another name do not review what they teach", async () => {
+test("only a free class has a review question: not a class on a layer or on selected text", async () => {
+  const t = await newCore(["Queue"]);
+  teacher = async function* () { yield { type: "text", text: "done" }; };
+  for (const body of [{ layer: "business" }, { selection: "dependency injection" }]) {
+    launches.length = 0;
+    await t.runClass(body);
+    assert.doesNotMatch(tutorMessage(), /review question/i, JSON.stringify(body));
+  }
+  launches.length = 0;
+  await t.runClass({ topic: "how a queue works in this shop" }, () => ({ option: 0, confidence: 50 }));
+  assert.doesNotMatch(tutorMessage(), /review question/i, "the only idea is the one the topic names");
+  const free = await newCore(["Queue"]);
+  launches.length = 0;
+  await free.runClass({ topic: "something else entirely" }, () => ({ option: 0, confidence: 50 }));
+  assert.match(tutorMessage(), /review question/i, "a free class with a topic still has one");
+});
+
+test("the Teacher is told no review is due in a class that has none", async () => {
+  const t = await newCore(["Queue"]);
+  let answer: any;
+  teacher = async function* (call) {
+    answer = await call("review", reviewQ);
+    yield { type: "text", text: "done" };
+  };
+  await t.runClass({ selection: "dependency injection" });
+  assert.equal(answer.isError, true);
+  assert.match(text(answer), /no review/i);
+});
+
+test("an idea known by another name is not reviewed when the topic names it", async () => {
   const t = await newCore(["Customer Segment", "Worker|job runner"]);
   launches.length = 0;
   teacher = async function* () { yield { type: "text", text: "done" }; };
-  await t.runClass({ layer: "business" });
-  assert.match(tutorMessage(), /Worker is an idea taught before/, "Customer Segment is what the business layer teaches");
-  assert.doesNotMatch(tutorMessage(), /Customer Segment is an idea taught before/);
-  launches.length = 0;
-  await t.runClass({ topic: "how a job runner picks work" });
-  assert.match(tutorMessage(), /Customer Segment is an idea taught before/, "Worker is also called a job runner");
+  await t.runClass({ topic: "how a job runner picks work" }, () => ({ option: 0, confidence: 50 }));
+  assert.match(tutorMessage(), /Customer Segment is an idea taught before/);
   assert.doesNotMatch(tutorMessage(), /Worker is an idea taught before/);
+});
+
+test("it prefers ideas taught in this Project, even when another Project's idea is older", async () => {
+  const t = await newCore(["Old Idea@other", "Never Seen", "Mine@this"]);
+  launches.length = 0;
+  teacher = async function* () { yield { type: "text", text: "done" }; };
+  await t.runClass({}, () => ({ option: 0, confidence: 50 }));
+  assert.match(tutorMessage(), /Mine is an idea taught before/);
+  assert.doesNotMatch(tutorMessage(), /Old Idea is an idea taught before/);
+});
+
+test("a Project with no ideas of its own falls back to the rest, and an idea of unknown Project is only in the fallback", async () => {
+  const t = await newCore(["Elsewhere@other", "Unknown"]);
+  launches.length = 0;
+  teacher = async function* () { yield { type: "text", text: "done" }; };
+  await t.runClass({}, () => ({ option: 0, confidence: 50 }));
+  assert.match(tutorMessage(), /Elsewhere is an idea taught before/, "the graph's own order decides in the fallback");
+  const mixed = await newCore(["Unknown", "Mine@this"]);
+  launches.length = 0;
+  await mixed.runClass({}, () => ({ option: 0, confidence: 50 }));
+  assert.match(tutorMessage(), /Mine is an idea taught before/, "an idea of unknown Project does not compete with one of this Project");
+});
+
+test("an idea saved before the Project was recorded takes it from the Evidence of its class", async () => {
+  const t = await newCore(["Elsewhere#c8", "Legacy#c9"], undefined, [["c8", other], ["c9", project]]);
+  launches.length = 0;
+  teacher = async function* () { yield { type: "text", text: "done" }; };
+  await t.runClass({}, () => ({ option: 0, confidence: 50 }));
+  assert.match(tutorMessage(), /Legacy is an idea taught before/);
+});
+
+test("a new idea saved by the pipeline records the Project of its class", async () => {
+  const t = await newCore();
+  extracted = { propositions: [{ name: "Queue holds work", statement: "A queue holds work until a worker is free.", aliases: [], message: 0 }], chains: [] };
+  teacher = async function* (call) {
+    await call("begin_step", { stepId: "s1", title: "Queues" });
+    await call("predict", { stepId: "s1", prompt: "What is a queue for?" });
+    await call("explain", { stepId: "s1", text: "A queue holds work until a worker is free." });
+    yield { type: "text", text: "done" };
+  };
+  await t.runClass();
+  extracted = { propositions: [], chains: [] };
+  const graph = await t.get("/learner/graph");
+  assert.equal(graph.propositions.length, 1);
+  assert.equal(graph.propositions[0].provenance[0].project, project);
 });
