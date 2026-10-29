@@ -7,6 +7,8 @@ import type { Handler } from "../types.ts";
 
 type Recording = { id: string; project: string; visits: { step: string; locals: Record<string, string> }[] };
 
+const verdicts = new Map<string, { correct: boolean; name: string; answer: string }>(); // the first answer per recording and step
+
 const handler: Handler = async (req, res, core) => {
   const url = new URL(req.url ?? "/", "http://core");
   if (url.pathname !== "/playback/predict") return false;
@@ -22,7 +24,9 @@ const handler: Handler = async (req, res, core) => {
   const id = isGet ? url.searchParams.get("id") : body.id;
   const rec = typeof id === "string" ? (core.recordings.get(id) as Recording | undefined) : undefined;
   if (!rec) return core.send(res, 404, { error: "Unknown recording" }), true;
-  const step = Number(isGet ? url.searchParams.get("step") : body.step);
+  const rawStep = isGet ? url.searchParams.get("step") : body.step;
+  if (rawStep === undefined || rawStep === null || rawStep === "") return core.send(res, 400, { error: "Send step as the number of a step of the recording" }), true;
+  const step = Number(rawStep);
   const q = Number.isInteger(step) ? runQuestion(rec.visits, step) : undefined;
 
   if (isGet) {
@@ -45,6 +49,8 @@ const handler: Handler = async (req, res, core) => {
     core.send(res, 400, { error: "thought must be text of at most 2000 characters" });
     return true;
   }
+  const first = verdicts.get(`${rec.id}:${step}`);
+  if (first) return core.send(res, 200, first), true; // a repeat adds no Evidence
   const correct = option === q!.correct;
   const e: Evidence = {
     classId: `run:${rec.id}`, questionId: `${rec.id}:${step}`, project: rec.project, kind: "run-prediction",
@@ -53,7 +59,9 @@ const handler: Handler = async (req, res, core) => {
     ...(!correct && confidence >= 70 ? { sureAndWrong: true as const } : {}),
   };
   core.learner.recordEvidence(e);
-  core.send(res, 200, { correct, name: q!.name, answer: q!.options[q!.correct] });
+  const verdict = { correct, name: q!.name, answer: q!.options[q!.correct] };
+  verdicts.set(`${rec.id}:${step}`, verdict);
+  core.send(res, 200, verdict);
   return true;
 };
 

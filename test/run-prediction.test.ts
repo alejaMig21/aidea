@@ -14,7 +14,8 @@ after(() => t.core.close());
 
 const ask = (step: number, id = rec.id) => t.get(`/playback/predict?id=${id}&step=${step}`);
 // The first step after which some value changes: the recording itself says what the answer is.
-const changing = () => rec.visits.findIndex((v, i) => rec.visits[i + 1] && Object.entries(rec.visits[i + 1].locals).some(([k, x]) => v.locals[k] !== x));
+const changingFrom = (from: number) => rec.visits.findIndex((v, i) => i >= from && rec.visits[i + 1] && Object.entries(rec.visits[i + 1].locals).some(([k, x]) => v.locals[k] !== x));
+const changing = () => changingFrom(0);
 
 test("the question names a value that changes next and never carries the answer", async () => {
   const i = changing();
@@ -52,10 +53,14 @@ test("a right and a wrong guess are recorded as Evidence about the run, never in
   const right = await t.post("/playback/predict", { id: rec.id, step: i, option: q.options.indexOf(truth), confidence: 70, thought: "it goes down by ten" });
   assert.equal(right.status, 200);
   assert.deepEqual(await right.json(), { correct: true, name: q.name, answer: truth });
-  const wrongIndex = q.options.findIndex((o: string) => o !== truth);
-  const wrong = await (await t.post("/playback/predict", { id: rec.id, step: i, option: wrongIndex, confidence: 90 })).json();
+  const j = changingFrom(i + 1); // a second guess is about another step
+  assert.ok(j > i);
+  const q2 = await (await ask(j)).json();
+  const truth2 = rec.visits[j + 1].locals[q2.name];
+  const wrongIndex = q2.options.findIndex((o: string) => o !== truth2);
+  const wrong = await (await t.post("/playback/predict", { id: rec.id, step: j, option: wrongIndex, confidence: 90 })).json();
   assert.equal(wrong.correct, false);
-  assert.equal(wrong.answer, truth);
+  assert.equal(wrong.answer, truth2);
 
   const { entries } = await (await t.get(`/learner/evidence?class=run:${rec.id}`)).json();
   assert.equal(entries.length, 2);
@@ -64,6 +69,7 @@ test("a right and a wrong guess are recorded as Evidence about the run, never in
     { kind: "run-prediction", correct: true, confidence: 70, answer: truth, thought: "it goes down by ten", project, run: { recording: rec.id, step: i, name: q.name } },
   );
   assert.equal(entries[1].correct, false);
+  assert.equal(entries[1].run.step, j);
   assert.equal(entries[1].sureAndWrong, true);
   const graph = await (await t.get("/learner/graph")).json();
   assert.deepEqual(graph.propositions, []);
@@ -77,4 +83,23 @@ test("an answer that is not one of the options, or has a made-up confidence, is 
   }
   assert.equal((await t.post("/playback/predict", { id: rec.id, step: rec.visits.length - 1, option: 0 })).status, 422);
   assert.equal((await (await t.get(`/learner/evidence?class=run:${rec.id}`)).json()).entries.length, before);
+});
+
+test("a missing step is refused the same way by GET and POST", async () => {
+  assert.equal((await t.get(`/playback/predict?id=${rec.id}`)).status, 400);
+  assert.equal((await t.post("/playback/predict", { id: rec.id, option: 0 })).status, 400);
+});
+
+test("a repeated guess for the same recording and step records nothing new and answers with the first verdict", async () => {
+  const next = (await (await t.get(`/learner/evidence?class=run:${rec.id}`)).json()).entries.map((e: any) => e.run.step);
+  const i = changingFrom(Math.max(...next) + 1);
+  assert.ok(i >= 0, "the recording has a step nobody guessed yet");
+  const q = await (await ask(i)).json();
+  const truth = rec.visits[i + 1].locals[q.name];
+  const first = await (await t.post("/playback/predict", { id: rec.id, step: i, option: q.options.indexOf(truth) })).json();
+  const again = await (await t.post("/playback/predict", { id: rec.id, step: i, option: q.options.findIndex((o: string) => o !== truth) })).json();
+  assert.deepEqual(again, first);
+  assert.equal(first.correct, true);
+  const { entries } = await (await t.get(`/learner/evidence?class=run:${rec.id}`)).json();
+  assert.equal(entries.filter((e: any) => e.run.step === i).length, 1);
 });
