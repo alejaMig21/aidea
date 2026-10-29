@@ -1,5 +1,5 @@
 // The TypeScript and JavaScript language adapter (ADR 0004): reads .ts .tsx .mts .cts .js .jsx .mjs .cjs files with the
-// TypeScript compiler's API, which is already a dependency. Only `analyze` is offered; flow and run come with later tickets.
+// TypeScript compiler's API, which is already a dependency. `analyze` and `flow` (typescript-flow.ts) are offered; run comes with a later ticket.
 //
 // The compiler needs a project file to open, so a throw-away tsconfig listing the Project's files is written to the
 // temp folder (the Project itself is never touched). Nothing of the Project is run.
@@ -16,6 +16,7 @@ import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import type { Analysis, LanguageAdapter } from "./adapters.ts";
 import type { CoreNode, Relationship } from "./types.ts";
+import { flowOf } from "./typescript-flow.ts";
 
 // Folders that hold copies of code or libraries, not the Project's own (the same set as analyze.py); hidden folders are skipped too.
 export const SKIP_DIRS = new Set(["__pycache__", "venv", "env", "node_modules", "dist", "build", "site-packages"]);
@@ -279,4 +280,4 @@ async function analyze(root: string): Promise<Analysis> {
   }
 }
 
-export const typescriptAdapter: LanguageAdapter = { analyze };
+export const typescriptAdapter: LanguageAdapter = { analyze, flow: flowOf };

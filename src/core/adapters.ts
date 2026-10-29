@@ -36,7 +36,7 @@ export class AdapterError extends Error {
 }
 
 export type Analysis = Pick<Project, "nodes" | "errors" | "relationships" | "unresolved">;
-export type Flow = { steps: ({ id: string; kind: string; label: string; io?: string | null; construct?: string } & Record<string, unknown>)[]; edges: { from: string; to: string; label?: string; exit?: string; back?: boolean }[] };
+export type Flow = { steps: ({ id: string; kind: string; label: string; io?: string | null; construct?: string } & Record<string, unknown>)[]; edges: { from: string; to: string; label?: string; exit?: string; exception?: string; back?: boolean }[] };
 export type RunRequest = {
   projectPath: string;
   moduleId: string;

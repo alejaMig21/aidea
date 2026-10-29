@@ -167,7 +167,7 @@ function flowReplay(visits, index, previous) {
       ["derived", "Teal: taken or visited during Playback"],
       ["danger", "Red: an exception, a raise, or the handler it leads to"],
     ],
-    notShown: ["Data flow between steps (the panel lists the values)", "async and await, and generators", "Comprehensions and lambdas as flows of their own (one generic step each)", "Nested functions (one step; open their own graph)", "Exceptions raised outside a try (only try/except is drawn)"],
+    notShown: ["Data flow between steps (the panel lists the values)", "async and await, and generators", "Comprehensions and lambdas as flows of their own (one generic step each)", "Nested functions (one step; open their own graph)", "Exceptions raised outside a try (only try/except and try/catch are drawn)", "A break or continue with a label, and the place of a default inside a switch (JavaScript and TypeScript: drawn as a plain step, and default is tried last)"],
   });
 }
 

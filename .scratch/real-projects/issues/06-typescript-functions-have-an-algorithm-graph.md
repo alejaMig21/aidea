@@ -4,9 +4,9 @@
 
 **Blocked by:** None.
 
-**Status:** ready-for-agent
+**Status:** done (same work as language-adapters 04: `src/core/typescript-flow.ts`)
 
-- [ ] Double-clicking `loadRoutes` and `startCore` in `src/core/server.ts` opens a graph with its decisions, loops and early returns drawn with the layer's notation.
-- [ ] A function with `try/catch`, `switch`, `for...of`, `?.` and an arrow callback draws without a crash; a construct the adapter cannot place is drawn as one plain step, never skipped silently.
-- [ ] The legend check passes and says what the TypeScript graph leaves out.
-- [ ] Verified on the aidea repository (a copy) in the real app at two window sizes.
+- [x] Double-clicking `loadRoutes` and `startCore` in `src/core/server.ts` opens a graph with its decisions, loops and early returns drawn with the layer's notation.
+- [x] A function with `try/catch`, `switch`, `for...of`, `?.` and an arrow callback draws without a crash; a construct the adapter cannot place is drawn as one plain step, never skipped silently.
+- [x] The legend check passes and says what the TypeScript graph leaves out.
+- [x] Verified on the aidea repository (a copy) in the real app at two window sizes.

@@ -75,9 +75,9 @@ test("in a project that holds two languages, a function of the language without 
     writeFileSync(join(mixed, "n.ts"), "export function g() { return 1; }\n");
     assert.equal((await t.post("/projects", { path: mixed })).status, 201);
     const q = (node: string) => `project=${encodeURIComponent(mixed)}&node=${node}`;
-    const ts = await t.get(`/algorithm?${q("n.g")}`);
-    assert.equal(ts.status, 422);
-    assert.match((await ts.json()).error, /TypeScript/);
+    const ts = await t.get(`/algorithm?${q("n.g")}`); // TypeScript has a flow now: it is drawn by its own adapter, not Python's
+    assert.equal(ts.status, 200);
+    assert.equal((await ts.json()).steps[0].label, "g()");
     assert.equal((await t.get(`/algorithm?${q("m.f")}`)).status, 200); // the Python function still draws
     registerAdapter("python", { ...fake, async run() { return { outcome: { steps: [] }, interpreter: "fake" }; } });
     const run = await t.post("/playback", { project: mixed, node: "n.g" });
