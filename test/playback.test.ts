@@ -206,6 +206,15 @@ test("a Project with a virtual environment plays with it by default, and the per
   assert.equal(optedOut.interpreter, "default");
 });
 
+test("a folder called env is not taken for the Project's virtual environment: only .venv and venv are", async () => {
+  const dir = await bareCopy();
+  execFileSync(process.env.AIDEA_PYTHON ?? "python", ["-m", "venv", "--without-pip", join(dir, "env")]);
+  const rec = await (await t.post("/playback", { project: dir, node: "ops.drain", args: [130] })).json();
+  assert.equal(rec.interpreter, "default");
+  const refused = await t.post("/playback", { project: dir, node: "ops.drain", args: [130], useProjectPython: true });
+  assert.equal(refused.status, 422);
+});
+
 test("a virtual environment whose interpreter does not work is reported in words", async () => {
   const dir = await bareCopy();
   const win = process.platform === "win32";

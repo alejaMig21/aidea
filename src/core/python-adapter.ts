@@ -34,7 +34,7 @@ export const pythonAdapter: LanguageAdapter = {
   // projectPython at fixed places inside the Project folder; a request can switch it on or off, never name a path.
   async run({ projectPath, moduleId, qualifiedName, file, input, useProjectInterpreter, timeoutMs }: RunRequest): Promise<RunResult> {
     const interpreter = useProjectInterpreter === false ? undefined : projectPython(projectPath);
-    if (useProjectInterpreter && !interpreter) throw new AdapterError("This Project has no virtual environment (.venv, venv or env) to use", 422);
+    if (useProjectInterpreter && !interpreter) throw new AdapterError("This Project has no virtual environment (.venv or venv) to use", 422);
     try {
       const out = await runPython("playback.py", [projectPath, moduleId, qualifiedName, file], {
         input: JSON.stringify(input),

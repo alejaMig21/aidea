@@ -225,7 +225,7 @@ function pbRender() {
     ...pbFields(node),
     pbEl("p", { className: "pb-hint", textContent: "Numbers, text in quotes like \"hi\", or lists like [1, 2, 3]." }),
     pbEl("div", { className: "pb-row" }, pbEl("button", { textContent: "Use example", onclick: useExample }), pbEl("button", { id: "pb-record", className: "primary", textContent: "Record a run", onclick: pbRecord })),
-    pbEl("label", { className: "pb-check" }, pbEl("input", { id: "pb-own-python", type: "checkbox", checked: pbOwnPython }), "Use the Project's own interpreter when it has one (.venv, venv or env)"),
+    pbEl("label", { className: "pb-check" }, pbEl("input", { id: "pb-own-python", type: "checkbox", checked: pbOwnPython }), "Use the Project's own interpreter when it has one (.venv or venv)"),
     pbEl("p", { className: "pb-warning", textContent: "Recording runs this function for real, on your computer, with the Project's own code. Writing files, network access and new programs are blocked as a safety net, not as a guarantee: only play code you trust." }),
     pbEl("div", { id: "pb-message", className: "pb-error" }),
   ];

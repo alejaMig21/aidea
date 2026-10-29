@@ -9,7 +9,7 @@ const defaultPython = process.env.AIDEA_PYTHON ?? "python";
 
 // The Python of the Project itself, when it keeps a virtual environment in the usual places.
 export function projectPython(projectPath: string): string | undefined {
-  for (const folder of [".venv", "venv", "env"]) {
+  for (const folder of [".venv", "venv"]) {
     for (const exe of ["Scripts/python.exe", "bin/python"]) {
       const candidate = join(projectPath, folder, exe);
       if (existsSync(candidate)) return candidate;
