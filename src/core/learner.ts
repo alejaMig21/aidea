@@ -9,7 +9,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renam
 import { join } from "node:path";
 import type { Answer, Question } from "./tutor.ts";
 
-// `project` is the Project of the class the idea came from; ideas saved before it was recorded have none (see ownIdeas in review.ts).
+// `project` is the Project of the class the idea came from; ideas saved before it was recorded have none (see ownIdea in review.ts).
 export type Provenance = { classId: string; message: number; node?: string; project?: string };
 export type Proposition = { id: string; name: string; statement: string; aliases: string[]; provenance: Provenance[] };
 export type Chain = { id: string; premises: string[]; conclusion: string; provenance: Provenance[] };

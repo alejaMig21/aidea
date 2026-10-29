@@ -121,7 +121,7 @@ The record of each answer the person gave in a class: whether it was right, how 
 _Avoid_: Score, grade
 
 **Review question**:
-One question, with no hint, at the start of a free class about an idea the person met in an earlier class of the same project (any earlier idea when the project has none) and has not been asked about for the longest time. A class on a layer, on selected text, on a difference or on a decision never has one. The person may say they do not know, and may turn it off; the answer is Evidence and never changes the Learner graph.
+One question, with no hint, at the start of a free class (one started with "Start a class", not one on a layer, on selected text, on a difference or on a decision) about an idea the person met in an earlier class of the same Project, the one not asked about for the longest time; a Project with no ideas of its own uses any earlier idea. An idea the class topic names is never chosen. The person may say they do not know, and may turn it off; the answer is Evidence and never changes the Learner graph.
 _Avoid_: Quiz, test
 
 **Decision class**:

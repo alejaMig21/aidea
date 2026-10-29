@@ -261,6 +261,14 @@ test("a Project with no ideas of its own falls back to the rest, and an idea of 
   assert.match(tutorMessage(), /Mine is an idea taught before/, "an idea of unknown Project does not compete with one of this Project");
 });
 
+test("a Project whose ideas are all about the topic gets no review, instead of one about another Project", async () => {
+  const t = await newCore(["Mine@this", "Elsewhere@other"]);
+  launches.length = 0;
+  teacher = async function* () { yield { type: "text", text: "done" }; };
+  await t.runClass({ topic: "how mine works" }, () => ({ option: 0, confidence: 50 }));
+  assert.doesNotMatch(tutorMessage(), /review question/i);
+});
+
 test("an idea saved before the Project was recorded takes it from the Evidence of its class", async () => {
   const t = await newCore(["Elsewhere#c8", "Legacy#c9"], undefined, [["c8", other], ["c9", project]]);
   launches.length = 0;
