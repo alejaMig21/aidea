@@ -6,12 +6,12 @@
 
 **Status:** done
 
-- [ ] A visible, keyboard-reachable control freezes and resumes all motion on any layer; while paused, Next hop and Previous hop move one packet at a time along its edge, and the position is deterministic (the same hop number gives the same place).
-- [ ] The paused state is remembered only for the session, is cleared when the layer or Project changes, and does not fight the global Animations switch or reduce-motion (either of those off means no motion at all and the stepping controls are hidden).
-- [ ] On the flowchart with a recording, Next and Previous step the replay token one step and the existing Playback controls stay consistent with it.
-- [ ] The trace table shows one row per step reached, columns for the variables of the recording, the current row highlighted, and the output column when the function prints; it can be folded away; long values are clipped with a tooltip.
-- [ ] Stepping back removes rows after the current step; restarting empties the table; a recording with an error ends with an error row.
-- [ ] Verified with a headless browser (no visible window) at 1440x900 and 1000x700: screenshots of the paused state and of the table mid-replay read by the implementer; packet positions at two hop numbers; no console errors; `npm test` passes.
+- [~] A visible, keyboard-reachable control freezes and resumes all motion on any layer; while paused, Next hop and Previous hop move one packet at a time along its edge, and the position is deterministic (the same hop number gives the same place).
+- [~] The paused state is remembered only for the session, is cleared when the layer or Project changes, and does not fight the global Animations switch or reduce-motion (either of those off means no motion at all and the stepping controls are hidden).
+- [~] On the flowchart with a recording, Next and Previous step the replay token one step and the existing Playback controls stay consistent with it.
+- [~] The trace table shows one row per step reached, columns for the variables of the recording, the current row highlighted, and the output column when the function prints; it can be folded away; long values are clipped with a tooltip.
+- [~] Stepping back removes rows after the current step; restarting empties the table; a recording with an error ends with an error row.
+- [~] Verified with a headless browser (no visible window) at 1440x900 and 1000x700: screenshots of the paused state and of the table mid-replay read by the implementer; packet positions at two hop numbers; no console errors; `npm test` passes.
 
 ## Review notes
 
@@ -23,10 +23,12 @@ Verified with a headless Chrome script (1440x900 and 1000x700, core on `studio-c
 - [x] Cleared on layer change (live again, controls collapsed); the controls disappear when Animations go off and come back live when turned on. Reduce-motion starts with Animations off, so the same path hides them (not run with the real media query).
 - [x] Flowchart with a recording: Next/Previous call the Playback step (position `3 / n` agreed, trace table rows followed).
 - [x] Trace table: one row per step reached, columns for the recording variables, current row highlighted, Fold button, narrow width fits; Previous removes the last row; Record again starts at one row.
-- [ ] Output column on the last row and the error row of a failing run were written but not exercised with a printing or failing recording.
-- [ ] Long-value tooltip (`title` set when a value is cut at 24 characters) not checked visually.
+- [~] Output column on the last row and the error row of a failing run were written but not exercised with a printing or failing recording.
+- [~] Long-value tooltip (`title` set when a value is cut at 24 characters) not checked visually.
 - [x] No console errors; `npm run typecheck` and `npm test` pass (232 pass, 1 skipped).
 
 Differences from the prototype: one Pause/Resume toggle plus Previous/Next buttons in the top bar instead of a card under the diagram; the table is a foldable overlay on the Canvas (bottom, above the zoom controls), not a side card; hops are per edge for all layers, not narrated block by block; at 1100 px and below the buttons show only icons.
 
 Remaining: hop order is drawing order, not the story order; at 1000 px the layer bar scrolls a little more because the controls take room in the top bar; stepping hops does not highlight the edge on the flowchart while a recording exists (the Playback token is used instead).
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

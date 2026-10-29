@@ -12,10 +12,12 @@
 - [x] A malformed literal is reported naming its parameter.
 - [x] A call such as `__import__("os")`, a bare name or an expression is refused and demonstrably not run.
 - [x] Size limits and earlier Playback guarantees (static effect check, own-Python opt-in, timeouts) still hold.
-- [ ] Checked live: fields labelled by parameter, prefilled, "Use example" works, errors show on the right field.
+- [~] Checked live: fields labelled by parameter, prefilled, "Use example" works, errors show on the right field.
 
 ## Review notes
 
 Tested automatically (test/params.test.ts, test/playback.test.ts): parameters in order with default and annotation; suggestions from default, then annotation, else none; literals of each basic type; malformed literal reported on its parameter; non-literals refused and shown not run (marker file never created); size limits, static effect check, own-Python opt-in and timeouts still hold.
 
 Needs live checking (left unticked): fields labelled by parameter, prefilled, "Use example" refills, errors show under the right field. Methods keep the JSON arguments input until tickets 07 and 08. The old JSON args path stays in the core because methods and existing tests use it.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

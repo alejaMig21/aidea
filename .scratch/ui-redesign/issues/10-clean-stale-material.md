@@ -9,5 +9,7 @@
 The person confirmed the cleanup is wanted (the interface is defined by the chosen mockups, not by OpenCode). Default: rewrite ADR 0003 as a short ADR keeping the real decision (plain JavaScript and CSS, no framework, revisit if smoothness fails), with no OpenCode reference.
 
 - [x] ADR 0003 is rewritten with no OpenCode reference, and its title and filename no longer mention OpenCode.
-- [ ] The OpenCode research note is deleted.
+- [~] The OpenCode research note is deleted.
 - [x] `GLOSSARY.md` and other docs do not point at either removed item.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

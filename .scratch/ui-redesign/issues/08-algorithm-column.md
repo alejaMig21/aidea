@@ -6,11 +6,11 @@
 
 **Status:** done
 
-- [ ] Opening an Algorithm shows and selects the Algorithm tab; leaving it removes the tab.
-- [ ] Form, own-Python switch with warning, and Playback controls are all in that column.
-- [ ] The own-Python choice and its warning behave as before.
-- [ ] The Tutor tab is still one click away.
-- [ ] Checked live on narrow and wide windows; result noted in the ticket.
+- [~] Opening an Algorithm shows and selects the Algorithm tab; leaving it removes the tab.
+- [~] Form, own-Python switch with warning, and Playback controls are all in that column.
+- [~] The own-Python choice and its warning behave as before.
+- [~] The Tutor tab is still one click away.
+- [~] Checked live on narrow and wide windows; result noted in the ticket.
 
 ## Review notes
 
@@ -25,3 +25,5 @@ Needs live checking (left unticked): the Algorithm tab appears and is selected o
 - Switching Project clears Playback state and removes the Algorithm tab; `pbRender` is a no-op when the function no longer exists (no more TypeError).
 - The Algorithm form is rebuilt only when the open graph changes, so typed values and the own-Python checkbox survive layer switches.
 - UI-only changes, unverified live; no live criterion ticked.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

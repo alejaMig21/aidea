@@ -13,7 +13,7 @@
 - [x] Forgetting an entry removes only the entry; the folder on disk is untouched.
 - [x] Entries survive a core restart.
 - [x] A path that does not exist or is not a directory is refused when opened.
-- [ ] Checked live: Home lists recents with name, path and last-opened time; choosing one opens it; empty state explains how to start.
+- [~] Checked live: Home lists recents with name, path and last-opened time; choosing one opens it; empty state explains how to start.
 - [x] `GLOSSARY.md` defines "Recent project" and "Home".
 
 ## Review notes
@@ -26,3 +26,5 @@
 
 - Recents now normalise paths in the core (`path.resolve`; case-folded comparison on Windows only, the stored display path keeps its spelling), so `X`, `X/` and other spellings list one entry. Covered by a protocol test in `test/recents.test.ts`.
 - Home text explains the two ways to start (Open folder, New project; typed path in a plain browser), and Forget shows on every recent entry (never touches the folder). UI changes are unverified live.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

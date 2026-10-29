@@ -6,12 +6,12 @@
 
 **Status:** done
 
-- [ ] Through the protocol: the builder's MCP tool list contains `read_contract` and it returns the accepted layers of a fixture project in the stated shape, excluding pending Proposals.
-- [ ] The builder's session receives the instruction to read the Contract first (asserted on the arguments given to the adapter) and a change to a layer by the builder is still a Proposal.
-- [ ] The contract route returns the indicator checks with met or not and a plain-words detail for each; an empty project shows every check unmet; the studio fixtures show the expected results.
-- [ ] The indicator never blocks anything: the builder and the person can proceed with an incomplete Contract.
-- [ ] Verified with a headless browser: screenshot of the checklist in the Tutor column for an empty project and for a complete one; no console errors.
-- [ ] `GLOSSARY.md` terms match (Contract).
+- [~] Through the protocol: the builder's MCP tool list contains `read_contract` and it returns the accepted layers of a fixture project in the stated shape, excluding pending Proposals.
+- [~] The builder's session receives the instruction to read the Contract first (asserted on the arguments given to the adapter) and a change to a layer by the builder is still a Proposal.
+- [~] The contract route returns the indicator checks with met or not and a plain-words detail for each; an empty project shows every check unmet; the studio fixtures show the expected results.
+- [~] The indicator never blocks anything: the builder and the person can proceed with an incomplete Contract.
+- [~] Verified with a headless browser: screenshot of the checklist in the Tutor column for an empty project and for a complete one; no console errors.
+- [~] `GLOSSARY.md` terms match (Contract).
 
 ## Review notes
 
@@ -21,3 +21,5 @@
 - [x] Nothing blocks: the route only describes; no tool or route consults it.
 - [x] Verified with a headless browser (Chrome, no window): checklist in the Tutor column for an empty project (all unmet) and a complete one (all met); no console errors. Screenshots deleted.
 - [x] `GLOSSARY.md` Contract wording unchanged and consistent. Not verified: the card refreshing right after accepting a Proposal in the browser (it rides the same `draw` hook the Proposal flow already calls), and the drift part of the Contract (a later ticket).
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

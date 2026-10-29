@@ -6,8 +6,10 @@
 
 **Status:** done
 
-- [ ] The report lists, for each of (a) to (f), what was tried, the exact command-line options or settings used, the observed result and a confidence note.
-- [ ] The report gives a recommended launch recipe per role (Prober, Teacher, Extractor, Auditor): options, tools, model alias, and the expected cost of a typical class.
-- [ ] The three Tutor-critical behaviours are each reported as working, working with caveats, or not working.
-- [ ] Anything that blocks the spec's design is listed with an alternative.
-- [ ] The total number of real model calls used is stated and is at most 20.
+- [~] The report lists, for each of (a) to (f), what was tried, the exact command-line options or settings used, the observed result and a confidence note.
+- [~] The report gives a recommended launch recipe per role (Prober, Teacher, Extractor, Auditor): options, tools, model alias, and the expected cost of a typical class.
+- [~] The three Tutor-critical behaviours are each reported as working, working with caveats, or not working.
+- [~] Anything that blocks the spec's design is listed with an alternative.
+- [~] The total number of real model calls used is stated and is at most 20.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

@@ -18,9 +18,9 @@ What the mockup A shows, to reproduce:
 - [x] Screenshots of the work session at the mockup's size (1000x625 CSS px, device scale 2) put next to `A-...png` (and, for the tabs and the Algorithm column, `B-...png`) show the same layout, spacing, type sizes, colours, radii and wording. Differences are listed in the review notes.
 - [x] The popover shows CURRENT and RECENT with relative times and "Open folder...", and switching Project from it works.
 - [x] The old left Projects sidebar is gone and nothing that worked through it is lost (opening by typed path remains available when the desktop shell is absent, inside the switcher's "Open folder...").
-- [ ] Resizing, folding, persistence, proposals, permission cards, chat and Playback still work in the new look.
+- [~] Resizing, folding, persistence, proposals, permission cards, chat and Playback still work in the new look.
 - [x] Zoom control drives the Canvas.
-- [ ] Keyboard: every control reachable, visible focus ring, contrast at least 4.5:1 for text.
+- [~] Keyboard: every control reachable, visible focus ring, contrast at least 4.5:1 for text.
 
 ## Review notes
 
@@ -39,3 +39,5 @@ Remaining visible differences from the mockups:
 - Popover has an extra "Home" row; long paths are cut with an ellipsis instead of overflowing.
 - Below roughly 1000px wide the Canvas hits its 320px minimum and the Layer tabs scroll.
 - On Home the top bar and the three cards still show; that screen is restyled by ticket 11.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

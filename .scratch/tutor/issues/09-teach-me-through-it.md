@@ -10,7 +10,7 @@
 - [x] With the Tutor available the button starts a layer class; without it, the fixed quick tour runs and says that the Tutor is not available.
 - [x] The layer class ends with the pipeline of ticket 04 and leaves the layer's pending Proposals visible.
 - [x] Verified with a headless browser: screenshots of the button on each layer, a quick tour step on a non-Business layer, and the unavailable message.
-- [ ] Read by the person for clarity (last box, for the person).
+- [~] Read by the person for clarity (last box, for the person).
 
 ## Review notes
 
@@ -25,3 +25,5 @@
 
 - A layer class on Requirements did NOT co-author: the Teacher read the Plan, found requirement concepts already in it and gave a lecture (`begin_step`, `predict`, `explain`), never asking an element question and making no Proposal. Cause: the first message told it to work the Plan first and "then" build the layer with the person.
 - Fixed: for the layers the person writes, the message now says this is a co-authoring class, not a lecture, and that the FIRST question is the first element, asked with `ask {element}` before any Plan work (the element tag is given). Re-run live: element question, `propose_node` quoting the person's words (`save-cart`), "Other ways to see this", next element; accepted in the interface it drew the Node and updated the Contract card. Test in `test/layer-class.test.ts`.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

@@ -6,12 +6,12 @@
 
 **Status:** done
 
-- [ ] Through the core protocol: a functional requirement with and without `criteria` is valid; a non-functional requirement without `as`/`want`/`so` is valid; a non-functional one without `statement`, an unknown `quality` or a missing `measure` is reported as an error naming the field and dropped, like other bad Nodes; old files still load.
-- [ ] Proposals can add and change both kinds and the new fields, validated by the same rules.
-- [ ] The layer groups requirements by kind and draws both card types; criteria are listed; quality and measure are shown.
-- [ ] Trace links from a non-functional requirement to Architecture Nodes and from a functional one to code are drawn and carry packets.
-- [ ] Glossary: functional requirement and non-functional requirement are added to `GLOSSARY.md`.
-- [ ] Verified headless: screenshots next to the prototype's Requirements tab, differences listed in the review notes; no console errors.
+- [~] Through the core protocol: a functional requirement with and without `criteria` is valid; a non-functional requirement without `as`/`want`/`so` is valid; a non-functional one without `statement`, an unknown `quality` or a missing `measure` is reported as an error naming the field and dropped, like other bad Nodes; old files still load.
+- [~] Proposals can add and change both kinds and the new fields, validated by the same rules.
+- [~] The layer groups requirements by kind and draws both card types; criteria are listed; quality and measure are shown.
+- [~] Trace links from a non-functional requirement to Architecture Nodes and from a functional one to code are drawn and carry packets.
+- [~] Glossary: functional requirement and non-functional requirement are added to `GLOSSARY.md`.
+- [~] Verified headless: screenshots next to the prototype's Requirements tab, differences listed in the review notes; no console errors.
 
 ## Review notes
 
@@ -25,3 +25,5 @@ Verified through the protocol (`test/requirements-kinds.test.ts`, 7 tests, fixtu
 - [x] `npm run typecheck` and `npm test` pass (170 pass, 1 skipped).
 
 Differences from the prototype: the packet runs along a rail down the card's left edge, not through each criterion one by one; criteria show no pass/fail state; the story is a card with the criteria as a checklist inside it, not separate criterion cards; at most three trace chips per card; chips show the target id only (no file path or "derived" note); no step mode or quiz.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

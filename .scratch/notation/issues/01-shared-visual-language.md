@@ -6,13 +6,13 @@
 
 **Status:** done
 
-- [ ] Colour tokens exist with one meaning each and are used by the kit; no layer redefines them.
-- [ ] A reusable way to mark an edge as flowing, an element as breathing and an edge as carrying packets, driven by data attributes or classes, with the packet following the edge's own path.
-- [ ] The "Animations" switch turns everything off and back on, is remembered between sessions, and starts off when the system asks to reduce motion; hidden-window pause works.
-- [ ] Unresolved (grey dashed) edges never animate.
-- [ ] Hover and focus light an element's edges and dim the rest; keyboard focus does the same.
-- [ ] Each layer card has a "?" button with an accessible name that opens and closes a legend popover; layers can register their legend content; the popover is not clipped in narrow windows and closes with Escape.
-- [ ] Verified with a headless browser (no visible window): screenshots next to the prototype `.scratch/notation/prototype/index-hover-tilt.html`, differences listed in the review notes; packet positions sampled at two moments to prove motion; no console errors; the existing layouts (resizing, drawers) still work.
+- [~] Colour tokens exist with one meaning each and are used by the kit; no layer redefines them.
+- [~] A reusable way to mark an edge as flowing, an element as breathing and an edge as carrying packets, driven by data attributes or classes, with the packet following the edge's own path.
+- [~] The "Animations" switch turns everything off and back on, is remembered between sessions, and starts off when the system asks to reduce motion; hidden-window pause works.
+- [~] Unresolved (grey dashed) edges never animate.
+- [~] Hover and focus light an element's edges and dim the rest; keyboard focus does the same.
+- [~] Each layer card has a "?" button with an accessible name that opens and closes a legend popover; layers can register their legend content; the popover is not clipped in narrow windows and closes with Escape.
+- [~] Verified with a headless browser (no visible window): screenshots next to the prototype `.scratch/notation/prototype/index-hover-tilt.html`, differences listed in the review notes; packet positions sampled at two moments to prove motion; no console errors; the existing layouts (resizing, drawers) still work.
 
 ## Review notes
 
@@ -28,3 +28,5 @@ Verified with a headless Chrome script (1440x900, 420x800), screenshots compared
 - [x] Packet positions sampled 700 ms apart on Architecture: (556,301) then (556,346). No console errors besides the pre-existing `/favicon.ico` 404. `npm run typecheck` and `npm test` pass (155 pass, 1 skipped).
 
 Differences from the prototype: packets have no outline ring and the glow is slightly smaller; the switch is a button (`aria-pressed`) not a checkbox; no "Quiz me" or step mode (out of scope here); legend is one popover on the Canvas card, not per panel; flow dashes apply to every connector including plain parent-child ones, as in the prototype; Fit now measures the world without packets (they sit at the origin until they move).
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

@@ -6,11 +6,11 @@
 
 **Status:** done
 
-- [ ] In the real desktop window, "Open folder" shows the folder picker and opens the chosen folder.
-- [ ] Cancelling the picker changes nothing.
-- [ ] In a plain browser, "Open folder" falls back to a typed path.
-- [ ] The opened folder appears first in the recents.
-- [ ] Checked live in the real window on the second monitor; result noted in the ticket.
+- [~] In the real desktop window, "Open folder" shows the folder picker and opens the chosen folder.
+- [~] Cancelling the picker changes nothing.
+- [~] In a plain browser, "Open folder" falls back to a typed path.
+- [~] The opened folder appears first in the recents.
+- [~] Checked live in the real window on the second monitor; result noted in the ticket.
 
 ## Review notes
 
@@ -19,3 +19,5 @@ Implemented: `electron/preload.cjs` exposes `window.aidea.pickFolder()` (context
 Verified: `npm run typecheck` and `npm test` pass (no regressions). No criterion is verified live; none ticked.
 
 Still needs the live check in the real window on the second monitor (`AIDEA_DISPLAY=secondary npm run desktop`): picker appears and opens the folder; cancel changes nothing; opened folder is first in recents; plain-browser fallback focuses the typed path box.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

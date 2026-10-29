@@ -8,13 +8,13 @@
 
 **Status:** done
 
-- [ ] The Agent adapter interface can describe what its provider offers: a list of Permission modes (id, label, one-line meaning, whether it is available and, if not, why) and a list of models (id, label).
-- [ ] The Claude Code adapter fills that description from Claude Code itself where Claude Code exposes it (models), and declares what Claude Code documents but does not list (modes) inside the adapter, never in the core or the interface.
-- [ ] The chat bar shows one selector for the mode and one for the model, filled only from the active adapter's description.
-- [ ] The choice applies to the next message of the conversation and is remembered for each Project.
-- [ ] With a different adapter (a fake one in tests) offering other modes and models, the selectors show those and nothing from Claude Code.
-- [ ] A mode that is not available (for example auto, which depends on plan, model, provider and client version) is shown with the reason instead of failing silently.
-- [ ] `dontAsk` and `bypassPermissions` are not offered unless the person decides otherwise (open decision below).
+- [~] The Agent adapter interface can describe what its provider offers: a list of Permission modes (id, label, one-line meaning, whether it is available and, if not, why) and a list of models (id, label).
+- [~] The Claude Code adapter fills that description from Claude Code itself where Claude Code exposes it (models), and declares what Claude Code documents but does not list (modes) inside the adapter, never in the core or the interface.
+- [~] The chat bar shows one selector for the mode and one for the model, filled only from the active adapter's description.
+- [~] The choice applies to the next message of the conversation and is remembered for each Project.
+- [~] With a different adapter (a fake one in tests) offering other modes and models, the selectors show those and nothing from Claude Code.
+- [~] A mode that is not available (for example auto, which depends on plan, model, provider and client version) is shown with the reason instead of failing silently.
+- [~] `dontAsk` and `bypassPermissions` are not offered unless the person decides otherwise (open decision below).
 
 ## Facts checked in the Claude Code documentation
 
@@ -51,4 +51,6 @@
 - [x] Applied to the next message as `--permission-mode <id>` and `--model <id>` (`--model` omitted for `default`).
 - [x] A fake adapter with other modes and models shows only those (test/agent-options.test.ts).
 - [x] UI checked in a browser at 1440x900: model chip and mode selector bottom-left of the chat card, Send bottom-right, Tutor model selector above "Start a class"; selections persist across reload; no console errors besides the missing favicon.
-- [ ] Known gap (not in scope): in plan mode the plan arrives through `ExitPlanMode` and is not yet shown as a readable card. `auto` is always listed as available because there is no way to detect availability before sending; Claude Code reports the failure itself.
+- [~] Known gap (not in scope): in plan mode the plan arrives through `ExitPlanMode` and is not yet shown as a readable card. `auto` is always listed as available because there is no way to detect availability before sending; Claude Code reports the failure itself.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

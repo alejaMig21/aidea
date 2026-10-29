@@ -20,7 +20,7 @@ Rules:
 - [x] Drawers open and close (button, Escape, outside click) below the narrow breakpoint.
 - [x] Persistence of sizes and folded state still works; dragging separators and keyboard resizing still work.
 - [x] The desktop window has a minimum size.
-- [ ] Verified by the person in the real window on the second monitor.
+- [~] Verified by the person in the real window on the second monitor.
 
 ## Review notes
 
@@ -43,3 +43,5 @@ Headless Chrome (no visible window), `07-layout.js` + `index.html`. Columns are 
 - Screenshots read at 1440 (open, folded), 900 (folded), 520 (drawer): they match mockup A.
 - Not measured: Home at 360 px (its CSS was not changed), and vertical fit under zoom emulation. CSS `zoom` on the root is not a real browser zoom (the viewport units do not follow it), so those runs fail on both sides for reasons that are not the layout; the person confirmed the vertical overflow they saw was an older build. Hardening kept: `html { height: 100% }`, body `100vh` then `100dvh`.
 - `npm run typecheck` clean; `npm test` 155 pass, 1 skipped, 0 fail. `electron/main.js` now sets `minWidth: 720`, `minHeight: 520`; never launched.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

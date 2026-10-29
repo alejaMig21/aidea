@@ -6,10 +6,10 @@
 
 **Status:** done
 
-- [ ] Through the protocol with a scripted Prober: no more than five questions are accepted per Probe; a question about an idea already in the graph is not asked.
-- [ ] "I already know this" skips a question and is Evidence; skipping the whole Probe starts the class anyway.
-- [ ] The handover tool rejects a malformed result with a message the model can act on.
-- [ ] The Probe of a layer runs once per person and Project unless the person asks to redo it.
+- [~] Through the protocol with a scripted Prober: no more than five questions are accepted per Probe; a question about an idea already in the graph is not asked.
+- [~] "I already know this" skips a question and is Evidence; skipping the whole Probe starts the class anyway.
+- [~] The handover tool rejects a malformed result with a message the model can act on.
+- [~] The Probe of a layer runs once per person and Project unless the person asks to redo it.
 - [x] Verified with a headless browser: screenshot of the Probe in the Tutor column with the skip controls.
 
 ## Review notes
@@ -22,3 +22,5 @@
 - [x] The layer concepts are one structure, `LAYER_CONCEPTS` in `src/core/probe.ts`, handed to the Prober in the first message as JSON. Instructions (`PROBE_INSTRUCTIONS`) are under 4000 characters (asserted). Role `prober` uses the Tutor's isolated flags in the adapter. Results live in `probes.jsonl` in the per-user folder and survive a restart (tested).
 - [x] UI (`src/ui/features/51-probe.js`, small hooks in `50-tutor.js`: `startClass(opts)`, the skip button on a probe card, "Question n of 5", the closing line) checked in headless Chrome with a scripted adapter, no real model: offer row on the layer on screen ("Architecture: not checked yet", "Check what I know first (5 questions)", "Skip"), "QUESTION 1 OF 5" with "I already know this", the stop button reads "Skip probe" and ends it ("Probe skipped. You can start a class anyway."), a finished Probe shows "Known: 2, partly: 1, new to you: 2" and the offer becomes "Redo the check"; "Start a class" stays enabled throughout; no overflow, no console errors. Screenshots deleted.
 - NOT done: the real Claude Code was not run (the live behaviour of the isolated recipe was checked in ticket 05); the Plan (ticket 07) does not read the result yet; the Prober's question quality is unchecked live. The collapsed card of an answered probe question drops its "Question n of 5" label.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

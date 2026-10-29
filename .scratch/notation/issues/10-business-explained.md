@@ -12,13 +12,13 @@ All wording is English, short, free of jargon, and not copied from the canvas's 
 
 **Status:** done
 
-- [ ] The decorative flow arrows, their packets and their legend entries are gone from the Business layer; the blocks still breathe softly and the animation switch still applies.
-- [ ] Every block shows its hint; an empty block shows it as a larger prompt; a block with notes keeps its notes fully visible and unclipped.
-- [ ] "Walk me through it" steps through the nine blocks in the stated order with the narration (using the person's notes when present), supports Next, Back, Close and Escape, restores the normal view when closed, and is keyboard operable.
-- [ ] The hover/focus card shows what it is, the question and a marked example for each block, never hides the block's own notes, and is reachable by keyboard.
-- [ ] The text is stored in one structure (block id to hint, description, question, example, narration) so a later ticket can reuse the pattern for other layers.
-- [ ] Verified headless (no visible window) at 1440x900 and 1000x700: screenshots of an empty Business layer, a filled one, mid-walk, and a hover card, read by the implementer; no overlaps; no console errors; notes still tilt on hover as before.
-- [ ] Read by the person for clarity.
+- [~] The decorative flow arrows, their packets and their legend entries are gone from the Business layer; the blocks still breathe softly and the animation switch still applies.
+- [~] Every block shows its hint; an empty block shows it as a larger prompt; a block with notes keeps its notes fully visible and unclipped.
+- [~] "Walk me through it" steps through the nine blocks in the stated order with the narration (using the person's notes when present), supports Next, Back, Close and Escape, restores the normal view when closed, and is keyboard operable.
+- [~] The hover/focus card shows what it is, the question and a marked example for each block, never hides the block's own notes, and is reachable by keyboard.
+- [~] The text is stored in one structure (block id to hint, description, question, example, narration) so a later ticket can reuse the pattern for other layers.
+- [~] Verified headless (no visible window) at 1440x900 and 1000x700: screenshots of an empty Business layer, a filled one, mid-walk, and a hover card, read by the implementer; no overlaps; no console errors; notes still tilt on hover as before.
+- [~] Read by the person for clarity.
 
 ## Review notes
 
@@ -32,4 +32,6 @@ Wording lives in `BUSINESS_HELP` (block id to `hint`, `what`, `question`, `examp
 - [x] Headless at 1440x900 and 1000x700 (empty and filled projects, mid-walk, hover card): screenshots read (1000x700 hover shot checked by metrics only); no console errors. The reduced-motion branch is CSS only (`prefers-reduced-motion`, `body.motion-off`) and was not run under emulation.
 - [x] Legend gains "The blocks fill in over time; an empty one is normal, it is a question still to answer".
 - [x] `npm run typecheck` and `npm test` pass (226 pass, 0 fail; one earlier full run showed 15 failures that did not repeat, likely load from parallel runs).
-- [ ] Read by the person for clarity.
+- [~] Read by the person for clarity.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

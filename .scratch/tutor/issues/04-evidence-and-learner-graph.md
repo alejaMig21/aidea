@@ -6,12 +6,12 @@
 
 **Status:** done
 
-- [ ] Through the protocol with scripted fake Extractor and Auditor outputs: fixed Teacher prose and fixed extractor output give exactly the expected Propositions and chains, and running it twice gives the same graph with no duplicates.
-- [ ] Two Propositions with the same normalised name merge and keep both aliases and both provenances.
-- [ ] Evidence entries are written for every answer, including "don't know", and are never written to the graph.
-- [ ] Deleting an idea removes it and its chains and nothing else; there is no edit route.
-- [ ] A failure in the pipeline leaves the ledger and graph unchanged and the class retryable.
-- [ ] The stores live outside the Project folder and survive a core restart; the folder is injectable for tests.
+- [~] Through the protocol with scripted fake Extractor and Auditor outputs: fixed Teacher prose and fixed extractor output give exactly the expected Propositions and chains, and running it twice gives the same graph with no duplicates.
+- [~] Two Propositions with the same normalised name merge and keep both aliases and both provenances.
+- [~] Evidence entries are written for every answer, including "don't know", and are never written to the graph.
+- [~] Deleting an idea removes it and its chains and nothing else; there is no edit route.
+- [~] A failure in the pipeline leaves the ledger and graph unchanged and the class retryable.
+- [~] The stores live outside the Project folder and survive a core restart; the folder is injectable for tests.
 
 ## Review notes
 
@@ -21,3 +21,5 @@
 - Routes: `GET /learner/graph`, `GET /learner/evidence?project=&class=`, `DELETE /learner/propositions/<id>`, `POST /tutor/classes/<id>/close` (retry: 200 `{ok,ideas}`, 404 nothing waiting, 409 running, 502 `pipeline failed`). The class stream ends with `{type:"learner", classId, status:"saved", ideas}` or `{status:"failed", message}` (not sent if the Teacher said nothing). `POST /tutor/classes` accepts an optional `node` stored in provenance. Defaults: `~/.aidea/learner` or `AIDEA_LEARNER_DIR` (main.ts); `startCore({learnerDir, learnerModel})`, model default `haiku`; without `learnerDir` everything stays in memory.
 - Choices to review: any record not matching the schema rejects the whole Extractor output (class stays retryable); the Extractor gets the prose as numbered messages (0-based) and returns the message number per record; the whole class goes in one Extractor call (no chunking; about 3,000 words measured as one cheap call in the spike, but a very long class is untested); a chain that concludes one of its own premises (e.g. after an Auditor merge) is dropped; the person ending the class while the pipeline runs still finishes it on the server, the interface just may not hear the result (the pending file lets a retry find it).
 - NOT verified with a real model: the real Extractor and Auditor prompts and schemas (only the launch flags through a fake spawn and `structured_output` parsing), the quality of extracted ideas, and passing a JSON schema on the Windows command line. UI: the "Saved N ideas" line and Retry button are not checked in a browser.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

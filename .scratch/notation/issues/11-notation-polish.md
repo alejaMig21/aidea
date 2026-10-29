@@ -11,11 +11,11 @@
 
 **Status:** done
 
-- [ ] Each of the four defects has a before and after measurement or screenshot reading in the review notes (before may be "not reproducible").
-- [ ] Business: at 1000x700 and 1440x900 every note's text stays inside its note and every note inside its block, asserted by a headless script; long titles end with an ellipsis and show the full title in the tooltip.
-- [ ] Flowchart: on the fixture functions with a loop (for, while, nested) the loop exit has at most two elbows more than the direct path and no edge passes through a node; existing flowchart tests pass (update an expectation only if a coordinate legitimately changes and say so).
-- [ ] Components: no label or text overlaps a package or box border on the `relations` fixture; long names are clipped with tooltips.
-- [ ] Requirements: the gap between card and chip is a fixed small value; packets still run.
+- [~] Each of the four defects has a before and after measurement or screenshot reading in the review notes (before may be "not reproducible").
+- [~] Business: at 1000x700 and 1440x900 every note's text stays inside its note and every note inside its block, asserted by a headless script; long titles end with an ellipsis and show the full title in the tooltip.
+- [~] Flowchart: on the fixture functions with a loop (for, while, nested) the loop exit has at most two elbows more than the direct path and no edge passes through a node; existing flowchart tests pass (update an expectation only if a coordinate legitimately changes and say so).
+- [~] Components: no label or text overlaps a package or box border on the `relations` fixture; long names are clipped with tooltips.
+- [~] Requirements: the gap between card and chip is a fixed small value; packets still run.
 - [x] No console errors; `npm test` passes.
 
 ## Review notes
@@ -27,8 +27,10 @@ Measured with a headless Chrome script (1000x700 and 1440x900) against a core on
 - [x] 3 Components. On the `relations` fixture no label or member name sat on a border (the package name inside its tab is covered by the tab, so it only looked like a hit): not reproduced, nothing changed for it. Long names did reproduce: class, member, function and package names ran 50-200 px over their box. Now they are cut with an ellipsis (width estimated per character) with the whole name as a tooltip; clipped stub labels get the tooltip too. 0 hits on both fixtures at both sizes.
 - [x] 4 Requirements. Before: chip 50 px from the card, the next column 320 px away. After: chip 24 px from the card, columns 260 px apart (`layoutRequirements`, test added), packets still run (3 trace edges with `data-packets`), broken style untouched. The old drawing also let 2 criteria lines and the Measure line run 27 and 14 px past the card edge: clipped to 38 characters.
 - [x] No console errors in any run; typecheck and `npm test` pass (231 pass, 1 skipped).
-- [ ] Not verified: Playback token along the new exit routes (routes only changed shape; the replay code follows the route points), hover tooltips (set in the markup, not hovered), a loop exit whose label cannot fit (falls back to the old route; no fixture).
+- [~] Not verified: Playback token along the new exit routes (routes only changed shape; the replay code follows the route points), hover tooltips (set in the markup, not hovered), a loop exit whose label cannot fit (falls back to the old route; no fixture).
 
 Remaining problems:
 - The way back still runs 24 px right of the rightmost node of its rows, so it is wide when the exit branch sits beside the body; hugging the body would make it cross the exit edge. Left as is.
 - Character-width estimates for Components (7.4 px mono, 8.4 px for the class name); a different font could still overrun a few pixels.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

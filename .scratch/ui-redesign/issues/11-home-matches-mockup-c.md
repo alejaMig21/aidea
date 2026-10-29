@@ -9,9 +9,9 @@
 - [x] A screenshot of Home at the same size as the mockup (1000x625 CSS px, device scale 2) put next to `C-home.png` shows the same layout, spacing, type sizes, colours, radii and wording. Differences are listed in the review notes.
 - [x] Home covers the whole window: no top bar, chat, side panel or Canvas visible while it is shown.
 - [x] Relative times are formatted as in the mockup.
-- [ ] Open folder, New project, opening a row, forgetting an entry and unavailable entries still work.
-- [ ] Empty state (no recents) uses the same visual language and explains how to start.
-- [ ] Keyboard: every control reachable, visible focus ring.
+- [~] Open folder, New project, opening a row, forgetting an entry and unavailable entries still work.
+- [~] Empty state (no recents) uses the same visual language and explains how to start.
+- [~] Keyboard: every control reachable, visible focus ring.
 
 ## Review notes
 
@@ -19,3 +19,5 @@
 - Verified with screenshots: layout, tile/title/tagline, button sizes, label, card, row pitch and relative times match within about 1 px. Home covers the window (top bar and others hidden via `body:has(#home:not([hidden]))`), a row opens the Project, the New project form and Forget on hover were seen working.
 - Remaining differences: colours are estimated by eye (no pixel sampler available), so background, card and accent may be a few shades off; text weight/antialiasing differs slightly (Chromium vs the mockup renderer); the unavailable row, empty state, keyboard focus ring and the Home switcher entry were not screenshotted.
 - Criteria ticked below are the ones verified by screenshot only.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

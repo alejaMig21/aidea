@@ -6,12 +6,12 @@
 
 **Status:** done
 
-- [ ] Dragging the chat edge resizes it; a button folds and unfolds it.
-- [ ] Same for the right slot.
-- [ ] However the areas are resized, the Canvas never goes below its minimum width.
-- [ ] Sizes and folded state are still there after closing and reopening aidea.
-- [ ] The Tutor tab is always present and explains the Tutor is not available yet.
-- [ ] Checked live on narrow and wide windows; result noted in the ticket.
+- [~] Dragging the chat edge resizes it; a button folds and unfolds it.
+- [~] Same for the right slot.
+- [~] However the areas are resized, the Canvas never goes below its minimum width.
+- [~] Sizes and folded state are still there after closing and reopening aidea.
+- [~] The Tutor tab is always present and explains the Tutor is not available yet.
+- [~] Checked live on narrow and wide windows; result noted in the ticket.
 
 ## Review notes
 
@@ -21,3 +21,5 @@
 - The existing `#panel` (Proposals, Algorithm test data, Playback) stays where it was, now inside the right slot below the tab panes and always visible. Ticket 08 should turn it into the Algorithm tab.
 - To check live: dragging each edge resizes; arrow keys on a focused edge resize (Right grows the chat, Left grows the right slot); each top-bar button folds and unfolds; sizes and folded state survive a restart; on a narrow window the Canvas stays at least 320px and the side panes shrink; the Tutor tab says the Tutor is not available and its input and button are disabled; chat, permission cards, Proposals and the Algorithm panel still work in the new layout (the chat log now fills the column instead of a 40vh strip).
 - Known gaps: the project list column (`#side`) is neither resizable nor foldable; it only shrinks (up to 200px) when space is short.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

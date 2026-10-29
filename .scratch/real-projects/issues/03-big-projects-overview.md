@@ -8,9 +8,9 @@
 
 - [x] Through the protocol on a generated project with 120 modules in 6 folders: the layout of the Components layer is the overview (one rectangle per module plus one per folder label, no per-class rectangles), is deterministic, fits a width that is about one screen (wrapped rows, not one strip), and merged routes are at most one per pair of modules; the detail of one module returns only that module's boxes and the routes that touch it.
 - [x] A project with 40 modules or fewer returns the same layout as before (every existing test passes unchanged).
-- [ ] In the real interface the overview of Telegram and of hubstaff-automation draws in under 3 seconds and with fewer than 5,000 SVG elements, Fit shows every folder readably at 1920 and at 1280 pixels wide, hovering a module lights its lines, double click opens it, "All modules" returns, and no file of the person's folders changes (open them read-only).
+- [~] In the real interface the overview of Telegram and of hubstaff-automation draws in under 3 seconds and with fewer than 5,000 SVG elements, Fit shows every folder readably at 1920 and at 1280 pixels wide, hovering a module lights its lines, double click opens it, "All modules" returns, and no file of the person's folders changes (open them read-only).
 - [x] The legend of the Components layer says what the overview shows and what it leaves out; the legend check (`test/legend-check.test.ts`) and the shared scale of sizes and colours (`docs/agents/ui-style.md`) are respected.
-- [ ] Verified live with the real app on the main screen, with screenshots of both projects at both sizes, and a short written verdict on what is better and what is worse than before.
+- [~] Verified live with the real app on the main screen, with screenshots of both projects at both sizes, and a short written verdict on what is better and what is worse than before.
 
 ## Review notes
 
@@ -21,3 +21,5 @@
 - NOT done: not verified live on the main screen (headless only, the lead does it), so the last box stays open; Fit does not make the labels readable: at 1920 Fit gives 32% on Telegram and 21% on hubstaff-automation (15% at 1280), so folder paths and module names are shapes until the person zooms in (the layout keeps the shape of a screen, a legible overview of 590 boxes needs a semantic zoom, not this ticket); the focus zoom from an authored layer (`POST /focus`) still frames the old strip layout for a project of more than 40 modules, so its frame and dimming are wrong on an overview; a module's detail does not draw what comes into it from other modules; an import and a call between the same two modules are one line (the stronger kind); the module detail is cut off by nothing, so a module with thousands of members still draws every box.
 
 Follow-up: readability of labels at Fit moved to ticket 05. Not done in 03: `POST /focus` from an authored layer still frames the old strip layout for projects over 40 modules; module detail does not draw relationships that come into the module from others.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

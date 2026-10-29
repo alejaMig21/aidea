@@ -6,11 +6,11 @@
 
 **Status:** done
 
-- [ ] Through the protocol with a scripted Tutor: a Proposal tool call is refused if no question about that element was answered first; after an answer it creates a pending Proposal validated by the same rules as the builder's (bad fields refused with the same messages).
-- [ ] Accepting or rejecting works as for the builder's Proposals; the Proposal says it came from the Tutor.
-- [ ] The Tutor has no way to change a Node except by a Proposal.
-- [ ] The answer text is stored as Evidence and the accepted Node's Rationale can cite it.
-- [ ] Verified with a headless browser: a Tutor Proposal appears with the dashed pending style on its layer.
+- [~] Through the protocol with a scripted Tutor: a Proposal tool call is refused if no question about that element was answered first; after an answer it creates a pending Proposal validated by the same rules as the builder's (bad fields refused with the same messages).
+- [~] Accepting or rejecting works as for the builder's Proposals; the Proposal says it came from the Tutor.
+- [~] The Tutor has no way to change a Node except by a Proposal.
+- [~] The answer text is stored as Evidence and the accepted Node's Rationale can cite it.
+- [~] Verified with a headless browser: a Tutor Proposal appears with the dashed pending style on its layer.
 
 ## Review notes
 
@@ -23,3 +23,5 @@
 - [x] Instructions: new layer-class paragraph (ask with element, own words, Proposal, only then "Other ways to see this"); total under 4000 characters (asserted).
 - [x] UI: Tutor stream draws a "From the Tutor: proposal to add/change ..." line with Review; the builder chat line is prefixed "From the Tutor." when `source` is set; the proposal box shows a "From the Tutor" pill and the person's quoted words. Pending dashed style unchanged. Verified headless Chrome (scripted adapter): one `.proposal` on the Business layer with computed `stroke-dasharray: 5px, 4px`, the label, the quote in the box, no console errors. Screenshots and the script deleted.
 - Not done: the quoted answer is not auto-inserted into `why`; follow-up alternatives have no enforcement (as specified); an element question cannot be a choice question.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

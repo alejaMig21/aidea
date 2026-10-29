@@ -6,10 +6,10 @@
 
 **Status:** done
 
-- [ ] Through the core protocol: on a Project whose Architecture has a Node with a `parent`, the child's rectangle is below the parent's and horizontally overlapping it; a root keeps its grid place; a `parent` that does not exist leaves the Node as a root.
-- [ ] The Layer response lets the interface draw the connector (the parent id of each Node is available), covered by a protocol test.
-- [ ] A Proposal that adds a child Node is placed under its parent in the preview.
-- [ ] Checked live with a screenshot next to `mockups/A-session-top-bar-switcher.png`: connector lines present, dashed for the Proposal.
+- [~] Through the core protocol: on a Project whose Architecture has a Node with a `parent`, the child's rectangle is below the parent's and horizontally overlapping it; a root keeps its grid place; a `parent` that does not exist leaves the Node as a root.
+- [~] The Layer response lets the interface draw the connector (the parent id of each Node is available), covered by a protocol test.
+- [~] A Proposal that adds a child Node is placed under its parent in the preview.
+- [~] Checked live with a screenshot next to `mockups/A-session-top-bar-switcher.png`: connector lines present, dashed for the Proposal.
 
 ## Review notes
 
@@ -18,3 +18,5 @@
 - [x] A Proposal adding a child Node is placed under its parent (test/proposals.test.ts).
 - [x] Checked live at 1440x900 next to mockup A: solid connector Web app to Quote database, dashed accent connector to the Proposal; no console errors. Differences: the Proposal in the mockup is a root beside Web app (here the test Proposal had a parent, so it sits in the child row); connector is an elbow, not a straight side line.
 - Changed existing expectation: an added root now takes the second grid slot (x 280) because a child no longer occupies a grid slot.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

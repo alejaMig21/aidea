@@ -6,12 +6,12 @@
 
 **Status:** done
 
-- [ ] Through the core protocol: the Architecture layout puts children inside their parent's boundary with a margin, roots outside it, no overlaps, identical results for the same input; relations are returned with routes and label positions.
-- [ ] Children are visibly inside their boundary; relationships show label and technology; an unknown kind is drawn as a generic box.
-- [ ] A Proposal that adds an element or a relation previews in place with the dashed accent look; accepting or rejecting keeps working.
-- [ ] Packets travel along relationships; the animation switch and reduce-motion are respected.
-- [ ] The legend opens from "?".
-- [ ] Verified headless: screenshots of the `studio` fixture (extended with kinds, descriptions and relations) next to the prototype's Architecture tab, differences listed in the review notes; no console errors.
+- [~] Through the core protocol: the Architecture layout puts children inside their parent's boundary with a margin, roots outside it, no overlaps, identical results for the same input; relations are returned with routes and label positions.
+- [~] Children are visibly inside their boundary; relationships show label and technology; an unknown kind is drawn as a generic box.
+- [~] A Proposal that adds an element or a relation previews in place with the dashed accent look; accepting or rejecting keeps working.
+- [~] Packets travel along relationships; the animation switch and reduce-motion are respected.
+- [~] The legend opens from "?".
+- [~] Verified headless: screenshots of the `studio` fixture (extended with kinds, descriptions and relations) next to the prototype's Architecture tab, differences listed in the review notes; no console errors.
 
 ## Review notes
 
@@ -24,3 +24,5 @@ Headless run (Chrome, 1440x900, `studio-c4` fixture, after the review fixes): th
 - The layout indexes boundary members in a Map instead of scanning leaves per relation, climbs parent chains iteratively, and ignores a repeated id after the first.
 - The leftover generic card loop and parent connector of ticket 13 were deleted from `20-authored.js` and `70-proposals.js`; `layoutAuthored` was unreachable and is gone.
 - Broken-link marks survive an Architecture redraw (`markBroken()`).
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

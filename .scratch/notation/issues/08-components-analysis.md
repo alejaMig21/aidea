@@ -6,12 +6,12 @@
 
 **Status:** done
 
-- [ ] Through the core protocol on fixtures: inheritance between classes of the Project is reported; a base class outside the Project is reported as external.
-- [ ] Imports between modules of the Project are reported, with the imported names when they are explicit.
-- [ ] A direct call to a Project function is resolved; a call by name to a method that several classes define is inferred; a call through `getattr` or a callable stored in a variable is unresolved, and none of these is dropped silently.
-- [ ] Visibility, static, abstract (a class with abstract methods or deriving `ABC`) and property markers are reported on members.
-- [ ] The total of unresolved relationships is reported.
-- [ ] Earlier Components behaviour (outline, trace links, focus zoom, broken links) keeps working: all earlier tests pass.
+- [~] Through the core protocol on fixtures: inheritance between classes of the Project is reported; a base class outside the Project is reported as external.
+- [~] Imports between modules of the Project are reported, with the imported names when they are explicit.
+- [~] A direct call to a Project function is resolved; a call by name to a method that several classes define is inferred; a call through `getattr` or a callable stored in a variable is unresolved, and none of these is dropped silently.
+- [~] Visibility, static, abstract (a class with abstract methods or deriving `ABC`) and property markers are reported on members.
+- [~] The total of unresolved relationships is reported.
+- [~] Earlier Components behaviour (outline, trace links, focus zoom, broken links) keeps working: all earlier tests pass.
 
 ## Review notes
 
@@ -43,3 +43,5 @@ Existing fields are unchanged. New:
 - Calls through parameters, local or module variables, `getattr(...)()`, `x[k]()`, `f()()` are unresolved; names imported from a Project module but not defined there (re-exports) are unresolved when called.
 - Nested functions are not Nodes: their calls are attributed to the enclosing function, and a call to a nested function is not reported. Class-body and decorator calls are not reported. Aliases (`h = obj.method`) are only unresolved when called by bare name.
 - Composition and aggregation are not inferred (spec).
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

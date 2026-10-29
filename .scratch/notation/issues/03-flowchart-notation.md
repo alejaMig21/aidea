@@ -6,11 +6,11 @@
 
 **Status:** done
 
-- [ ] Through the core protocol: each flow step carries what the interface needs to choose its symbol (kind, labelled exits, input/output flag, exception type on exception edges); a construct without a symbol is reported as a generic step with its name.
-- [ ] Every symbol above is drawn from the data; no step is omitted; a function with `try`/`except`/`finally`, `with`, `break`, `continue`, a loop and a `match` renders without overlaps or crossing edges through nodes.
-- [ ] Playback: the token follows the recording's path and the highlighting rules above hold; pausing and stepping still work; the animation switch and reduce-motion are respected.
-- [ ] The legend opens from the "?" button and lists symbols and omissions.
-- [ ] Verified headless: screenshots of the same sample function next to the prototype's Algorithms tab at 1440x900, differences listed in the review notes; token positions sampled at two moments; no console errors.
+- [~] Through the core protocol: each flow step carries what the interface needs to choose its symbol (kind, labelled exits, input/output flag, exception type on exception edges); a construct without a symbol is reported as a generic step with its name.
+- [~] Every symbol above is drawn from the data; no step is omitted; a function with `try`/`except`/`finally`, `with`, `break`, `continue`, a loop and a `match` renders without overlaps or crossing edges through nodes.
+- [~] Playback: the token follows the recording's path and the highlighting rules above hold; pausing and stepping still work; the animation switch and reduce-motion are respected.
+- [~] The legend opens from the "?" button and lists symbols and omissions.
+- [~] Verified headless: screenshots of the same sample function next to the prototype's Algorithms tab at 1440x900, differences listed in the review notes; token positions sampled at two moments; no console errors.
 
 ## Review notes
 
@@ -21,7 +21,7 @@ Core: `flow.py` steps now carry `construct`, `generic`, `io`, `finally`, `except
 - [x] Playback (headless, `sample.total` with prices ["10","abc","5"]): token follows the recorded edge, active step glows accent, visited teal, taken edges teal, exception edge red and flashing only after it is taken (count of taken exception edges 0 at step 7, 1 at step 12). Token sampled: mid-flight at step 4 (93,244) then (745.5,548) settled at step 7; mid-flight at step 9 (83,244) then (288.5,446) at step 12. Stepping and slider scrubbing work; motion off or a jump of more than one step moves the token without animating.
 - [x] Legend opens from "?" with symbols, arrows, colours and not-shown list.
 - [x] No console errors except one 404 (a static resource, present before this ticket; not investigated).
-- [ ] Side-by-side screenshots against the prototype were not compared pixel by pixel; I looked at my own screenshots only.
+- [~] Side-by-side screenshots against the prototype were not compared pixel by pixel; I looked at my own screenshots only.
 
 Differences from the prototype: layout is the engine's, not hand-placed (the `return` sits beside the loop and the back edge runs far right); the token is a plain dot parked on the step's centre (covers some text); loop exits are labelled "next item / done" and "yes / no"; break/continue are pointed pentagons and with has a double frame (not in the prototype); no trace table or narration.
 
@@ -36,3 +36,5 @@ Remaining: the exception edge is drawn from `try`, while the run raises from ins
 - Flow edges now carry the kit's packets (forward edges only, red for an exception edge) and the start terminator breathes; a recording hides the packets (headless: 6 packets moving on an idle `ops.drain`, 0 visible during a replay; motion off stops the breathing).
 - A leftover `has-recording` class made a newly opened graph look dimmed; it is cleared when a graph opens and when the Project is redrawn.
 - Not done: the open items of the review notes above (side-by-side comparison with the prototype) are unchanged.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).

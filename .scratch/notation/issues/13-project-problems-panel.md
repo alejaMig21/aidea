@@ -6,10 +6,10 @@
 
 **Status:** done
 
-- [ ] Through the core protocol: the authored-layer response lets the interface group problems by layer and name the item (id when present) without parsing free text; existing `errors` text keeps working for other consumers; all earlier authored-layer and proposal tests pass.
-- [ ] No red text is drawn over the Canvas on any layer; a layer with problems shows a count badge on its tab; the "Problems (N)" button exists only when N is greater than 0.
-- [ ] The popover lists every problem, grouped by layer, in plain words with the item named and the file in small text; it is keyboard operable (button name, focus return, Escape closes) and not clipped at 420 px wide.
-- [ ] Verified headless (no visible window) at 1440x900 and 1000x700 on the `studio-requirements` fixture (six problems on the requirements layer) and on a copy of `studio-c4` whose architecture has a relation to the missing id "ghost": screenshots read by the implementer; no console errors; Proposals and the legend still work.
+- [~] Through the core protocol: the authored-layer response lets the interface group problems by layer and name the item (id when present) without parsing free text; existing `errors` text keeps working for other consumers; all earlier authored-layer and proposal tests pass.
+- [~] No red text is drawn over the Canvas on any layer; a layer with problems shows a count badge on its tab; the "Problems (N)" button exists only when N is greater than 0.
+- [~] The popover lists every problem, grouped by layer, in plain words with the item named and the file in small text; it is keyboard operable (button name, focus return, Escape closes) and not clipped at 420 px wide.
+- [~] Verified headless (no visible window) at 1440x900 and 1000x700 on the `studio-requirements` fixture (six problems on the requirements layer) and on a copy of `studio-c4` whose architecture has a relation to the missing id "ghost": screenshots read by the implementer; no console errors; Proposals and the legend still work.
 
 ## Review notes
 
@@ -17,5 +17,7 @@
 - [x] No red text over the Canvas (the `#authored-errors` element and its CSS are gone); red count badge on the tab of a faulty layer; "Problems (N)" button only when N > 0 (`src/ui/features/49-problems.js`).
 - [x] Popover: grouped by layer, item named by id (or position), file in small text; button name, Escape closes and returns focus, outside click closes, opening the legend closes it. Checked headless at 1440x900, 1000x700 and 420x800: not clipped.
 - [x] Headless run on `studio-requirements` (6 problems, tab badge 6, shown from Components and Requirements) and on a copy of `studio-c4` with a relation to "ghost" (1 problem on Architecture); a clean project shows no button and no badge; no console errors; legend still opens.
-- [ ] Proposals refusing an invalid item in the chat was not re-run in the browser (core tests cover it).
+- [~] Proposals refusing an invalid item in the chat was not re-run in the browser (core tests cover it).
 - Note: `markTabs` in 70-proposals.js rewrites a tab's text, so it calls `problemsMarkTab` to restore the red badge.
+
+`[~]` = closed as done without this check being recorded at the time; not re-verified (cleaned up on 2026-10-30, history in git).
