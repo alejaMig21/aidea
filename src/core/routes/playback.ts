@@ -1,7 +1,7 @@
 // Playback: run a function once with the given inputs, keep the recording, replay it from memory.
 // A recording is the steps the run went through and the values on arrival at each. Replaying never runs the code again.
 import { locate, moduleAndName } from "../locate.ts";
-import { projectPython, runPython } from "../python.ts";
+import { AdapterError, adapterFor } from "../adapters.ts";
 import type { Handler } from "../types.ts";
 
 const MAX_RECORDINGS = 200;
@@ -60,37 +60,35 @@ const handler: Handler = async (req, res, core) => {
     return true;
   }
 
-  // The Python that runs the code. The Project's own virtual environment holds a program that comes with the
-  // Project, so it is used only when the person asks for it.
+  // Whether to run with the Project's own interpreter (for Python, its virtual environment) instead of the default one.
   const wantsProjectPython = body?.useProjectPython;
   if (wantsProjectPython !== undefined && typeof wantsProjectPython !== "boolean") {
     core.send(res, 400, { error: "useProjectPython must be true or false" });
     return true;
   }
-  const projectInterpreter = wantsProjectPython ? projectPython(project.path) : undefined;
-  if (wantsProjectPython && !projectInterpreter) {
-    core.send(res, 422, { error: "This Project has no virtual environment (.venv, venv or env) to use" });
+
+  const adapter = adapterFor(project.path);
+  if (!adapter.run) {
+    core.send(res, 422, { error: "This project's language cannot run functions yet" });
     return true;
   }
-
   const { module, qualifiedName } = moduleAndName(project, node);
   const input = { args, kwargs, instance, fakes, values, instanceValues, effects };
   let outcome: Record<string, unknown>;
+  let interpreter: string;
   try {
-    outcome = JSON.parse(
-      await runPython("playback.py", [project.path, module.id, qualifiedName, file], {
-        input: JSON.stringify(input),
-        timeoutMs: Number(process.env.AIDEA_PLAYBACK_TIMEOUT_MS) || DEFAULT_RUN_TIMEOUT_MS,
-        python: projectInterpreter,
-        cwd: project.path,
-      }),
-    );
+    ({ outcome, interpreter } = await adapter.run({
+      projectPath: project.path,
+      moduleId: module.id,
+      qualifiedName,
+      file,
+      input,
+      useProjectInterpreter: wantsProjectPython === true,
+      timeoutMs: Number(process.env.AIDEA_PLAYBACK_TIMEOUT_MS) || DEFAULT_RUN_TIMEOUT_MS,
+    }));
   } catch (e) {
-    const failure = e as { code?: number; killed?: boolean };
-    if (failure.code === 2) core.send(res, 422, { error: "The function is no longer in its file: refresh the Project" });
-    else if (failure.code === 3) core.send(res, 422, { error: "The file cannot be read as Python: fix it, then refresh the Project" });
-    else if (failure.killed) core.send(res, 504, { error: "The function ran for too long and was stopped" });
-    else throw e;
+    if (!(e instanceof AdapterError)) throw e;
+    core.send(res, e.status, { error: e.message });
     return true;
   }
 
@@ -114,7 +112,7 @@ const handler: Handler = async (req, res, core) => {
   }
 
   const id = `pb-${++counter}`;
-  const recording = { id, project: project.id, node: node.id, input, interpreter: projectInterpreter ?? "default", ...outcome };
+  const recording = { id, project: project.id, node: node.id, input, interpreter, ...outcome };
   if (core.recordings.size >= MAX_RECORDINGS) core.recordings.delete(core.recordings.keys().next().value!);
   core.recordings.set(id, recording);
   core.send(res, 201, recording);

@@ -1,12 +1,12 @@
 import { mkdirSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
-import { runPython } from "../python.ts";
+import { adapterFor } from "../adapters.ts";
 import type { ServerResponse } from "node:http";
 import type { Core, Handler, Project } from "../types.ts";
 
 
 async function openProject(path: string): Promise<Project> {
-  const { nodes, errors, relationships, unresolved } = JSON.parse(await runPython("analyze.py", [path])) as Pick<Project, "nodes" | "errors" | "relationships" | "unresolved">;
+  const { nodes, errors, relationships, unresolved } = await adapterFor(path).analyze(path);
   // The full path is the id: two folders can share a name.
   return { id: path, name: basename(path), path, nodes, errors, relationships, unresolved };
 }

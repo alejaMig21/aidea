@@ -1,8 +1,7 @@
 // Algorithms layer: the control-flow graph of one function, laid out and framed by the core.
+import { AdapterError, adapterFor } from "../adapters.ts";
 import { frameOf, layoutFlow } from "../layout.ts";
-import type { FlowEdge, FlowStep } from "../layout.ts";
 import { locate, moduleAndName } from "../locate.ts";
-import { runPython } from "../python.ts";
 import type { Handler } from "../types.ts";
 
 const handler: Handler = async (req, res, core) => {
@@ -19,24 +18,18 @@ const handler: Handler = async (req, res, core) => {
 
   const { qualifiedName } = moduleAndName(project, node);
 
-  let flow: { steps: (FlowStep & Record<string, unknown>)[]; edges: FlowEdge[] };
+  const adapter = adapterFor(project.path);
+  if (!adapter.flow) {
+    core.send(res, 422, { error: "This project's language cannot draw an Algorithm graph yet" });
+    return true;
+  }
+  let flow;
   try {
-    flow = JSON.parse(await runPython("flow.py", [file, qualifiedName], { timeoutMs: 30_000 }));
+    flow = await adapter.flow(file, qualifiedName);
   } catch (e) {
-    const failure = e as { code?: number; killed?: boolean };
-    if (failure.code === 2) {
-      core.send(res, 422, { error: "The function is no longer in its file: refresh the Project" });
-      return true;
-    }
-    if (failure.code === 3) {
-      core.send(res, 422, { error: "The file cannot be read as Python: fix it, then refresh the Project" });
-      return true;
-    }
-    if (failure.killed) {
-      core.send(res, 504, { error: "Building the Algorithm graph took too long" });
-      return true;
-    }
-    throw e;
+    if (!(e instanceof AdapterError)) throw e;
+    core.send(res, e.status, { error: e.message });
+    return true;
   }
 
   const { rects, routes, lines } = layoutFlow(flow.steps, flow.edges);

@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] Every existing test passes unchanged; the routes no longer import the Python module directly.
-- [ ] A test registers a fake adapter and shows the routes use it (analysis, flow and run), and that an adapter that does not support an operation answers with a plain-words error instead of a crash.
-- [ ] The interface and its three operations are written down in the adapter file's header comment, with what each returns (the shapes already used by the routes).
-- [ ] No new dependency.
+- [x] Every existing test passes unchanged; the routes no longer import the Python module directly.
+- [x] A test registers a fake adapter and shows the routes use it (analysis, flow and run), and that an adapter that does not support an operation answers with a plain-words error instead of a crash.
+- [x] The interface and its three operations are written down in the adapter file's header comment, with what each returns (the shapes already used by the routes).
+- [x] No new dependency.
