@@ -16,8 +16,11 @@
   input.addEventListener("input", fit);
   // Enter sends; Shift+Enter makes a new line; Enter that confirms an input-method composition does neither.
   input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); }
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); form.requestSubmit(); } // 229: some browsers report a composition Enter this way
   });
+  // The text wraps differently when the column is resized, so the height follows the width.
+  let fitWidth = 0;
+  new ResizeObserver(() => { if (input.clientWidth !== fitWidth) { fitWidth = input.clientWidth; fit(); } }).observe(input);
   const send = document.createElement("button");
   send.textContent = "Send";
   form.append(label, input, send);
@@ -156,8 +159,9 @@
 
   form.onsubmit = async (e) => {
     e.preventDefault();
+    if (send.disabled) return; // the builder is still answering: the draft stays in the box
     const message = input.value.trim();
-    if (!message) return;
+    if (!message) { input.value = ""; fit(); return; }
     if (!current) { add("error", "Open a Project first."); return; }
     const project = current;
     input.value = "";
