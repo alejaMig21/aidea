@@ -22,6 +22,8 @@ const layoutEdge = 8; // the margin between a card and the window's edge
     /* With the Canvas hidden the two panes share its room and the separator between them is the chat one; one pane alone has nothing to separate from. */
     body.canvas-folded main, body.canvas-folded #sepr { display: none; }
     body.canvas-folded.chat-folded #sepc, body.canvas-folded.right-folded #sepc { display: none; }
+    /* The failure line lives in <main> over the Canvas; with the Canvas hidden it moves to the body (layoutApply) and floats at the bottom of the window. */
+    body > #error { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; max-width: min(560px, calc(100vw - 32px)); z-index: 25; padding: 6px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
     #fold-canvas:disabled { opacity: .45; cursor: default; }
     .drawer-close, #scrim { display: none; }
     body.narrow { --canvas-min: 0px; }
@@ -149,6 +151,8 @@ function layoutApply() {
   body.style.setProperty("--canvas-track", layoutCanvasHidden ? "0px" : `minmax(${canvasMin}px, ${layoutCanvasFr}fr)`);
   body.classList.toggle("narrow", layoutNarrow);
   body.classList.toggle("canvas-folded", layoutCanvasHidden);
+  const errorHome = layoutCanvasHidden ? body : document.querySelector("main");
+  if ($("error").parentNode !== errorHome) errorHome.append($("error"));
   const canvasButton = $("fold-canvas");
   canvasButton.disabled = layoutNarrow || (layoutState.chatFolded && layoutState.rightFolded);
   canvasButton.setAttribute("aria-pressed", String(!layoutCanvasHidden));
@@ -233,6 +237,14 @@ for (const [name, p] of Object.entries(layoutPanes)) {
     e.preventDefault();
     layoutSet(name, layoutTrack(name) + layoutStep * dir * (name === "chat" ? 1 : -1));
   };
+}
+
+// A quick tour draws over the Canvas, so starting one brings the Canvas back. The person's choice is saved as it now stands (shown).
+function layoutShowCanvas() {
+  if (!layoutCanvasHidden) return;
+  layoutState.canvasFolded = false;
+  layoutApply();
+  layoutSave();
 }
 
 $("fold-canvas").onclick = () => {

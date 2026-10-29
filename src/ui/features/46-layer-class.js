@@ -57,6 +57,7 @@
     guideTourOpen = false;
   }
   async function quickTour(layer, unavailable) {
+    layoutShowCanvas();
     note.hidden = !unavailable;
     if (layer === "business") return businessWalkSet(true);
     const l = (await help())?.[layer];
@@ -93,6 +94,7 @@
     at = 0;
     render();
     note.hidden = !unavailable;
+    layoutShowCanvas();
     layoutCloseDrawer(); // in a narrow window the Tutor's drawer covers the Canvas, where the tour is
     tour.hidden = false;
     guideTourOpen = true;
