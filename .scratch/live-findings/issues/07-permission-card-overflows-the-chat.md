@@ -6,6 +6,6 @@
 
 **Status:** ready-for-agent
 
-- [ ] At chat widths of 240, 270, 340 and 510 px a pending permission card, an answered one and one with a long request body show all their buttons and no horizontal scrollbar appears in the chat.
-- [ ] The card uses the shared scale (`docs/agents/ui-style.md`); nothing else in the chat changes.
+- [x] At chat widths of 240, 270, 340 and 510 px a pending permission card, an answered one and one with a long request body show all their buttons and no horizontal scrollbar appears in the chat.
+- [x] The card uses the shared scale (`docs/agents/ui-style.md`); nothing else in the chat changes.
 - [ ] Verified live on the second monitor, with a screenshot.
