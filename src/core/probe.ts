@@ -128,14 +128,20 @@ export const heldIdea = (core: Core, idea: string) => core.learner.graph().propo
 
 // A class goes further than the Probe: the graph holds what the Teacher taught, so an idea also needs strong Evidence in this Project before the Teacher is told to skip it:
 // a correct answer about it, given with confidence 70 or more (when a confidence was asked), in the last 90 days.
+// Only an answer to a check or an ask counts: a prediction, a review answer and a run-prediction are never strong Evidence.
+// A missing confidence means none was asked (a written answer graded by the grader), so it counts as sure enough.
 const STRONG_CONFIDENCE = 70;
 const STRONG_DAYS = 90;
+const NOT_A_CHECK = ["predict", "review"];
+// ponytail: reads the whole Evidence list per idea, so `held_ideas` is O(propositions x evidence); compute the list once per call if the ledger grows large.
 export function heldStrongly(core: Core, project: string, idea: string) {
   const held = heldIdea(core, idea);
   if (!held) return undefined;
   const names = new Set([held.name, ...held.aliases].map(normalise));
   const since = new Date(Date.now() - STRONG_DAYS * 86_400_000).toISOString();
-  const strong = core.learner.evidence({ project }).some((e) => e.correct === true && (e.confidence ?? 100) >= STRONG_CONFIDENCE && e.time >= since && names.has(e.idea ?? e.item ?? ""));
+  const strong = core.learner
+    .evidence({ project })
+    .some((e) => e.correct === true && e.kind !== "run-prediction" && !NOT_A_CHECK.includes(e.phase ?? "") && (e.confidence ?? 100) >= STRONG_CONFIDENCE && e.time >= since && names.has(e.idea ?? e.item ?? ""));
   return strong ? held : undefined;
 }
 

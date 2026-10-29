@@ -29,9 +29,9 @@ const cores: Awaited<ReturnType<typeof startCore>>[] = [];
 const DAY = 86_400_000;
 const prop = (name: string, aliases: string[] = []) =>
   JSON.stringify({ op: "put", proposition: { id: name.toLowerCase().replaceAll(" ", "-"), name, statement: `${name} is an idea taught before.`, aliases, provenance: [{ classId: "c1", message: 0, project }] } }) + "\n";
-// One Evidence row about an idea: a review answer. `ago` is how old it is in days.
-const row = (idea: string, o: { correct?: boolean | null; confidence?: number | null; ago?: number; project?: string } = {}) =>
-  JSON.stringify({ classId: "c1", questionId: `q-${idea}`, project: o.project ?? project, kind: "choice", correct: "correct" in o ? o.correct : true, confidence: o.confidence ?? 90, answer: "SECRET ANSWER", thought: null, dontKnow: false, time: new Date(Date.now() - (o.ago ?? 1) * DAY).toISOString(), phase: "review", idea }) + "\n";
+// One Evidence row about an idea: a check answer. `ago` is how old it is in days.
+const row = (idea: string, o: { correct?: boolean | null; confidence?: number | null; ago?: number; project?: string; phase?: string; kind?: string } = {}) =>
+  JSON.stringify({ classId: "c1", questionId: `q-${idea}`, project: o.project ?? project, kind: o.kind ?? "choice", correct: "correct" in o ? o.correct : true, confidence: o.confidence ?? 90, answer: "SECRET ANSWER", thought: null, dontKnow: false, time: new Date(Date.now() - (o.ago ?? 1) * DAY).toISOString(), phase: o.phase ?? "check", idea }) + "\n";
 
 async function newCore(props: string[], rows: string[] = []) {
   const dir = mkdtempSync(join(tmpdir(), "aidea-held-"));
@@ -117,6 +117,19 @@ test("an idea with weak or old Evidence, or none, is still taught", async () => 
   };
   await t.runClass();
   for (const idea of ["Wrong answer", "Unsure", "Old", "No evidence", "Other project", "Not graded"]) assert.equal(seen[idea]?.isError, undefined, `${idea}: ${seen[idea] && text(seen[idea])}`);
+});
+
+test("a correct prediction or run-prediction is not a check: it does not make an idea held", async () => {
+  const props = ["Guessed", "Run guessed", "Reviewed"].map((n) => prop(n));
+  const rows = [row("guessed", { phase: "predict" }), row("run guessed", { kind: "run-prediction", phase: "predict" }), row("reviewed", { phase: "review" })];
+  const t = await newCore(props, rows);
+  let held: any;
+  teacher = async function* (call) {
+    held = await call("held_ideas", {});
+    yield { type: "text", text: "done" };
+  };
+  await t.runClass();
+  assert.deepEqual(JSON.parse(text(held)).ideas, []);
 });
 
 test("with an empty graph nothing changes: any step begins, with or without an idea", async () => {
