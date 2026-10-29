@@ -31,8 +31,10 @@ const fakeAgent: Adapter = {
 
 const project = fixture("shop");
 const cores: Awaited<ReturnType<typeof startCore>>[] = [];
-const prop = (name: string) =>
-  JSON.stringify({ op: "put", proposition: { id: name.toLowerCase().replaceAll(" ", "-"), name, statement: `${name} is an idea taught before.`, aliases: [], provenance: [{ classId: "c1", message: 0 }] } }) + "\n";
+const prop = (spec: string) => {
+  const [name, ...aliases] = spec.split("|");
+  return JSON.stringify({ op: "put", proposition: { id: name.toLowerCase().replaceAll(" ", "-"), name, statement: `${name} is an idea taught before.`, aliases, provenance: [{ classId: "c1", message: 0 }] } }) + "\n";
+};
 
 async function newCore(known: string[] = [], dir = mkdtempSync(join(tmpdir(), "aidea-review-"))) {
   if (known.length) writeFileSync(join(dir, "propositions.jsonl"), known.map(prop).join(""));
@@ -159,4 +161,46 @@ test("the person can turn it off, the choice is remembered", async () => {
 test("the instructions teach the review tool within the size limit", () => {
   assert.match(TUTOR_INSTRUCTIONS, /review/);
   assert.ok(TUTOR_INSTRUCTIONS.length < 4000, `${TUTOR_INSTRUCTIONS.length} characters`);
+});
+
+test("a class whose Teacher never asks the review question is not stuck behind it", async () => {
+  const t = await newCore(["Queue"]);
+  const seen: Record<string, any> = {};
+  teacher = async function* (call) {
+    seen.first = await call("begin_step", { stepId: "s1", title: "One" });
+    seen.second = await call("begin_step", { stepId: "s1", title: "One" });
+    seen.third = await call("begin_step", { stepId: "s1", title: "One" });
+    seen.late = await call("review", reviewQ);
+    yield { type: "text", text: "done" };
+  };
+  await t.runClass();
+  assert.equal(seen.first.isError, true);
+  assert.equal(seen.second.isError, true);
+  assert.equal(seen.third.isError, undefined, "after two refusals the review is dropped and the class goes on");
+  assert.equal(seen.late.isError, true);
+  assert.deepEqual(await t.evidence(), []);
+});
+
+test("the person can always say they do not know, whatever the Teacher asked for", async () => {
+  const t = await newCore(["Queue"]);
+  teacher = async function* (call) {
+    await call("review", { ...reviewQ, allowDontKnow: false });
+    yield { type: "text", text: "done" };
+  };
+  const events = await t.runClass({}, () => ({ dontKnow: true }));
+  assert.equal(events.find((e) => e.type === "tutor_question").allowDontKnow, true);
+  assert.equal((await t.evidence())[0].dontKnow, true);
+});
+
+test("a layer class, a drift class and a class on an idea known by another name do not review what they teach", async () => {
+  const t = await newCore(["Customer Segment", "Worker|job runner"]);
+  launches.length = 0;
+  teacher = async function* () { yield { type: "text", text: "done" }; };
+  await t.runClass({ layer: "business" });
+  assert.match(tutorMessage(), /Worker is an idea taught before/, "Customer Segment is what the business layer teaches");
+  assert.doesNotMatch(tutorMessage(), /Customer Segment is an idea taught before/);
+  launches.length = 0;
+  await t.runClass({ topic: "how a job runner picks work" });
+  assert.match(tutorMessage(), /Customer Segment is an idea taught before/, "Worker is also called a job runner");
+  assert.doesNotMatch(tutorMessage(), /Worker is an idea taught before/);
 });

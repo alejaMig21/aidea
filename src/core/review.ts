@@ -6,14 +6,16 @@ import type { Core } from "./types.ts";
 
 export type Review = { idea: string; name: string; statement: string };
 
-// `aboutToTeach` is whatever names the topic of the class (topic, selected text); an idea that overlaps it is not a review, it is the lesson.
-export function pickReview(core: Core, project: string, aboutToTeach: string): Review | undefined {
-  const topic = normalise(aboutToTeach);
+// `aboutToTeach` is whatever names what the class will teach (its topic, the selected text, the concepts of the layer, the difference); an idea that overlaps
+// any of them, under its name or an alias, is not a review, it is the lesson.
+export function pickReview(core: Core, project: string, aboutToTeach: string[]): Review | undefined {
+  const topics = aboutToTeach.map(normalise).filter(Boolean);
+  const overlaps = (name: string) => topics.some((t) => t.includes(name) || name.includes(t));
   const last = new Map<string, string>(); // idea -> time of its latest review in this Project
   for (const e of core.learner.evidence({ project })) if (e.phase === "review" && e.idea && e.time > (last.get(e.idea) ?? "")) last.set(e.idea, e.time);
   const candidates = core.learner.graph().propositions
-    .map((p) => ({ idea: normalise(p.name), name: p.name, statement: p.statement }))
-    .filter((p) => p.idea && !(topic && (topic.includes(p.idea) || p.idea.includes(topic))));
+    .filter((p) => normalise(p.name) && ![p.name, ...p.aliases].map(normalise).filter(Boolean).some(overlaps))
+    .map((p) => ({ idea: normalise(p.name), name: p.name, statement: p.statement }));
   // Never reviewed first, then the longest ago; the graph's own order breaks ties, so the choice is the same every time.
   return candidates.sort((a, b) => (last.get(a.idea) ?? "").localeCompare(last.get(b.idea) ?? ""))[0];
 }

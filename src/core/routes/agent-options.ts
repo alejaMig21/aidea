@@ -1,8 +1,6 @@
 import type { Core, Handler } from "../types.ts";
 import type { Choice, Stored } from "../preferences.ts";
-import { classModeOf } from "../decision-class.ts";
-
-export const reviewQuestionOn = (core: Core, project: string) => core.preferences.get(project).reviewQuestion !== false;
+import { classModeOf, reviewQuestionOn } from "../decision-class.ts";
 
 // The stored choice, with anything the adapter does not offer (any more) replaced by its first entry.
 export function currentChoice(core: Core, project: string): Choice {

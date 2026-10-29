@@ -7,6 +7,7 @@ import { PATTERN_PREFIX, publicView } from "./proposals.ts";
 import type { StoredProposal } from "./proposals.ts";
 import type { Core } from "./types.ts";
 
+export const reviewQuestionOn = (core: Core, project: string) => core.preferences.get(project).reviewQuestion !== false; // absent means on
 export const classModeOf = (core: Core, project: string): "class" | "direct" => (core.preferences.get(project).classMode === "class" ? "class" : "direct");
 
 // Blocking decisions: a new or changed Node on an authored layer (a technology choice is a field of one), or a Pattern group.

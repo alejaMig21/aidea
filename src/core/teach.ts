@@ -34,6 +34,7 @@ export function createLesson() {
   const elements = new Map<string, { questionId: string; text: string }>(); // layer elements the person has answered about (co-authoring)
   let reviewDue: string | undefined; // the idea of a review question the first step waits for
   let reviewIdea: string | undefined; // the same idea, until the question has been asked
+  let reviewRefusals = 0; // begin_step calls refused for the review; after two the review is dropped so a Teacher that never asks it cannot trap the class
   const texts: string[] = []; // every explanation, in order: the Teacher's prose for the Learner graph
 
   const stepOf = (id: unknown, call: string): Step | Failure => {
@@ -55,14 +56,14 @@ export function createLesson() {
     },
     // The review question: one, before the first step, about the idea the core chose.
     review(args: Record<string, unknown>): Failure | { question: Question } {
-      if (!reviewIdea) return { error: reviewDue === undefined && !steps.size ? "No review question is due in this class. Go on with begin_step." : "The review question was already asked. Go on with begin_step." };
+      if (!reviewIdea) return { error: "No review question is due now (none was asked for, or it is done). Go on with begin_step." };
       const parsed = parseQuestion(args);
       if ("error" in parsed) return parsed;
       const q = parsed.question;
       if (q.kind === "text" && !nonEmpty(q.expected, MAX_PROSE)) return { error: "A text review question needs `expected`: the answer you have in mind, fixed before the question is shown" };
       const idea = reviewIdea;
       reviewIdea = undefined;
-      return { question: { ...q, phase: "review", idea } };
+      return { question: { ...q, allowDontKnow: true, phase: "review", idea } }; // the person can always say they do not know
     },
     reviewAnswered() {
       reviewDue = undefined;
@@ -71,6 +72,7 @@ export function createLesson() {
 
     begin(args: Record<string, unknown>, item?: string): Failure | { stepId: string } {
       if (finished) return { error: "The class is finished. End your turn." };
+      if (reviewDue && ++reviewRefusals > 2) reviewDue = reviewIdea = undefined;
       if (reviewDue) return { error: "Ask the review question first, with review, as your first message said. begin_step is refused until the person has answered it (\"I don't know\" counts)." };
       const { stepId, title } = args;
       if (!nonEmpty(stepId, 100)) return { error: "begin_step needs a stepId: a short unique id for the step" };
@@ -152,6 +154,18 @@ const GRADE_INSTRUCTIONS =
   "correct is true when the person expresses the expected idea, even in different words; false when the key idea is missing, wrong or only hinted at. " +
   "feedback is one plain sentence for the teacher naming what the person got right or missed. Answer with the JSON only.";
 
+// The verdict on one answer: right or wrong ("I don't know" is wrong), or null when the grader could not judge a text answer.
+async function judge(core: Core, q: Question, a: Answer): Promise<{ correct: boolean; feedback?: string } | null> {
+  if (a.dontKnow) return { correct: false };
+  if (q.kind === "choice") return { correct: a.option === q.correct };
+  try {
+    return await grade(core, q, a);
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+
 async function grade(core: Core, q: Question & { kind: "text" }, a: Answer): Promise<{ correct: boolean; feedback: string }> {
   const out = (await callRole(core.adapter, "grader", GRADE_INSTRUCTIONS, `Question: ${q.prompt}\nExpected answer: ${q.expected}\nPerson's answer: ${a.text}`, GRADE_SCHEMA, core.learner.model)) as any;
   if (typeof out?.correct !== "boolean" || typeof out?.feedback !== "string") throw new Error("the grader returned an invalid verdict");
@@ -218,19 +232,13 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
     const { heard } = result;
     const a = heard.answer;
     const evidence = { phase: "review" as const, idea: q.idea };
-    let correct = false;
-    let feedback: string | undefined;
-    if (!a.dontKnow && q.kind === "choice") correct = a.option === q.correct;
-    else if (!a.dontKnow && q.kind === "text") {
-      try {
-        ({ correct, feedback } = await grade(core, q, a));
-      } catch (e) {
-        console.error(e);
-        record(q, a, heard.questionId, undefined, evidence); // the answer is kept; nothing is counted
-        lesson.reviewAnswered();
-        return ok({ next: "The grader could not judge this answer, so nothing was counted. Go on with begin_step." });
-      }
+    const verdict = await judge(core, q, a);
+    if (!verdict) {
+      record(q, a, heard.questionId, undefined, evidence); // the answer is kept; nothing is counted
+      lesson.reviewAnswered();
+      return ok({ next: "The grader could not judge this answer, so nothing was counted. Go on with begin_step." });
     }
+    const { correct, feedback } = verdict;
     const entry = record(q, a, heard.questionId, q.kind === "text" && !a.dontKnow ? correct : undefined, evidence);
     lesson.reviewAnswered();
     return ok({
@@ -265,19 +273,12 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
 
   // A check. A choice is graded by the program, a text answer by the grader against the committed answer.
   const a = heard.answer;
-  let correct: boolean;
-  let feedback: string | undefined;
-  if (a.dontKnow) correct = false;
-  else if (q.kind === "choice") correct = a.option === q.correct;
-  else {
-    try {
-      ({ correct, feedback } = await grade(core, q, a));
-    } catch (e) {
-      console.error(e);
-      record(q, a, heard.questionId); // the answer is kept; nothing is counted
-      return err("The grader could not judge this answer, so nothing was counted and the step stays as it was. Check the step again with a different question.");
-    }
+  const verdict = await judge(core, q, a);
+  if (!verdict) {
+    record(q, a, heard.questionId); // the answer is kept; nothing is counted
+    return err("The grader could not judge this answer, so nothing was counted and the step stays as it was. Check the step again with a different question.");
   }
+  const { correct, feedback } = verdict;
   const entry = record(q, a, heard.questionId, q.kind === "text" && !a.dontKnow ? correct : undefined);
   lesson.checked(stepId, correct);
   const sureAndWrong = entry?.sureAndWrong === true;

@@ -120,6 +120,10 @@ _Avoid_: Curriculum, roadmap
 The record of each answer the person gave in a class: whether it was right, how sure they were and what they thought. It is kept apart from the Learner graph, which holds only ideas the Tutor taught.
 _Avoid_: Score, grade
 
+**Review question**:
+One question, with no hint, at the start of a class about an idea the person met in an earlier class and has not been asked about for the longest time. The person may say they do not know, and may turn it off; the answer is Evidence and never changes the Learner graph.
+_Avoid_: Quiz, test
+
 **Decision class**:
 A short class in Class mode that stops the builder at one Blocking decision until the person has answered.
 _Avoid_: Quiz

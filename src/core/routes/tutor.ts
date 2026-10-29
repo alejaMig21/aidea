@@ -8,8 +8,8 @@ import { join } from "node:path";
 import type { Handler } from "../types.ts";
 import { TUTOR_INSTRUCTIONS } from "../tutor.ts";
 import { createLesson } from "../teach.ts";
-import { DECISION_INSTRUCTIONS, bindDecision, decisionMessage, heldDecision, unbindDecision } from "../decision-class.ts";
-import { currentChoice, reviewQuestionOn } from "./agent-options.ts";
+import { DECISION_INSTRUCTIONS, bindDecision, decisionMessage, heldDecision, reviewQuestionOn, unbindDecision } from "../decision-class.ts";
+import { currentChoice } from "./agent-options.ts";
 import { pickReview, reviewMessage } from "../review.ts";
 import { layerClassMessage } from "../layer-help.ts";
 import { driftClassMessage, driftOf } from "../drift.ts";
@@ -57,9 +57,8 @@ const handler: Handler = async (req, res, core) => {
   if (held && "error" in held) return reject(400, held.error);
   const opening = held ? decisionMessage(held.proposal) : layer ? layerClassMessage(layer) : difference ? driftClassMessage(difference) : selection ? selectionMessage(selection) : body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
   // One review question about an earlier idea opens a class, unless the person turned it off; a short decision class never has one.
-  const review = held || !reviewQuestionOn(core, project.id) ? undefined : pickReview(core, project.id, [topic, selection].filter((x) => typeof x === "string").join(" "));
-  const message = review && typeof opening === "string" ? `${opening}
-${reviewMessage(review)}` : opening;
+  const review = held || !reviewQuestionOn(core, project.id) ? undefined : pickReview(core, project.id, [topic, selection, ...(layer ? LAYER_CONCEPTS[layer] : []), difference?.explanation, ...(difference?.nodes ?? [])].filter((x): x is string => typeof x === "string"));
+  const message = review && typeof opening === "string" ? opening + "\n" + reviewMessage(review) : opening;
   if (typeof message !== "string" || !message.trim() || message.length > MAX_MESSAGE_CHARS) {
     return reject(400, `message must be a non-empty string of at most ${MAX_MESSAGE_CHARS} characters`);
   }
