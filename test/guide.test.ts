@@ -124,6 +124,22 @@ test("the guide class does not touch the Plan and ignores it: a step needs no Pl
   assert.match(text(seen.free), /item/);
 });
 
+test("the guide class makes no proposals: the core refuses propose_node and propose_change with a message the Teacher can act on", async () => {
+  const t = await newCore();
+  const seen: Record<string, any> = {};
+  teacher = async function* (call) {
+    seen.node = await call("propose_node", { layer: "requirements", node: { id: "r1", title: "T" }, element: "requirements:r1" });
+    seen.change = await call("propose_change", { layer: "requirements", id: "r1", changes: { title: "U" }, element: "requirements:r1" });
+    yield { type: "text", text: "done" };
+  };
+  await t.events(await t.post("/tutor/classes", { project, guide: true }));
+  for (const r of [seen.node, seen.change]) {
+    assert.equal(r.isError, true);
+    assert.match(text(r), /about aidea itself/);
+    assert.match(text(r), /without proposing|do not propose|no proposals/i, "it says what to do instead");
+  }
+});
+
 test("guide must be true or absent", async () => {
   const t = await newCore();
   const res = await t.post("/tutor/classes", { project, guide: "yes" });

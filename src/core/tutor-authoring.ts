@@ -49,6 +49,7 @@ export async function runAuthoringTool(name: string, args: Record<string, unknow
   if (!isAsk && name !== "propose_node" && name !== "propose_change") return undefined;
   const conversation = core.permissions.conversationOf(token);
   if (!conversation?.classId) return err("The class is not running");
+  if (lesson.aboutAidea && !isAsk) return err("This class is about aidea itself, so it makes no proposals. Do not propose anything: go on teaching with begin_step, predict, explain and ask.");
   const key = tag(args.element);
   if (!key) return err("element must be a short text naming the layer element, for example \"business:customer-segments\"");
 
