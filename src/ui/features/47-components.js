@@ -24,7 +24,9 @@
     .cp-q { fill: var(--muted); font: 600 12px var(--mono); }
     /* Overview of a big project: a block per folder, a compact box per module, one faint line per pair (lit when its module is hovered or focused). */
     .cp-ov-folder { fill: color-mix(in srgb, var(--panel) 70%, transparent); stroke: var(--control); }
-    .cp-ov-label { font: 600 13px var(--mono); fill: var(--derived); pointer-events: none; }
+    .cp-ov-label { font: 600 13px var(--mono); fill: var(--derived); pointer-events: none; paint-order: stroke; stroke: var(--panel); stroke-linejoin: round; }
+    /* Under Fit the boxes shrink but the folder names do not: componentsZoomed sizes them; a module name or its counts is drawn only when it would be 11px or more on screen. */
+    #cp-root:not(.ov-names) .cp-ov-name, #cp-root:not(.ov-counts) .cp-ov-counts { display: none; }
     rect[data-id].cp-ov-module { cursor: pointer; } rect[data-id].cp-ov-module:is(:hover, :focus) { stroke: var(--accent); outline: none; }
     .cp-ov-name { font: 600 13px var(--sans); pointer-events: none; } .cp-ov-counts { font: 400 12px var(--mono); fill: var(--muted); pointer-events: none; }
     .cp-ov-edge { fill: none; stroke: var(--cp-line); stroke-width: 1.4; opacity: .15; pointer-events: stroke; }
@@ -235,8 +237,9 @@ function componentsOverviewDraw(world, nodes, layout) {
   for (const r of layout.rects) {
     if (!r.id.startsWith("folder:")) continue;
     const dir = r.id.slice(7), label = dir === "." ? "(project root)" : dir;
-    world.append(el("rect", { x: r.x, y: r.y, width: r.width, height: r.height, rx: 8, class: "cp-ov-folder" }));
-    world.append(componentsTip(el("text", { x: r.x + 14, y: r.y + 20, class: "cp-ov-label" }, componentsFit(label, r.width - 28)), label, componentsFit(label, r.width - 28)));
+    const block = el("rect", { x: r.x, y: r.y, width: r.width, height: r.height, rx: 8, class: "cp-ov-folder" });
+    block.append(el("title", {}, label)); // the full name, when Fit cut it short
+    world.append(block);
   }
   for (const m of nodes.filter((n) => n.kind === "module" && at.has(n.id))) {
     const r = at.get(m.id), c = layout.counts[m.id] ?? { classes: 0, functions: 0 };
@@ -251,6 +254,35 @@ function componentsOverviewDraw(world, nodes, layout) {
       el("text", { x: r.x + 10, y: r.y + 24, class: "cp-ov-name", "data-ref": m.id }, componentsFit(name, r.width - 20, 8.4)),
       el("text", { x: r.x + 10, y: r.y + 43, class: "cp-ov-counts", "data-ref": m.id }, counts),
     );
+  }
+  for (const r of layout.rects) { // the folder names go last: under Fit they stand over the boxes, with a halo to stay readable
+    if (!r.id.startsWith("folder:")) continue;
+    const dir = r.id.slice(7), label = dir === "." ? "(project root)" : dir;
+    const t = el("text", { class: "cp-ov-label", "data-full": label, "data-w": r.width, "data-x": r.x, "data-y": r.y }, label);
+    t.append(el("title", {}, label));
+    world.append(t);
+  }
+  componentsZoomed(view.k, true);
+}
+
+// Zoom of the overview. The smallest text of the shared scale is 11px (ui-style.md): a folder name is always 13px on screen
+// (the box shrinks, the name does not; it is cut to the width of its box), a module name or its counts is shown only from the zoom
+// where it reaches 11px. Called by every zoom (00-canvas.js apply) and once after drawing; it reads the drawing, not the state of this file.
+let componentsZoomK = 0;
+function componentsZoomed(k, force = false) {
+  const root = document.getElementById("cp-root");
+  if (!root || (k === componentsZoomK && !force)) return;
+  componentsZoomK = k;
+  root.classList.toggle("ov-names", k * 13 >= 11);
+  root.classList.toggle("ov-counts", k * 12 >= 11);
+  const kk = Math.min(k, 1);
+  for (const t of root.querySelectorAll(".cp-ov-label")) {
+    const d = t.dataset, room = d.w * kk - 12, full = d.full, shown = notationClip(full, Math.max(3, Math.floor(room / 7.9)));
+    t.setAttribute("x", +d.x + 6 / kk);
+    t.setAttribute("y", +d.y + 14 / kk);
+    t.style.fontSize = `${13 / kk}px`;
+    t.style.strokeWidth = `${5 / kk}px`;
+    t.firstChild.textContent = shown;
   }
 }
 

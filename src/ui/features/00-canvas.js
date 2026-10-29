@@ -5,6 +5,7 @@ const view = { ...viewStart };
 const apply = () => {
   $("world").setAttribute("transform", `translate(${view.x} ${view.y}) scale(${view.k})`);
   $("zoom-pct").textContent = `${Math.round(view.k * 100)}%`;
+  if (typeof componentsZoomed === "function") componentsZoomed(view.k); // the overview keeps its labels at a readable size
 };
 
 // Pan and zoom
