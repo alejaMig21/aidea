@@ -180,3 +180,57 @@ test("a drift id that is not on the list is refused", async () => {
   assert.equal(res.status, 400);
   assert.match((await res.json()).error, /drift/i);
 });
+
+// A project from python files and authored layers, for the edge cases below.
+function build(files: Record<string, string>, layers: Record<string, unknown>) {
+  const dir = mkdtempSync(join(tmpdir(), "aidea-drift-edge-"));
+  for (const [f, text] of Object.entries(files)) writeFileSync(join(dir, f), text);
+  mkdirSync(join(dir, ".aidea"));
+  for (const [name, nodes] of Object.entries(layers)) writeFileSync(join(dir, ".aidea", `${name}.json`), JSON.stringify({ nodes }));
+  return dir;
+}
+const anode = (id: string, traces: string[], extra: object = {}) => ({ id, title: id, technology: "Python", traces, rationale: why, ...extra });
+const driftOfDir = async (t: Awaited<ReturnType<typeof newCore>>, dir: string) => {
+  await t.post("/projects", { path: dir });
+  const res = await fetch(`${t.core.url}/drift?project=${encodeURIComponent(dir)}`);
+  return { status: res.status, drift: ((await res.json()) as any).drift as any[] };
+};
+
+test("two Nodes that stand for the same module cannot be told apart, so a relation between them is not called missing", async () => {
+  const t = await newCore();
+  const dir = build({ "m.py": "def f():\n    return 1\n", "n.py": "import m\n" }, {
+    architecture: [anode("p", ["m.f"], { relations: [{ to: "q", label: "uses" }] }), anode("q", ["m.f"]), anode("r", ["n"])],
+  });
+  assert.deepEqual((await driftOfDir(t, dir)).drift, []);
+});
+
+test("a Node inside a Node that declares a relation may use what the parent may use", async () => {
+  const t = await newCore();
+  const dir = build({ "s.py": "def go():\n    return 1\n", "c.py": "import s\n\n\ndef run():\n    return s.go()\n", "p.py": "import s\n" }, {
+    architecture: [anode("parent", ["p"], { relations: [{ to: "store", label: "uses" }] }), anode("child", ["c"], { parent: "parent", relations: [{ to: "kid", label: "owns" }] }), anode("store", ["s"]), anode("kid", [], { parent: "store" })],
+  });
+  assert.deepEqual((await driftOfDir(t, dir)).drift, []);
+});
+
+test("odd data in the authored files never breaks the list", async () => {
+  const t = await newCore();
+  const dir = build({ "a.py": "import b\n", "b.py": "def go():\n    return 1\n" }, {
+    architecture: [anode("a", ["a"], { relations: "b" }), anode("b", ["b"], { relations: [null, 3, { to: 7 }, { to: "a" }] }), anode("x>y", ["a"], { relations: [{ to: "b", label: "uses" }] })],
+    requirements: [{ id: "r", title: "r", as: "a", want: "w", so: "s", traces: "not-a-list", built: true, rationale: why }],
+  });
+  const { status, drift } = await driftOfDir(t, dir);
+  assert.equal(status, 200);
+  assert.ok(Array.isArray(drift));
+});
+
+test("two differences with the same Nodes on different layers have different ids", async () => {
+  const t = await newCore();
+  const dir = build({ "a.py": "def go():\n    return 1\n" }, {
+    business: [{ id: "n1", title: "n1", block: "customer segments", traces: ["gone"], rationale: why }],
+    requirements: [{ id: "n1", title: "n1", as: "a", want: "w", so: "s", traces: ["gone"], rationale: why }],
+  });
+  const { drift } = await driftOfDir(t, dir);
+  const broken = drift.filter((d) => d.type === "broken-trace");
+  assert.equal(broken.length, 2);
+  assert.notEqual(broken[0].id, broken[1].id);
+});
