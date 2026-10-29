@@ -27,15 +27,16 @@
     .cp-ov-label { font: 600 13px var(--mono); fill: var(--derived); pointer-events: none; paint-order: stroke; stroke: var(--panel); stroke-linejoin: round; }
     /* Under Fit the boxes shrink but the folder names do not: componentsZoomed sizes them; a module name or its counts is drawn only when it would be 11px or more on screen. */
     #cp-root:not(.ov-names) .cp-ov-name, #cp-root:not(.ov-counts) .cp-ov-counts { display: none; }
-    rect[data-id].cp-ov-module { cursor: pointer; } rect[data-id].cp-ov-module:is(:hover, :focus) { stroke: var(--accent); outline: none; }
+    rect[data-id].cp-ov-module { cursor: pointer; } rect[data-id].cp-ov-module:is(:hover, :focus) { stroke: var(--accent); }
     .cp-ov-name { font: 600 13px var(--sans); pointer-events: none; } .cp-ov-counts { font: 400 12px var(--mono); fill: var(--muted); pointer-events: none; }
     .cp-ov-edge { fill: none; stroke: var(--cp-line); stroke-width: 1.4; opacity: .15; pointer-events: stroke; }
     .cp-ov-edge[data-kind="imports"], .cp-ov-edge[data-resolution="inferred"] { stroke-dasharray: 6 4; }
     .cp-imports { fill: var(--raised); stroke: var(--control); }
-    .cp-import { fill: transparent; stroke: none; cursor: pointer; } .cp-import:is(:hover, :focus) { fill: color-mix(in srgb, var(--accent) 14%, transparent); outline: none; }
+    .cp-import { fill: transparent; stroke: none; cursor: pointer; } .cp-import:is(:hover, :focus) { fill: color-mix(in srgb, var(--accent) 14%, transparent); }
     .cp-import-unresolved { cursor: help; } .cp-import-unresolved:hover { fill: transparent; }
     .cp-import-group { font: 600 11px var(--mono); fill: var(--muted); }
-    .cp-ov-tests { stroke-dasharray: 6 4; cursor: pointer; } .cp-ov-tests:is(:hover, :focus) { stroke: var(--accent); outline: none; }
+    .cp-ov-tests { stroke-dasharray: 6 4; cursor: pointer; } .cp-ov-tests:is(:hover, :focus) { stroke: var(--accent); }
+    /* Keyboard focus keeps the shared outline (index.html :focus-visible); hover and focus only light the box. */
     #components-note { position: absolute; left: 15px; bottom: 15px; max-width: calc(100% - 210px); z-index: 1; padding: 6px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; font-size: 12px; color: var(--muted); }
     #components-note button { all: unset; cursor: pointer; color: var(--accent-soft); text-decoration: underline; } #components-note button:focus-visible { outline: 2px solid var(--accent); }
     #zoom #components-back { color: var(--text); font-weight: 500; }

@@ -89,6 +89,14 @@ const node = (tag, props = {}, ...children) => {
 };
 const show = (v) => (typeof v === "string" ? v : JSON.stringify(v));
 
+// The plain line for a Proposal the core refused (shared by the chat and the Tutor column): `who` is "Claude" or "The Tutor".
+// Returns [text, "Open it" button or nothing], to append to the line.
+function proposalRefusedParts(event, who) {
+  const why = event.reason === "pending" ? "a proposal with that name is already waiting for you. Review it first. " : `the ${event.layer} layer already has it. `;
+  const open = event.proposalId ? node("button", { type: "button", textContent: "Open it", onclick: () => document.dispatchEvent(new CustomEvent("proposal-open", { detail: { id: event.proposalId } })) }) : null;
+  return [`${who} tried to add "${event.nodeId}", but ${why}`, ...(open ? [open] : [])];
+}
+
 // "Decide for me": skips the class of a held Proposal. Returns the problem as text, or null when it worked.
 const proposalNoKey = "This window cannot decide this proposal any more, because the page was reloaded or the proposal was made in another window. Ask the builder for the change again here.";
 async function decideForMe(id) {

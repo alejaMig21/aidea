@@ -107,11 +107,12 @@
   #switcher-button .caret { font-size: 9px; color: var(--muted); flex: none; }
   #opening, #languages { min-width: 0; font-size: 12px; color: var(--muted); } /* secondary text of the shared scale */
   #languages { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #no-code { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); width: min(420px, calc(100% - 30px)); margin: 0; text-align: left; font-size: 13.5px; line-height: 1.5; color: var(--text); }  #fold-buttons { margin-left: auto; display: flex; gap: 12px; flex: none; }
-  #refresh { flex: none; padding: 4px 12px; font-size: 13px; font-weight: 400; background: transparent; color: var(--text); border: 1px solid var(--control); white-space: nowrap; } /* a control of the shared scale, like #guide-open */
-  #guide-open { margin-left: auto; flex: none; padding: 4px 12px; font-size: 13px; font-weight: 400; background: transparent; color: var(--text); border: 1px solid var(--control); white-space: nowrap; } /* a control of the shared scale */
+  #no-code { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); width: min(420px, calc(100% - 30px)); margin: 0; text-align: left; font-size: 13.5px; line-height: 1.5; color: var(--text); }
+  #fold-buttons { margin-left: auto; display: flex; gap: 12px; flex: none; }
+  #refresh, #guide-open { flex: none; padding: 4px 12px; font-size: 13px; font-weight: 400; background: transparent; color: var(--text); border: 1px solid var(--control); white-space: nowrap; } /* the top bar's text buttons: controls of the shared scale */
+  #guide-open { margin-left: auto; }
   #guide-open ~ #motion-toggle { margin-left: 0; } /* the guide button leads the right-hand group */
-  @media (max-width: 480px) { #switcher-label { display: none; } #topbar { gap: 8px; padding: 0 8px; } #fold-buttons { gap: 8px; } #guide-open { padding: 4px 8px; } }
+  @media (max-width: 480px) { #switcher-label { display: none; } #topbar { gap: 8px; padding: 0 8px; } #fold-buttons { gap: 8px; } #refresh, #guide-open { padding: 4px 8px; } }
   @media (max-width: 759px) { #switcher-menu { position: fixed !important; top: 49px !important; left: 8px !important; width: min(338px, calc(100vw - 16px)) !important; } }
   #fold-buttons button { width: 30px; height: 30px; padding: 0; display: grid; place-items: center; background: transparent; color: var(--text); border: 1px solid var(--control); }
   #fold-buttons button[aria-pressed="false"] { color: var(--muted); }

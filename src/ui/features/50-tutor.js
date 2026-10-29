@@ -211,14 +211,7 @@
 
   // A Proposal the Tutor tried to make and the core refused: one plain line with why, and the way to the one that is waiting.
   function tutorRefused(event) {
-    const why = event.reason === "pending" ? "a proposal with that name is already waiting for you. Review it first. " : `the ${event.layer} layer already has it. `;
-    const p = el("p", { className: "tutor-meta tutor-proposal" }, `The Tutor tried to add "${event.nodeId}", but ${why}`);
-    if (event.proposalId) {
-      const open = el("button", { type: "button", textContent: "Open it" });
-      open.onclick = () => document.dispatchEvent(new CustomEvent("proposal-open", { detail: { id: event.proposalId } }));
-      p.append(open);
-    }
-    log.append(p);
+    log.append(el("p", { className: "tutor-meta tutor-proposal" }, ...proposalRefusedParts(event, "The Tutor")));
     pane.scrollTop = pane.scrollHeight;
   }
 

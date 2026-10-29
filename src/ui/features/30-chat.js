@@ -143,15 +143,8 @@
       document.dispatchEvent(new CustomEvent("proposal-created", { detail: event }));
     }
     else if (event.type === "proposal_refused") {
-      const line = add("proposal-line", event.reason === "pending"
-        ? `Claude tried to add "${event.nodeId}", but a proposal with that name is already waiting for you. Review it first. `
-        : `Claude tried to add "${event.nodeId}", but the ${event.layer} layer already has it. `);
-      if (event.proposalId) {
-        const open = document.createElement("button");
-        open.textContent = "Open it";
-        open.onclick = () => document.dispatchEvent(new CustomEvent("proposal-open", { detail: { id: event.proposalId } }));
-        line.append(open);
-      }
+      const [text, open] = proposalRefusedParts(event, "Claude");
+      add("proposal-line", text).append(...(open ? [open] : []));
     }
     else if (event.type === "authored_changed") {
       // The builder changed the authored files without a Proposal: say which, and offer the way back.
