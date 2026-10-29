@@ -74,6 +74,11 @@ test("a layer class starts the Tutor on that layer with its content as data and 
   assert.match(tutor.message, /acceptance criteria/i);
   assert.match(tutor.message, /get_plan/);
   assert.match(tutor.message, /propose_node/);
+  // Found in a live run: a Teacher that is told to teach the Plan first never gets to co-author. The person speaks first, with an element question.
+  assert.match(tutor.message, /co-authoring class, not a lecture/i);
+  assert.match(tutor.message, /FIRST question[^\n]*ask[^\n]*element/i);
+  assert.ok(tutor.message.indexOf("FIRST question") < tutor.message.indexOf("get_plan"), "the element question comes before any Plan work");
+  assert.match(tutor.message, /requirements:functional-requirement/, "the element tag of the first element is given");
   assert.ok(events.some((e) => e.type === "text"));
   assert.ok(events.some((e) => e.type === "learner"), "the class ends with the Learner pipeline");
 });

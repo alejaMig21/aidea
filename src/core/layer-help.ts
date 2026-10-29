@@ -301,14 +301,27 @@ export const LAYER_HELP: Record<string, LayerHelp> = {
 const AUTHORED = ["business", "requirements", "architecture"];
 
 // The first message of a layer class: the layer's content as data, and the order of work.
+// A live run showed that a Teacher told to work the Plan first never got round to co-authoring, so for the layers the person writes the first
+// thing it must do is ask the first element question; the Plan only gets a short note.
+const tag = (layer: string, id: string) => `${layer}:${id.replaceAll(" ", "-")}`;
 export function layerClassMessage(layer: string): string {
   const help = LAYER_HELP[layer];
   const concepts = LAYER_CONCEPTS[layer] ?? [];
-  const common =
-    `The person opened a class on the ${layer} layer ("Teach me through it"). The layer's teaching content, as data, in the order to tell it:\n${JSON.stringify({ ...help, elements: help.order.map((id) => ({ id, ...help.elements[id] })) })}\n` +
-    `Plan: call get_plan first. If the Plan has no concepts for the ${layer} layer, add them with set_plan (the layer's usual concepts are ${JSON.stringify(concepts)}), keeping the rest of the Plan. Teach only items of the Plan, with begin_step {item}.\n` +
-    "Use plain words, and the content above as your guide; its examples are generic, so look at the person's own project with the read tools and use that.\n";
-  return common + (AUTHORED.includes(layer)
-    ? "Then build the layer WITH the person, one element at a time in that order: they speak first, you turn their words into a proposal with propose_node or propose_change, and only afterwards offer alternatives. Begin."
-    : "This layer is drawn from the code, so nobody writes it and you make no proposals: teach how to read it, using the person's own project. Begin.");
+  const content = `The layer's teaching content, as data, in the order to tell it:\n${JSON.stringify({ ...help, elements: help.order.map((id) => ({ id, tag: tag(layer, id), ...help.elements[id] })) })}\n`;
+  const plain = "Use plain words, and the content above as your guide; its examples are generic, so look at the person's own project with the read tools and use that.\n";
+  if (!AUTHORED.includes(layer)) {
+    return (
+      `The person opened a class on the ${layer} layer ("Teach me through it"). ${content}` +
+      `Plan: call get_plan first. If the Plan has no concepts for the ${layer} layer, add them with set_plan (the layer's usual concepts are ${JSON.stringify(concepts)}), keeping the rest of the Plan. Teach only items of the Plan, with begin_step {item}.\n` +
+      plain + "This layer is drawn from the code, so nobody writes it and you make no proposals: teach how to read it, using the person's own project. Begin."
+    );
+  }
+  const first = help.order[0];
+  return (
+    `The person opened a class on the ${layer} layer ("Teach me through it"). This is a co-authoring class, not a lecture: you help them write the layer in their own words. ${content}${plain}` +
+    `Your FIRST question to the person is about the first element, "${first}": ask it with ask {kind: "text", element: "${tag(layer, first)}", prompt} in plain words, with no jargon and no explanation before it (no begin_step, no stepId). They speak first.\n` +
+    "Then turn what they said into propose_node or propose_change for that element, quoting their words in rationale.why. Only after that offer alternatives, as one more ask with the same element, starting \"Other ways to see this\". " +
+    "Go on to the next element in the order given, with the tag of each element from the content. If they are stuck on a word, explain it briefly (explain needs an open step: begin_step then predict first) and go back to the question.\n" +
+    `Plan: call get_plan once. If it has nothing for the ${layer} layer, add at most two concepts with set_plan (usual: ${JSON.stringify(concepts)}), keeping the rest. The Plan only matters for the short explanations above. Begin with your first question.`
+  );
 }
