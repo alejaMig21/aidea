@@ -25,7 +25,7 @@
   const row = Object.assign(document.createElement("div"), { className: "row" });
   const said = Object.assign(document.createElement("p"), { className: "said", hidden: true });
   said.setAttribute("role", "status");
-  const hint = Object.assign(document.createElement("p"), { className: "hint", hidden: true, textContent: `Select less text: up to ${MAX} characters.` });
+  const hint = Object.assign(document.createElement("p"), { className: "hint", hidden: true });
   row.append(define, enter);
   pop.append(row, said, hint);
   document.body.append(pop);
@@ -36,7 +36,7 @@
   // Is the selection in a box the person types in? Those never offer the control.
   const typing = (node) => {
     const el = node?.nodeType === 1 ? node : node?.parentElement;
-    return !!el?.closest?.("input, textarea, select, [contenteditable=''], [contenteditable='true']");
+    return !!el?.closest?.("input, textarea, select, [contenteditable]:not([contenteditable='false'])");
   };
 
   function check() {
@@ -44,11 +44,14 @@
     const picked = sel?.toString().trim() ?? "";
     if (!picked || !sel.rangeCount || !current || typing(sel.anchorNode) || typing(sel.focusNode) || typing(document.activeElement)) return;
     if (pop.contains(sel.anchorNode)) return;
+    if (picked !== text) { token++; said.hidden = true; } // a definition still on its way belongs to the old selection
     text = picked;
-    said.hidden = true;
     const tooLong = picked.length > MAX;
-    define.disabled = enter.disabled = tooLong;
-    hint.hidden = !tooLong;
+    const busy = window.tutorUi?.isRunning();
+    define.disabled = tooLong;
+    enter.disabled = tooLong || busy;
+    hint.textContent = tooLong ? `Select less text: up to ${MAX} characters.` : "A class is running: end it to start another.";
+    hint.hidden = !(tooLong || busy);
     pop.hidden = false;
     const r = sel.getRangeAt(0).getBoundingClientRect();
     const w = pop.offsetWidth, h = pop.offsetHeight;
@@ -65,7 +68,7 @@
 
   define.onclick = async () => {
     const mine = ++token, project = current, asked = text;
-    define.disabled = true;
+    define.disabled = true; // the answer re-enables it only if the selection has not changed meanwhile
     said.className = "said";
     said.textContent = "Defining…";
     said.hidden = false;
@@ -80,7 +83,7 @@
       said.className = "said error";
       said.textContent = `Could not reach the core: ${err.message}`;
     }
-    define.disabled = false;
+    define.disabled = text.length > MAX;
   };
   enter.onclick = () => {
     const asked = text, project = current;

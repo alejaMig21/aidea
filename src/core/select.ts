@@ -1,5 +1,6 @@
 // Text the person selected on their screen and wants to learn about. It is data, never instructions: it travels as one quoted string.
-export const MAX_SELECTION = 2000;
+export const MAX_SELECTION = 2000; // 54-select.js repeats this number: keep them equal
+export const validSelection = (x: unknown): x is string => typeof x === "string" && x.trim().length > 0 && x.length <= MAX_SELECTION;
 
 // The first message of a free class on selected text.
 export const selectionMessage = (text: string) =>

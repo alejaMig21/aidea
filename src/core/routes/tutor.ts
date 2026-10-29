@@ -12,7 +12,7 @@ import { DECISION_INSTRUCTIONS, bindDecision, decisionMessage, heldDecision, unb
 import { currentChoice } from "./agent-options.ts";
 import { layerClassMessage } from "../layer-help.ts";
 import { driftClassMessage, driftOf } from "../drift.ts";
-import { MAX_SELECTION, selectionMessage } from "../select.ts";
+import { MAX_SELECTION, selectionMessage, validSelection } from "../select.ts";
 import { LAYER_CONCEPTS, isLayer } from "../probe.ts";
 
 const MAX_MESSAGE_CHARS = 20_000;
@@ -51,7 +51,7 @@ const handler: Handler = async (req, res, core) => {
   const difference = body?.drift === undefined ? undefined : driftOf(project).find((d) => d.id === body.drift);
   if (body?.drift !== undefined && !difference) return reject(400, "drift must be the id of a difference on the project's drift list (GET /drift)");
   const selection = body?.selection;
-  if (selection !== undefined && (typeof selection !== "string" || !selection.trim() || selection.length > MAX_SELECTION)) return reject(400, `selection must be the selected text, at most ${MAX_SELECTION} characters`);
+  if (selection !== undefined && !validSelection(selection)) return reject(400, `selection must be the selected text, at most ${MAX_SELECTION} characters`);
   const held = body?.decision === undefined ? undefined : heldDecision(core, project.id, body.decision);
   if (held && "error" in held) return reject(400, held.error);
   const message = held ? decisionMessage(held.proposal) : layer ? layerClassMessage(layer) : difference ? driftClassMessage(difference) : selection ? selectionMessage(selection) : body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);

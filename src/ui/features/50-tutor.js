@@ -269,7 +269,7 @@
   start.onclick = () => startClass();
   document.addEventListener("decision-class-start", (e) => startClass({ payload: { project: current, decision: e.detail.proposal } }));
   end.onclick = () => (running?.skip ? running.skip() : running?.abort.abort()); // closing the stream ends the class in the core
-  window.tutorUi = { startClass, abort: () => running?.abort.abort() };
+  window.tutorUi = { startClass, abort: () => running?.abort.abort(), isRunning: () => running !== null };
   document.addEventListener("project-opened", (e) => {
     if (running && running.project !== e.detail.id) running.abort.abort();
     if (!running) { log.replaceChildren(); log.hidden = true; pane.classList.remove("tutor-live", "tutor-over"); start.textContent = "Start a class"; }
