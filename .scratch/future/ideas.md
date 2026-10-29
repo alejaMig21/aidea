@@ -28,3 +28,7 @@ Order: teamwork storage any time; language adapters, then the engine, then the l
 - **aidea understands the aidea repository.** Needs the TypeScript and JavaScript adapter (`.scratch/language-adapters`), then a report of what is useful when reading a real, large repository (`.scratch/real-projects/issues/02`).
 - **The person's own projects** (`hubstaff-automation`, `Telegram`): work with aidea on them; first a read-only viability check (`.scratch/real-projects/issues/01`).
 - The bridge between the person and their own apps: while aidea is being built that gap still exists, so at the moment of truth the person needs to understand everything that happens. Whatever is built should favour showing what happens over hiding it.
+
+## Added by the person on 2026-10-30
+
+- **The interface spread over N screens.** The person works with several monitors: the Canvas on one and the Builder and the Tutor on another. Layout **presets** chosen from a menu (no dragging of columns needed), for example "everything on one screen", "Canvas alone on screen 2, Builder and Tutor on screen 1". Needs the three areas to be separate windows of the same running app that share one core and one state, and the Canvas can already be hidden per window (tonight's fold button) which is the first brick. Open questions: one Electron window per area or a free split, remembering the preset per set of monitors, and what happens when a monitor is unplugged.
