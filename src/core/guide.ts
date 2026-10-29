@@ -44,7 +44,7 @@ const PARTS: Record<string, Part> = {
   modes: {
     name: "Direct and Class",
     hint: "Do I want to be asked first?",
-    what: `Under the chat box, "Builder works" has two settings. "Direct" lets the builder work freely, and you review its Proposals. "Class" makes the builder wait at a big decision until the Tutor has asked you about it. A Proposal that is waiting for a class shows "Start the class", and also "Decide for me" if you would rather skip it; then the builder's own version can be accepted as it is. If you keep missing the questions of a class, the Tutor offers "Decide for me" too.`,
+    what: `Under the chat box, "Builder works" has two settings. "Direct" lets the builder work freely, and you review its Proposals. "Class" makes the builder wait at a big decision until the Tutor has asked you about it. A Proposal that is waiting for a class shows "Start the class", and also "Decide for me" if you would rather skip it; then the builder's own version can be accepted as it is. If you keep missing the questions of a class on a decision, the Tutor offers "Decide for me" too.`,
     question: "When would you rather be asked first, and when would you rather just see the result?",
     example: "Direct while you try ideas quickly, Class while you decide something you want to understand.",
     narration: "You choose how much the Tutor gets in the way of the builder.",
@@ -89,7 +89,7 @@ const PARTS: Record<string, Part> = {
   playback: {
     name: "Playback",
     hint: "Can I watch the code run?",
-    what: `On "Components", double-click a function to open its flowchart. The "Algorithms" tab in the right panel then lets you fill in "Test data" and press "Record a run", which runs that function for real on your computer. "Play" and the step arrows then replay what happened, one step at a time, without running it again.`,
+    what: `On "Components", double-click a function to open its flowchart. The "Algorithms" tab in the right panel then lets you fill in "Test data" and press "Record a run", which runs that function for real on your computer. "Play" and the step arrows then replay what happened, one step at a time, without running it again. A short sentence under the flowchart tells in plain words what happened at each step. If you tick "Guess first", you are asked to predict the next step before it is shown.`,
     question: "Where does this function take another way, and what value decides it?",
     example: "Watch which branch a discount check takes for a cart of two items.",
     narration: "Last, you can watch a real run of the code, one step at a time.",

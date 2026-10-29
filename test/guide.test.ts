@@ -72,6 +72,13 @@ test("every name the guide puts in quotes is a label or word the interface reall
   for (const label of quoted) assert.ok(ui.includes(label), `the interface has no "${label}"`);
 });
 
+test("the guide says only a class on a decision offers \"Decide for me\" after missed questions, and Playback names \"Guess first\" and the narration", async () => {
+  const els = (await (await newCore()).guide()).guide.elements;
+  assert.match(els.modes.what, /keep missing the questions of a class on a decision/);
+  assert.match(els.playback.what, /"Guess first"/);
+  assert.match(els.playback.what, /narrat|sentence/i);
+});
+
 test("the guide class starts the Tutor with the app content as data and a first step about what the person sees, not a lecture", async () => {
   const t = await newCore();
   launches.length = 0;
