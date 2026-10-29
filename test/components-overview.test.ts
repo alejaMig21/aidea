@@ -112,6 +112,48 @@ test("the detail of one module returns its own boxes only, and what leaves it as
   assert.ok(body.routes.some((r) => r.to === null), "calls to other modules are stubs");
 });
 
+type ImportRow = { id: string; label: string; target: string | null; group?: true; resolution: string; why?: string };
+type DetailBody = Body & { imports?: Record<string, { box: string; rows: ImportRow[] }> };
+
+test("in a module's detail the imports are rows of an Imports box, one per imported module, in full, and not arrows", async () => {
+  const root = generate(120, 6, 3);
+  const { nodes } = await open(root);
+  const mod = nodes.find((n) => n.kind === "module" && n.id === "pkg0.m0")!;
+  const { body } = (await open(root, mod.id)) as { body: DetailBody };
+  const block = body.imports![mod.id];
+  const targets = nodes.filter((n) => n.kind === "module" && ["pkg1.m1", "pkg2.m2", "pkg3.m3"].includes(n.id));
+  assert.deepEqual(block.rows.map((r) => r.target).sort(), targets.map((n) => n.id).sort());
+  assert.deepEqual(block.rows.map((r) => r.label).sort(), targets.map((n) => n.name).sort(), "the whole module name, never cut");
+  assert.ok(!body.routes.some((r) => r.kind === "imports"), "no import arrow");
+  const rect = (id: string) => body.rects.find((r) => r.id === id)!;
+  const box = rect(block.box), pkg = rect(mod.id);
+  assert.ok(box.x >= pkg.x && box.x + box.width <= pkg.x + pkg.width && box.y + box.height <= pkg.y + pkg.height, "inside the module package");
+  const rows = block.rows.map((r) => rect(r.id));
+  for (const r of rows) assert.ok(r.y >= box.y && r.y + r.height <= box.y + box.height && r.x >= box.x && r.x + r.width <= box.x + box.width, "each row inside the Imports box");
+  for (let i = 1; i < rows.length; i++) assert.ok(apart(rows[i - 1], rows[i]), "rows do not overlap");
+  for (const other of body.rects.filter((r) => r.id !== block.box && !r.id.startsWith(`${mod.id}#import:`) && r.id !== mod.id)) assert.ok(apart(box, other), `${other.id} does not overlap the Imports box`);
+});
+
+test("more than 8 imports are grouped by folder", async () => {
+  const root = generate(45, 3, 12);
+  const { nodes } = await open(root);
+  const { body } = (await open(root, "pkg0.m0")) as { body: DetailBody };
+  const rows = body.imports!["pkg0.m0"].rows;
+  assert.equal(rows.filter((r) => !r.group).length, 12);
+  assert.ok(rows.filter((r) => r.group).length >= 2, "a heading per folder");
+  assert.ok(nodes.length > 0 && rows[0].group, "a heading comes first");
+});
+
+test("a dynamic import that cannot be followed is an unresolved row with the reason", async () => {
+  const root = mkdtempSync(join(tmpdir(), "aidea-dynamic-"));
+  scratch.push(root);
+  for (let i = 0; i < 41; i++) writeFileSync(join(root, `m${i}.ts`), i === 0 ? `import { f1 } from "./m1.ts";\nexport async function load(name: string) { f1(); return import(name); }\n` : `export function f${i}() { return ${i}; }\n`);
+  const { body } = (await open(root, "m0")) as { body: DetailBody };
+  const rows = body.imports!["m0"].rows;
+  assert.deepEqual(rows.map((r) => [r.label, r.target, r.resolution]).sort(), [["dynamic import in load()", null, "unresolved"], ["m1", "m1", "resolved"]].sort());
+  assert.match(rows.find((r) => r.target === null)!.why!, /decided at run time/);
+});
+
 test("asking for the detail of something that is not a module is a 404", async () => {
   const root = generate(50, 5, 2);
   const { status } = await open(root, "pkg0.nothing");

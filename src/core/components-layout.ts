@@ -26,15 +26,23 @@ export type ComponentsRoute = {
   points: Point[];
   label?: { text: string; x: number; y: number };
 };
+// One row of the "Imports" box of a module's detail: an imported module (target is its id; opens it), a folder heading (group),
+// or an import that cannot be followed (target null, with the reason in `why`). `id` is the rectangle of the row.
+export type ImportRow = { id: string; label: string; target: string | null; group?: true; resolution: Resolution; why?: string };
+export type ImportsBlock = { box: string; rows: ImportRow[] };
 export type ComponentsLayout = {
   rects: Rect[];
   compartments: Record<string, { attributes: number; methods: number }>; // y of the top of each compartment of a class box
   routes: ComponentsRoute[];
+  imports?: Record<string, ImportsBlock>; // per module id, only in the detail of one module of a big project
 };
 
 const short = (name: string) => name.split(".").pop() ?? name;
+const IMPORT_GROUP_ABOVE = 8, IMPORTS_MAX_W = 560;
 
-export function layoutComponentsDiagram(nodes: CoreNode[], relationships: Relationship[] = []): ComponentsLayout {
+export type ImportLine = { label: string; target: string | null; folder: string; resolution: Resolution; why?: string };
+
+export function layoutComponentsDiagram(nodes: CoreNode[], relationships: Relationship[] = [], importLines: Record<string, ImportLine[]> = {}): ComponentsLayout {
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const rects: Rect[] = [];
   const compartments: ComponentsLayout["compartments"] = {};
@@ -46,6 +54,7 @@ export function layoutComponentsDiagram(nodes: CoreNode[], relationships: Relati
   };
   const columns: { id: string; x: number; width: number }[] = [];
   const boxOfNode = new Map<string, string>(); // Node id -> the box that draws it
+  const importsOf: Record<string, ImportsBlock> = {};
 
   let x = 0;
   for (const module of nodes.filter((n) => n.kind === "module")) {
@@ -58,12 +67,34 @@ export function layoutComponentsDiagram(nodes: CoreNode[], relationships: Relati
       ...membersOf(c).map((m) => (short(m.name).length + 5) * CHAR + 20),
     );
     const inner = Math.min(MAX_W, Math.max(MIN_W, short(module.name).length * CHAR + 56, ...boxes.map((b) => (b.kind === "class" ? textWidth(b) : (short(b.name).length + 3) * CHAR + 24))));
-    const width = inner + 2 * PAD;
+    // The "Imports" box comes first in the package: a heading and one row per imported module (a folder heading each when there are many).
+    const lines = importLines[module.id] ?? [];
+    const rows: { line?: ImportLine; label: string }[] = [];
+    if (lines.length > IMPORT_GROUP_ABOVE) {
+      for (const folder of [...new Set(lines.map((l) => l.folder))].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))) {
+        rows.push({ label: folder || "cannot be followed" }, ...lines.filter((l) => l.folder === folder).map((line) => ({ line, label: line.label })));
+      }
+    } else rows.push(...lines.map((line) => ({ line, label: line.label })));
+    const importsW = Math.min(IMPORTS_MAX_W, Math.max(0, ...rows.map((r) => r.label.length * CHAR + 44)));
+    const innerW = Math.max(inner, importsW);
+    const width = innerW + 2 * PAD;
     let y = HEAD + PAD;
+    if (rows.length) {
+      const id = `${module.id}#imports`, height = NAME_H + rows.length * ROW + SECTION_PAD;
+      put({ id, x: x + PAD, y, width: innerW, height });
+      const block: ImportsBlock = { box: id, rows: [] };
+      rows.forEach((r, i) => {
+        const rowId = `${module.id}#import:${i}`;
+        put({ id: rowId, x: x + PAD, y: y + NAME_H + SECTION_PAD / 2 + i * ROW, width: innerW, height: ROW });
+        block.rows.push(r.line ? { id: rowId, label: r.label, target: r.line.target, resolution: r.line.resolution, ...(r.line.why ? { why: r.line.why } : {}) } : { id: rowId, label: r.label, target: null, group: true, resolution: "resolved" });
+      });
+      importsOf[module.id] = block;
+      y += height + BOX_GAP;
+    }
     for (const box of boxes) {
       boxOfNode.set(box.id, box.id);
       if (box.kind === "function") {
-        put({ id: box.id, x: x + PAD, y, width: inner, height: FUNCTION_H });
+        put({ id: box.id, x: x + PAD, y, width: innerW, height: FUNCTION_H });
         y += FUNCTION_H + BOX_GAP;
         continue;
       }
@@ -71,12 +102,12 @@ export function layoutComponentsDiagram(nodes: CoreNode[], relationships: Relati
       const attributesH = attributes.length ? attributes.length * ROW + SECTION_PAD : EMPTY;
       const methodsH = methods.length ? methods.length * ROW + SECTION_PAD : EMPTY;
       const height = NAME_H + attributesH + methodsH;
-      put({ id: box.id, x: x + PAD, y, width: inner, height });
+      put({ id: box.id, x: x + PAD, y, width: innerW, height });
       compartments[box.id] = { attributes: y + NAME_H, methods: y + NAME_H + attributesH };
-      attributes.forEach((a, i) => put({ id: `${box.id}#${a.name}`, x: x + PAD, y: y + NAME_H + SECTION_PAD / 2 + i * ROW, width: inner, height: ROW }));
+      attributes.forEach((a, i) => put({ id: `${box.id}#${a.name}`, x: x + PAD, y: y + NAME_H + SECTION_PAD / 2 + i * ROW, width: innerW, height: ROW }));
       methods.forEach((m, i) => {
         boxOfNode.set(m.id, box.id);
-        put({ id: m.id, x: x + PAD, y: y + NAME_H + attributesH + SECTION_PAD / 2 + i * ROW, width: inner, height: ROW });
+        put({ id: m.id, x: x + PAD, y: y + NAME_H + attributesH + SECTION_PAD / 2 + i * ROW, width: innerW, height: ROW });
       });
       y += height + BOX_GAP;
     }
@@ -90,7 +121,7 @@ export function layoutComponentsDiagram(nodes: CoreNode[], relationships: Relati
   // Packages come first in the list, so a viewer drawing in order paints them under their boxes.
   rects.sort((a, b) => Number(!columns.some((c) => c.id === a.id)) - Number(!columns.some((c) => c.id === b.id)));
 
-  return { rects, compartments, routes: routesFor(relationships, byId, at, boxOfNode, columns, moduleOf) };
+  return { rects, compartments, routes: routesFor(relationships, byId, at, boxOfNode, columns, moduleOf), ...(Object.keys(importsOf).length ? { imports: importsOf } : {}) };
 }
 
 // ---- Overview: a project with more than OVERVIEW_ABOVE modules is too big to draw box by box (Telegram: 6,000 boxes in a strip
@@ -226,15 +257,29 @@ export function layoutModuleDetail(nodes: CoreNode[], relationships: Relationshi
   if (moduleOf.get(moduleId) !== moduleId) return null;
   const mine = nodes.filter((n) => moduleOf.get(n.id) === moduleId);
   const ids = new Set(mine.map((n) => n.id));
-  const nameOf = new Map(nodes.filter((n) => n.kind === "module").map((m) => [m.id, short(m.name)]));
+  const modules = new Map(nodes.filter((n) => n.kind === "module").map((m) => [m.id, m]));
+  const nameOf = new Map([...modules].map(([id, m]) => [id, short(m.name)]));
+  const byId = new Map(nodes.map((n) => [n.id, n]));
   const rels: Relationship[] = [];
+  // Imports are a list on the module (an "Imports" box), not arrows into the air: one row per imported module, whatever the number of import statements.
+  const lines = new Map<string, ImportLine>();
   for (const rel of relationships) {
     if (!ids.has(rel.from)) continue;
+    if (rel.kind === "imports") {
+      const target = rel.to ? moduleOf.get(rel.to) : undefined, m = target ? modules.get(target) : undefined;
+      if (m && target !== moduleId) lines.set(target!, { label: m.name, target: target!, folder: folderOf(m.file), resolution: rel.resolution });
+      else if (!m) { // one that cannot be followed (import(name) decided at run time): marked, with the reason
+        const owner = byId.get(rel.from)!, where = owner.kind === "module" ? "the top of the module" : `${short(owner.name)}()`;
+        lines.set(`?${rel.from}`, { label: `dynamic import in ${where}`, target: null, folder: "", resolution: "unresolved", why: "Unresolved: the module is decided at run time (a dynamic import), so aidea cannot say which one it is" });
+      }
+      continue;
+    }
     if (rel.to === null || ids.has(rel.to)) rels.push(rel);
     // Only the certain ones: a call matched by name only can point at dozens of modules and would bury the module under stubs.
     else if (rel.resolution === "resolved") rels.push({ ...rel, to: null, name: nameOf.get(moduleOf.get(rel.to) ?? "") ?? rel.name });
   }
-  return layoutComponentsDiagram(mine, rels);
+  const sorted = [...lines.values()].sort((a, b) => byText(a.label, b.label));
+  return layoutComponentsDiagram(mine, rels, sorted.length ? { [moduleId]: sorted } : {});
 }
 
 // The weakest resolution wins when several relationships merge: a route never claims more than its least certain part.

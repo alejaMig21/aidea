@@ -31,6 +31,10 @@
     .cp-ov-name { font: 600 13px var(--sans); pointer-events: none; } .cp-ov-counts { font: 400 12px var(--mono); fill: var(--muted); pointer-events: none; }
     .cp-ov-edge { fill: none; stroke: var(--cp-line); stroke-width: 1.4; opacity: .15; pointer-events: stroke; }
     .cp-ov-edge[data-kind="imports"], .cp-ov-edge[data-resolution="inferred"] { stroke-dasharray: 6 4; }
+    .cp-imports { fill: var(--raised); stroke: var(--control); }
+    .cp-import { fill: transparent; stroke: none; cursor: pointer; } .cp-import:is(:hover, :focus) { fill: color-mix(in srgb, var(--accent) 14%, transparent); outline: none; }
+    .cp-import-unresolved { cursor: help; } .cp-import-unresolved:hover { fill: transparent; }
+    .cp-import-group { font: 600 11px var(--mono); fill: var(--muted); }
     .cp-ov-tests { stroke-dasharray: 6 4; cursor: pointer; } .cp-ov-tests:is(:hover, :focus) { stroke: var(--accent); outline: none; }
     #components-note { position: absolute; left: 15px; bottom: 15px; max-width: calc(100% - 210px); z-index: 1; padding: 6px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; font-size: 12px; color: var(--muted); }
     #components-note button { all: unset; cursor: pointer; color: var(--accent-soft); text-decoration: underline; } #components-note button:focus-visible { outline: 2px solid var(--accent); }
@@ -65,6 +69,7 @@ function componentsLegend(unresolved, module = null) {
       [notationSwatch(`<path d="M3 22V6H15V9H41V22z" style="fill:var(--panel);stroke:var(--control)"/>`), "Package: a module, holding its classes and functions", ".cp-pkg"],
       [notationSwatch(`<rect x="3" y="2" width="38" height="20" rx="3" style="fill:var(--raised);stroke:var(--control)"/><path d="M3 9H41M3 15H41" style="stroke:var(--control)"/>`), "Class: name, attributes, methods", ".cp-class"],
       [notationSwatch(`<rect x="3" y="6" width="38" height="12" rx="3" style="fill:var(--raised);stroke:var(--control)"/>`), "Function: a small box inside its package", ".cp-func"],
+      ...(module ? [[notationSwatch(`<rect x="3" y="2" width="38" height="20" rx="3" style="fill:var(--raised);stroke:var(--control)"/><path d="M3 9H41" style="stroke:var(--control)"/><path d="M8 14H30M8 19H24" style="stroke:var(--label)"/>`), "Imports: the modules this module imports, one row each with its whole name. Click a row to open that module. A row with ? is a dynamic import that cannot be followed; its tooltip says why", ".cp-imports"]] : []),
       [notationSwatch(`<text x="2" y="16" style="fill:var(--label);font:12px var(--mono)">+ - ~</text>`), "Visibility: + public, - private, ~ special (dunder). Derived from the naming convention (underscores), not part of UML", ".cp-mark"],
       [notationSwatch(`<text x="2" y="16" style="fill:var(--label);font:12px var(--sans);text-decoration:underline">name</text>`), "Underlined: static or class method", ".cp-static"],
       [notationSwatch(`<text x="2" y="16" style="fill:var(--label);font:italic 12px var(--sans)">Name</text>`), "Italic: abstract class or method", ".cp-abstract"],
@@ -162,6 +167,29 @@ function componentsDetailDraw(world, nodes, layout) {
       el("rect", { x: r.x, y: r.y, width: tabW, height: 28, rx: 6, class: "cp-tab", "data-id": m.id, "data-ref": m.id }),
       componentsTip(el("text", { x: r.x + 12, y: r.y + 19, class: "cp-pkg-name", "data-ref": m.id }, pkgShown), pkgName, pkgShown),
     );
+  }
+
+  // The "Imports" box of a module opened from the overview: one row per imported module, whole name, each opening that module.
+  for (const [moduleId, block] of Object.entries(layout.imports ?? {})) {
+    const box = at.get(block.box);
+    world.append(
+      el("rect", { x: box.x, y: box.y, width: box.width, height: box.height, rx: 6, class: "cp-imports", "data-ref": moduleId }),
+      el("text", { x: box.x + box.width / 2, y: box.y + 20, "text-anchor": "middle", class: "cp-class-name", "data-ref": moduleId }, "Imports"),
+      el("path", { d: `M${box.x} ${box.y + 30}H${box.x + box.width}`, class: "cp-divider", "data-ref": moduleId }),
+    );
+    for (const row of block.rows) {
+      const r = at.get(row.id);
+      if (row.group) { // a folder heading, when there are many imports
+        world.append(el("text", { x: r.x + 10, y: r.y + 15, class: "cp-import-group", "data-ref": moduleId }, row.label));
+        continue;
+      }
+      const open = row.target !== null, hint = open ? `${row.label}: click to open its detail` : row.why;
+      const rect = el("rect", { x: r.x + 1, y: r.y, width: r.width - 2, height: r.height, rx: 4, class: open ? "cp-import" : "cp-import cp-import-unresolved", "data-ref": moduleId, ...(open ? { "data-import": row.target, tabindex: 0, role: "button", "aria-label": `Import ${row.label}. Press Enter to open it` } : {}) });
+      rect.append(el("title", {}, hint));
+      const text = el("text", { x: r.x + 10 + (open ? 0 : 14), y: r.y + 15, class: "cp-member", "data-ref": moduleId, "pointer-events": "none" }, row.label);
+      world.append(rect, text);
+      if (!open) world.append(el("text", { x: r.x + 10, y: r.y + 15, class: "cp-q", "data-ref": moduleId, "pointer-events": "none" }, "?"));
+    }
   }
 
   for (const route of layout.routes) {
@@ -336,6 +364,16 @@ async function componentsLoad(module, tests = false) {
 }
 let componentsLoaded = 0;
 componentsBack.onclick = () => componentsLoad(null);
+// A click on an import row of a module's detail opens that module (the same as double clicking its box in the overview).
+// Read from pointerup like the Canvas does for selecting: the pointer is captured by the svg, so a click would not name the row.
+let componentsDown = null;
+svg.addEventListener("pointerdown", (e) => { componentsDown = [e.clientX, e.clientY]; });
+svg.addEventListener("pointerup", (e) => {
+  const moved = componentsDown && Math.hypot(e.clientX - componentsDown[0], e.clientY - componentsDown[1]) >= 4;
+  componentsDown = null;
+  const row = !moved && authoredShown === "components" ? document.elementFromPoint(e.clientX, e.clientY)?.closest?.("[data-import]") : null;
+  if (row) componentsLoad(row.dataset.import);
+});
 svg.addEventListener("dblclick", (e) => {
   const live = componentsMode === "overview" && authoredShown === "components";
   const box = live ? e.target.closest?.(".cp-ov-module") : null;
@@ -346,6 +384,7 @@ svg.addEventListener("keydown", (e) => {
   if (e.key !== "Enter") return;
   if (e.target.classList?.contains("cp-ov-module")) componentsLoad(e.target.dataset.id);
   else if (e.target.classList?.contains("cp-ov-tests")) componentsToggleTests();
+  else if (e.target.dataset?.import) componentsLoad(e.target.dataset.import);
 });
 // A module that keeps the focus (after a click or Tab) keeps its lines lit when the pointer leaves the Canvas.
 svg.addEventListener("pointerleave", () => { if (document.activeElement?.classList?.contains("cp-ov-module")) notationLight({ target: document.activeElement }); });
