@@ -15,7 +15,7 @@ Decisions:
 
 **Blocked by:** 01 (the person approves the mockup first).
 
-**Status:** needs-info
+**Status:** ready-for-agent
 
 - [ ] The mockup (ticket 01) is approved and its changes, if any, are written under "Verdict" here.
 - [ ] The behaviour of every existing feature of the column still works as before: starting a class with or without a topic, the review question, the Probe (offer, skip, redo), probe/class cards with skip and "Don't know", the end/skip buttons, the Plan, Differences and Contract content, the layer class and decision class entries, selecting text, and narrow windows (drawers).
@@ -25,4 +25,4 @@ Decisions:
 
 ## Verdict
 
-(to be filled after the person has looked at the mockup)
+The person approved the mockup as it is (ticket 01): branch `prototype/tutor-column`, commit `470a130`, file `src/ui/features/99-prototype-tutor-column.js` (read it with `git show prototype/tutor-column:src/ui/features/99-prototype-tutor-column.js`; its CSS and markup are the reference for sizes, spacing and structure, its stub data and wiring are not). No changes were asked.
