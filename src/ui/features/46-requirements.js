@@ -152,5 +152,11 @@ notationRegisterLegend("requirements", {
     [notationSwatch(`<rect x="4" y="5" width="36" height="14" rx="5" style="fill:var(--raised);stroke:var(--derived)"/>`), "Trace chip: the code (teal) or the Architecture element (amber) the requirement points at; grey dashed when it is not found"],
   ],
   arrows: [[notationSwatch(`<path d="M2 12H36" style="stroke:var(--derived);stroke-width:1.6;stroke-dasharray:7 5"/><path d="M34 7L42 12L34 17" style="fill:none;stroke:var(--derived);stroke-width:1.5"/>`), "Trace link: from the card, past its criteria, to its target; the dot travels that way"]],
+  colours: [
+    ["authored", "Amber: written by a person or the agent (the card's dot, the words of the story, the quality tag, a link to Architecture)"],
+    ["derived", "Teal: found in the code (a link to code)"],
+    ["unresolved", "Grey, dashed: a link whose target is not found, never moving"],
+    ["danger", "Red outline on a card: a link from it is broken, or the code differs from what the Contract says"],
+  ],
   notShown: ["Priority (no Must or Should labels)", "Story maps", "Whether each criterion passes", "More than three trace targets per requirement"],
 });

@@ -120,5 +120,9 @@ notationRegisterLegend("business", {
     [notationSwatch(`<rect x="6" y="6" width="32" height="12" rx="3" style="fill:#f2b45a22;stroke:#f2b45a99"/>`), "A sticky note: one idea in plain words, inside the block it belongs to"],
     [notationSwatch(`<rect x="4" y="3" width="36" height="18" rx="5" style="fill:none;stroke:var(--control);stroke-dasharray:4 3"/>`), "The blocks fill in over time; an empty one is normal, it is a question still to answer"],
   ],
+  colours: [
+    ["authored", "Amber: written by a person or the agent (block names and sticky notes)"],
+    ["danger", "Red outline on a note: a link from it is broken, or the code differs from what the Contract says"],
+  ],
   notShown: ["Relationships between notes", "The order of notes by importance", "Numbers, priorities or evidence for any note"],
 });

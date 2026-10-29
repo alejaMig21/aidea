@@ -36,6 +36,12 @@ notationRegisterLegend("architecture", {
     [notationSwatch(`<rect x="4" y="4" width="36" height="16" rx="4" style="fill:var(--proposal);stroke:var(--accent);stroke-dasharray:4 3"/>`), "Proposal: suggested by the agent, not accepted yet"],
   ],
   arrows: [[notationSwatch(`<path d="M2 12H34" style="stroke:#4a546c;stroke-width:1.6;stroke-dasharray:7 5"/><path d="M42 12L33 7.5V16.5Z" style="fill:#4a546c"/>`), "One-way relationship with a verb and the technology; dashes flow and a dot travels in its direction"]],
+  colours: [
+    ["authored", "Amber: written by a person or the agent (the dot, a person, a pattern group)"],
+    ["accent", "Blue: suggested by the agent and not accepted yet (a Proposal)"],
+    ["danger", "Red: a broken link, a difference from the Contract, a pattern rule broken, or a Proposal to remove"],
+    ["unresolved", "Grey: only a guess, a possible pattern violation that is not certain"],
+  ],
   notShown: ["Dynamic scenarios and numbered steps", "Deployment (servers, regions)", "C4 levels as separate diagrams: one Canvas holds them all, nested"],
 });
 

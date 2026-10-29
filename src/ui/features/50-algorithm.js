@@ -162,6 +162,11 @@ function flowReplay(visits, index, previous) {
       [arrow("var(--danger)", true), "Red dashed, labelled with an exception type: control goes to that handler"],
       [notationSwatch(`<circle cx="22" cy="12" r="7" style="fill:var(--accent)"/>`), "Playback token: it travels the edges the real run took; the active step glows, visited steps turn teal. With no Playback shown, small dots travel the edges instead and the start breathes"],
     ],
+    colours: [
+      ["accent", "Blue: active now (the Playback token, the step it is on) or in flight (the dots on the edges)"],
+      ["derived", "Teal: taken or visited during Playback"],
+      ["danger", "Red: an exception, a raise, or the handler it leads to"],
+    ],
     notShown: ["Data flow between steps (the panel lists the values)", "async and await, and generators", "Comprehensions and lambdas as flows of their own (one generic step each)", "Nested functions (one step; open their own graph)", "Exceptions raised outside a try (only try/except is drawn)"],
   });
 }

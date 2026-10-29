@@ -63,6 +63,11 @@ function componentsLegend(unresolved) {
       [notationSwatch(line("M2 12H36", "stroke-dasharray:6 4") + line("M33 7L41 12L33 17")), "Dashed: inferred, matched by name only (several classes may share it)"],
       [notationSwatch(`<path d="M2 12H30" style="fill:none;${grey}stroke-width:1.4;stroke-dasharray:5 4"/><path d="M27 7L35 12L27 17" style="fill:none;${grey}stroke-width:1.4"/><text x="37" y="16" style="fill:var(--muted);font:600 12px var(--mono)">?</text>`), `Grey dashed with ?: unresolved, never animated. ${unresolved} in this Project. Python decides the target at run time (getattr, a function held in a variable), so aidea cannot say where it goes`],
     ],
+    colours: [
+      ["derived", "Teal: read from the code (package names)"],
+      ["accent", "Blue: a call in flight, the dot that travels along a relationship"],
+      ["unresolved", "Grey, dashed: unresolved, never moving"],
+    ],
     notShown: [
       "Composition and aggregation are not inferred: guessing them from code gives too many false positives",
       "Calls to libraries and Python builtins are left out",

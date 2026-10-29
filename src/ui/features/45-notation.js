@@ -6,12 +6,10 @@
 //   [data-breathe]   on any element: slow glow (about 2.5 s).
 //   [data-ends="idA idB"]  on an edge: the ids of its two Nodes; hovering or focusing a [data-node]/[data-id] Node lights its edges and dims the rest
 //                    (a Node may carry data-light="id" when the edges know it by another id).
-// Legends: notationRegisterLegend(layerKey, { shapes, arrows, notShown }) with shapes/arrows as [[notationSwatch(svgInner), "text"], ...] and notShown as ["text", ...].
+// Legends: notationRegisterLegend(layerKey, { shapes, arrows, colours, notShown }) with shapes/arrows as [[notationSwatch(svgInner), "text"], ...],
+// colours as [["accent|derived|visited|authored|danger|unresolved", "text"], ...] (only the tones that layer really draws; none = no "Colours" section) and notShown as ["text", ...].
+// A layer's declared colours are read back with notationLegends[layerKey].colours.
 const notationKey = "aidea.animations";
-const notationColours = [
-  ["accent", "Active now, or in flight"], ["derived", "Visited, or derived from the code"], ["authored", "Authored by a person or the agent"],
-  ["danger", "Error or exception"], ["unresolved", "Unresolved: grey, dashed, never moving (inferred links are dashed but still flow)"],
-];
 
 {
   const style = document.createElement("style");
@@ -156,7 +154,7 @@ function notationRenderLegend() {
   const label = layerBar.querySelector(`[data-layer="${layer}"]`)?.textContent ?? layer;
   legendButton.setAttribute("aria-label", `Legend for ${label}`);
   legendPop.setAttribute("aria-label", `${label} legend`);
-  const colours = notationColours.map(([tone, text]) => [notationSwatch(`<rect x="4" y="6" width="36" height="12" rx="3" style="fill:var(--${tone});${tone === "unresolved" ? "opacity:.6" : ""}"/>`), text]);
+  const colours = (legend.colours ?? []).map(([tone, text]) => [notationSwatch(`<rect x="4" y="6" width="36" height="12" rx="3" style="fill:var(--${tone});${tone === "unresolved" ? "opacity:.6" : ""}"/>`), text]);
   const notShown = legend.notShown ?? ["This layer has not described its notation yet."];
   legendPop.replaceChildren(...notationList("Shapes", legend.shapes), ...notationList("Arrows", legend.arrows), ...notationList("Colours", colours), ...notationList("Not shown", notShown, "not"));
 }
