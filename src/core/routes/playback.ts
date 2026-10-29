@@ -2,6 +2,7 @@
 // A recording is the steps the run went through and the values on arrival at each. Replaying never runs the code again.
 import { locate, moduleAndName } from "../locate.ts";
 import { AdapterError, adapterFor } from "../adapters.ts";
+import { narrate } from "../narrate.ts";
 import type { Handler } from "../types.ts";
 
 const MAX_RECORDINGS = 200;
@@ -111,8 +112,15 @@ const handler: Handler = async (req, res, core) => {
     return true;
   }
 
+  // One plain sentence per visit, told from the graph and the visits alone (narrate.ts); a graph that cannot be drawn leaves it out.
+  let narration: string[] | undefined;
+  try {
+    narration = adapter.flow && Array.isArray(outcome.visits) ? narrate(await adapter.flow(file, qualifiedName), outcome as Parameters<typeof narrate>[1]) : undefined;
+  } catch (e) {
+    if (!(e instanceof AdapterError)) throw e;
+  }
   const id = `pb-${++counter}`;
-  const recording = { id, project: project.id, node: node.id, input, interpreter, ...outcome };
+  const recording = { id, project: project.id, node: node.id, input, interpreter, ...outcome, narration };
   if (core.recordings.size >= MAX_RECORDINGS) core.recordings.delete(core.recordings.keys().next().value!);
   core.recordings.set(id, recording);
   core.send(res, 201, recording);

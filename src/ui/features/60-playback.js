@@ -15,6 +15,8 @@ playbackStyle.textContent = `
   #pane-algorithm .pb-row > button { flex: 1; padding: 5px 10px; font-size: 13px; }
   #pane-algorithm .pb-row > button.step { flex: none; width: 29px; padding: 4px 0; }
   #pane-algorithm .pb-values, #pane-algorithm #pb-output { font: 12.5px/1.7 var(--mono); margin: 4px 0 0; padding: 10px 12px; background: var(--raised); border-radius: 8px; color: var(--text); white-space: pre-wrap; }
+  #pane-algorithm #pb-narration { margin: 4px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--text); }
+  #pane-algorithm #pb-narration:empty { display: none; }
   #pane-algorithm #pb-output:empty { display: none; }
   #pane-algorithm .pb-values div { display: flex; justify-content: space-between; gap: 8px; }
   #pane-algorithm .pb-error { color: var(--danger); font-size: 12px; }
@@ -53,6 +55,7 @@ function pbShowEntry() {
   const entry = pbRecording.visits[pbIndex];
   if (!entry) { // the run failed before its first step (for example a missing argument)
     $("pb-position").textContent = "0 / 0";
+    $("pb-narration").textContent = "";
     $("pb-values").replaceChildren(pbEl("div", { className: "pb-error" }, pbEl("span", { textContent: pbRecording.error ? `${pbRecording.error.type}: ${pbRecording.error.message}` : "Nothing was recorded" })));
     $("pb-output").textContent = pbRecording.output ?? "";
     return;
@@ -66,6 +69,7 @@ function pbShowEntry() {
   });
   $("pb-position").textContent = `${pbIndex + 1} / ${pbRecording.visits.length}`;
   $("pb-slider").value = pbIndex;
+  $("pb-narration").textContent = pbRecording.narration?.[pbIndex] ?? ""; // told by the core from the recording; nothing is invented here
   const names = Object.keys(entry.locals);
   const rows = names.map((name) => pbEl("div", {}, pbEl("span", { textContent: name }), pbEl("span", { textContent: entry.locals[name] })));
   const last = pbIndex === pbRecording.visits.length - 1;
@@ -175,6 +179,7 @@ function pbRender() {
         pbEl("button", { id: "pb-play", className: "primary", textContent: "Play", onclick: pbPlayPause }),
         pbEl("span", { id: "pb-position" }),
       ),
+      pbEl("p", { id: "pb-narration" }),
       pbEl("div", { id: "pb-values", className: "pb-values" }),
       pbEl("pre", { id: "pb-output" }),
       pbEl("p", { className: "pb-warning", textContent: `Interpreter used: ${pbRecording.interpreter}` }),

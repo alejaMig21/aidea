@@ -4,9 +4,9 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Through the protocol or a pure function with tests on recordings of the fixtures: for assignments, calls, branches, loops, returns and exceptions the sentence is the expected one, and for an unrecognised step the sentence says only the line and what changed.
-- [ ] The sentence appears for the current step while stepping, in the Algorithms column, in `--text` at 13.5px; it does not change the existing controls.
-- [ ] Values are shown as the program holds them, shortened with an ellipsis when long.
-- [ ] Verified in the real app on the main screen: record a run of a fixture function and read five steps in a row; the text is correct and helps.
+- [x] Through the protocol or a pure function with tests on recordings of the fixtures: for assignments, calls, branches, loops, returns and exceptions the sentence is the expected one, and for an unrecognised step the sentence says only the line and what changed.
+- [x] The sentence appears for the current step while stepping, in the Algorithms column, in `--text` at 13.5px; it does not change the existing controls.
+- [x] Values are shown as the program holds them, shortened with an ellipsis when long.
+- [x] Verified in the real app on the main screen: record a run of a fixture function and read five steps in a row; the text is correct and helps.
