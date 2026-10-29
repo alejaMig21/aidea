@@ -105,6 +105,9 @@ export type ComponentsOverview = {
   counts: Record<string, { classes: number; functions: number }>; // per module id; functions include methods
   routes: ComponentsRoute[]; // module to module; points are [start, control, end] of a gentle quadratic curve
   pairs: { total: number; shown: number };
+  // Only when the project has test or fixture folders: how many modules and folders they hold, how many pairs touch them, and whether they are drawn.
+  // Closed (the default), they are one block `tests:folded` and have no boxes and no lines; open, they stand after the other folders.
+  tests?: { modules: number; folders: number; pairs: number; open: boolean };
 };
 
 // The module each Node belongs to (a module is its own), for every Node at once.
@@ -121,8 +124,10 @@ function moduleIndex(nodes: CoreNode[]): Map<string, string> {
 
 const folderOf = (file: string) => file.split("/").slice(0, -1).join("/") || ".";
 const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0); // no locale: the same order on every machine
+const TEST_NAMES = new Set(["test", "tests", "__tests__", "fixtures", "spec", "specs"]);
+const isTestFolder = (dir: string) => dir.split("/").some((part) => TEST_NAMES.has(part.toLowerCase()));
 
-export function layoutComponentsOverview(nodes: CoreNode[], relationships: Relationship[] = []): ComponentsOverview {
+export function layoutComponentsOverview(nodes: CoreNode[], relationships: Relationship[] = [], { openTests = false } = {}): ComponentsOverview {
   const moduleOf = moduleIndex(nodes);
   const modules = nodes.filter((n) => n.kind === "module");
   const counts: ComponentsOverview["counts"] = Object.fromEntries(modules.map((m) => [m.id, { classes: 0, functions: 0 }]));
@@ -137,12 +142,17 @@ export function layoutComponentsOverview(nodes: CoreNode[], relationships: Relat
   // The blocks stand in lanes of LANE_COLS modules across, each block going to the shortest lane (in path order), so the whole
   // project is about as wide as a screen and fills it (a strip, or rows with holes, would shrink to nothing under Fit).
   // The lanes make the width: MIN_TARGET at least, more as the project grows so that it keeps a screen's shape.
+  // Test and fixture folders are drawn last, or, closed (the default), as one block that says how many modules it holds.
+  const testDirs = [...groups.keys()].filter(isTestFolder).sort(byText);
+  const testIds = new Set(testDirs.flatMap((d) => groups.get(d)!.map((m) => m.id)));
+  const hidden = openTests ? new Set<string>() : testIds;
+  const drawn = [...[...groups.keys()].filter((d) => !isTestFolder(d)).sort(byText), ...(openTests ? testDirs : [])];
   const laneW = 2 * BLOCK_PAD + LANE_COLS * MOD_W + (LANE_COLS - 1) * MOD_GAP;
-  const target = Math.max(MIN_TARGET, Math.sqrt(modules.length * (MOD_W + MOD_GAP) * (MOD_H + MOD_GAP) * 1.7 * ASPECT)); // 1.7: blocks leave holes, measured on two real projects
+  const target = Math.max(MIN_TARGET, Math.sqrt((modules.length - hidden.size) * (MOD_W + MOD_GAP) * (MOD_H + MOD_GAP) * 1.7 * ASPECT)); // 1.7: blocks leave holes, measured on two real projects
   const lanes = Array.from({ length: Math.max(1, Math.round(target / (laneW + BLOCK_GAP))) }, () => 0); // height used so far in each lane
 
   const folders: Rect[] = [], boxes: Rect[] = [];
-  for (const dir of [...groups.keys()].sort(byText)) {
+  for (const dir of drawn) {
     const members = groups.get(dir)!.sort((a, b) => byText(a.name, b.name));
     // A big folder is wider (up to the whole width) so that it does not stand taller than everything else; it takes `span` lanes side by side.
     const cols = Math.min(LANE_COLS * lanes.length, members.length, Math.ceil(Math.sqrt(members.length * 2)));
@@ -161,6 +171,10 @@ export function layoutComponentsOverview(nodes: CoreNode[], relationships: Relat
       id: m.id, x: x + BLOCK_PAD + (i % cols) * (MOD_W + MOD_GAP), y: y + LABEL_H + Math.floor(i / cols) * (MOD_H + MOD_GAP), width: MOD_W, height: MOD_H,
     }));
   }
+  if (testDirs.length && !openTests) { // the closed block: one lane wide, in the shortest lane
+    const y = Math.min(...lanes), lane = lanes.indexOf(y);
+    folders.push({ id: "tests:folded", x: lane * (laneW + BLOCK_GAP), y, width: laneW, height: LABEL_H + BLOCK_PAD + MOD_H });
+  }
   const rects = [...folders, ...boxes];
   const at = new Map(boxes.map((r) => [r.id, r]));
   const nameOf = new Map(modules.map((m) => [m.id, short(m.name)]));
@@ -168,10 +182,15 @@ export function layoutComponentsOverview(nodes: CoreNode[], relationships: Relat
   // One entry per ordered pair of modules: the strongest kind, the number of relationships and the weakest resolution among them.
   const KINDS: Relationship["kind"][] = ["calls", "inherits", "imports"];
   const pairs = new Map<string, { from: string; to: string; kinds: Set<string>; count: number; resolution: Resolution }>();
+  const touchingTests = new Set<string>(); // pairs with a test module at either end, drawn or not
   for (const rel of relationships) {
     const from = moduleOf.get(rel.from), to = rel.to ? moduleOf.get(rel.to) : undefined;
-    if (!from || !to || from === to || !at.has(from) || !at.has(to)) continue;
-    const key = `${from}\n${to}`, mine = pairs.get(key);
+    if (!from || !to || from === to) continue;
+    const key = `${from}\n${to}`;
+    if (testIds.has(from) || testIds.has(to)) touchingTests.add(key);
+    if (hidden.has(from) || hidden.has(to)) continue;
+    if (!at.has(from) || !at.has(to)) continue;
+    const mine = pairs.get(key);
     if (!mine) { pairs.set(key, { from, to, kinds: new Set([rel.kind]), count: 1, resolution: rel.resolution }); continue; }
     mine.kinds.add(rel.kind);
     mine.count++;
@@ -196,7 +215,8 @@ export function layoutComponentsOverview(nodes: CoreNode[], relationships: Relat
       points: [onEdge(a, ac, ctrl), { x: round(ctrl.x), y: round(ctrl.y) }, onEdge(b, bc, ctrl)],
     };
   });
-  return { rects, counts, routes, pairs: { total: pairs.size, shown: routes.length } };
+  const tests = testDirs.length ? { tests: { modules: testDirs.reduce((n, d) => n + groups.get(d)!.length, 0), folders: testDirs.length, pairs: touchingTests.size, open: openTests } } : {};
+  return { rects, counts, routes, pairs: { total: pairs.size, shown: routes.length }, ...tests };
 }
 
 // The detailed layout of one module: its classes, methods and functions. What leaves the module is a stub, a resolved

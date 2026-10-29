@@ -31,7 +31,9 @@
     .cp-ov-name { font: 600 13px var(--sans); pointer-events: none; } .cp-ov-counts { font: 400 12px var(--mono); fill: var(--muted); pointer-events: none; }
     .cp-ov-edge { fill: none; stroke: var(--cp-line); stroke-width: 1.4; opacity: .15; pointer-events: stroke; }
     .cp-ov-edge[data-kind="imports"], .cp-ov-edge[data-resolution="inferred"] { stroke-dasharray: 6 4; }
-    #components-note { position: absolute; left: 15px; bottom: 15px; z-index: 1; padding: 6px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; font-size: 12px; color: var(--muted); }
+    .cp-ov-tests { stroke-dasharray: 6 4; cursor: pointer; } .cp-ov-tests:is(:hover, :focus) { stroke: var(--accent); outline: none; }
+    #components-note { position: absolute; left: 15px; bottom: 15px; max-width: calc(100% - 210px); z-index: 1; padding: 6px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; font-size: 12px; color: var(--muted); }
+    #components-note button { all: unset; cursor: pointer; color: var(--accent-soft); text-decoration: underline; } #components-note button:focus-visible { outline: 2px solid var(--accent); }
     #zoom #components-back { color: var(--text); font-weight: 500; }
   `;
   document.head.append(style);
@@ -94,12 +96,13 @@ function componentsLegend(unresolved, module = null) {
 }
 
 // The legend of the overview of a big project: what it shows and, as plainly, what it leaves out.
-function componentsOverviewLegend(pairs, unresolved) {
+function componentsOverviewLegend(pairs, unresolved, tests = null) {
   const line = (extra = "") => `<path d="M2 12H36" style="fill:none;stroke:var(--cp-line);stroke-width:1.4;${extra}"/><path d="M33 7L41 12L33 17" style="fill:none;stroke:var(--cp-line);stroke-width:1.4"/>`;
   notationRegisterLegend("components", {
     shapes: [
       [notationSwatch(`<rect x="2" y="2" width="40" height="20" rx="5" style="fill:var(--panel);stroke:var(--control)"/>`), "Folder: a block holding the modules of one folder, named by its path", ".cp-ov-folder"],
       [notationSwatch(`<rect x="3" y="5" width="38" height="14" rx="3" style="fill:var(--raised);stroke:var(--control)"/>`), "Module: one box with its name and how many classes and functions it holds. Double click it, or press Enter on it, to open its detail", ".cp-ov-module"],
+      ...(tests && !tests.open ? [[notationSwatch(`<rect x="2" y="2" width="40" height="20" rx="5" style="fill:var(--panel);stroke:var(--control);stroke-dasharray:6 4"/>`), "Closed block: the folders named test, tests, fixtures or spec, folded into one. The line at the bottom says how many modules it holds and opens it", ".cp-ov-tests"]] : []),
     ],
     arrows: [
       [notationSwatch(line()), "A call or an import between two modules, one line per pair, with the arrow on the module that is used. Only the lines of the module under the pointer (or focused) are lit; the others are faint. Solid: calls; dashed: imports, or calls matched by name only", ".cp-ov-edge"],
@@ -107,7 +110,8 @@ function componentsOverviewLegend(pairs, unresolved) {
     colours: [["derived", "Teal: folder paths, read from the code"]],
     notShown: [
       "Classes, methods and functions: open a module (All modules brings you back)",
-      pairs.total > pairs.shown ? `Only the ${pairs.shown} strongest of ${pairs.total} module pairs are drawn; ${pairs.total - pairs.shown} are hidden` : `All ${pairs.total} module pairs are drawn`,
+      ...(tests && !tests.open ? [`${componentsPlural(tests.modules, "module")} of the test and fixture folders, and the ${componentsPlural(tests.pairs, "pair")} that touch them: closed, open the block to see them`] : []),
+      pairs.total > pairs.shown ?`Only the ${pairs.shown} strongest of ${pairs.total} module pairs are drawn; ${pairs.total - pairs.shown} are hidden` : `All ${pairs.total} module pairs are drawn`,
       `Relationships that cannot be followed (unresolved, ${unresolved} in this Project): they show in the detail of the module they leave`,
       "Imports of modules outside the Project, and calls to libraries and built-in functions",
       "Several relationships between the same two modules are one line (its tooltip says how many)",
@@ -127,12 +131,13 @@ function componentsDraw(world, nodes, layout, unresolved, module = null) {
   componentsMode = layout.mode ?? "detail";
   if (componentsMode === "overview") {
     componentsOverviewDraw(root, nodes, layout);
-    componentsOverviewLegend(layout.pairs, unresolved);
+    componentsOverviewLegend(layout.pairs, unresolved, layout.tests);
   } else {
     componentsDetailDraw(root, nodes, layout);
     componentsLegend(unresolved, module);
   }
   componentsPairs = layout.pairs ?? null;
+  componentsTests = layout.tests ?? null;
   componentsChrome();
   notationUnlight(); // what was under the pointer is gone
   if ((componentsMode === "overview" || module) && authoredShown === "components") {
@@ -234,11 +239,15 @@ function componentsOverviewDraw(world, nodes, layout) {
     path.append(el("title", {}, `${route.kind} ${route.name}${route.count > 1 ? ` (x${route.count})` : ""}: ${route.resolution}`));
     world.append(path);
   }
+  const folderLabel = (r) => r.id === "tests:folded" ? `tests and fixtures: ${layout.tests.modules} hidden`
+    : r.id.startsWith("folder:") ? (r.id.slice(7) === "." ? "(project root)" : r.id.slice(7)) : null;
   for (const r of layout.rects) {
-    if (!r.id.startsWith("folder:")) continue;
-    const dir = r.id.slice(7), label = dir === "." ? "(project root)" : dir;
-    const block = el("rect", { x: r.x, y: r.y, width: r.width, height: r.height, rx: 8, class: "cp-ov-folder" });
-    block.append(el("title", {}, label)); // the full name, when Fit cut it short
+    const label = folderLabel(r);
+    if (!label) continue;
+    const closed = r.id === "tests:folded";
+    const block = el("rect", { x: r.x, y: r.y, width: r.width, height: r.height, rx: 8, class: closed ? "cp-ov-folder cp-ov-tests" : "cp-ov-folder",
+      ...(closed ? { tabindex: 0, role: "button", "aria-label": `${label}. Double click it, or press Enter on it, to show them` } : {}) });
+    block.append(el("title", {}, closed ? `${label}. Double click to show them` : label)); // the full name, when Fit cut it short
     world.append(block);
   }
   for (const m of nodes.filter((n) => n.kind === "module" && at.has(n.id))) {
@@ -256,8 +265,8 @@ function componentsOverviewDraw(world, nodes, layout) {
     );
   }
   for (const r of layout.rects) { // the folder names go last: under Fit they stand over the boxes, with a halo to stay readable
-    if (!r.id.startsWith("folder:")) continue;
-    const dir = r.id.slice(7), label = dir === "." ? "(project root)" : dir;
+    const label = folderLabel(r);
+    if (!label) continue;
     const t = el("text", { class: "cp-ov-label", "data-full": label, "data-w": r.width, "data-x": r.x, "data-y": r.y }, label);
     t.append(el("title", {}, label));
     world.append(t);
@@ -287,7 +296,7 @@ function componentsZoomed(k, force = false) {
 }
 
 // What the overview and the detail of a module add to the Canvas: the "All modules" button (next to Fit) and the line about the pair cap.
-let componentsNodes = [], componentsMode = "detail", componentsOpen = null, componentsPairs = null;
+let componentsNodes = [], componentsMode = "detail", componentsOpen = null, componentsPairs = null, componentsTests = null;
 const componentsBack = Object.assign(document.createElement("button"), { type: "button", id: "components-back", textContent: "All modules", hidden: true });
 componentsBack.setAttribute("aria-label", "Back to the overview of all modules");
 $("zoom").prepend(componentsBack);
@@ -298,15 +307,26 @@ function componentsChrome() {
   componentsBack.hidden = !(here && componentsOpen);
   const pairs = componentsPairs;
   componentsNote.hidden = !(here && componentsMode === "overview" && pairs);
-  if (pairs) componentsNote.textContent = pairs.total > pairs.shown ? `Showing the ${pairs.shown} strongest of ${pairs.total} module pairs; ${pairs.total - pairs.shown} hidden` : `${componentsPlural(pairs.total, "module pair")}`;
+  if (!pairs) return;
+  const plain = pairs.total > pairs.shown ? `Showing the ${pairs.shown} strongest of ${pairs.total} module pairs; ${pairs.total - pairs.shown} hidden` : `${componentsPlural(pairs.total, "module pair")}`;
+  componentsNote.replaceChildren(plain);
+  const tests = componentsTests; // the test and fixture folders: said in words with their count, and one control to open or close them
+  if (tests) {
+    const toggle = Object.assign(document.createElement("button"), { type: "button", textContent: tests.open ? "hide" : "show" });
+    toggle.onclick = () => componentsToggleTests();
+    componentsNote.append(tests.open
+      ? ` · includes ${componentsPlural(tests.modules, "test module")}, ${componentsPlural(tests.pairs, "pair")} touch them - `
+      : ` · ${componentsPlural(tests.modules, "test module")} hidden (${componentsPlural(tests.pairs, "pair")} touch them, not counted above) - `, toggle);
+  }
 }
+function componentsToggleTests() { return componentsLoad(null, !componentsTests?.open); }
 const componentsShowLayerPlain = showLayer;
 showLayer = (which) => { componentsShowLayerPlain(which); componentsChrome(); };
 
 // Opens the detail of one module (id) or, with null, the overview again. Only the Components drawing is replaced.
-async function componentsLoad(module) {
+async function componentsLoad(module, tests = false) {
   const project = current, started = performance.now();
-  const res = await fetch(`/layout?project=${encodeURIComponent(project)}&layer=components${module ? `&module=${encodeURIComponent(module)}` : ""}`);
+  const res = await fetch(`/layout?project=${encodeURIComponent(project)}&layer=components${module ? `&module=${encodeURIComponent(module)}` : tests ? "&tests=1" : ""}`);
   const layout = await res.json();
   if (project !== current) return;
   $("error").textContent = res.ok ? "" : layout.error;
@@ -317,11 +337,15 @@ async function componentsLoad(module) {
 let componentsLoaded = 0;
 componentsBack.onclick = () => componentsLoad(null);
 svg.addEventListener("dblclick", (e) => {
-  const box = componentsMode === "overview" && authoredShown === "components" ? e.target.closest?.(".cp-ov-module") : null;
+  const live = componentsMode === "overview" && authoredShown === "components";
+  const box = live ? e.target.closest?.(".cp-ov-module") : null;
   if (box) componentsLoad(box.dataset.id);
+  else if (live && e.target.closest?.(".cp-ov-tests")) componentsToggleTests();
 });
 svg.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && e.target.classList?.contains("cp-ov-module")) componentsLoad(e.target.dataset.id);
+  if (e.key !== "Enter") return;
+  if (e.target.classList?.contains("cp-ov-module")) componentsLoad(e.target.dataset.id);
+  else if (e.target.classList?.contains("cp-ov-tests")) componentsToggleTests();
 });
 // A module that keeps the focus (after a click or Tab) keeps its lines lit when the pointer leaves the Canvas.
 svg.addEventListener("pointerleave", () => { if (document.activeElement?.classList?.contains("cp-ov-module")) notationLight({ target: document.activeElement }); });

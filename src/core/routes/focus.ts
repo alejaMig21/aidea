@@ -61,7 +61,7 @@ const handler: Handler = async (req, res, core) => {
         return true;
       }
       if (project.nodes.filter((n) => n.kind === "module").length > OVERVIEW_ABOVE) {
-        core.send(res, 200, { layer, mode: "overview", ...layoutComponentsOverview(project.nodes, project.relationships), unresolved: project.unresolved });
+        core.send(res, 200, { layer, mode: "overview", ...layoutComponentsOverview(project.nodes, project.relationships, { openTests: url.searchParams.get("tests") === "1" }), unresolved: project.unresolved });
         return true;
       }
       const { rects, compartments, routes } = layoutComponentsDiagram(project.nodes, project.relationships);

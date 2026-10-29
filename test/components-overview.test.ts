@@ -33,10 +33,10 @@ function generate(modules: number, folders: number, fanout: number): string {
 
 type Rect = { id: string; x: number; y: number; width: number; height: number };
 type Route = { kind: string; resolution: string; from: string; to: string | null; count: number; ends: string[] };
-type Body = { mode: string; rects: Rect[]; routes: Route[]; counts?: Record<string, { classes: number; functions: number }>; pairs?: { total: number; shown: number } };
-async function open(root: string, module?: string): Promise<{ nodes: CoreNode[]; status: number; body: Body }> {
+type Body = { mode: string; rects: Rect[]; routes: Route[]; counts?: Record<string, { classes: number; functions: number }>; pairs?: { total: number; shown: number }; tests?: { modules: number; folders: number; pairs: number; open: boolean } };
+async function open(root: string, module?: string, extra = ""): Promise<{ nodes: CoreNode[]; status: number; body: Body }> {
   const project = await (await t.post("/projects", { path: root })).json();
-  const res = await t.get(`/layout?project=${encodeURIComponent(root)}&layer=components${module ? `&module=${encodeURIComponent(module)}` : ""}`);
+  const res = await t.get(`/layout?project=${encodeURIComponent(root)}&layer=components${module ? `&module=${encodeURIComponent(module)}` : ""}${extra}`);
   return { nodes: project.nodes, status: res.status, body: await res.json() };
 }
 const right = (rects: Rect[]) => Math.max(...rects.map((r) => r.x + r.width));
@@ -144,6 +144,50 @@ test("in a mixed project one folder is one block, whatever the language of its m
   const names = nodes.filter((n) => n.kind === "module").map((n) => n.name).sort();
   assert.ok(names.includes("src.core.p0") && names.includes("src/core/t0"), "each module keeps its own language's name");
   assert.equal(body.rects.length, 51);
+});
+
+// 45 real modules in pkg0..pkg2 plus tests: 10 in tests/ and 5 in tests/fixtures/shop, each calling modules of pkg0..pkg2.
+function generateWithTests(): string {
+  const root = generate(45, 3, 2);
+  for (const dir of ["tests", "tests/fixtures/shop"]) mkdirSync(join(root, dir), { recursive: true });
+  for (let i = 0; i < 15; i++) {
+    const dir = i < 10 ? "tests" : "tests/fixtures/shop", j = i + 3;
+    writeFileSync(join(root, dir, `check${i}.py`), `from pkg${j % 3}.m${j} import f${j}\n\n\ndef check${i}():\n    return f${j}()\n`);
+  }
+  return root;
+}
+
+test("folders that are tests or fixtures fold into one closed block that says what it holds", async () => {
+  const { nodes, body } = await open(generateWithTests());
+  const hidden = nodes.filter((n) => n.kind === "module" && n.file.startsWith("tests/")).map((n) => n.id);
+  assert.equal(hidden.length, 15);
+  const ids = body.rects.map((r) => r.id);
+  assert.ok(hidden.every((id) => !ids.includes(id)), "no box for a test module");
+  assert.deepEqual(ids.filter((id) => id.startsWith("folder:")).sort(), ["folder:pkg0", "folder:pkg1", "folder:pkg2"]);
+  assert.equal(ids.filter((id) => id === "tests:folded").length, 1, "one closed block");
+  assert.deepEqual(body.tests, { modules: 15, folders: 2, pairs: 15, open: false });
+  assert.ok(body.routes.every((r) => !hidden.includes(r.from) && !hidden.includes(r.to ?? "")), "no line to a hidden module");
+  assert.equal(body.pairs?.total, 45 * 2, "the pair count is of the modules drawn");
+});
+
+test("tests=1 opens the block: every test folder is drawn after the rest, with its modules and lines", async () => {
+  const root = generateWithTests();
+  const { nodes, body } = await open(root, undefined, "&tests=1");
+  const ids = body.rects.map((r) => r.id);
+  assert.ok(!ids.includes("tests:folded"));
+  assert.deepEqual(ids.filter((id) => id.startsWith("folder:")), ["folder:pkg0", "folder:pkg1", "folder:pkg2", "folder:tests", "folder:tests/fixtures/shop"]);
+  assert.equal(ids.length, 45 + 15 + 5);
+  assert.deepEqual(body.tests, { modules: 15, folders: 2, pairs: 15, open: true });
+  assert.equal(body.pairs?.total, 45 * 2 + 15);
+  const boxes = body.rects.filter((r) => nodes.some((n) => n.id === r.id));
+  for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) assert.ok(apart(boxes[i], boxes[j]), `${boxes[i].id} / ${boxes[j].id}`);
+});
+
+test("a project with no test folder draws exactly as before and has no tests entry", async () => {
+  const { body } = await open(generate(120, 6, 3), undefined, "&tests=1");
+  assert.equal(body.tests, undefined);
+  assert.ok(!body.rects.some((r) => r.id === "tests:folded"));
+  assert.equal(body.rects.length, 120 + 6);
 });
 
 test("the counts on a module box say 'classes', not 'classs'", () => {

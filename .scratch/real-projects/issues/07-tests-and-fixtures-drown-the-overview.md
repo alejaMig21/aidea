@@ -4,9 +4,11 @@
 
 **Blocked by:** None.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] On the aidea repository the first screen at Fit shows `electron`, `src/core`, `src/core/routes`, `src/ui/features` and one closed block for tests; opening it shows what is there now.
-- [ ] A project with no test folders draws exactly as before.
-- [ ] The count of hidden modules and pairs is written on the screen, so nothing is hidden silently.
-- [ ] Verified on a copy of the aidea repository and on Telegram at 1920 and 1280 pixels wide.
+**Built:** folders with a path part `test`, `tests`, `__tests__`, `fixtures`, `spec`, `specs` fold into one dashed closed block (`tests:folded`); `GET /layout?...&tests=1` opens them (drawn after the other folders). The response carries `tests: {modules, folders, pairs, open}`. The line at the bottom says "N test modules hidden (P pairs touch them, not counted above) - show" and flips to "includes N test modules ... - hide"; double click or Enter on the block also opens it. The top-bar language line is left as it is (it says what the project holds, files on disk); the bottom line says what is folded.
+
+- [x] On the aidea repository the first screen at Fit shows `electron`, `src/core`, `src/core/routes`, `src/ui/features` and one closed block for tests (also `src/core/adapter`, a real one-module folder); opening it shows the 89 test modules.
+- [x] A project with no test folders draws exactly as before (test: no `tests` entry, same rect count).
+- [x] The count of hidden modules and pairs is written on the screen.
+- [x] Verified on a copy of the aidea repository and on Telegram (129 test modules) at 1920 and 1280 pixels wide, closed, open, closed again.

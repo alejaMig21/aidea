@@ -40,3 +40,6 @@ FLAKY TEST: `robustness.test.ts` (and sometimes others) fails with `fetch failed
 
 ## 10. Live round on the second monitor (real Electron, real Claude Code, haiku)
 Window 1264x761. Hide Canvas, language line, "How aidea works" class with the real Tutor (asked to predict the three columns, then revealed and checked the answer; its text matched the app), real builder in Manual mode proposed two Business Nodes without any aidea permission card (only the person's own memory plugin asked), accepting one wrote `.aidea/business/001-business-payer.json` (one file per Node). Cost about $0.15. Found: a permission card overflows a narrow chat (ticket live-findings/07). Not covered live: decision-class hint, long waits, idea names, prediction, narration.
+
+## DECISION (real-projects/07)
+Test folders are folded into one closed block with a "show" line, not removed. The language line in the top bar is not changed (it counts files on disk); the overview line says how many test modules and pairs are folded. Recommended default taken.
