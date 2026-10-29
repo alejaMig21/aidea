@@ -186,6 +186,9 @@ function readStored(root: string, sub: string): { entries: Entry[]; names: strin
   }
 }
 
+// The reads and removals that can fail after files were written; tests swap them to prove the write is undone.
+export const io = { read: (path: string) => readFileSync(path, "utf8"), unlink: (path: string) => unlinkSync(path) };
+
 // Writes an accepted Proposal. A layer stored one file per Node changes only the file of that Node; a layer still in its single file is
 // converted first: every Node gets its own file, and only when all of them are on disk is the old file removed.
 // A file is named `<number>-<id>.json`: the number keeps the order the layer is drawn in. Returns a message when nothing could be written.
@@ -267,6 +270,10 @@ export function apply(project: Project, p: Proposal): string | null {
   stage(groups, "patterns", storedGroups.names);
 
   const made: string[] = []; // files created by this write: removed again when it fails
+  const kept = new Map<string, Buffer>(); // the old bytes of every file this write overwrites or removes: put back when it fails
+  for (const path of [...ops.filter((op) => op.kind === "del" || !op.fresh).map((op) => op.path), ...(doc ? [file] : [])]) {
+    try { kept.set(path, readFileSync(path)); } catch { return `The layer could not be written (is the folder read-only?): nothing was changed`; }
+  }
   let temporary: string | undefined;
   try {
     for (const op of ops) {
@@ -278,13 +285,16 @@ export function apply(project: Project, p: Proposal): string | null {
       temporary = undefined;
       if (op.fresh) made.push(op.path);
     }
-    for (const op of ops) if (op.kind === "put" && readFileSync(op.path, "utf8") !== op.data) throw new Error("a file did not read back as written");
-    for (const op of ops) if (op.kind === "del") unlinkSync(op.path);
-    if (doc) unlinkSync(file); // last: the old single file goes only once every Node is on disk
+    for (const op of ops) if (op.kind === "put" && io.read(op.path) !== op.data) throw new Error("a file did not read back as written");
+    for (const op of ops) if (op.kind === "del") io.unlink(op.path);
+    if (doc) io.unlink(file); // last: the old single file goes only once every Node is on disk
     coreWrote(project.path, [...ops.map((op) => op.path), ...(doc ? [file] : [])]); // these changes are the core's, not a builder's
   } catch {
     if (temporary) rmSync(temporary, { force: true });
     for (const path of made) rmSync(path, { force: true });
+    for (const [path, bytes] of kept) {
+      try { writeFileSync(path, bytes); } catch { /* the folder went away: nothing more can be done */ }
+    }
     return `The layer could not be written (is the folder read-only?): nothing was changed`;
   }
   return null;
