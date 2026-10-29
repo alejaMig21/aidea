@@ -26,3 +26,7 @@ Components of a project with more than 40 modules is now an overview: one box pe
 
 ## 7. Overview readable at Fit (real-projects/05)
 Folder names are always 13 px on screen (cut to the box, full name as tooltip); module names and counts appear only when zoomed in enough. Telegram readable at 1920 and 1280; hubstaff at 1280 readable but squeezed (one-module folders cut to a few letters, first label close to the "Teach me through it" button). Folders unchanged.
+
+## 8. Merged: opening feedback (real-projects/04), storage per Node read side (01), language adapter interface (01) and language detection (02)
+Opening a project shows "Reading the project..." and failures in words; analysis output byte-identical, 12% to 16% faster. `.aidea/<layer>/*.json` one file per Node is read next to the single file. A language line in the top bar says what is analysed and what is not (Python analysed; TS/JS counted, not yet analysed). 443 tests.
+FLAKY TEST: `robustness.test.ts` (and sometimes others) fails with `fetch failed: bad port` when the OS gives a port that fetch blocks (a fixed list). Not a product bug; the earlier unexplained red runs were this. Fix idea: retry `startCore` on a blocked port.
