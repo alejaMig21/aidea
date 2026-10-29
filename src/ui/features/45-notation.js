@@ -80,9 +80,9 @@ document.addEventListener("visibilitychange", notationSync);
 
 // ---- Packets: small glowing dots that follow an edge's own path (mpath), so they never drift from it.
 let notationIds = 0;
-function notationPacket(edge, count = 1, dur) {
+function notationPacket(edge, count = 1, dur, length = edge.getTotalLength?.() || 0) {
   edge.id ||= `nt-edge-${++notationIds}`;
-  const seconds = dur ?? Math.min(6, Math.max(1.6, (edge.getTotalLength?.() || 0) / 90 || 3)); // about 90 px per second
+  const seconds = dur ?? Math.min(6, Math.max(1.6, length / 90 || 3)); // about 90 px per second
   for (let i = 0; i < count; i++) {
     const dot = el("circle", { class: "nt-packet", r: 6 });
     if (edge.dataset.tone) dot.dataset.tone = edge.dataset.tone;
@@ -92,12 +92,17 @@ function notationPacket(edge, count = 1, dur) {
     edge.after(dot);
   }
 }
-// Packets are added when edges appear in the world, whoever draws them.
+// Packets are added when edges appear in the world, whoever draws them. Beyond notationMaxPackets edges the dots are noise and a big project
+// (thousands of edges) used to freeze the page for minutes creating them, so the first ones get dots and the rest do not.
+const notationMaxPackets = 250;
 function notationDecorate() {
-  $("world").querySelectorAll("[data-packets]:not([data-packeted])").forEach((edge) => {
-    edge.dataset.packeted = "";
-    if (edge.dataset.tone !== "unresolved") notationPacket(edge, Number(edge.dataset.packets) || 1, edge.dataset.packetDur && Number(edge.dataset.packetDur));
-  });
+  const edges = [...$("world").querySelectorAll("[data-packets]:not([data-packeted])")];
+  edges.forEach((edge) => (edge.dataset.packeted = ""));
+  const room = Math.max(0, notationMaxPackets - $("world").querySelectorAll(".nt-packet").length);
+  const todo = edges.filter((edge) => edge.dataset.tone !== "unresolved").slice(0, room);
+  // Every length is read before any dot is inserted: measuring between insertions made the browser lay the whole drawing out again for each one.
+  const lengths = todo.map((edge) => edge.getTotalLength?.() || 0);
+  todo.forEach((edge, i) => notationPacket(edge, Number(edge.dataset.packets) || 1, edge.dataset.packetDur && Number(edge.dataset.packetDur), lengths[i]));
 }
 new MutationObserver(notationDecorate).observe($("world"), { childList: true, subtree: true });
 
