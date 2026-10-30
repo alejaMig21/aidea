@@ -32,7 +32,7 @@ showLayer = (which) => { showLayerPlain(which); dim([]); };
 
 svg.addEventListener("dblclick", async (e) => {
   const node = e.target.closest("[data-node]");
-  if (!node) return;
+  if (!node || authoredShown === "algorithms" || authoredShown === "code") return; // a step of a graph opens its lines (50-algorithm.js); only the authored layers have a focus
   const project = current;
   const res = await post("/focus", { project, layer: authoredShown, node: node.dataset.node });
   const body = await res.json();

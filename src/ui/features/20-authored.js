@@ -92,8 +92,8 @@ layerBar.replaceChildren(...[{ key: "components", label: "Components" }, ...AUTH
   b.onclick = () => showLayer(key);
   return b;
 }));
-// "Code" has no view of its own: a Node's source opens in a box when it is selected on Components.
-const codeTab = Object.assign(document.createElement("button"), { textContent: "Code", disabled: true, title: "Select a Node on Components to read its code" });
+// The Code layer draws itself in 55-code.js, which enables this tab once a Project with code is open.
+const codeTab = Object.assign(document.createElement("button"), { textContent: "Code", disabled: true });
 codeTab.dataset.layer = "code";
 layerBar.append(codeTab);
 

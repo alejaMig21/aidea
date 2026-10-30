@@ -1,5 +1,5 @@
 // Algorithms layer: double-click a function on the Components layer to see its Algorithm graph;
-// double-click a step to see its source text. The core builds and lays out the graph; this only draws it, in flowchart notation.
+// double-click a step to see its lines in the Code layer. The core builds and lays out the graph; this only draws it, in flowchart notation.
 const algoStyle = document.createElement("style");
 algoStyle.textContent = `
   .flow-edge { stroke: #4a546c; fill: none; stroke-width: 1.6; marker-end: url(#flow-arrow); }
@@ -194,7 +194,6 @@ async function algoOpen(id, keepView = false) {
   if (!res.ok) return false;
   algoGraph = body;
   algoOpenId = id;
-  codeBox.hidden = true; // the first click of the double-click opened the function's source over the graph
   drawAlgorithm(body);
   algoTab.disabled = false;
   algoTab.textContent = `Algorithm: ${id.split(".").pop()}`;
@@ -215,6 +214,6 @@ svg.addEventListener("dblclick", async (e) => {
   const step = e.target.closest?.("[data-step]");
   if (step && algoGraph) {
     const s = algoGraph.steps.find((x) => x.id === step.dataset.step);
-    showCodeBox(`${algoGraph.file}:${s.line}${s.endLine > s.line ? "-" + s.endLine : ""}`, s.text);
+    codeOpen(algoOpenId, { from: s.line, to: s.endLine ?? s.line }, { algo: algoOpenId, id: s.id });
   }
 });

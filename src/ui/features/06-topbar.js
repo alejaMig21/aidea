@@ -135,7 +135,7 @@ async function refreshProject() {
   if (!current || refreshing || !$("home").hidden || !$("opening").hidden) return; // one at a time; Home covers the Project; a Project is being opened
   refreshing = true;
   const project = current, layer = authoredShown, saved = { ...view };
-  const module = componentsOpen, testsOpen = !!componentsTests?.open, algo = algoOpenId, selected = codeSelected;
+  const module = componentsOpen, testsOpen = !!componentsTests?.open, algo = algoOpenId;
   openingShow();
   $("refresh").disabled = true;
   try {
@@ -152,8 +152,8 @@ async function refreshProject() {
     else if (testsOpen) await componentsLoad(null, true);
     else await draw(body.nodes);
     if (layer === "algorithms") { if (!(has(algo) && await algoOpen(algo, true))) showLayer("components"); }
-    else if (has(selected) && !codeBox.hidden) await onSelect(selected);
-    else { codeBox.hidden = true; codeSelected = null; }
+    await codeRefresh(body.nodes, layer);
+    if (!has(codeSelected)) codeSelected = null;
     if (project === current) { Object.assign(view, saved); apply(); }
   } catch {
     $("error").textContent = "Could not reach aidea to read the project again, so what is drawn is the last version it read. Try Refresh again.";

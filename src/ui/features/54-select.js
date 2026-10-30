@@ -1,4 +1,4 @@
-// Select any text to learn about it (ticket 13): selecting text anywhere (a builder reply, a Rationale, the code box, the Tutor's own words)
+// Select any text to learn about it (ticket 13): selecting text anywhere (a builder reply, a Rationale, the Code layer, the Tutor's own words)
 // shows a small control next to it with "Just define" (a brief explanation, no class) and "Enter the Tutor" (a free class on that text).
 // Text typed in the person's own input boxes never triggers it. The core does the work (POST /tutor/define, POST /tutor/classes {selection});
 // the selected text only travels as data. Names are prefixed "select" because every feature file shares one global scope.
