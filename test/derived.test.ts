@@ -212,3 +212,67 @@ test("editing a file by hand and reopening the Project changes the derived layer
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+const whole = (project: string, node: string, extra = "") =>
+  t.get(`/source?project=${encodeURIComponent(project)}&node=${encodeURIComponent(node)}&whole=1${extra}`);
+
+test("the Code layer can ask for the whole file of a Node, with the Node's lines to highlight", async () => {
+  await open(fixture("shop"));
+  const res = await whole(fixture("shop"), "cart.Cart.add");
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.file, "cart.py");
+  assert.equal(body.line, 5);
+  assert.equal(body.endLine, 6);
+  assert.equal(body.text, readFileSync(join(fixture("shop"), "cart.py"), "utf-8"));
+});
+
+test("the whole file can be asked with another range, as for a step of an Algorithm", async () => {
+  await open(fixture("shop"));
+  const body = await (await whole(fixture("shop"), "cart.apply_discount", "&from=13&to=14")).json();
+  assert.equal(body.line, 13);
+  assert.equal(body.endLine, 14);
+  assert.match(body.text, /^class Cart:/);
+  for (const bad of ["&from=0&to=2", "&from=5&to=4", "&from=2&to=9999", "&from=x&to=3", "&from=3"]) {
+    assert.equal((await whole(fixture("shop"), "cart.apply_discount", bad)).status, 400, bad);
+  }
+});
+
+test("a file that is too big, not text, or gone is refused with a plain sentence", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "aidea-source-"));
+  cpSync(fixture("shop"), dir, { recursive: true });
+  try {
+    await open(dir);
+    writeFileSync(join(dir, "cart.py"), "x = 1\n".repeat(100_000)); // 600 KB
+    const big = await whole(dir, "cart.Cart.add");
+    assert.equal(big.status, 413);
+    assert.match((await big.json()).error, /too big/i);
+    assert.equal((await source(dir, "cart.Cart.add")).status, 413);
+    writeFileSync(join(dir, "cart.py"), Buffer.from([0x63, 0x00, 0xff, 0x00, 0x0a]));
+    const binary = await whole(dir, "cart.Cart.add");
+    assert.equal(binary.status, 415);
+    assert.match((await binary.json()).error, /not text/i);
+    rmSync(join(dir, "cart.py"));
+    const gone = await whole(dir, "cart.Cart.add");
+    assert.equal(gone.status, 404);
+    assert.match((await gone.json()).error, /moved|deleted|read/i);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("the whole file is never served from outside the Project folder", async () => {
+  const outside = mkdtempSync(join(tmpdir(), "aidea-outside-"));
+  const project = mkdtempSync(join(tmpdir(), "aidea-project-"));
+  writeFileSync(join(outside, "secret.py"), "def leak():\n    return 1\n");
+  writeFileSync(join(project, "ok.py"), "def fine():\n    return 1\n");
+  symlinkSync(outside, join(project, "linked"), "junction");
+  try {
+    await open(project);
+    assert.equal((await whole(project, "linked.secret.leak")).status, 403);
+    assert.equal((await whole(project, "ok.fine")).status, 200);
+  } finally {
+    rmSync(project, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  }
+});

@@ -34,7 +34,11 @@ export function locate(core: Core, res: ServerResponse, projectId: unknown, node
     const rel = relative(realpathSync(project.path), file);
     if (rel === "" || rel === ".." || rel.startsWith(".." + sep) || isAbsolute(rel)) throw new Error("outside");
     return { project, node, file };
-  } catch {
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") {
+      core.send(res, 404, { error: `${node.file} could not be read. It may have been moved or deleted; refresh the Project.` });
+      return null;
+    }
     core.send(res, 403, { error: "File is not inside the Project folder" });
     return null;
   }
