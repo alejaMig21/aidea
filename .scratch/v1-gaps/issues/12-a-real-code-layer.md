@@ -15,10 +15,18 @@ The floating box (`codeBox` in `src/ui/features/10-derived.js`) is deleted, incl
 
 **Status:** ready-for-agent
 
-- [ ] Through the protocol: the source route can answer with the whole file of a Node plus its line range and, for an Algorithm step, the step's range; a file over a size cap (500 KB) is refused with a plain message; a path outside the Project, a symlink pointing out and a non-text file are refused; existing `/source` behaviour and tests keep working until the box is gone.
-- [ ] In the interface: the Code tab is enabled with a Project open; it shows the file with line numbers, the Node's lines highlighted and in view; changing layer and coming back keeps what was shown; Escape returns to the layer it came from; no floating box exists anywhere (rg finds no `codeBox`).
-- [ ] The layer has its legend behind "?" like the other layers (what the view shows, what it leaves out), the legend check test passes, and sizes and colours come from `docs/agents/ui-style.md` (the code font and size are the ones of the Algorithm trace table or the shared monospace role).
-- [ ] The layer is reachable by keyboard and its controls have accessible names; contrast at least 4.5:1.
-- [ ] Refresh (window focus or button) keeps the Code layer open on the same Node when it still exists and says so when it does not.
-- [ ] Verified headless at 1920 and 1280 on a Python project, on a TypeScript project (aidea's own `src`, a copy) and with the Canvas hidden; read screenshots.
+- [x] Through the protocol: the source route can answer with the whole file of a Node plus its line range and, for an Algorithm step, the step's range; a file over a size cap (500 KB) is refused with a plain message; a path outside the Project, a symlink pointing out and a non-text file are refused; existing `/source` behaviour and tests keep working until the box is gone.
+- [x] In the interface: the Code tab is enabled with a Project open; it shows the file with line numbers, the Node's lines highlighted and in view; changing layer and coming back keeps what was shown; Escape returns to the layer it came from; no floating box exists anywhere (rg finds no `codeBox`).
+- [x] The layer has its legend behind "?" like the other layers (what the view shows, what it leaves out), the legend check test passes, and sizes and colours come from `docs/agents/ui-style.md` (the code font and size are the ones of the Algorithm trace table or the shared monospace role).
+- [x] The layer is reachable by keyboard and its controls have accessible names; contrast at least 4.5:1.
+- [x] Refresh (window focus or button) keeps the Code layer open on the same Node when it still exists and says so when it does not.
+- [x] Verified headless at 1920 and 1280 on a Python project, on a TypeScript project (aidea's own `src`, a copy) and with the Canvas hidden; read screenshots.
 - [ ] Verified live on the second monitor, opening `D:\Projects\Telegram` read-only (no files written there), by selecting a component, opening Code, going back and opening a step of an algorithm.
+
+## Verification notes (headless)
+
+- Core: `/source` takes `whole=1` (entire file, the Node's lines to highlight) and optional `from` and `to` (a step's lines, checked against the file). A file over 500 KB answers 413, a file with a NUL byte 415, a file that is gone 404 (`locate` now tells "moved or deleted" apart from "outside the Project", which stays 403). Tests in `test/derived.test.ts`.
+- Interface: new `src/ui/features/55-code.js`; `10-derived.js` and every use of `codeBox` are deleted (`rg codeBox src test` finds nothing). Selecting a Node shows "View code" in the right slot's Details area; the Code tab opens the selected Node, or what was shown before, or says how to pick something.
+- Checked in headless Chrome at 1920x1080 and 1280x800, on the `flow` Python fixture and on a copy of aidea's own `src` in a temp folder: empty state, select then View code (lines highlighted and in view), legend, leave and come back (same view), Escape back to the layer it came from, Refresh on Code (same Node), renaming the function then Refresh (a plain sentence says it is gone), double click on an algorithm step (its line highlighted, "Back to Algorithms", Escape returns to the graph, the tab shows the step again), Canvas hidden and shown again (the Code layer is kept; the Code tab lives on the Canvas, so it cannot be reached while the Canvas is hidden).
+- Found and fixed on the way: ligatures drew `==` and `=>` as joined glyphs (turned off, the text must be exact); double clicking an algorithm step also sent a focus request that failed with "layer must be one of ..." and left a red line (40-focus.js now ignores the Algorithms and Code layers); at 1280 the layer bar scrolls, so the layer on screen is scrolled into view.
+- Not done: the live check on the second monitor (last box).
