@@ -81,3 +81,6 @@ Not fixed: byte cap on guard memory (count cap only); `#components-note` disappe
 
 ## 18. Merge to feat/walking-skeleton and the Code layer (v1-gaps/12)
 `overnight/autonomy` was fast-forwarded into `feat/walking-skeleton` (now `79c6015`). The person opened Telegram in the real app and found that the code box cannot be closed and asked why a Code layer exists if it is disabled. History: the box came with ticket 02 (b04825a, 2026-10-26) as a stopgap, the disabled Code tab with the tab bar (1621576, 2026-10-27); no ADR or ticket recorded it as a decision; ticket 04 closed without the layer; the audit marked story 16 as done through the box. DECISION 4 (the person, option 1): build the real Code layer and delete the box (ticket v1-gaps/12). Waits measured with the real Claude Code: 20 s, 60 s, 180 s and 600 s continue after the answer; at 1800 s the core sends tutor_question_expired and answers 410.
+
+## 19. The real Code layer (v1-gaps/12) verified live
+`55-code.js` replaces the floating box (no `codeBox` left). Checked on the second monitor with the real Telegram project (unchanged afterwards): select module, View code, Back, Escape, and a step of an algorithm opens the code at its line. Found and fixed a 400 from the Tutor column asking a Probe for the Code layer. 540 tests.

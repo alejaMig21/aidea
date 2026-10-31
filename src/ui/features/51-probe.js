@@ -24,7 +24,7 @@
   async function refresh() {
     const mine = ++token;
     const project = current, layer = layerKey();
-    if (!project) { offer.hidden = true; return; }
+    if (!project || layer === "code") { offer.hidden = true; return; } // the Code layer is not a Tutor layer: it has no Probe
     let result = null;
     try {
       const res = await fetch(`/tutor/probes?project=${encodeURIComponent(project)}&layer=${layer}`);
@@ -67,5 +67,6 @@
 
   window.probeUi = { begin }; // the layer class (46-layer-class.js) runs the Probe first when the layer was never checked
   document.addEventListener("project-opened", refresh);
-  $("layers").addEventListener("click", () => setTimeout(refresh, 0)); // the layer tabs: each layer has its own Probe
+  const showLayerWithoutProbe = showLayer; // however a layer is shown (tab, View code, a step), each layer has its own Probe
+  showLayer = (which) => { showLayerWithoutProbe(which); refresh(); };
 }
