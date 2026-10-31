@@ -6,10 +6,11 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const key = (target, k) => target.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }));
 const rows = () => [...document.querySelectorAll("#panels-menu [role=menuitemcheckbox]")];
 const entries = () => rows().map((b) => ({ title: b.dataset.title, id: b.dataset.panel, checked: b.getAttribute("aria-checked"), disabled: b.getAttribute("aria-disabled") === "true", reason: b.querySelector(".reason")?.textContent ?? "", markVisible: getComputedStyle(b.querySelector(".check")).visibility !== "hidden", focusable: b.tabIndex === -1 }));
-const cards = () => [...document.querySelectorAll(".panel-card, main")].map((e) => e.id || e.tagName.toLowerCase());
-const shown = (id) => { const e = document.getElementById(id); return !!e && getComputedStyle(e).display !== "none"; };
+// With a docking Layout the DOM order of the cards is not the screen order: the cards on screen are listed by their position, left to right.
+const onScreen = (e) => !!e && e.getClientRects().length > 0;
+const cards = () => [...document.querySelectorAll(".panel-card, main")].filter(onScreen).sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left).map((e) => e.id || e.tagName.toLowerCase());
+const shown = (id) => onScreen(document.getElementById(id));
 const row = (title) => rows().find((b) => b.dataset.title === title);
-const visibleSeparators = () => [...document.querySelectorAll(".panel-sep")].filter((s) => getComputedStyle(s).display !== "none").length;
 const openMenu = async () => { if (document.getElementById("panels-menu").hidden) document.getElementById("panels-button").click(); await wait(50); };
 
 (async () => {
@@ -25,7 +26,7 @@ const openMenu = async () => { if (document.getElementById("panels-menu").hidden
     report.menuClosedAtStart = document.getElementById("panels-menu").hidden;
     report.entries = entries();
     // what the saved layout of an older version (plus an id nobody knows) did
-    report.saved = { chatShown: shown("chat"), filesShown: shown("files"), chatWeight: layoutState.chat, ghostIgnored: !("ghost" in layoutState) && !("ghostFolded" in layoutState) };
+    report.saved = { chatShown: shown("chat"), filesShown: shown("files"), chatSizeCarried: layoutSized.chat, ghostIgnored: !("ghost" in layoutState) && !("ghostFolded" in layoutState) };
 
     // keyboard: open, move, toggle, escape
     const button = document.getElementById("panels-button");
@@ -73,14 +74,14 @@ const openMenu = async () => { if (document.getElementById("panels-menu").hidden
     layoutSetRunAvailable(false);
     await wait(100);
 
-    // the Canvas hidden from the menu: a separator stands only between two neighbouring cards that are on screen
+    // the Canvas hidden from the menu: the Panels stay, one group each, and the Canvas is off the screen
     await openMenu();
     row("Canvas").click();
     await wait(100);
-    report.canvasHidden = { canvasShown: getComputedStyle(document.querySelector("main")).display !== "none", panelsShown: layoutNames.filter((n) => layoutShown[n]).length, visibleSeparators: visibleSeparators() };
+    report.canvasHidden = { canvasShown: onScreen(document.querySelector("main")), panelsShown: layoutNames.filter((n) => layoutShown[n]).length, groups: layoutApi.groups.length };
     row("Canvas").click();
     await wait(100);
-    report.canvasBack = { canvasShown: getComputedStyle(document.querySelector("main")).display !== "none" };
+    report.canvasBack = { canvasShown: onScreen(document.querySelector("main")) };
     key(document.activeElement, "Escape");
 
     // a seventh Panel: one declaration
@@ -88,12 +89,13 @@ const openMenu = async () => { if (document.getElementById("panels-menu").hidden
     layoutRegister({ id: "notes", title: "Notes", side: "right", min: 260, weight: 300, startsHidden: true, pane: "pane-notes", icon: '<path d="M5 6h6M5 9h6"/>' });
     await wait(100);
     const notes = entries().find((e) => e.title === "Notes");
-    report.seventh = { entriesBefore: before.entries, entriesAfter: entries().length, hasCard: !!document.getElementById("notes"), hasPane: !!document.getElementById("pane-notes"), hasSeparator: !!document.getElementById("sep-notes"), entry: notes, headerBefore: before.header, headerAfter: document.querySelectorAll("#panels-control > button").length, hiddenAtStart: !shown("notes") };
+    report.seventh = { entriesBefore: before.entries, entriesAfter: entries().length, hasCard: !!document.getElementById("notes"), hasPane: !!document.getElementById("pane-notes"), inLayoutAtStart: !!layoutApi.getPanel("notes"), entry: notes, headerBefore: before.header, headerAfter: document.querySelectorAll("#panels-control > button").length, hiddenAtStart: !shown("notes") };
     document.getElementById("panels-button").click();
     await wait(50);
     row("Notes").click();
     await wait(100);
     report.seventh.shownAfterMenu = shown("notes");
+    report.seventh.inLayoutAfterMenu = !!layoutApi.getPanel("notes");
     report.finalCards = cards();
   } catch (e) {
     report.errors.push(String(e && e.stack || e));

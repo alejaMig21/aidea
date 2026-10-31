@@ -1,39 +1,38 @@
-// Work-session layout. Every Panel (Builder, Files, Code, Run, Tutor) is DECLARED ONCE in the registry below (layoutRegister); the cards, their
-// separators, the grid, the sizes, the saved layout and the Panels menu in the top bar are all produced from it, so a new Panel is one declaration plus
-// its content, and the top bar keeps its one "Panels" control however many Panels there are. The Canvas sits between the Panels of the left and of the
-// right and is not declared here (its content is the page's own). Panels are resized by dragging or with the arrow keys, and shown or hidden from the
-// menu. Names are prefixed "layout" or "panels" because every feature file shares one global scope.
+// Work-session layout. Every Panel (Builder, Files, Code, Run, Tutor) is DECLARED ONCE in the registry below (layoutRegister); its card, its place in the
+// docking Layout (dockview-core, vendored in src/ui/vendor/dockview, ADR 0007) and the Panels menu in the top bar are all produced from it, so a new Panel
+// is one declaration plus its content, and the top bar keeps its one "Panels" control however many Panels there are. The Canvas is a Panel of the Layout
+// too ("canvas") but is not declared here (its content is the page's own). Panels are resized and moved with the library (drag a border, drag a tab) and
+// shown or hidden from the menu. Names are prefixed "layout" or "panels" because every feature file shares one global scope.
 const layoutKey = "aidea.layout";
 const layoutCanvasMin = 360; // the Canvas is never squeezed below this (wide windows)
 const layoutCanvasFr = 800; // the Canvas weight; the Panels' weights (380, 300, 560, 420, 540 by default) are on the same scale
 const layoutNarrowBelow = 760; // narrower windows show the Panels as drawers
-const layoutStep = 20;
-const layoutSeparatorWidth = 8; // the gap between two cards
-const layoutEdge = 8; // the margin between a card and the window's edge
+const layoutGap = 8; // the gap between two cards, and the margin between a card and the window's edge
+const layoutMinHeight = 120; // the least height of a Panel stacked above or below another
 const layoutSvg = (inner) => `<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/>${inner}</svg>`;
 
-// ---- The registry. Order is the order on screen: the Panels of the left, then the Canvas, then the Panels of the right.
+// ---- The registry. Order is the order on screen by default: the Panels of the left, then the Canvas, then the Panels of the right.
 const layoutRegistry = [];
-const layoutNames = []; // the ids in that order (kept in step with the registry)
+const layoutNames = []; // the ids in that order (kept in step with the registry), without the Canvas
 const layoutLeft = []; // the ids of the Panels on the left of the Canvas
-const layoutPaneMin = {}; // minimum track width (the card plus its 8px window margin)
 const layoutDef = {}; // the declaration of each Panel, by id
 let layoutFoldOrder = []; // what auto-fold gives up first: choosing a file must not hide the Files panel it was chosen in
-const layoutState = { canvasFolded: false }; // per Panel: its weight (by id) and `<id>Folded`
-const layoutSized = {}; // per Panel: whether the weight is the person's own (they dragged a separator)
-const layoutPanes = {}; // per Panel: { sep, el, edge }
+const layoutState = { canvasFolded: false }; // per Panel: its default weight (by id) and `<id>Folded`
+const layoutSized = {}; // per Panel: whether the weight in the save is the person's own (kept as saved; sizes are saved by ticket 19, not here)
+const layoutPanes = {}; // per Panel: { el: its card, closeButton }
+const layoutHome = {}; // per Panel: where it was when it went away ({ ref: the id of a neighbour, direction }), so showing it again puts it back there
 let layoutRunAvailable = false; // Run has something to show only while a Flow is open
 let layoutShown = {}; // what is really on screen: the person's choice minus automatic folds
-let layoutMargin = {}; // the window margin each card carries (8px for the outermost card on each side)
 let layoutNarrow = false;
 let layoutCanvasHidden = false; // the person's choice, unless it would leave nothing on screen or the window shows drawers
 let layoutDrawer = null; // the id of the Panel open as a drawer, only in narrow windows
 let layoutOpener = null; // the control that opened the drawer, which gets the focus back
 let layoutLastOpened = "chat"; // the Panel the person opened last is the one auto-fold keeps
 let layoutReady = false; // false while the first Panels are being declared
+let layoutTouched = false; // true once the person has dragged a border: from then on their sizes are kept when a Panel is shown or hidden
+let layoutBusy = false; // true while this file adds or removes Panels, so a removal made by the library itself (not by the menu) can be told apart
 
-// A size is the person's own only once they have dragged a separator: folding a pane used to save all the numbers as if they were choices, and the
-// defaults could then never reach anyone who had used the app. Saves from before the marks count as the person's own when they differ from the old defaults.
+// A Panel's flags are the person's own only once they chose; sizes are carried as saved until ticket 19 saves the whole arrangement.
 let layoutSaved = {};
 try { layoutSaved = JSON.parse(localStorage.getItem(layoutKey) || "{}") ?? {}; } catch {}
 layoutState.canvasFolded = layoutSaved.canvasFolded === true;
@@ -43,6 +42,33 @@ const layoutSave = () => {
     localStorage.setItem(layoutKey, JSON.stringify({ canvasFolded: layoutState.canvasFolded, sized: layoutSized, ...Object.fromEntries(keys.map((k) => [k, layoutState[k]])) }));
   } catch {}
 };
+
+// ---- The Layout: a dockview in #dock. Cards that are not in it wait in #dock-parking (hidden), so the features can always find their bodies by id.
+const layoutDv = window["dockview-core"];
+const layoutMain = document.querySelector("main");
+const layoutDock = Object.assign(document.createElement("div"), { id: "dock" });
+const layoutParking = Object.assign(document.createElement("div"), { id: "dock-parking", hidden: true });
+document.getElementById("topbar").after(layoutDock);
+layoutDock.after(layoutParking);
+layoutParking.append(layoutMain);
+const layoutEl = (id) => (id === "canvas" ? layoutMain : layoutPanes[id].el);
+const layoutApi = layoutDv.createDockview(layoutDock, {
+  theme: { ...layoutDv.themeAbyssSpaced, name: "aidea", className: "dockview-theme-aidea", gap: layoutGap },
+  defaultRenderer: "always", // a Panel that is not the visible tab keeps its scroll and zoom
+  disableFloatingGroups: true,
+  getTabContextMenuItems: () => [], // hiding is done from the Panels menu
+  createComponent: ({ name }) => ({ element: layoutEl(name), init() {}, dispose() {} }),
+});
+layoutApi.layout(layoutDock.clientWidth - 2 * layoutGap, layoutDock.clientHeight - layoutGap); // the library measures itself later, too late for the first arrangement
+layoutDock.addEventListener("pointerdown", (e) => { if (e.target.closest?.(".dv-sash")) layoutTouched = true; }, true);
+// A Panel taken out of the Layout by the library itself (not through the menu) counts as hidden by the person.
+layoutApi.onDidRemovePanel((p) => {
+  if (layoutBusy) return;
+  layoutParking.append(layoutEl(p.id));
+  if (p.id !== "canvas") layoutState[`${p.id}Folded`] = true;
+  layoutSave();
+  queueMicrotask(layoutApply);
+});
 
 // Declares a Panel. { id, title, side: "left" | "right", min, weight, startsHidden, foldRank, pane: id of its body (or null), adopt: ids of elements
 // already in the page that move into its card, icon: svg shapes for the menu, available: () => boolean with unavailable: the reason when it is not,
@@ -57,75 +83,55 @@ function layoutRegister(def) {
   layoutNames.splice(0, layoutNames.length, ...[...left, ...right].map((x) => x.id));
   layoutLeft.splice(0, layoutLeft.length, ...left.map((x) => x.id));
   layoutFoldOrder = [...layoutRegistry].sort((a, b) => a.foldRank - b.foldRank).map((x) => x.id);
-  layoutPaneMin[d.id] = d.min;
   layoutState[d.id] = d.weight;
   layoutSized[d.id] = false;
   const saved = layoutSaved[`${d.id}Folded`];
   layoutState[`${d.id}Folded`] = d.startsHidden ? saved !== false : saved === true; // a Panel that starts hidden stays hidden until the person shows it
   const size = layoutSaved[d.id];
-  if (size > 0 && (layoutSaved.sized ? layoutSaved.sized[d.id] === true : size !== d.legacySize)) { layoutState[d.id] = size; layoutSized[d.id] = true; }
-  layoutShown[d.id] = !layoutState[`${d.id}Folded`] && !d.available; // a Panel that depends on something is not on screen until it is available
+  if (size > 0 && (layoutSaved.sized ? layoutSaved.sized[d.id] === true : size !== d.legacySize)) layoutSized[d.id] = true; // carried for ticket 19; the default Layout uses the declared weight
+  layoutShown[d.id] = false;
   layoutBuild(d);
-  if (layoutReady) { layoutGrid(); panelsBuild(); layoutApply(); }
+  if (layoutReady) { panelsBuild(); layoutApply(); }
 }
 
-// The card, its separator and its body, put where the registry says. The page keeps only the Canvas.
+// The card and its body. The library draws the title (the tab) and the border around the card.
 function layoutBuild(d) {
   const card = Object.assign(document.createElement("section"), { id: d.id, className: "panel-card", tabIndex: -1 });
-  card.dataset.side = d.side === "left" ? "left" : "right";
   card.setAttribute("aria-label", d.title);
-  card.append(Object.assign(document.createElement("h2"), { className: "card-head", textContent: d.title }));
   if (d.pane) card.append(Object.assign(document.createElement("div"), { id: d.pane }));
   for (const id of d.adopt) { const e = $(id); if (e) card.append(e); }
-  const sep = Object.assign(document.createElement("div"), { id: `sep-${d.id}`, className: "panel-sep", tabIndex: 0 });
-  sep.setAttribute("role", "separator");
-  sep.setAttribute("aria-orientation", "vertical");
-  sep.setAttribute("aria-label", `Resize ${d.title}`);
-  card.style.gridArea = d.id;
-  sep.style.gridArea = `sep-${d.id}`;
-  if (d.side === "left") document.querySelector("main").before(card, sep); else $("scrim").before(sep, card);
   const closeButton = Object.assign(document.createElement("button"), { type: "button", className: "drawer-close", textContent: "Close", hidden: true, onclick: () => layoutCloseDrawer() });
   closeButton.setAttribute("aria-label", `Close ${d.title}`);
   card.append(closeButton);
-  const before = (names) => names.reduce((n, o) => n + (layoutShown[o] ? layoutTrack(o) + layoutSeparatorWidth : 0), 0);
-  // The separator of a Panel on the left sits after its card, so the pointer is at the end of the track; on the right it sits before it.
-  const edge = (x) => (d.side === "left" ? x - before(layoutLeft.slice(0, layoutLeft.indexOf(d.id))) : layoutWidth() - before(layoutNames.slice(layoutNames.indexOf(d.id) + 1)) - x);
-  layoutPanes[d.id] = { sep, el: card, closeButton, edge };
-  sep.onpointerdown = (e) => { e.preventDefault(); sep.setPointerCapture(e.pointerId); sep.classList.add("dragging"); };
-  sep.onpointermove = (e) => { if (sep.hasPointerCapture(e.pointerId)) layoutSet(d.id, edge(e.clientX)); };
-  sep.onpointerup = sep.onpointercancel = () => sep.classList.remove("dragging");
-  // Arrow keys move the edge: Right moves it right, so the Panels on the left of the Canvas grow and the ones on its right shrink.
-  sep.onkeydown = (e) => {
-    const dir = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
-    if (!dir) return;
-    e.preventDefault();
-    layoutSet(d.id, layoutTrack(d.id) + layoutStep * dir * (d.side === "left" ? 1 : -1));
-  };
-}
-
-// The grid follows the registry: a track and a separator per Panel, the Canvas between the two sides, one row under the top bar.
-function layoutGrid() {
-  const left = layoutLeft, right = layoutNames.filter((n) => !layoutLeft.includes(n));
-  const columns = [...left.flatMap((n) => [`var(--${n}-track)`, "auto"]), "var(--canvas-track)", ...right.flatMap((n) => ["auto", `var(--${n}-track)`])];
-  const row = [...left.flatMap((n) => [n, `sep-${n}`]), "main", ...right.flatMap((n) => [`sep-${n}`, n])];
-  document.body.style.gridTemplateColumns = columns.join(" ");
-  document.body.style.gridTemplateRows = "auto minmax(0, 1fr)";
-  document.body.style.gridTemplateAreas = `"${columns.map(() => "top").join(" ")}" "${row.join(" ")}"`;
+  layoutPanes[d.id] = { el: card, closeButton };
+  layoutParking.append(card);
 }
 
 {
   const style = document.createElement("style");
   style.textContent = `
-    .panel-sep { width: ${layoutSeparatorWidth}px; cursor: col-resize; touch-action: none; background: transparent; }
-    .panel-sep:hover, .panel-sep:focus-visible, .panel-sep.dragging { background: var(--accent); outline: none; }
-    .panel-sep[hidden] { display: none; }
-    .panel-card[data-folded]:not(.is-drawer), body.canvas-folded main { display: none; }
+    #dock { min-height: 0; padding: 0 ${layoutGap}px ${layoutGap}px; position: relative; }
+    .dockview-theme-aidea {
+      --dv-background-color: var(--bg); --dv-group-view-background-color: var(--panel); --dv-separator-border: transparent; --dv-sash-color: transparent; --dv-active-sash-color: var(--accent);
+      --dv-tabs-and-actions-container-background-color: var(--panel); --dv-tabs-and-actions-container-height: 40px; --dv-tabs-and-actions-container-font-size: 13.5px; --dv-tab-font-size: 13.5px;
+      --dv-activegroup-visiblepanel-tab-background-color: var(--panel); --dv-activegroup-hiddenpanel-tab-background-color: var(--panel);
+      --dv-inactivegroup-visiblepanel-tab-background-color: var(--panel); --dv-inactivegroup-hiddenpanel-tab-background-color: var(--panel);
+      --dv-activegroup-visiblepanel-tab-color: var(--text); --dv-activegroup-hiddenpanel-tab-color: var(--muted);
+      --dv-inactivegroup-visiblepanel-tab-color: var(--text); --dv-inactivegroup-hiddenpanel-tab-color: var(--muted);
+      --dv-drag-over-background-color: rgba(138, 164, 255, .22); --dv-drag-over-border: 2px solid var(--accent);
+    }
+    .dockview-theme-aidea .dv-groupview { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel); }
+    .dockview-theme-aidea .dv-tabs-and-actions-container { border-bottom: 1px solid var(--line); }
+    .dockview-theme-aidea .dv-tab { padding: 0 14px; font-weight: 600; }
+    .dockview-theme-aidea .dv-default-tab-action { display: none !important; }
+    .panel-card, main { width: 100%; height: 100%; background: var(--panel); border: 0; border-radius: 0 0 12px 12px; margin: 0; overflow: hidden; }
+    main { background-color: var(--canvas); }
+    .panel-card { min-width: 0; display: flex; flex-direction: column; }
     /* The failure line lives in <main> over the Canvas; with the Canvas hidden it moves to the body (layoutApply) and floats at the bottom of the window. */
     body > #error { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; max-width: min(560px, calc(100vw - 32px)); z-index: 25; padding: 6px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
     .drawer-close, #scrim { display: none; }
-    body.narrow { --canvas-min: 0px; }
     body.narrow #scrim:not([hidden]) { display: block; position: fixed; inset: 51px 0 0 0; z-index: 15; background: rgba(0, 0, 0, .5); }
-    .panel-card.is-drawer { display: flex; position: fixed; top: 51px; bottom: 0; z-index: 20; width: min(360px, calc(100vw - 16px)); margin: 0; box-shadow: 0 14px 36px rgba(0, 0, 0, .5); }
+    .panel-card.is-drawer { display: flex; position: fixed; top: 51px; bottom: 0; z-index: 20; width: min(360px, calc(100vw - 16px)); margin: 0; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 14px 36px rgba(0, 0, 0, .5); }
     .panel-card.is-drawer[data-side="left"] { left: 0; }
     .panel-card.is-drawer[data-side="right"] { right: 0; }
     body.narrow .drawer-close:not([hidden]) { display: block; position: absolute; top: 6px; right: 8px; z-index: 1; padding: 3px 10px; background: transparent; color: var(--text); border: 1px solid var(--control); }
@@ -133,20 +139,18 @@ function layoutGrid() {
   document.head.append(style);
 }
 
-// ---- Sizes and folded state. A pane's size is a flex weight (fr), so every visible pane grows and shrinks with the window.
-// Folded (by the person or automatically) means a 0 track with its separator hidden. Automatic folds are never saved.
-
+// ---- What is on screen. The Layout holds the Panels the person wants, minus the ones given up for lack of room (never saved). In a narrow window it
+// holds the Canvas only and a Panel opens as a drawer over it.
 const layoutWidth = () => document.documentElement.clientWidth;
 // What the person wants on screen: a Panel that is not available (Run with no Flow open) does not count.
 const layoutAvailable = (name) => !layoutDef[name].available || layoutDef[name].available();
 const layoutWanted = (name) => layoutAvailable(name) && !layoutState[`${name}Folded`];
-const layoutAnyLeft = (shown) => layoutLeft.some((n) => shown[n]);
-// A side without a pane leaves the Canvas an 8px margin; a pane costs its track minimum plus its separator.
-const layoutAnyRight = (shown) => layoutNames.some((n) => !layoutLeft.includes(n) && shown[n]);
-const layoutEdges = (shown) => (layoutAnyLeft(shown) ? 0 : layoutEdge) + (layoutAnyRight(shown) ? 0 : layoutEdge);
-const layoutNeed = (shown) => (layoutCanvasHidden ? 0 : layoutCanvasMin) + layoutNames.reduce((n, p) => n + (shown[p] ? layoutPaneMin[p] + layoutSeparatorWidth : 0), 0) + layoutEdges(shown);
-// The card plus the window margin it carries.
-const layoutTrack = (name) => layoutPanes[name].el.offsetWidth + (layoutMargin[name] ?? 0);
+// Every minimum is padded by the library's gap. The window leaves the Layout a margin of 8px at each side.
+// (the library counts the gap into the size of a group, so a group is never narrower than its declared minimum.)
+const layoutMin = (name) => (name === "canvas" ? layoutCanvasMin : layoutDef[name].min) + layoutGap;
+const layoutNeed = (shown) => 2 * layoutGap + (layoutCanvasHidden ? 0 : layoutMin("canvas")) + layoutNames.reduce((n, p) => n + (shown[p] ? layoutMin(p) : 0), 0);
+const layoutOrder = () => [...layoutLeft, "canvas", ...layoutNames.filter((n) => !layoutLeft.includes(n))];
+const layoutInDock = (id) => !!layoutApi.getPanel(id);
 
 function layoutResolve() {
   layoutNarrow = layoutWidth() < layoutNarrowBelow;
@@ -158,75 +162,93 @@ function layoutResolve() {
   for (const n of [...layoutFoldOrder.filter((x) => x !== layoutLastOpened), layoutLastOpened]) if (layoutNeed(layoutShown) > layoutWidth()) layoutShown[n] = false;
 }
 
-// Most a pane's track may take: the window minus the Canvas minimum, the other panes and this separator.
-function layoutMax(name) {
-  const others = layoutNames.filter((n) => n !== name && layoutShown[n]);
-  return Math.max(layoutPaneMin[name], layoutWidth() - (layoutCanvasHidden ? 0 : layoutCanvasMin) - layoutSeparatorWidth - others.reduce((n, o) => n + layoutTrack(o) + layoutSeparatorWidth, 0) - layoutEdges(layoutShown));
+// Where a Panel was when it left, so that showing it again puts it back: in the tabs of a neighbour, or at its side.
+function layoutRemember(id) {
+  const group = layoutApi.getPanel(id).group, mate = group.panels.find((x) => x.id !== id);
+  if (mate) { layoutHome[id] = { ref: mate.id, direction: "within" }; return; }
+  const r = group.element.getBoundingClientRect(), near = (a, b) => Math.abs(a - b) <= layoutGap + 4;
+  for (const other of layoutApi.groups) {
+    if (other === group || !other.panels.length) continue;
+    const q = other.element.getBoundingClientRect(), rows = q.top < r.bottom && q.bottom > r.top, cols = q.left < r.right && q.right > r.left;
+    const direction = rows && near(q.right, r.left) ? "right" : rows && near(q.left, r.right) ? "left" : cols && near(q.bottom, r.top) ? "below" : cols && near(q.top, r.bottom) ? "above" : null;
+    if (direction) { layoutHome[id] = { ref: other.panels[0].id, direction }; return; }
+  }
+  delete layoutHome[id];
 }
 
-// Margins and separators follow from what is on screen. The card at each window edge carries the 8px margin; with the Canvas hidden those are the
-// first and last cards shown, otherwise the first of the panes on its left and the last of the panes on its right. A separator stands between two
-// cards that are both on screen: with the Canvas visible each pane has the one on its Canvas side; with it hidden, a left pane's own separator
-// stands between it and whatever comes next, a right pane's stands between it and the right pane before it, and the first right pane has none.
-function layoutFrame() {
-  const order = layoutNames.filter((n) => layoutShown[n]);
-  const rightShown = order.filter((n) => !layoutLeft.includes(n));
-  const first = order.find((n) => layoutLeft.includes(n) || layoutCanvasHidden);
-  const last = [...order].reverse().find((n) => !layoutLeft.includes(n) || layoutCanvasHidden);
-  layoutMargin = {};
-  for (const [name, p] of Object.entries(layoutPanes)) {
-    const [l, r] = [name === first ? layoutEdge : 0, name === last ? layoutEdge : 0];
-    layoutMargin[name] = l + r;
-    p.el.style.marginLeft = `${l}px`;
-    p.el.style.marginRight = `${r}px`;
-    const isLeft = layoutLeft.includes(name);
-    p.sep.hidden = !layoutShown[name] || (layoutCanvasHidden && (isLeft ? order.indexOf(name) === order.length - 1 : rightShown[0] === name));
+// Where a Panel goes: where it was, else beside the nearest Panel of the registry order (the one before it, else the one after it).
+function layoutPlace(id) {
+  const home = layoutHome[id];
+  if (home && layoutInDock(home.ref)) return { referencePanel: home.ref, direction: home.direction };
+  const order = layoutOrder(), at = order.indexOf(id);
+  const before = order.slice(0, at).reverse().find(layoutInDock);
+  if (before) return { referencePanel: before, direction: "right" };
+  const after = order.slice(at + 1).find(layoutInDock);
+  return after ? { referencePanel: after, direction: "left" } : undefined;
+}
+
+// The width of a card by weight, as the fixed grid gave it: the weights share the window minus the gaps, and a card at a window edge gives up its margin.
+const layoutWeight = (id) => (id === "canvas" ? layoutCanvasFr : layoutState[id]);
+function layoutTarget(id, row) {
+  const track = (layoutApi.width + 2 * layoutGap - layoutGap * (row.length - 1)) * layoutWeight(id) / row.reduce((n, x) => n + layoutWeight(x), 0);
+  return Math.max(layoutMin(id) - layoutGap, Math.round(track - (row[0] === id ? layoutGap : 0) - (row.at(-1) === id ? layoutGap : 0)));
+}
+// Sets a group to a card width. The library counts half a gap into the size of the outer groups, so the width is measured and corrected once.
+function layoutWiden(id, want) {
+  const p = layoutApi.getPanel(id);
+  if (!p) return;
+  p.api.setSize({ width: want });
+  const got = p.group.element.getBoundingClientRect().width;
+  if (Math.abs(got - want) > 1) p.api.setSize({ width: Math.round(want + want - got) });
+}
+
+// Puts the Layout in step with the Panels that should be on screen, then gives the new groups their size by weight.
+function layoutSync(wanted) {
+  layoutBusy = true;
+  const had = layoutApi.panels.length;
+  const gone = layoutApi.panels.map((p) => p.id).filter((id) => !wanted.includes(id));
+  for (const id of gone) { layoutRemember(id); layoutApi.removePanel(layoutApi.getPanel(id)); layoutParking.append(layoutEl(id)); }
+  const added = [];
+  for (const id of layoutOrder().filter((x) => wanted.includes(x) && !layoutInDock(x))) {
+    const position = layoutPlace(id);
+    layoutApi.addPanel({ id, component: id, title: id === "canvas" ? "Canvas" : layoutDef[id].title, minimumWidth: layoutMin(id), minimumHeight: layoutMinHeight, ...(position ? { position } : {}) });
+    added.push(id);
   }
-  const main = document.querySelector("main");
-  main.style.marginLeft = `${!layoutCanvasHidden && !layoutAnyLeft(layoutShown) ? layoutEdge : 0}px`;
-  main.style.marginRight = `${!layoutCanvasHidden && !layoutAnyRight(layoutShown) ? layoutEdge : 0}px`;
+  layoutBusy = false;
+  // Sizes. While the person has not dragged a border and every group holds one Panel in one row, the weights decide every width (as the fixed grid did),
+  // so showing or hiding a Panel shares the room by weight. Afterwards only a Panel that comes back is sized, and the others keep what the person made.
+  const groups = layoutApi.groups.filter((g) => g.panels.length).sort((a, b) => a.element.getBoundingClientRect().left - b.element.getBoundingClientRect().left);
+  const row = groups.map((g) => g.panels[0].id);
+  const plain = !layoutTouched && groups.every((g) => g.panels.length === 1 && Math.abs(g.element.getBoundingClientRect().top - groups[0].element.getBoundingClientRect().top) < 2);
+  if ((!had || added.length || gone.length) && row.length > 1) {
+    if (plain) for (const id of row.slice(0, -1)) layoutWiden(id, layoutTarget(id, row));
+    else for (const id of added) if (layoutApi.getPanel(id).group.panels.length === 1) layoutWiden(id, layoutTarget(id, row));
+  }
+  layoutShown = Object.fromEntries(layoutNames.map((n) => [n, layoutInDock(n)]));
 }
 
 function layoutApply() {
   layoutResolve();
   const body = document.body;
-  const track = (name) => (layoutShown[name] ? `minmax(${layoutPaneMin[name]}px, ${layoutState[name]}fr)` : "0px");
-  const canvasMin = layoutNarrow || layoutCanvasHidden ? 0 : layoutCanvasMin + layoutEdges(layoutShown);
-  for (const name of layoutNames) body.style.setProperty(`--${name}-track`, track(name));
-  body.style.setProperty("--canvas-track", layoutCanvasHidden ? "0px" : `minmax(${canvasMin}px, ${layoutCanvasFr}fr)`);
   body.classList.toggle("narrow", layoutNarrow);
-  body.classList.toggle("canvas-folded", layoutCanvasHidden);
-  const errorHome = layoutCanvasHidden ? body : document.querySelector("main");
+  const wanted = layoutNarrow ? ["canvas"] : [...(layoutCanvasHidden ? [] : ["canvas"]), ...layoutNames.filter((n) => layoutShown[n])];
+  layoutSync(wanted);
+  const errorHome = layoutCanvasHidden ? body : layoutMain;
   if ($("error").parentNode !== errorHome) errorHome.append($("error"));
   $("scrim").hidden = !layoutDrawer;
-  layoutFrame();
   for (const [name, p] of Object.entries(layoutPanes)) {
     const open = layoutNarrow && layoutDrawer === name;
-    p.el.toggleAttribute("data-folded", !layoutShown[name]);
+    if (open) { p.el.dataset.side = layoutLeft.includes(name) ? "left" : "right"; document.body.append(p.el); } else if (!layoutInDock(name)) layoutParking.append(p.el);
     p.el.classList.toggle("is-drawer", open);
     p.el.setAttribute("role", open ? "dialog" : "region");
     p.closeButton.hidden = !open;
-    if (!layoutShown[name]) continue;
-    p.sep.setAttribute("aria-valuemin", String(layoutPaneMin[name]));
-    p.sep.setAttribute("aria-valuemax", String(Math.round(layoutMax(name))));
-    p.sep.setAttribute("aria-valuenow", String(Math.round(layoutTrack(name))));
   }
   panelsSync();
   document.dispatchEvent(new Event("layout-applied")); // the Files panel loads its tree only while it is on screen
 }
 
-// Sets a pane to a wanted track width in px by turning it into a weight: w / (w + the rest) = wanted / available.
-function layoutSet(name, px) {
-  if (!layoutShown[name]) return;
-  const others = layoutNames.filter((n) => n !== name && layoutShown[n]);
-  const t = Math.min(layoutMax(name), Math.max(layoutPaneMin[name], px));
-  const available = layoutWidth() - layoutSeparatorWidth * (1 + others.length);
-  const rest = (layoutCanvasHidden ? 0 : layoutCanvasFr) + others.reduce((n, o) => n + layoutState[o], 0);
-  layoutState[name] = Math.round(t * rest / Math.max(1, available - t) * 100) / 100;
-  layoutSized[name] = true;
-  layoutApply();
-  layoutSave();
-}
+// Brings a Panel's tab to the front (it may be one of several tabs of a group).
+const layoutReveal = (name) => layoutApi.getPanel(name)?.api.setActive();
 
 // ---- Drawers (narrow windows): one panel over the Canvas at a time, opened from the Panels menu.
 function layoutOpenDrawer(name, opener) {
@@ -248,7 +270,7 @@ document.addEventListener("keydown", (e) => { if (e.key === "Escape" && layoutDr
 // Opens a Panel by its id, as a drawer in a narrow window.
 function layoutShowPane(name) {
   if (layoutNarrow) layoutOpenDrawer(name);
-  else { layoutState[`${name}Folded`] = false; layoutLastOpened = name; layoutApply(); layoutSave(); }
+  else { layoutState[`${name}Folded`] = false; layoutLastOpened = name; layoutApply(); layoutSave(); layoutReveal(name); }
 }
 
 // Run has something to show only while a Flow is open; until then it is listed in the menu as unavailable and its card takes no room.
@@ -268,20 +290,20 @@ function layoutToggle(name) {
   if (!layoutShown[name]) layoutLastOpened = name;
   layoutApply();
   layoutSave();
+  if (layoutShown[name]) layoutReveal(name);
 }
 
 function layoutToggleCanvas() {
   layoutState.canvasFolded = !layoutCanvasHidden;
   layoutApply();
   layoutSave();
+  layoutReveal("canvas");
 }
 
 // A quick tour draws over the Canvas, so starting one brings the Canvas back. The person's choice is saved as it now stands (shown).
 function layoutShowCanvas() {
-  if (!layoutCanvasHidden) return;
-  layoutState.canvasFolded = false;
-  layoutApply();
-  layoutSave();
+  if (layoutCanvasHidden) { layoutState.canvasFolded = false; layoutApply(); layoutSave(); }
+  layoutReveal("canvas");
 }
 
 // ---- The Panels menu: the one control for Panels in the top bar. One row per Panel (and the Canvas) in screen order, a check mark when it is on
@@ -378,7 +400,6 @@ layoutRegister({ id: "right", title: "Tutor", side: "right", min: 288, weight: 5
 }
 
 layoutReady = true;
-layoutGrid();
 panelsBuild();
 layoutApply();
 window.addEventListener("resize", layoutApply);

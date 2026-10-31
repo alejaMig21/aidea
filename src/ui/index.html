@@ -25,12 +25,10 @@
   }
   * { box-sizing: border-box; }
   /* Panels: each a rounded card under the top bar, around the Canvas. They are declared once in the registry of 07-layout.js, which creates the cards
-     and their separators (the gaps between cards) and sets the grid; each track is minmax(minimum, weight in fr) in a --<id>-track value (a folded pane is a 0 track). The shell is exactly the window tall (dvh follows mobile toolbars, vh is the fallback); only the cards scroll inside. */
+     and places them in the docking Layout (#dock, dockview-core); the look of the library is set in that file. The shell is exactly the window tall (dvh follows mobile toolbars, vh is the fallback); only the cards scroll inside. */
   html { height: 100%; }
-  body { margin: 0; height: 100%; height: 100vh; height: 100dvh; overflow: hidden; display: grid; grid-template-rows: auto minmax(0, 1fr); background: var(--bg); color: var(--text); font: 13px/1.4 var(--sans); }
-  .panel-card, main { margin-bottom: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-  .panel-card { min-width: 0; display: flex; flex-direction: column; }
-  main { grid-area: main; min-width: 0; position: relative; background-color: var(--canvas); background-image: radial-gradient(circle, #283044 1px, transparent 1.3px); background-size: 18px 18px; }
+  body { margin: 0; height: 100%; height: 100vh; height: 100dvh; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); background: var(--bg); color: var(--text); font: 13px/1.4 var(--sans); }
+  main { min-width: 0; position: relative; background-color: var(--canvas); background-image: radial-gradient(circle, #283044 1px, transparent 1.3px); background-size: 18px 18px; }
   h1 { font-size: 15px; margin: 0; }
   h2 { font-size: 11px; margin: 0; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 500; }
   form { display: flex; flex-direction: column; gap: 6px; }
@@ -59,7 +57,8 @@
   #home { --h-bg: #0e1014; --h-card: #151921; --h-line: #1d222c; --h-text: #e9ebf0; --h-muted: #9aa1af; --h-accent: #8aa4ff; --h-ink: #10131a;
     position: fixed; inset: 0; z-index: 10; background: var(--h-bg); color: var(--h-text); font: 14px/1.3 Inter, system-ui, sans-serif; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 32px 0; }
   #home[hidden] { display: none; }
-  body:has(#home:not([hidden])) > :not(#home) { display: none; }
+  body:has(#home:not([hidden])) > :not(#home, #dock) { display: none; }
+  body:has(#home:not([hidden])) > #dock { visibility: hidden; } /* kept at its size under the Home screen, so the Layout does not lose its sizes */
   #home .h-col { width: 592px; max-width: calc(100% - 32px); margin: auto 0; }
   #home .h-head { display: flex; align-items: flex-start; gap: 14px; }
   #home .h-logo { width: 44px; height: 44px; border-radius: 12px; background: var(--h-accent); color: var(--h-ink); display: grid; place-items: center; font-size: 26px; font-weight: 600; }
@@ -93,9 +92,8 @@
   #home #recents .forget:hover { color: var(--h-text); text-decoration: underline; }
   #home #home-empty { color: var(--h-muted); font-size: 13px; line-height: 1.5; margin: 0; }
   /* ---- end Home ---- */
-  .card-head { margin: 0; padding: 0 14px; height: 40px; display: flex; align-items: center; font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text); border-bottom: 1px solid var(--line); flex: none; }
   /* Top bar */
-  #topbar { grid-area: top; position: relative; z-index: 30; display: flex; align-items: center; gap: 10px; height: 43px; min-width: 0; padding: 0 12px; margin-bottom: 8px; background: var(--bar); border-bottom: 1px solid #1c202a; }
+  #topbar { position: relative; z-index: 30; display: flex; align-items: center; gap: 10px; height: 43px; min-width: 0; padding: 0 12px; margin-bottom: 8px; background: var(--bar); border-bottom: 1px solid #1c202a; }
   .logo { flex: none; }
   .logo { width: 22px; height: 22px; border-radius: 6px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-weight: 700; font-size: 13px; }
   #topbar h1 { font-size: 14px; font-weight: 700; margin-right: 6px; }
@@ -241,8 +239,7 @@
     <div id="panels-menu" role="menu" aria-label="Panels" hidden></div>
   </div>
 </header>
-<!-- The side Panels (Builder, Files, Code, Run, Tutor) are created by 07-layout.js from its registry, each with its separator, in this order around the Canvas.
-     DOM order is the keyboard order and matches the visual order. -->
+<!-- The Panels (Builder, Files, Code, Run, Tutor) are created by 07-layout.js from its registry, and it places them and the Canvas in the docking Layout. -->
 <main>
   <svg id="canvas" role="img" aria-label="Canvas"><g id="world"></g></svg>
   <p id="no-code" hidden></p>
@@ -276,6 +273,7 @@
   <ul id="recents"></ul>
   <p id="home-empty" hidden>No projects yet. Choose "Open folder..." to pick an existing project, or "New project" to create an empty one. In a plain browser, "Open folder..." uses the path typed in the box on the left. Opened projects are listed here next time.</p>
 </div></section>
+<script src="/vendor/dockview/dockview-core.min.js"></script><!-- the docking library, served from the core (src/ui/vendor/dockview/NOTICE.md) -->
 <!--features-->
 </body>
 </html>

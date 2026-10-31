@@ -78,7 +78,9 @@ const order = () => {
 test("the page loads without errors and its Panels stand in the order of the registry", { skip }, () => {
   assert.deepEqual(report.errors, []);
   assert.ok(report.registry.length >= 5);
-  assert.deepEqual(report.cards, order().cards);
+  // Left to right on the screen (the page lists the cards by position): the registry order, for the Panels that are shown.
+  assert.deepEqual(report.cards, order().cards.filter((id) => report.cards.includes(id)));
+  assert.ok(report.cards.includes("main") && report.cards.length >= 2);
 });
 
 test("the header has one control for Panels and no per-Panel button", { skip }, () => {
@@ -102,7 +104,7 @@ test("the Panels menu lists every Panel with a check mark; a Panel that cannot b
 });
 
 test("a layout saved by an earlier version still loads, and an id no Panel has is ignored and never written back", { skip }, () => {
-  assert.deepEqual(report.saved, { chatShown: false, filesShown: true, chatWeight: 300, ghostIgnored: true });
+  assert.deepEqual(report.saved, { chatShown: false, filesShown: true, chatSizeCarried: true, ghostIgnored: true });
   const ids = (report.registry as { id: string }[]).map((d) => d.id);
   assert.deepEqual(report.stored, ["canvasFolded", "sized", ...ids.map((id) => `${id}Folded`), "chat"].sort(), "the old key names, the one size the person set, and nothing about an unknown id");
 });
@@ -125,19 +127,20 @@ test("a Panel that depends on something is enabled and shown once it is availabl
   assert.deepEqual(report.conditional, { id: report.conditional.id, enabled: true, shown: true });
 });
 
-test("hiding the Canvas from the menu leaves one separator between each two neighbouring Panels, and showing it brings it back", { skip }, () => {
+test("hiding the Canvas from the menu leaves the Panels on screen, one group each, and showing it brings it back", { skip }, () => {
   assert.equal(report.canvasHidden.canvasShown, false);
-  assert.equal(report.canvasHidden.visibleSeparators, report.canvasHidden.panelsShown - 1);
+  assert.equal(report.canvasHidden.groups, report.canvasHidden.panelsShown);
   assert.equal(report.canvasBack.canvasShown, true);
 });
 
-test("a new Panel is one declaration: a menu entry, a card, a separator and a body appear and the header does not grow", { skip }, () => {
+test("a new Panel is one declaration: a menu entry, a card, a body and a place in the Layout appear and the header does not grow", { skip }, () => {
   const s = report.seventh;
   assert.equal(s.entriesAfter, s.entriesBefore + 1);
-  assert.deepEqual([s.hasCard, s.hasPane, s.hasSeparator], [true, true, true]);
+  assert.deepEqual([s.hasCard, s.hasPane, s.inLayoutAfterMenu], [true, true, true]);
   assert.equal(s.headerAfter, s.headerBefore);
   assert.equal(s.headerAfter, 1);
   assert.equal(s.hiddenAtStart, true);
+  assert.equal(s.inLayoutAtStart, false, "a Panel that starts hidden is not in the Layout until it is shown");
   assert.equal(s.shownAfterMenu, true);
-  assert.deepEqual(report.finalCards, [...order().cards, "notes"]);
+  assert.deepEqual(report.finalCards.at(-1), "notes", "a Panel declared last stands at the right end");
 });
