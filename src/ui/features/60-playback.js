@@ -3,42 +3,42 @@
 const playbackStyle = document.createElement("style");
 playbackStyle.textContent = `
   #algorithm.has-recording .flow-step:not(.visited) { opacity: .4; }
-  #pane-algorithm { padding: 0; gap: 0; }
-  #pane-algorithm > header { display: flex; justify-content: space-between; align-items: center; height: 40px; padding: 0 14px; border-bottom: 1px solid var(--line); font-weight: 600; font-size: 13px; flex: none; }
-  #pane-algorithm > header span { font: 400 12px var(--mono); color: var(--muted); }
-  #pane-algorithm .body { padding: 14px; display: flex; flex-direction: column; gap: 8px; }
-  #pane-algorithm h3 { margin: 6px 0 0; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
-  #pane-algorithm hr { border: 0; border-top: 1px solid #202531; margin: 8px 0 2px; width: 100%; }
-  #pane-algorithm label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--label); }
-  #pane-algorithm input:not([type]), #pane-algorithm input[type="text"] { padding: 6px 10px; font-size: 13px; }
-  #pane-algorithm label[hidden] { display: none; }
-  #pane-algorithm .pb-row { display: flex; gap: 8px; align-items: center; }
-  #pane-algorithm .pb-row > button { flex: 1; padding: 5px 10px; font-size: 13px; }
-  #pane-algorithm .pb-row > button.step { flex: none; width: 29px; padding: 4px 0; }
-  #pane-algorithm .pb-values, #pane-algorithm #pb-output { font: 12.5px/1.7 var(--mono); margin: 4px 0 0; padding: 10px 12px; background: var(--raised); border-radius: 8px; color: var(--text); white-space: pre-wrap; }
-  #pane-algorithm #pb-narration { margin: 4px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--text); }
-  #pane-algorithm #pb-narration:empty { display: none; }
-  #pane-algorithm #pb-output:empty { display: none; }
-  #pane-algorithm .pb-values div { display: flex; justify-content: space-between; gap: 8px; }
-  #pane-algorithm .pb-error { color: var(--danger); font-size: 12px; }
-  #pane-algorithm .pb-warning, #pane-algorithm .pb-hint { color: var(--muted); font-size: 12px; margin: 4px 0; }
-  #pane-algorithm .pb-check { flex-direction: row; align-items: center; gap: 6px; }
-  #pane-algorithm input[type="range"] { flex: 1; min-width: 0; padding: 0; accent-color: var(--accent); }
-  #pane-algorithm #pb-position { font-size: 12px; color: var(--muted); }
-  #pane-algorithm #pb-guess:empty { display: none; }
-  #pane-algorithm #pb-guess form { margin: 4px 0 0; padding: 10px 12px; background: var(--raised); border-radius: 8px; display: flex; flex-direction: column; gap: 8px; }
-  #pane-algorithm #pb-guess .pb-prompt { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--text); }
-  #pane-algorithm #pb-guess .pb-option { flex-direction: row; align-items: center; gap: 8px; font: 13px var(--mono); color: var(--text); }
-  #pane-algorithm #pb-guess .pb-confidence { font-size: 12px; }
-  #pane-algorithm #pb-guess .pb-result { margin: 4px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--text); }
+  #pane-run { padding: 0; gap: 0; }
+  #pane-run > header { display: flex; justify-content: space-between; align-items: center; height: 40px; padding: 0 14px; border-bottom: 1px solid var(--line); font-weight: 600; font-size: 13px; flex: none; }
+  #pane-run > header span { font: 400 12px var(--mono); color: var(--muted); }
+  #pane-run .body { padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  #pane-run h3 { margin: 6px 0 0; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  #pane-run hr { border: 0; border-top: 1px solid #202531; margin: 8px 0 2px; width: 100%; }
+  #pane-run label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--label); }
+  #pane-run input:not([type]), #pane-run input[type="text"] { padding: 6px 10px; font-size: 13px; }
+  #pane-run label[hidden] { display: none; }
+  #pane-run .pb-row { display: flex; gap: 8px; align-items: center; }
+  #pane-run .pb-row > button { flex: 1; padding: 5px 10px; font-size: 13px; }
+  #pane-run .pb-row > button.step { flex: none; width: 29px; padding: 4px 0; }
+  #pane-run .pb-values, #pane-run #pb-output { font: 12.5px/1.7 var(--mono); margin: 4px 0 0; padding: 10px 12px; background: var(--raised); border-radius: 8px; color: var(--text); white-space: pre-wrap; }
+  #pane-run #pb-narration { margin: 4px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--text); }
+  #pane-run #pb-narration:empty { display: none; }
+  #pane-run #pb-output:empty { display: none; }
+  #pane-run .pb-values div { display: flex; justify-content: space-between; gap: 8px; }
+  #pane-run .pb-error { color: var(--danger); font-size: 12px; }
+  #pane-run .pb-warning, #pane-run .pb-hint { color: var(--muted); font-size: 12px; margin: 4px 0; }
+  #pane-run .pb-check { flex-direction: row; align-items: center; gap: 6px; }
+  #pane-run input[type="range"] { flex: 1; min-width: 0; padding: 0; accent-color: var(--accent); }
+  #pane-run #pb-position { font-size: 12px; color: var(--muted); }
+  #pane-run #pb-guess:empty { display: none; }
+  #pane-run #pb-guess form { margin: 4px 0 0; padding: 10px 12px; background: var(--raised); border-radius: 8px; display: flex; flex-direction: column; gap: 8px; }
+  #pane-run #pb-guess .pb-prompt { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--text); }
+  #pane-run #pb-guess .pb-option { flex-direction: row; align-items: center; gap: 8px; font: 13px var(--mono); color: var(--text); }
+  #pane-run #pb-guess .pb-confidence { font-size: 12px; }
+  #pane-run #pb-guess .pb-result { margin: 4px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--text); }
 `;
 document.head.append(playbackStyle);
 
-// The Algorithm column: a tab in the right slot, always there, enabled only while an Algorithm is open.
-// Proposals stay in #panel, outside this column, so deciding on them works from any tab.
+// The Run panel: in the right slot beside the Tutor, shown only while a Flow is open.
+// Proposals stay in #panel, outside it, so deciding on them works whatever is open.
 const pbPane = document.createElement("div");
-rightRegisterTab("algorithm", "Algorithms", pbPane); // always in the right slot, in the page so pbRender can find its fields by id
-rightSetTabEnabled("algorithm", false); // until an Algorithm is open
+rightRegisterPanel("run", "Run", pbPane); // in the page from the start so pbRender can find its fields by id
+rightSetPanelShown("run", false); // until a Flow is open
 let pbGraph = null;     // the open Algorithm graph
 let pbRecording = null; // the recording being replayed
 let pbIndex = 0;
@@ -143,7 +143,7 @@ async function pbRecord() {
   const message = $("pb-message");
   message.textContent = "";
   message.className = "pb-error";
-  document.querySelectorAll("#pane-algorithm .pb-field-error").forEach((n) => { n.textContent = ""; });
+  document.querySelectorAll("#pane-run .pb-field-error").forEach((n) => { n.textContent = ""; });
   pbOwnPython = $("pb-own-python").checked;
   const body = { project: current, node: pbGraph.node };
   if (!pbOwnPython) body.useProjectPython = false; // left out: the Project's own interpreter when it has one
@@ -210,7 +210,7 @@ async function pbOfferTestInputs(box, node) {
 
 // Builds the panel: the inputs always, the controls once there is a recording.
 function pbRender() {
-  if (!pbNode()) { rightSetTabEnabled("algorithm", false); return; } // the function is gone (another Project): nothing to show
+  if (!pbNode()) { rightSetPanelShown("run", false); return; } // the function is gone (another Project): nothing to show
   pbRenderedFor = pbGraph;
   const node = pbNode();
   const useExample = () => {
@@ -251,7 +251,7 @@ function pbRender() {
       pbEl("p", { className: "pb-warning", textContent: `Interpreter used: ${pbRecording.interpreter}` }),
     );
   }
-  pbPane.replaceChildren(pbEl("header", {}, "Algorithm", pbEl("span", { textContent: pbGraph.node.split(".").pop() })), pbEl("div", { className: "body" }, ...parts));
+  pbPane.replaceChildren(pbEl("header", {}, "Function", pbEl("span", { textContent: pbGraph.node.split(".").pop() })), pbEl("div", { className: "body" }, ...parts));
   pbOfferTestInputs(fromTests, node);
   if (pbRecording) {
     const inputs = pbRecording.input;
@@ -281,19 +281,19 @@ draw = async (nodes) => {
   pbRecording = null;
   pbIndex = 0;
   pbRenderedFor = null;
-  rightSetTabEnabled("algorithm", false);
+  rightSetPanelShown("run", false);
   await drawWithoutPlayback(nodes);
 };
 
-// The column belongs to the Algorithms layer: opening it adds and selects the tab, leaving removes it and pauses the replay.
+// The Run panel belongs to the Flow layer: opening a Flow shows it, leaving hides it and pauses the replay.
 const showLayerWithoutPlayback = showLayer;
 showLayer = (which) => {
   showLayerWithoutPlayback(which);
-  if (which !== "flow" || !pbNode()) { pbStop(); rightSetTabEnabled("algorithm", false); }
+  if (which !== "flow" || !pbNode()) { pbStop(); rightSetPanelShown("run", false); }
   else {
-    rightSetTabEnabled("algorithm", true);
+    rightSetPanelShown("run", true);
     if (pbRenderedFor !== pbGraph) pbRender(); // keep what the person typed unless the graph changed
-    rightShowTab("algorithm");
+    rightShowPanel("run");
     if (pbRecording) { $("algorithm").classList.add("has-recording"); pbShowStep(); }
   }
 };

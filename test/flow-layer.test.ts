@@ -46,7 +46,7 @@ test("a Probe result and a Plan stored under the old layer id are read back as F
   }
 });
 
-// Text a person or the Tutor reads must not call the layer by its old name. The right-slot tab (renamed Run in ticket 02) is not the layer.
+// Text a person or the Tutor reads must not call the layer by its old name.
 test("user-facing text never names the layer Algorithms or the graph an Algorithm graph", () => {
   const src = join(import.meta.dirname, "..", "src");
   const files = [
@@ -61,9 +61,7 @@ test("user-facing text never names the layer Algorithms or the graph an Algorith
     readFileSync(file, "utf8").split("\n").forEach((line, i) => {
       const code = line.replace(/\s\/\/.*$/, ""); // comments are for maintainers, not for the person
       if (code.trim().startsWith("//")) return;
-      // The right-slot tab (60-playback.js) and the Guide text that names it stay "Algorithms" until ticket 02 renames that tab to Run.
-      if (/guide\.ts|60-playback\.js/.test(file)) return;
-      if (/Algorithm graph|Algorithms layer|textContent = "Algorithms"|\balgorithm step\b|\ban algorithm\b/i.test(code)) found.push(`${file.slice(src.length + 1)}:${i + 1}: ${line.trim().slice(0, 120)}`);
+      if (/Algorithm graph|Algorithms layer|"Algorithms"|textContent = "Algorithms"|\balgorithm step\b|\ban algorithm\b/i.test(code)) found.push(`${file.slice(src.length + 1)}:${i + 1}: ${line.trim().slice(0, 120)}`);
     });
   }
   assert.deepEqual(found, [], `old layer name in text:\n${found.join("\n")}`);

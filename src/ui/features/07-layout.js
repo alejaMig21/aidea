@@ -36,46 +36,40 @@ const layoutEdge = 8; // the margin between a card and the window's edge
   document.head.append(style);
 }
 
-// ---- Right slot tabs: a small registry so ticket 08 can add the Algorithm tab with one call.
-const rightTabs = $("right-tabs");
-const rightPanes = $("right-panes");
-function rightSelectTab(id) {
-  for (const b of rightTabs.children) b.setAttribute("aria-selected", String(b.dataset.tab === id));
-  for (const p of rightPanes.children) p.hidden = p.dataset.tab !== id;
-}
-// Adds a tab (button in the tab bar plus its pane). The first one registered is selected.
-function rightRegisterTab(id, label, pane) {
-  const b = Object.assign(document.createElement("button"), { type: "button", textContent: label, id: `tab-${id}`, onclick: () => rightSelectTab(id) });
-  b.dataset.tab = id;
-  b.setAttribute("role", "tab");
-  b.setAttribute("aria-controls", `pane-${id}`);
-  pane.dataset.tab = id;
+// ---- Right slot panels: the Tutor and Run are two Panels stacked in the slot, visible at the same time. Each has a title that
+// folds it; a Panel can also be hidden altogether (Run is, until a Flow is open). The folded state of a Panel is not saved.
+const rightPanels = $("right-panels");
+const rightPanelBox = (id) => rightPanels.querySelector(`[data-panel="${id}"]`);
+// Adds a Panel: a titled section holding the pane the caller built. The pane keeps the id pane-<id>.
+function rightRegisterPanel(id, label, pane) {
+  const box = document.createElement("section");
+  box.className = "rpanel";
+  box.dataset.panel = id;
+  const head = Object.assign(document.createElement("button"), { type: "button", className: "rpanel-head", textContent: label, id: `head-${id}` });
+  head.setAttribute("aria-expanded", "true");
+  head.setAttribute("aria-controls", `pane-${id}`);
+  head.onclick = () => rightFoldPanel(id, !box.classList.contains("rpanel-open"));
+  box.classList.add("rpanel-open");
   pane.id = `pane-${id}`;
-  pane.setAttribute("role", "tabpanel");
-  pane.setAttribute("aria-labelledby", b.id);
-  rightTabs.append(b);
-  rightPanes.append(pane);
-  rightSelectTab(rightTabs.children.length === 1 ? id : rightTabs.querySelector('[aria-selected="true"]').dataset.tab);
+  pane.setAttribute("role", "region");
+  pane.setAttribute("aria-labelledby", head.id);
+  box.append(head, pane);
+  rightPanels.append(box);
 }
 
-// Removes a tab and its pane; if it was selected, the first tab left (the Tutor) is selected.
-function rightUnregisterTab(id) {
-  const b = rightTabs.querySelector(`[data-tab="${id}"]`);
-  if (!b) return;
-  const wasSelected = b.getAttribute("aria-selected") === "true";
-  b.remove();
-  rightPanes.querySelector(`[data-tab="${id}"]`)?.remove();
-  if (wasSelected) { for (const x of rightPanes.children) x.hidden = x.dataset.tab !== rightTabs.firstChild.dataset.tab; rightTabs.firstChild.setAttribute("aria-selected", "true"); }
+// Opens or folds the body of a Panel; a folded Panel keeps its title, so the other one gets the room.
+function rightFoldPanel(id, open) {
+  const box = rightPanelBox(id);
+  box.classList.toggle("rpanel-open", open);
+  $(`head-${id}`).setAttribute("aria-expanded", String(open));
 }
 
-// Enables or disables a tab; a disabled tab that was selected hands the selection back to the first tab.
-function rightSetTabEnabled(id, enabled) {
-  const b = rightTabs.querySelector(`[data-tab="${id}"]`);
-  b.disabled = !enabled;
-  if (!enabled && b.getAttribute("aria-selected") === "true") rightSelectTab(rightTabs.firstChild.dataset.tab);
+// Shows or hides a whole Panel.
+function rightSetPanelShown(id, shown) {
+  rightPanelBox(id).hidden = !shown;
 }
 
-// The Tutor tab is always present. Its entry point stays disabled until the Tutor exists. The head of the column is the topic field
+// The Tutor panel is always present. Its entry point stays disabled until the Tutor exists. The head of the panel is the topic field
 // (50-tutor.js), the "Start a class" button and one line of help; the other files add the rest below it.
 {
   const pane = document.createElement("div");
@@ -84,7 +78,7 @@ function rightSetTabEnabled(id, enabled) {
   const head = Object.assign(document.createElement("div"), { id: "tutor-head" });
   head.append(start, help);
   pane.append(head);
-  rightRegisterTab("tutor", "Tutor", pane);
+  rightRegisterPanel("tutor", "Tutor", pane);
 }
 
 
@@ -202,11 +196,11 @@ $("scrim").onclick = layoutCloseDrawer;
 // Capture phase: the switcher's own Escape handler closes its popover first, and that Escape must not also close a drawer.
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && layoutDrawer && $("switcher-menu").hidden) layoutCloseDrawer(); }, true);
 
-// Selects a tab and makes sure the right slot is open to show it.
-function rightShowTab(id) {
+// Opens a Panel of the right slot and makes sure the slot is open to show it.
+function rightShowPanel(id) {
   if (layoutNarrow) layoutOpenDrawer("right");
   else { layoutState.rightFolded = false; layoutLastOpened = "right"; layoutApply(); layoutSave(); }
-  rightSelectTab(id);
+  rightFoldPanel(id, true);
 }
 
 for (const [name, p] of Object.entries(layoutPanes)) {

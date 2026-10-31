@@ -69,7 +69,7 @@
   const waiting = notationSwatch(`<rect x="4" y="4" width="36" height="16" rx="4" style="fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:2 3"/>`);
   for (const layer of ["business", "requirements", "architecture"]) {
     const legend = notationLegends[layer];
-    notationRegisterLegend(layer, { ...legend, shapes: [...legend.shapes, [swatch, "Dashed red outline: the code differs from what the Contract says about this Node (see the list in the Tutor column)", ".has-drift"], ...(layer === "requirements" ? [[waiting, "Dotted grey outline: a requirement not built yet, only a question to ask (see the Tutor column)", ".has-waiting"]] : [])] });
+    notationRegisterLegend(layer, { ...legend, shapes: [...legend.shapes, [swatch, "Dashed red outline: the code differs from what the Contract says about this Node (see the list in the Tutor panel)", ".has-drift"], ...(layer === "requirements" ? [[waiting, "Dotted grey outline: a requirement not built yet, only a question to ask (see the Tutor panel)", ".has-waiting"]] : [])] });
   }
 
   const drawWithoutDrift = draw;

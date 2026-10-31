@@ -104,7 +104,7 @@
     const project = current;
     closeTour();
     if (!project || !window.tutorUi) return guideTour(false);
-    rightShowTab("tutor");
+    rightShowPanel("tutor");
     const unavailable = await window.tutorUi.startClass({ payload: { project, guide: true }, fallback: true });
     if (unavailable && project === current) guideTour(true);
   };

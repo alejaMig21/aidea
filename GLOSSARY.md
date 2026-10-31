@@ -182,12 +182,18 @@ _Avoid_: Quiz, exercise
 
 ## Window
 
-**Column**:
-A vertical area of the window that the person can resize or fold away. The work session arranges the chat, the Canvas and a right slot, which holds the Tutor column and the Algorithm column as tabs. Folded columns take no space, and in narrow windows the chat and the right slot open as drawers over the Canvas.
-_Avoid_: Sidebar, panel, pane
+**Panel**:
+One section of the window with one job that the person can show, hide and resize: the Builder (chat), the Canvas, the Tutor, Run, and, later, Files and Code. A Panel is never a layer: a layer is something the Canvas draws. Hidden Panels take no space, and in narrow windows the side Panels open as drawers over the Canvas.
+_Avoid_: Column, sidebar, pane, tab (as the name of an area)
 
-**Tutor column**:
-The column that belongs to the Tutor: explanations, questions and class mode. It holds nothing else.
+**Layout**:
+How all the Panels are arranged on the screen right now: which are shown, their sizes and, once the Layout can be docked, their places and monitors.
+_Avoid_: Workspace, view
 
-**Algorithm column**:
-The column for everything about the Flow layer: the form for the data of a test and the Playback. Its tab is always in the right slot and is enabled only while a Flow is open. (Becomes the Run panel in ticket 02 of layout-and-data.)
+**Preset**:
+A Layout saved with a name, to return to it in one click. Some come with aidea and cannot be deleted.
+_Avoid_: Profile, theme
+
+**Run**:
+The Panel for running the open function: the form for the data of a test and the Playback. It appears while a Flow is open and is visible at the same time as the Tutor.
+_Avoid_: Algorithm column, Algorithm panel
