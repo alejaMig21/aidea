@@ -262,7 +262,7 @@ function layoutSync(wanted) {
   layoutShown = Object.fromEntries(layoutNames.map((n) => [n, layoutInDock(n)]));
 }
 
-let layoutStash = null; // the Layout as the library describes it, kept in memory only while the window is narrow (never saved: ticket 19 saves)
+let layoutStash = null; // the Layout as the library describes it, kept while the window is narrow: the one just left, or the saved one when the page starts narrow
 function layoutApply() {
   const dropped = layoutDrawer && layoutWidth() >= layoutNarrowBelow; // the window grew wide under an open drawer
   const wasNarrow = layoutNarrow;
@@ -271,7 +271,7 @@ function layoutApply() {
   if (!layoutNarrow && wasNarrow && layoutStash) {
     layoutMeasure();
     layoutBusy = true;
-    try { layoutApi.fromJSON(layoutStash); } catch { /* the sync below adds what is missing */ } finally { layoutBusy = false; layoutStash = null; }
+    try { layoutApi.fromJSON(layoutClean(layoutStash, layoutKeep())); } catch { /* the sync below adds what is missing */ } finally { layoutBusy = false; layoutStash = null; }
   }
   const body = document.body;
   body.classList.toggle("narrow", layoutNarrow);
@@ -301,24 +301,28 @@ function layoutClean(dock, keep) {
     if (node?.type === "leaf") {
       if (!Array.isArray(node.data?.views)) throw new Error("not a saved Layout");
       const views = node.data.views.filter((id) => keep.has(id));
+      if (views.some((id) => !dock.panels[id])) throw new Error("a Panel without a description");
       return views.length ? { ...node, data: { ...node.data, views, activeView: views.includes(node.data.activeView) ? node.data.activeView : views[0] } } : null;
     }
     if (node?.type !== "branch" || !Array.isArray(node.data)) throw new Error("not a saved Layout");
     const all = node.data.map(walk), data = all.filter(Boolean);
     if (!data.length) return null;
     // what the dropped children took goes to the others in proportion, so the sizes the person made keep their relations
-    const was = all.reduce((n, c, i) => n + (node.data[i].size ?? 0), 0), now = data.reduce((n, c) => n + (c.size ?? 0), 0);
-    return { ...node, data: data.length < all.length && now > 0 ? data.map((c) => ({ ...c, size: c.size * was / now })) : data };
+    const was = node.data.reduce((n, c) => n + (c.size ?? 0), 0), now = data.reduce((n, c) => n + (c.size ?? 0), 0);
+    return { ...node, data: data.length < all.length && now > 0 ? data.map((c) => ({ ...c, size: (c.size ?? 0) * was / now })) : data };
   };
   const root = walk(dock.grid.root);
   if (!root) throw new Error("nothing left");
   return { ...dock, grid: { ...dock.grid, root }, panels: Object.fromEntries(Object.entries(dock.panels).filter(([id]) => keep.has(id))) };
 }
 
+// The Panels that belong in the window now: the Canvas unless it is hidden, and the Panels layoutResolve lets be on screen.
+const layoutKeep = () => new Set([...(layoutCanvasHidden ? [] : ["canvas"]), ...layoutNames.filter((n) => layoutShown[n])]);
+
 function layoutRestore(dock) {
   layoutResolve();
-  if (layoutNarrow) return void (layoutStash = null); // the arrangement of a narrow window is the Canvas alone; the wide one is read when the window grows
-  const keep = new Set([...(layoutCanvasHidden ? [] : ["canvas"]), ...layoutNames.filter((n) => layoutShown[n])]);
+  if (layoutNarrow) return void (layoutStash = dock); // a narrow window shows the Canvas alone; the saved arrangement is read when the window grows
+  const keep = layoutKeep();
   let ok = false;
   layoutBusy = true;
   try {

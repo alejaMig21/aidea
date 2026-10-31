@@ -16,8 +16,10 @@ const chrome = [process.env.CHROME_PATH, "C:/Program Files/Google/Chrome/Applica
 if (!chrome && process.env.AIDEA_REQUIRE_CHROME) throw new Error("AIDEA_REQUIRE_CHROME is set but Chrome was not found (set CHROME_PATH to its executable)");
 const skip = chrome ? false : "Chrome was not found (set CHROME_PATH to its executable; set AIDEA_REQUIRE_CHROME=1 to fail instead of skipping)";
 
-const LEGACY = JSON.stringify({ chatFolded: false, filesFolded: true, codeFolded: true, runFolded: false, rightFolded: true, canvasFolded: false, sized: { chat: true }, chat: 300 });
-let arrangeReport: any, reopenReport: any, legacyReport: any;
+const LEGACY = JSON.stringify({ chatFolded: false, filesFolded: false, codeFolded: true, runFolded: false, rightFolded: true, canvasFolded: false, sized: { chat: true }, chat: 300 });
+const GARBAGE = JSON.stringify({ chatFolded: false, rightFolded: false, dock: "junk" });
+const DEFAULT_GROUPS = ["canvas", "chat", "files", "right"]; // Files is shown in the arranged save; Code is hidden
+let arrangeReport: any, reopenReport: any, legacyReport: any, garbageReport: any;
 let core: Awaited<ReturnType<typeof startCore>>;
 let scratch = "";
 
@@ -64,6 +66,7 @@ before(async () => {
   arrangeReport = await load("arrange");
   reopenReport = await load("reopen", arrangeReport.arranged.stored, arrangeReport.arranged.withRun);
   legacyReport = await load("legacy", LEGACY);
+  garbageReport = await load("legacy", GARBAGE);
 });
 
 after(() => {
@@ -72,22 +75,29 @@ after(() => {
 });
 
 test("the pages load without errors", { skip }, () => {
-  assert.deepEqual([arrangeReport.errors, reopenReport.errors, legacyReport.errors], [[], [], []]);
+  assert.deepEqual([arrangeReport.errors, reopenReport.errors, legacyReport.errors, garbageReport.errors], [[], [], [], []]);
 });
 
 test("the arrangement is saved as plain data, the same on two reads", { skip }, () => {
   const a = arrangeReport.arranged;
   assert.equal(a.twice, true);
-  assert.deepEqual(a.groups, ["canvas", "chat+files", "code", "right"]);
+  assert.deepEqual(a.groups, ["canvas", "chat+files", "right"]);
   const saved = JSON.parse(a.stored);
   assert.ok(saved.dock && typeof saved.dock === "object", "the saved Layout holds the arrangement");
-  assert.equal(saved.codeFolded, false);
+  assert.equal(saved.codeFolded, true, "a hidden Panel is saved as hidden");
 });
 
 test("reopening brings back the groups, the tabs and the sizes the person left", { skip }, () => {
   assert.deepEqual(reopenReport.opened.groups, arrangeReport.arranged.groups);
   assert.deepEqual(reopenReport.opened.inDock, arrangeReport.arranged.inDock);
   for (const [id, w] of Object.entries(arrangeReport.arranged.widths) as [string, number][]) assert.ok(Math.abs(reopenReport.opened.widths[id] - w) <= 3, `${id}: ${reopenReport.opened.widths[id]} vs ${w}`);
+});
+
+test("the data saved after a restart is the data saved before it, and a hidden Panel stays hidden", { skip }, () => {
+  const r = reopenReport.restart;
+  assert.equal(r.after, r.before);
+  assert.equal(r.codeFolded, true);
+  assert.equal(reopenReport.opened.inDock.includes("code"), false);
 });
 
 test("a Layout saved with Run in it, restored without a Flow, keeps the relations between the sizes of the other Panels", { skip }, () => {
@@ -110,12 +120,24 @@ test("a saved Layout with an unknown Panel id loads without it", { skip }, () =>
 test("a Layout that is not valid data, or cannot be restored, gives the default Layout and never an empty window", { skip }, () => {
   for (const name of ["notData", "empty", "nullDock", "wrongShape", "unrestorable"]) {
     const c = reopenReport.cases[name];
+    assert.deepEqual(c.groups, DEFAULT_GROUPS, `${name}: the default arrangement, not a partial one`);
     assert.equal(c.canvasShown, true, `${name}: the Canvas is on screen`);
     assert.ok(c.inDock.includes("canvas") && c.inDock.includes("chat") && c.inDock.includes("right"), `${name}: ${c.inDock}`);
   }
 });
 
+test("a window that starts narrow keeps the saved arrangement and brings it back when it grows wide", { skip }, () => {
+  assert.deepEqual(reopenReport.narrowStart.groups, arrangeReport.arranged.groups);
+  assert.match(reopenReport.narrowStart.saved, /"chat","files"/, "the saved arrangement is not overwritten by the default");
+});
+
+test("a saved id that no group defines is dropped, and a save that is not data at all, read at start, gives the default", { skip }, () => {
+  assert.deepEqual(reopenReport.cases.ghostOnly.groups, arrangeReport.arranged.groups);
+  assert.deepEqual(garbageReport.legacy.inDock, ["canvas", "chat", "right"]);
+  assert.ok(garbageReport.legacy.chatWidth > 200, "the window is not empty");
+});
+
 test("a save of the fixed grid (folded flags and a size) still gives the arrangement it described", { skip }, () => {
-  assert.deepEqual(legacyReport.legacy.inDock, ["canvas", "chat"]);
+  assert.deepEqual(legacyReport.legacy.inDock, ["canvas", "chat", "files"]);
   assert.ok(Math.abs(legacyReport.legacy.chatWidth - 300) <= 3, `Builder is ${legacyReport.legacy.chatWidth}`);
 });

@@ -20,6 +20,7 @@ async function arrange() {
   await menu("Code");
   layoutApi.getPanel("files").api.moveTo({ group: layoutApi.getPanel("chat").group, position: "center" }); // Files is a tab of the Builder
   await until(() => layoutApi.getPanel("files").group === layoutApi.getPanel("chat").group);
+  await menu("Code"); // a hidden Panel stays hidden after a restart
   // Run coming and going makes the library share the room again, so the person's width is set after each.
   const size = async () => { layoutApi.getPanel("chat").api.setSize({ width: 333 }); await wait(300); };
   await change(() => layoutSetRunAvailable(true)); // Run is in the Layout that gets saved ...
@@ -32,6 +33,8 @@ async function arrange() {
 }
 
 async function reopen() {
+  const views = (d) => JSON.stringify(d.grid.root.data.map((n) => n.data.views));
+  report.restart = { before: views(JSON.parse(window.SAVE_STORED).dock), after: views(JSON.parse(stored()).dock), codeFolded: JSON.parse(stored()).codeFolded };
   report.opened = { groups: groups(), inDock: inDock(), widths: widths() };
   // Run was in the saved Layout, but there is no Flow open: it is not in the window until it is available.
   report.run = { atStart: inDock().includes("run") };
@@ -50,13 +53,22 @@ async function reopen() {
   layoutRestore(JSON.parse(window.SAVE_WITH_RUN).dock);
   await wait(100);
   report.withRun = { inDock: inDock(), widths: widths(), saved: Object.fromEntries(JSON.parse(window.SAVE_WITH_RUN).dock.grid.root.data.map((n) => [n.data.views[0], n.size])) };
-  const cases = { unknownId: ghost, notData: "not data", empty: {}, nullDock: null, wrongShape: { grid: 5, panels: [] }, unrestorable };
+  const ghostOnly = JSON.parse(JSON.stringify(dock)); // an id in a group that the description does not define
+  firstLeaf(ghostOnly.grid.root).data.views.push("nobody");
+  const cases = { ghostOnly, unknownId: ghost, notData: "not data", empty: {}, nullDock: null, wrongShape: { grid: 5, panels: [] }, unrestorable };
   report.cases = {};
   for (const [name, value] of Object.entries(cases)) {
     layoutRestore(value);
     await wait(100);
     report.cases[name] = { inDock: inDock(), groups: groups(), canvasShown: layoutMain.getClientRects().length > 0 };
   }
+  // The page starts in a narrow window with a saved arrangement: it is not lost, and the window growing wide brings it back (and it is what stays saved).
+  const realWidth = layoutWidth;
+  await change(() => { window.layoutWidth = () => 700; layoutApply(); });
+  layoutRestore(dock);
+  await change(() => { window.layoutWidth = realWidth; layoutApply(); });
+  await wait(100);
+  report.narrowStart = { groups: groups(), saved: JSON.stringify(JSON.parse(stored()).dock.grid.root.data.map((n) => n.data.views)) };
 }
 
 async function legacy() {
