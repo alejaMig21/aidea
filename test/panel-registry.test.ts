@@ -119,7 +119,7 @@ test("the Panels menu lists every Panel with a check mark; a Panel that cannot b
 test("a layout saved by an earlier version still loads, and an id no Panel has is ignored and never written back", { skip }, () => {
   assert.deepEqual(report.saved, { chatShown: false, filesShown: true, ghostIgnored: true });
   const ids = (report.registry as { id: string }[]).map((d) => d.id);
-  assert.deepEqual(report.stored, ["canvasFolded", "sized", ...ids.map((id) => `${id}Folded`), "chat"].sort(), "the old key names, the one size the person set, and nothing about an unknown id");
+  assert.deepEqual(report.stored, ["canvasFolded", "dock", "sized", ...ids.map((id) => `${id}Folded`), "chat"].sort(), "the old key names, the one size the person set, the arrangement, and nothing about an unknown id");
   assert.deepEqual(report.storedSizes, { sized: { chat: true }, chat: 300 }, "the sizes an old save held are written back untouched");
 });
 

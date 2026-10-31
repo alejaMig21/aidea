@@ -31,15 +31,19 @@ let layoutReady = false; // false while the first Panels are being declared
 let layoutTouched = false; // true once the person has dragged a border: from then on their sizes are kept when a Panel is shown or hidden
 let layoutBusy = false; // true while this file adds or removes Panels, so a removal made by the library itself (not by the menu) can be told apart
 
-// A Panel's flags are the person's own only once they chose. The sizes an old save holds (`sized` and the weight under each id) are written back as they were
-// and not used: ticket 19 saves the whole arrangement and reads them.
+// What is saved: the folded flags of each Panel (`<id>Folded`, the names the fixed grid used) and `dock`, the arrangement as the library describes it (groups, tabs,
+// sizes). The sizes a fixed-grid save holds (`sized` and the weight under each id) are written back as they were and used only when there is no `dock` yet.
 let layoutSaved = {};
 try { layoutSaved = JSON.parse(localStorage.getItem(layoutKey) || "{}") ?? {}; } catch {}
+if (!layoutSaved || typeof layoutSaved !== "object") layoutSaved = {};
 layoutState.canvasFolded = layoutSaved.canvasFolded === true;
+let layoutRestored = false; // false until the saved arrangement has been read: the first default arrangement must not overwrite it
 const layoutSave = () => {
   try {
+    if (layoutRestored && !layoutNarrow && layoutApi.panels.length) layoutSaved.dock = layoutApi.toJSON(); // a narrow window shows the Canvas only: the arrangement saved before it stays
     const old = Object.fromEntries(layoutNames.filter((n) => layoutSaved[n] > 0).map((n) => [n, layoutSaved[n]]));
-    localStorage.setItem(layoutKey, JSON.stringify({ ...(layoutSaved.sized ? { sized: layoutSaved.sized } : {}), ...old, canvasFolded: layoutState.canvasFolded, ...Object.fromEntries(layoutNames.map((n) => [`${n}Folded`, layoutState[`${n}Folded`]])) }));
+    const text = JSON.stringify({ ...(layoutSaved.sized ? { sized: layoutSaved.sized } : {}), ...old, canvasFolded: layoutState.canvasFolded, ...Object.fromEntries(layoutNames.map((n) => [`${n}Folded`, layoutState[`${n}Folded`]])), ...(layoutSaved.dock ? { dock: layoutSaved.dock } : {}) });
+    if (text !== localStorage.getItem(layoutKey)) localStorage.setItem(layoutKey, text);
   } catch {}
 };
 
@@ -50,7 +54,7 @@ const layoutDv = window["dockview-core"] ?? (() => {
   // a line of its own: #error is cleared by whatever the person does next
   layoutMain.append(Object.assign(document.createElement("p"), { id: "layout-notice", className: "said", textContent: "The window layout could not be loaded, so only the Canvas is shown. Restart aidea to try again.", style: "position:absolute;left:15px;bottom:15px;margin:0;color:var(--danger);z-index:1" }));
   layoutMain.setAttribute("role", "region");
-  const none = { width: 0, height: 0, panels: [], groups: [], getPanel: () => undefined, addPanel() {}, removePanel() {}, layout() {}, onDidRemovePanel() {}, onWillShowOverlay() {}, toJSON: () => ({}), fromJSON() {} };
+  const none = { width: 0, height: 0, panels: [], groups: [], getPanel: () => undefined, addPanel() {}, removePanel() {}, layout() {}, onDidRemovePanel() {}, onDidLayoutChange() {}, onWillShowOverlay() {}, clear() {}, toJSON: () => ({}), fromJSON() {} };
   return { themeAbyssSpaced: {}, createDockview: () => none, none: true };
 })();
 const layoutDock = Object.assign(document.createElement("div"), { id: "dock" });
@@ -82,6 +86,13 @@ layoutApi.onDidRemovePanel((p) => {
   if (layoutBusy) return;
   layoutParking.append(layoutEl(p.id));
   queueMicrotask(layoutApply);
+});
+// Every change of the arrangement (a border dragged, a tab moved) is saved once per burst of changes; the changes this file makes itself are saved at the end of layoutApply.
+let layoutSaveQueued = false;
+layoutApi.onDidLayoutChange(() => {
+  if (layoutBusy || layoutSaveQueued) return;
+  layoutSaveQueued = true;
+  queueMicrotask(() => { layoutSaveQueued = false; layoutSave(); });
 });
 // The Canvas is never put behind another Panel in a group of tabs (it would be on the menu as shown and not visible), and no Panel is put behind the Canvas.
 layoutApi.onWillShowOverlay((e) => {
@@ -278,7 +289,60 @@ function layoutApply() {
   }
   panelsSync();
   if (dropped) { panelsButton.focus(); layoutOpener = null; } // the drawer went with the narrow window: the focus must not fall to the page
+  layoutSave();
   document.dispatchEvent(new Event("layout-applied")); // the Files panel loads its tree only while it is on screen
+}
+
+// ---- Restoring. A saved arrangement is cleaned of what cannot be in the window now (a Panel nobody declares, one that is hidden or not available) before the
+// library reads it: the library's own restore fails, and leaves the window empty, on one unknown id. Anything that still cannot be restored gives the default arrangement.
+function layoutClean(dock, keep) {
+  if (!dock || typeof dock !== "object" || !dock.grid?.root || typeof dock.panels !== "object" || Array.isArray(dock.panels)) throw new Error("not a saved Layout");
+  const walk = (node) => {
+    if (node?.type === "leaf") {
+      if (!Array.isArray(node.data?.views)) throw new Error("not a saved Layout");
+      const views = node.data.views.filter((id) => keep.has(id));
+      return views.length ? { ...node, data: { ...node.data, views, activeView: views.includes(node.data.activeView) ? node.data.activeView : views[0] } } : null;
+    }
+    if (node?.type !== "branch" || !Array.isArray(node.data)) throw new Error("not a saved Layout");
+    const all = node.data.map(walk), data = all.filter(Boolean);
+    if (!data.length) return null;
+    // what the dropped children took goes to the others in proportion, so the sizes the person made keep their relations
+    const was = all.reduce((n, c, i) => n + (node.data[i].size ?? 0), 0), now = data.reduce((n, c) => n + (c.size ?? 0), 0);
+    return { ...node, data: data.length < all.length && now > 0 ? data.map((c) => ({ ...c, size: c.size * was / now })) : data };
+  };
+  const root = walk(dock.grid.root);
+  if (!root) throw new Error("nothing left");
+  return { ...dock, grid: { ...dock.grid, root }, panels: Object.fromEntries(Object.entries(dock.panels).filter(([id]) => keep.has(id))) };
+}
+
+function layoutRestore(dock) {
+  layoutResolve();
+  if (layoutNarrow) return void (layoutStash = null); // the arrangement of a narrow window is the Canvas alone; the wide one is read when the window grows
+  const keep = new Set([...(layoutCanvasHidden ? [] : ["canvas"]), ...layoutNames.filter((n) => layoutShown[n])]);
+  let ok = false;
+  layoutBusy = true;
+  try {
+    layoutApi.fromJSON(layoutClean(dock, keep));
+    layoutMeasure();
+    ok = layoutApi.panels.length > 0 && layoutApi.panels.every((p) => keep.has(p.id));
+  } catch { /* the default arrangement below */ }
+  if (!ok) { // the library may have half built it: empty it, and the sync below builds the default arrangement
+    try { layoutApi.clear(); } catch { for (const p of [...layoutApi.panels]) try { layoutApi.removePanel(p); } catch {} }
+    for (const id of Object.keys(layoutHome)) delete layoutHome[id];
+  }
+  layoutBusy = false;
+  layoutTouched = ok; // the sizes the person made are kept when a Panel comes or goes
+  layoutApply();
+}
+
+// A save of the fixed grid has no arrangement, only the width the person gave a card.
+function layoutLegacySizes() {
+  for (const id of layoutNames) {
+    const px = layoutSaved[id];
+    if (layoutSaved.sized?.[id] !== true || !(px > 0) || !layoutInDock(id)) continue;
+    layoutWiden(id, Math.max(layoutMin(id) - layoutGap, px));
+    layoutTouched = true;
+  }
 }
 
 // Brings a Panel's tab to the front (it may be one of several tabs of a group).
@@ -437,5 +501,8 @@ layoutRegister({ id: "right", title: "Tutor", side: "right", min: 288, weight: 5
 layoutReady = true;
 panelsBuild();
 layoutApply();
+if (layoutSaved.dock) layoutRestore(layoutSaved.dock); else layoutLegacySizes();
+layoutRestored = true;
+layoutSave();
 let layoutFrame = 0; // a resize event comes many times a frame: the Layout is put in step once per frame
 window.addEventListener("resize", () => { layoutFrame ||= requestAnimationFrame(() => { layoutFrame = 0; layoutApply(); }); });
