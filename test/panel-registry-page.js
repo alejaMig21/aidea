@@ -3,7 +3,7 @@ const report = { errors: [] };
 window.addEventListener("error", (e) => report.errors.push(String(e.message)));
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const key = (target, k) => target.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }));
-const entries = () => [...document.querySelectorAll("#panels-menu [role=menuitemcheckbox]")].map((b) => ({ title: b.dataset.title, checked: b.getAttribute("aria-checked"), disabled: b.disabled, reason: b.querySelector(".reason")?.textContent ?? "" }));
+const entries = () => [...document.querySelectorAll("#panels-menu [role=menuitemcheckbox]")].map((b) => ({ title: b.dataset.title, checked: b.getAttribute("aria-checked"), disabled: b.disabled, reason: b.querySelector(".reason")?.textContent ?? "", markVisible: getComputedStyle(b.querySelector(".check")).visibility !== "hidden" }));
 const cards = () => [...document.querySelectorAll(".panel-card, main")].map((e) => e.id || e.tagName.toLowerCase());
 const shown = (id) => { const e = document.getElementById(id); return !!e && getComputedStyle(e).display !== "none"; };
 

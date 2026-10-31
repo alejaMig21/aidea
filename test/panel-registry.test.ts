@@ -16,7 +16,7 @@ const chrome = [process.env.CHROME_PATH, "C:/Program Files/Google/Chrome/Applica
 if (!chrome && process.env.AIDEA_REQUIRE_CHROME) throw new Error("AIDEA_REQUIRE_CHROME is set but Chrome was not found (set CHROME_PATH to its executable)");
 const skip = chrome ? false : "Chrome was not found (set CHROME_PATH to its executable; set AIDEA_REQUIRE_CHROME=1 to fail instead of skipping)";
 
-type Entry = { title: string; checked: string; disabled: boolean; reason: string };
+type Entry = { title: string; checked: string; disabled: boolean; reason: string; markVisible: boolean };
 let report: any;
 let core: Awaited<ReturnType<typeof startCore>>;
 let proxy: Server;
@@ -86,6 +86,8 @@ test("the Panels menu lists every Panel with a check mark; Run is listed, disabl
   assert.equal(run.disabled, true);
   assert.match(run.reason, /Flow/);
   assert.ok((report.entries as Entry[]).filter((e) => e.title !== "Run").every((e) => !e.disabled));
+  // The check mark is drawn only for a Panel that is on screen (it was once drawn on every row).
+  assert.ok((report.entries as Entry[]).every((e) => e.markVisible === (e.checked === "true")), "a check mark appears exactly on the checked rows");
 });
 
 test("a layout saved by an earlier version still loads, and an id no Panel has is ignored", { skip }, () => {
