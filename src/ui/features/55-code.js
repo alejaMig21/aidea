@@ -32,7 +32,7 @@ const codeBody = Object.assign(document.createElement("div"), { id: "code-body",
 codeView.append(codeHead, codeBody);
 document.querySelector("main").append(codeView);
 
-const CODE_EMPTY = "Select a class, function or module on Components, or open a step of an algorithm.";
+const CODE_EMPTY = "Select a class, function or module on Components, or open a step of a Flow.";
 let codeFocus = null; // what the view shows: { node, step: { algo, id } | null, back: the layer it was opened from }
 let codeSelected = null; // the Node selected on Components; the Code tab and "View code" open it
 let codePending = false; // a Node was selected after the view was last opened
@@ -220,7 +220,7 @@ document.addEventListener("keydown", (e) => {
 
 notationRegisterLegend("code", {
   shapes: [
-    [notationSwatch(`<rect x="2" y="4" width="40" height="16" style="fill:color-mix(in srgb, var(--accent) 16%, transparent);stroke:none"/><rect x="2" y="4" width="3" height="16" style="fill:var(--accent);stroke:none"/>`), "Tinted lines with a bar: the lines of the Node or the algorithm step you opened", "#code-body .cl.hit"],
+    [notationSwatch(`<rect x="2" y="4" width="40" height="16" style="fill:color-mix(in srgb, var(--accent) 16%, transparent);stroke:none"/><rect x="2" y="4" width="3" height="16" style="fill:var(--accent);stroke:none"/>`), "Tinted lines with a bar: the lines of the Node or the Flow step you opened", "#code-body .cl.hit"],
     [notationSwatch(`<text x="22" y="16" text-anchor="end" style="fill:var(--muted);font:12px var(--mono)">12</text>`), "Grey numbers: the line numbers of the file, left out when you copy the text", "#code-body .cl"],
   ],
   colours: [["accent", "Blue: the lines in focus"]],

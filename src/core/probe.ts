@@ -70,6 +70,10 @@ export const countsOf = (topics: ProbeTopic[]) => ({ known: topics.filter((t) =>
 // One running Probe. `abort` ends the Prober and withdraws the question it waits on.
 export type ProbeRun = { project: string; layer: string; asked: number; ideas: Set<string>; abort: AbortController; closed: "done" | "skipped" | undefined };
 
+// A layer id that was renamed: results and Plans stored under the old id are read back under the new one.
+const RENAMED_LAYERS: Record<string, string> = { algorithms: "flow" };
+export const currentLayer = (layer: unknown) => (typeof layer === "string" ? RENAMED_LAYERS[layer] ?? layer : layer);
+
 // The stored results (probes.jsonl: one line per result, the last for a Project and layer wins; memory only without a folder)
 // and the Probes running now.
 export function createProbes(dir?: string) {
@@ -80,6 +84,7 @@ export function createProbes(dir?: string) {
     for (const line of readFileSync(file, "utf8").split("\n")) {
       try {
         const r = JSON.parse(line);
+        if (r) r.layer = currentLayer(r.layer);
         if (r?.project && isLayer(r.layer)) results.set(key(r.project, r.layer), r);
       } catch {
         // an empty or torn line: skipped

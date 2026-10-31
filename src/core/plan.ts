@@ -5,7 +5,7 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { normalise } from "./learner-pipeline.ts";
-import { LAYER_CONCEPTS, isLayer } from "./probe.ts";
+import { LAYER_CONCEPTS, currentLayer, isLayer } from "./probe.ts";
 import type { Core } from "./types.ts";
 
 export type PlanConcept = { name: string; dependsOn: string[]; layer?: string };
@@ -117,7 +117,10 @@ export function createPlans(dir?: string) {
     for (const line of readFileSync(file, "utf8").split("\n")) {
       try {
         const p = JSON.parse(line);
-        if (p?.project && Array.isArray(p.concepts)) plans.set(p.project, p);
+        if (p?.project && Array.isArray(p.concepts)) {
+          for (const x of [...p.concepts, ...(p.decisions ?? [])]) if (x.layer) x.layer = currentLayer(x.layer);
+          plans.set(p.project, p);
+        }
       } catch {
         // an empty or torn line: skipped
       }

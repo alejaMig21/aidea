@@ -72,7 +72,7 @@ test("duplicate ids in the architecture layout: the first Node wins", () => {
   assert.equal(d.rects.filter((r) => r.id === "a").length, 1);
 });
 
-test("a long function through the algorithm route lays out", async () => {
+test("a long function through the flow route lays out", async () => {
   const dir = mkdtempSync(join(tmpdir(), "aidea-long-"));
   scratch.push(dir);
   mkdirSync(dir, { recursive: true });
