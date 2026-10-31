@@ -27,6 +27,8 @@ Three tokens, with their contrast on the panels (all above the 4.5:1 minimum): `
 
 Text is left-aligned on one edge; a field, a button, a card and a section share the same width and the same margin on both sides; a card never touches the edge of its Panel.
 
+A tree (Files) has rows 26px tall, each level indented 14px more, names at 13px and the language tag at 12px in `--muted`; names of ignored or unreadable entries are `--muted` too, ignored ones in italics.
+
 ## Checking a change
 
 Before a commit that changes the look: take full-screen captures (the second monitor, `AIDEA_DISPLAY=secondary`, headless scripts for anything that needs a browser) of the Panels side by side, and compare sizes, greys and margins. The legend check (`test/legend-check.test.ts`) and the language-neutral text test (`test/language-neutral-text.test.ts`) must pass.

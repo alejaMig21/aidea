@@ -8,7 +8,7 @@ import { startTestCore } from "./helpers.ts";
 const t = await startTestCore();
 after(() => t.core.close());
 
-type Entry = { name: string; path: string; kind: "folder" | "file"; ignored?: true; truncated?: number; language?: string; analysed?: boolean; children?: Entry[] };
+type Entry = { name: string; path: string; kind: "folder" | "file"; ignored?: true; unread?: true; truncated?: number; language?: string; analysed?: boolean; children?: Entry[] };
 
 const put = (root: string, rel: string, text = "x") => { mkdirSync(join(root, rel, ".."), { recursive: true }); writeFileSync(join(root, rel), text); };
 const open = async (dir: string) => ((await (await t.post("/projects", { path: dir })).json()) as { id: string }).id;
@@ -84,6 +84,27 @@ test("a folder with thousands of entries is cut at a limit and says how many it 
   assert.ok(big.children!.length >= 1000 && big.children!.length < 3200, `listed ${big.children!.length}`);
   assert.equal(big.children!.length + big.truncated!, 3200);
   assert.ok(find(root, "a.txt"), "the entries after the big folder are still listed");
+});
+
+test("a Project with more entries than the whole-tree limit lists the first ones and marks the folders it did not read", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "aidea-files-budget-"));
+  for (const d of ["d1", "d2", "d3", "d4"]) { mkdirSync(join(dir, d)); for (let i = 0; i < 1400; i++) writeFileSync(join(dir, d, `f${String(i).padStart(4, "0")}.txt`), ""); }
+  put(dir, "e/inside.txt");
+  const { root } = await files(await open(dir));
+  assert.equal(find(root, "d1")!.children!.length, 1400, "the first folders are listed whole");
+  const d4 = find(root, "d4")!;
+  assert.equal(d4.children!.length + d4.truncated!, 1400, "the folder that crossed the limit says how many it left out");
+  assert.ok(d4.truncated! > 0);
+  const e = find(root, "e")!;
+  assert.deepEqual([e.unread, e.children], [true, undefined], "a folder after the limit is marked unread, not shown as empty");
+});
+
+test("folders to ignore are recognised whatever the case of their name", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "aidea-files-case-"));
+  put(dir, "Node_Modules/x.js"); put(dir, "keep/a.txt");
+  const { root } = await files(await open(dir));
+  assert.deepEqual([find(root, "Node_Modules")!.ignored, find(root, "Node_Modules")!.children], [true, undefined]);
+  assert.equal(find(root, "keep")!.ignored, undefined);
 });
 
 test("the files route refuses a request without a Project and a Project that is not open", async () => {

@@ -156,8 +156,9 @@ function pbSetSpeed(ms) {
 // Keys: Space play or pause, left and right arrows step, Home and End jump, - and + change the speed.
 // They never act while the person types in a field or has a control focused that uses the same key.
 document.addEventListener("keydown", (e) => {
-  if (!pbRecording?.visits.length || authoredShown !== "flow" || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
-  if (e.target.closest?.("input, select, textarea, [contenteditable]") || (e.key === " " && e.target.closest?.("button, a"))) return;
+  // Run must be on screen (a hidden Run would play where nobody can see it), and a held key does not repeat.
+  if (!pbRecording?.visits.length || authoredShown !== "flow" || !layoutShown.run || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
+  if (e.target.closest?.("input, select, textarea, [contenteditable], #files") || (e.key === " " && e.target.closest?.("button, a"))) return;
   const keys = {
     " ": pbPlayPause,
     ArrowLeft: () => { pbStop(); pbGo(pbIndex - 1); },

@@ -15,7 +15,7 @@ const files = [join(ui, "index.html"), ...readdirSync(join(ui, "features")).map(
 test("the interface text says Python only where the fact is about Python", () => {
   const found: string[] = [];
   for (const file of files) {
-    readFileSync(file, "utf8").split("\n").forEach((line, i) => {
+    readFileSync(file, "utf8").split(/\r?\n/).forEach((line, i) => {
       if (!/\bPython\b/.test(line) || line.trim().startsWith("//")) return;
       if (allowed.some((a) => file.endsWith(a.file) && line.includes(a.text))) return;
       found.push(`${file.slice(ui.length + 1)}:${i + 1}: ${line.trim().slice(0, 120)}`);

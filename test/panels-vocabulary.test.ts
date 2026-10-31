@@ -8,7 +8,7 @@ const t = await startTestCore();
 after(() => t.core.close());
 
 const root = join(import.meta.dirname, "..");
-const lines = (file: string) => readFileSync(file, "utf8").split("\n").map((text, i) => ({ text: text.replace(/\s\/\/.*$/, ""), n: i + 1 })).filter((l) => !l.text.trim().startsWith("//"));
+const lines = (file: string) => readFileSync(file, "utf8").split(/\r?\n/).map((text, i) => ({ text: text.replace(/\s\/\/.*$/, ""), n: i + 1 })).filter((l) => !l.text.trim().startsWith("//"));
 const uiFiles = [join(root, "src", "ui", "index.html"), ...readdirSync(join(root, "src", "ui", "features")).map((f) => join(root, "src", "ui", "features", f))];
 
 test("the guide to aidea calls the areas of the window Panels, never columns, and names the Run panel", async () => {

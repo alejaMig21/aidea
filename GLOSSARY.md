@@ -183,7 +183,7 @@ _Avoid_: Quiz, exercise
 ## Window
 
 **Panel**:
-One section of the window with one job that the person can show, hide and resize: the Builder (chat), the Canvas, the Tutor, Run, and, later, Files and Code. A Panel is never a layer: a layer is something the Canvas draws. Hidden Panels take no space, and in narrow windows the side Panels open as drawers over the Canvas.
+One section of the window with one job that the person can show, hide and resize: the Builder (chat), the Canvas, the Tutor, Run, Files and, later, Code. A Panel is never a layer: a layer is something the Canvas draws. Hidden Panels take no space, and in narrow windows the side Panels open as drawers over the Canvas.
 _Avoid_: Column, sidebar, pane, tab (as the name of an area)
 
 **Layout**:
@@ -197,3 +197,7 @@ _Avoid_: Profile, theme
 **Run**:
 The Panel for running the open function: the form for the data of a test and the Playback. It is a card of its own between the Canvas and the Tutor, never part of the Tutor's: it appears while a Flow is open, and the person can hide it like any other Panel.
 _Avoid_: Algorithm column, Algorithm panel
+
+**Files**:
+The Panel that shows the folders and files of the Project as a tree, read-only, and works on any folder whatever its language. It starts hidden. A file in a language aidea can read says which. Folders that hold dependencies, caches, build output or version-control data are listed as ignored and are not opened; a folder or a Project with too many entries lists the first ones and says how many it left out.
+_Avoid_: Explorer, file browser, sidebar

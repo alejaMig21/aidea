@@ -8,10 +8,10 @@
 
 **Status:** resolved (see Answer)
 
-- [ ] A short written verdict in the log: per language, what can be captured, how identity works, what limits are needed.
-- [ ] A measured cost for a list of 10,000 numbers and for a linked structure of 1,000 objects.
-- [ ] A list of anything that cannot be captured (opaque values) and what Data should show for it.
-- [ ] The spike code is discarded or kept on a `prototype/` branch; only the verdict is folded into tickets 13 to 15.
+- [x] A short written verdict in the log: per language, what can be captured, how identity works, what limits are needed. (Below, and DECISION 5 in `.scratch/overnight/LOG.md`, which is the agent's and still needs the person's confirmation.)
+- [x] A measured cost for a list of 10,000 numbers and for a linked structure of 1,000 objects. (Python and Node, with and without limits; the JS numbers are for a recorder not wired to anything.)
+- [x] A list of anything that cannot be captured (opaque values) and what Data should show for it.
+- [x] The spike code is discarded or kept on a `prototype/` branch; only the verdict is folded into tickets 13 to 15. (Kept as files under `.scratch/layout-and-data/spike-12/`, not on a branch; nothing under `src/` changed.)
 
 ## Answer
 

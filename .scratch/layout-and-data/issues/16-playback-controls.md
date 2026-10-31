@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 (Run panel).
 
-**Status:** ready-for-agent
+**Status:** resolved (commit ad58d17, then a fix after the review: shortcuts now act only while Run is on screen, ignore a held key and stay out of the Files tree)
 
 - [x] Step back and jump to start or end work on a recording of any length within the existing step limit.
 - [x] Speed can be changed during play; the chosen speed is remembered.

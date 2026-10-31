@@ -58,7 +58,7 @@ test("user-facing text never names the layer Algorithms or the graph an Algorith
   ];
   const found: string[] = [];
   for (const file of files) {
-    readFileSync(file, "utf8").split("\n").forEach((line, i) => {
+    readFileSync(file, "utf8").split(/\r?\n/).forEach((line, i) => {
       const code = line.replace(/\s\/\/.*$/, ""); // comments are for maintainers, not for the person
       if (code.trim().startsWith("//")) return;
       if (/Algorithm graph|Algorithms layer|"Algorithms"|textContent = "Algorithms"|\balgorithm step\b|\ban algorithm\b/i.test(code)) found.push(`${file.slice(src.length + 1)}:${i + 1}: ${line.trim().slice(0, 120)}`);
