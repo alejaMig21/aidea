@@ -183,11 +183,11 @@ _Avoid_: Quiz, exercise
 ## Window
 
 **Panel**:
-One section of the window with one job that the person can show, hide and resize: the Builder (chat), the Canvas, the Tutor, Run, Files and Code. A Panel is never a layer: a layer is something the Canvas draws. Every Panel is declared once in a registry, and the top bar has a single "Panels" menu that lists all of them with a check mark and shows or hides each one: a new Panel adds a row to that menu, never a button to the top bar. Hidden Panels take no space, and in narrow windows the side Panels open as drawers over the Canvas.
+One section of the window with one job that the person can show, hide, resize and move (side by side, stacked, nested or grouped as tabs): the Builder (chat), the Canvas, the Tutor, Run, Files and Code. A Panel is never a layer: a layer is something the Canvas draws. Every Panel is declared once in a registry, and the top bar has a single "Panels" menu that lists all of them with a check mark and shows or hides each one: a new Panel adds a row to that menu, never a button to the top bar. Hidden Panels take no space, and in narrow windows the side Panels open as drawers over the Canvas.
 _Avoid_: Column, sidebar, pane, tab (as the name of a Panel)
 
 **Layout**:
-How all the Panels are arranged on the screen right now: which are shown, their sizes and, once the Layout can be docked, their places and monitors.
+How all the Panels are arranged on the screen right now: which are shown, their sizes and places (side by side, stacked, nested or grouped as tabs) and, later, their monitors. The default Layout is the Builder, the Canvas and the Tutor in one row.
 _Avoid_: Workspace, view
 
 **Preset**:

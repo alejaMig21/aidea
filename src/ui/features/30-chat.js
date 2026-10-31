@@ -20,7 +20,8 @@
   });
   // The text wraps differently when the column is resized, so the height follows the width.
   let fitWidth = 0;
-  new ResizeObserver(() => { if (input.clientWidth !== fitWidth) { fitWidth = input.clientWidth; fit(); } }).observe(input);
+  // fit() changes the height of the very box that is observed, so it runs a frame later (a Panel moved by the Layout resizes it often).
+  new ResizeObserver(() => requestAnimationFrame(() => { if (input.clientWidth !== fitWidth) { fitWidth = input.clientWidth; fit(); } })).observe(input);
   const send = document.createElement("button");
   send.textContent = "Send";
   form.append(label, input, send);

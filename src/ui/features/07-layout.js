@@ -59,7 +59,12 @@ const layoutApi = layoutDv.createDockview(layoutDock, {
   getTabContextMenuItems: () => [], // hiding is done from the Panels menu
   createComponent: ({ name }) => ({ element: layoutEl(name), init() {}, dispose() {} }),
 });
-layoutApi.layout(layoutDock.clientWidth - 2 * layoutGap, layoutDock.clientHeight - layoutGap); // the library measures itself later, too late for the first arrangement
+// The library measures itself later (a resize observer), too late for the first arrangement and for sizes set right after a resize: measure when the size differs.
+function layoutMeasure() {
+  const w = layoutDock.clientWidth - 2 * layoutGap, h = layoutDock.clientHeight - layoutGap;
+  if (layoutApi.width !== w || layoutApi.height !== h) layoutApi.layout(w, h);
+}
+layoutMeasure();
 layoutDock.addEventListener("pointerdown", (e) => { if (e.target.closest?.(".dv-sash")) layoutTouched = true; }, true);
 // A Panel taken out of the Layout by the library itself (not through the menu) counts as hidden by the person.
 layoutApi.onDidRemovePanel((p) => {
@@ -98,6 +103,7 @@ function layoutRegister(def) {
 function layoutBuild(d) {
   const card = Object.assign(document.createElement("section"), { id: d.id, className: "panel-card", tabIndex: -1 });
   card.setAttribute("aria-label", d.title);
+  card.append(Object.assign(document.createElement("h2"), { className: "drawer-title", textContent: d.title })); // shown only when the card is a drawer: in the Layout the tab is the title
   if (d.pane) card.append(Object.assign(document.createElement("div"), { id: d.pane }));
   for (const id of d.adopt) { const e = $(id); if (e) card.append(e); }
   const closeButton = Object.assign(document.createElement("button"), { type: "button", className: "drawer-close", textContent: "Close", hidden: true, onclick: () => layoutCloseDrawer() });
@@ -123,15 +129,17 @@ function layoutBuild(d) {
     .dockview-theme-aidea .dv-groupview { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel); }
     .dockview-theme-aidea .dv-tabs-and-actions-container { border-bottom: 1px solid var(--line); }
     .dockview-theme-aidea .dv-tab { padding: 0 14px; font-weight: 600; }
+    .dockview-theme-aidea .dv-tab.dv-active-tab:not(:only-child) { box-shadow: inset 0 -2px 0 var(--accent); } /* with several tabs in a group, the one in front is underlined */
     .dockview-theme-aidea .dv-default-tab-action { display: none !important; }
     .panel-card, main { width: 100%; height: 100%; background: var(--panel); border: 0; border-radius: 0 0 12px 12px; margin: 0; overflow: hidden; }
     main { background-color: var(--canvas); }
     .panel-card { min-width: 0; display: flex; flex-direction: column; }
     /* The failure line lives in <main> over the Canvas; with the Canvas hidden it moves to the body (layoutApply) and floats at the bottom of the window. */
     body > #error { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; max-width: min(560px, calc(100vw - 32px)); z-index: 25; padding: 6px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
-    .drawer-close, #scrim { display: none; }
+    .drawer-close, .drawer-title, #scrim { display: none; }
+    .panel-card.is-drawer .drawer-title { display: flex; align-items: center; flex: none; height: 40px; padding: 0 14px; font-size: 13.5px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text); border-bottom: 1px solid var(--line); }
     body.narrow #scrim:not([hidden]) { display: block; position: fixed; inset: 51px 0 0 0; z-index: 15; background: rgba(0, 0, 0, .5); }
-    .panel-card.is-drawer { display: flex; position: fixed; top: 51px; bottom: 0; z-index: 20; width: min(360px, calc(100vw - 16px)); margin: 0; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 14px 36px rgba(0, 0, 0, .5); }
+    .panel-card.is-drawer { display: flex; position: fixed; top: 51px; bottom: 0; height: auto; z-index: 20; width: min(360px, calc(100vw - 16px)); margin: 0; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 14px 36px rgba(0, 0, 0, .5); }
     .panel-card.is-drawer[data-side="left"] { left: 0; }
     .panel-card.is-drawer[data-side="right"] { right: 0; }
     body.narrow .drawer-close:not([hidden]) { display: block; position: absolute; top: 6px; right: 8px; z-index: 1; padding: 3px 10px; background: transparent; color: var(--text); border: 1px solid var(--control); }
@@ -204,6 +212,7 @@ function layoutWiden(id, want) {
 
 // Puts the Layout in step with the Panels that should be on screen, then gives the new groups their size by weight.
 function layoutSync(wanted) {
+  layoutMeasure(); // the sizes below need the width the window has now, not the one the library last measured
   layoutBusy = true;
   const had = layoutApi.panels.length;
   const gone = layoutApi.panels.map((p) => p.id).filter((id) => !wanted.includes(id));
