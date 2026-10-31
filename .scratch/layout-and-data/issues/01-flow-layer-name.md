@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** implemented (commits 1d1b7c5, 8fcaa0e); live check on the second monitor pending
 
 - [ ] The layers list and the layer help answer with the id and name Flow, and no Algorithms layer.
 - [ ] A test fails when "Algorithms" (as the layer name) or "Algorithm graph" appears in user-facing text.
