@@ -17,8 +17,13 @@ const handler: Handler = async (req, res) => {
   // The docking library, copied into the application (src/ui/vendor/dockview/, see its NOTICE.md). Only plain names that exist in that folder are served.
   const vendor = req.method === "GET" ? /^\/vendor\/dockview\/([\w.-]+)$/.exec(req.url ?? "")?.[1] : undefined;
   if (vendor && readdirSync(ui + "vendor/dockview").includes(vendor)) {
-    res.writeHead(200, { "content-type": vendor.endsWith(".js") ? "text/javascript; charset=utf-8" : "text/plain; charset=utf-8", "cache-control": "no-cache" });
-    res.end(readFileSync(ui + "vendor/dockview/" + vendor));
+    try {
+      const body = readFileSync(ui + "vendor/dockview/" + vendor); // read first: a file that vanished after the listing is a 404, not an uncaught error
+      res.writeHead(200, { "content-type": vendor.endsWith(".js") ? "text/javascript; charset=utf-8" : "text/plain; charset=utf-8", "cache-control": "no-cache", "x-content-type-options": "nosniff" });
+      res.end(body);
+    } catch {
+      res.writeHead(404).end();
+    }
     return true;
   }
   if (req.method !== "GET" || req.url !== "/") return false;

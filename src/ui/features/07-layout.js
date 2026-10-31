@@ -18,7 +18,6 @@ const layoutLeft = []; // the ids of the Panels on the left of the Canvas
 const layoutDef = {}; // the declaration of each Panel, by id
 let layoutFoldOrder = []; // what auto-fold gives up first: choosing a file must not hide the Files panel it was chosen in
 const layoutState = { canvasFolded: false }; // per Panel: its default weight (by id) and `<id>Folded`
-const layoutSized = {}; // per Panel: whether the weight in the save is the person's own (kept as saved; sizes are saved by ticket 19, not here)
 const layoutPanes = {}; // per Panel: { el: its card, closeButton }
 const layoutHome = {}; // per Panel: where it was when it went away ({ ref: the id of a neighbour, direction }), so showing it again puts it back there
 let layoutRunAvailable = false; // Run has something to show only while a Flow is open
@@ -32,25 +31,33 @@ let layoutReady = false; // false while the first Panels are being declared
 let layoutTouched = false; // true once the person has dragged a border: from then on their sizes are kept when a Panel is shown or hidden
 let layoutBusy = false; // true while this file adds or removes Panels, so a removal made by the library itself (not by the menu) can be told apart
 
-// A Panel's flags are the person's own only once they chose; sizes are carried as saved until ticket 19 saves the whole arrangement.
+// A Panel's flags are the person's own only once they chose. The sizes an old save holds (`sized` and the weight under each id) are written back as they were
+// and not used: ticket 19 saves the whole arrangement and reads them.
 let layoutSaved = {};
 try { layoutSaved = JSON.parse(localStorage.getItem(layoutKey) || "{}") ?? {}; } catch {}
 layoutState.canvasFolded = layoutSaved.canvasFolded === true;
 const layoutSave = () => {
   try {
-    const keys = layoutNames.flatMap((n) => [`${n}Folded`, ...(layoutSized[n] ? [n] : [])]);
-    localStorage.setItem(layoutKey, JSON.stringify({ canvasFolded: layoutState.canvasFolded, sized: layoutSized, ...Object.fromEntries(keys.map((k) => [k, layoutState[k]])) }));
+    const old = Object.fromEntries(layoutNames.filter((n) => layoutSaved[n] > 0).map((n) => [n, layoutSaved[n]]));
+    localStorage.setItem(layoutKey, JSON.stringify({ ...(layoutSaved.sized ? { sized: layoutSaved.sized } : {}), ...old, canvasFolded: layoutState.canvasFolded, ...Object.fromEntries(layoutNames.map((n) => [`${n}Folded`, layoutState[`${n}Folded`]])) }));
   } catch {}
 };
 
 // ---- The Layout: a dockview in #dock. Cards that are not in it wait in #dock-parking (hidden), so the features can always find their bodies by id.
-const layoutDv = window["dockview-core"];
 const layoutMain = document.querySelector("main");
+// Without the library (its file did not load) there is no Layout: the page says so, shows the Canvas, and the rest of the features go on working.
+const layoutDv = window["dockview-core"] ?? (() => {
+  // a line of its own: #error is cleared by whatever the person does next
+  layoutMain.append(Object.assign(document.createElement("p"), { id: "layout-notice", className: "said", textContent: "The window layout could not be loaded, so only the Canvas is shown. Restart aidea to try again.", style: "position:absolute;left:15px;bottom:15px;margin:0;color:var(--danger);z-index:1" }));
+  layoutMain.setAttribute("role", "region");
+  const none = { width: 0, height: 0, panels: [], groups: [], getPanel: () => undefined, addPanel() {}, removePanel() {}, layout() {}, onDidRemovePanel() {}, onWillShowOverlay() {}, toJSON: () => ({}), fromJSON() {} };
+  return { themeAbyssSpaced: {}, createDockview: () => none, none: true };
+})();
 const layoutDock = Object.assign(document.createElement("div"), { id: "dock" });
 const layoutParking = Object.assign(document.createElement("div"), { id: "dock-parking", hidden: true });
 document.getElementById("topbar").after(layoutDock);
 layoutDock.after(layoutParking);
-layoutParking.append(layoutMain);
+(layoutDv.none ? layoutDock : layoutParking).append(layoutMain);
 const layoutEl = (id) => (id === "canvas" ? layoutMain : layoutPanes[id].el);
 const layoutApi = layoutDv.createDockview(layoutDock, {
   theme: { ...layoutDv.themeAbyssSpaced, name: "aidea", className: "dockview-theme-aidea", gap: layoutGap },
@@ -65,19 +72,27 @@ function layoutMeasure() {
   if (layoutApi.width !== w || layoutApi.height !== h) layoutApi.layout(w, h);
 }
 layoutMeasure();
-layoutDock.addEventListener("pointerdown", (e) => { if (e.target.closest?.(".dv-sash")) layoutTouched = true; }, true);
-// A Panel taken out of the Layout by the library itself (not through the menu) counts as hidden by the person.
+// The person's sizes count (layoutTouched) once a border drag has really changed a width. It is not reset in a session: it lasts until the page is reloaded.
+const layoutWidths = () => layoutApi.groups.map((g) => Math.round(g.element.getBoundingClientRect().width)).join();
+let layoutSashFrom = null;
+layoutDock.addEventListener("pointerdown", (e) => { layoutSashFrom = e.target.closest?.(".dv-sash") ? layoutWidths() : null; }, true);
+document.addEventListener("pointerup", () => { if (layoutSashFrom !== null && layoutWidths() !== layoutSashFrom) layoutTouched = true; layoutSashFrom = null; }, true);
+// A Panel taken out of the Layout by the library itself (not through the menu) is a stray drag-out, not a choice: it is not saved as hidden and the next sync puts it back.
 layoutApi.onDidRemovePanel((p) => {
   if (layoutBusy) return;
   layoutParking.append(layoutEl(p.id));
-  if (p.id !== "canvas") layoutState[`${p.id}Folded`] = true;
-  layoutSave();
   queueMicrotask(layoutApply);
+});
+// The Canvas is never put behind another Panel in a group of tabs (it would be on the menu as shown and not visible), and no Panel is put behind the Canvas.
+layoutApi.onWillShowOverlay((e) => {
+  if (e.position !== "center" || !e.group) return;
+  const data = e.getData();
+  const dragged = data?.panelId ? [data.panelId] : (layoutApi.getGroup?.(data?.groupId)?.panels ?? []).map((p) => p.id);
+  if (dragged.includes("canvas") !== e.group.panels.some((p) => p.id === "canvas") && !(dragged.length && e.group.panels.every((p) => dragged.includes(p.id)))) e.preventDefault();
 });
 
 // Declares a Panel. { id, title, side: "left" | "right", min, weight, startsHidden, foldRank, pane: id of its body (or null), adopt: ids of elements
-// already in the page that move into its card, icon: svg shapes for the menu, available: () => boolean with unavailable: the reason when it is not,
-// legacySize: the weight an old save held when it was never the person's own }.
+// already in the page that move into its card, icon: svg shapes for the menu, available: () => boolean with unavailable: the reason when it is not }.
 // Folded state keeps the old names (`<id>Folded`), so layouts saved by earlier versions still load; a saved id nobody declares is ignored.
 function layoutRegister(def) {
   const d = { side: "right", min: 288, weight: 400, startsHidden: false, foldRank: 50, pane: null, adopt: [], icon: "", ...def };
@@ -89,11 +104,8 @@ function layoutRegister(def) {
   layoutLeft.splice(0, layoutLeft.length, ...left.map((x) => x.id));
   layoutFoldOrder = [...layoutRegistry].sort((a, b) => a.foldRank - b.foldRank).map((x) => x.id);
   layoutState[d.id] = d.weight;
-  layoutSized[d.id] = false;
   const saved = layoutSaved[`${d.id}Folded`];
   layoutState[`${d.id}Folded`] = d.startsHidden ? saved !== false : saved === true; // a Panel that starts hidden stays hidden until the person shows it
-  const size = layoutSaved[d.id];
-  if (size > 0 && (layoutSaved.sized ? layoutSaved.sized[d.id] === true : size !== d.legacySize)) layoutSized[d.id] = true; // carried for ticket 19; the default Layout uses the declared weight
   layoutShown[d.id] = false;
   layoutBuild(d);
   if (layoutReady) { panelsBuild(); layoutApply(); }
@@ -149,7 +161,7 @@ function layoutBuild(d) {
 
 // ---- What is on screen. The Layout holds the Panels the person wants, minus the ones given up for lack of room (never saved). In a narrow window it
 // holds the Canvas only and a Panel opens as a drawer over it.
-const layoutWidth = () => document.documentElement.clientWidth;
+function layoutWidth() { return document.documentElement.clientWidth; }
 // What the person wants on screen: a Panel that is not available (Run with no Flow open) does not count.
 const layoutAvailable = (name) => !layoutDef[name].available || layoutDef[name].available();
 const layoutWanted = (name) => layoutAvailable(name) && !layoutState[`${name}Folded`];
@@ -213,17 +225,18 @@ function layoutWiden(id, want) {
 // Puts the Layout in step with the Panels that should be on screen, then gives the new groups their size by weight.
 function layoutSync(wanted) {
   layoutMeasure(); // the sizes below need the width the window has now, not the one the library last measured
-  layoutBusy = true;
   const had = layoutApi.panels.length;
   const gone = layoutApi.panels.map((p) => p.id).filter((id) => !wanted.includes(id));
-  for (const id of gone) { layoutRemember(id); layoutApi.removePanel(layoutApi.getPanel(id)); layoutParking.append(layoutEl(id)); }
   const added = [];
-  for (const id of layoutOrder().filter((x) => wanted.includes(x) && !layoutInDock(x))) {
-    const position = layoutPlace(id);
-    layoutApi.addPanel({ id, component: id, title: id === "canvas" ? "Canvas" : layoutDef[id].title, minimumWidth: layoutMin(id), minimumHeight: layoutMinHeight, ...(position ? { position } : {}) });
-    added.push(id);
-  }
-  layoutBusy = false;
+  layoutBusy = true;
+  try { // a failure of the library must not leave the flag set: every later removal made by the library would be ignored
+    for (const id of gone) { layoutRemember(id); layoutApi.removePanel(layoutApi.getPanel(id)); layoutParking.append(layoutEl(id)); }
+    for (const id of layoutOrder().filter((x) => wanted.includes(x) && !layoutInDock(x))) {
+      const position = layoutPlace(id);
+      layoutApi.addPanel({ id, component: id, title: id === "canvas" ? "Canvas" : layoutDef[id].title, minimumWidth: layoutMin(id), minimumHeight: layoutMinHeight, ...(position ? { position } : {}) });
+      added.push(id);
+    }
+  } finally { layoutBusy = false; }
   // Sizes. While the person has not dragged a border and every group holds one Panel in one row, the weights decide every width (as the fixed grid did),
   // so showing or hiding a Panel shares the room by weight. Afterwards only a Panel that comes back is sized, and the others keep what the person made.
   const groups = layoutApi.groups.filter((g) => g.panels.length).sort((a, b) => a.element.getBoundingClientRect().left - b.element.getBoundingClientRect().left);
@@ -236,8 +249,17 @@ function layoutSync(wanted) {
   layoutShown = Object.fromEntries(layoutNames.map((n) => [n, layoutInDock(n)]));
 }
 
+let layoutStash = null; // the Layout as the library describes it, kept in memory only while the window is narrow (never saved: ticket 19 saves)
 function layoutApply() {
+  const dropped = layoutDrawer && layoutWidth() >= layoutNarrowBelow; // the window grew wide under an open drawer
+  const wasNarrow = layoutNarrow;
   layoutResolve();
+  if (layoutNarrow && !wasNarrow && layoutApi.panels.length > 1) layoutStash = layoutApi.toJSON();
+  if (!layoutNarrow && wasNarrow && layoutStash) {
+    layoutMeasure();
+    layoutBusy = true;
+    try { layoutApi.fromJSON(layoutStash); } catch { /* the sync below adds what is missing */ } finally { layoutBusy = false; layoutStash = null; }
+  }
   const body = document.body;
   body.classList.toggle("narrow", layoutNarrow);
   const wanted = layoutNarrow ? ["canvas"] : [...(layoutCanvasHidden ? [] : ["canvas"]), ...layoutNames.filter((n) => layoutShown[n])];
@@ -253,6 +275,7 @@ function layoutApply() {
     p.closeButton.hidden = !open;
   }
   panelsSync();
+  if (dropped) { panelsButton.focus(); layoutOpener = null; } // the drawer went with the narrow window: the focus must not fall to the page
   document.dispatchEvent(new Event("layout-applied")); // the Files panel loads its tree only while it is on screen
 }
 
@@ -271,6 +294,7 @@ function layoutCloseDrawer() {
   layoutDrawer = null;
   layoutApply();
   layoutOpener?.focus();
+  layoutOpener = null;
 }
 $("scrim").onclick = layoutCloseDrawer;
 // Capture phase: the switcher's own Escape handler closes its popover first, and that Escape must not also close a drawer.
@@ -411,4 +435,5 @@ layoutRegister({ id: "right", title: "Tutor", side: "right", min: 288, weight: 5
 layoutReady = true;
 panelsBuild();
 layoutApply();
-window.addEventListener("resize", layoutApply);
+let layoutFrame = 0; // a resize event comes many times a frame: the Layout is put in step once per frame
+window.addEventListener("resize", () => { layoutFrame ||= requestAnimationFrame(() => { layoutFrame = 0; layoutApply(); }); });

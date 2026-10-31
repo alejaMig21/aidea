@@ -16,7 +16,7 @@ const chrome = [process.env.CHROME_PATH, "C:/Program Files/Google/Chrome/Applica
 if (!chrome && process.env.AIDEA_REQUIRE_CHROME) throw new Error("AIDEA_REQUIRE_CHROME is set but Chrome was not found (set CHROME_PATH to its executable)");
 const skip = chrome ? false : "Chrome was not found (set CHROME_PATH to its executable; set AIDEA_REQUIRE_CHROME=1 to fail instead of skipping)";
 
-let wideReport: any, narrowReport: any;
+let wideReport: any, narrowReport: any, noLibReport: any;
 let core: Awaited<ReturnType<typeof startCore>>;
 let proxy: Server;
 let scratch = "";
@@ -27,6 +27,7 @@ function startProxy(coreUrl: string, project: string, mode: string) {
   const drive = `<script>${readFileSync(new URL("./docking-page.js", import.meta.url), "utf8")}</script>`;
   return new Promise<Server>((resolve) => {
     const server = createServer((req, res) => {
+      if (mode === "nolib" && req.url?.startsWith("/vendor/")) { res.writeHead(404).end(); return; } // the library's file is missing
       const { origin: _origin, ...headers } = req.headers;
       const up = request({ host: target.hostname, port: target.port, method: req.method, path: req.url, headers: { ...headers, host: target.host } }, (answer) => {
         if (req.url !== "/") { res.writeHead(answer.statusCode ?? 502, answer.headers); answer.pipe(res); return; }
@@ -62,12 +63,19 @@ before(async () => {
   core = await startCore({ port: 0, recentsFile: join(scratch, "recents.json"), preferencesFile: join(scratch, "preferences.json"), learnerDir: join(scratch, "learner") });
   wideReport = await load("wide", "1900,1000");
   narrowReport = await load("narrow", "700,900");
+  noLibReport = await load("nolib", "1400,900");
 });
 
 after(() => {
   proxy?.close();
   core?.close();
   if (scratch) rmSync(scratch, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+});
+
+test("without the docking library the page says so, shows the Canvas and keeps the other features working", { skip }, () => {
+  assert.deepEqual(noLibReport.errors, []);
+  assert.match(noLibReport.message, /layout could not be loaded/);
+  assert.deepEqual([noLibReport.canvasShown, noLibReport.chatBuilt, noLibReport.menuOpens], [true, true, true]);
 });
 
 test("the page loads without errors in a wide and in a narrow window", { skip }, () => {
@@ -95,8 +103,8 @@ test("no Panel can be squeezed below its minimum, by the library's size or by pu
   assert.deepEqual(wideReport.minimums.tooSmall, []);
   assert.ok(wideReport.minimums.canvas >= 360);
   assert.equal(wideReport.pushed.moved, true, "the border moved");
-  assert.equal(wideReport.pushed.touched, true, "the page noticed the border being dragged");
   assert.deepEqual(wideReport.pushed.tooSmall, []);
+  assert.deepEqual(wideReport.pressOnly.widths, wideReport.default.widths, "a press on a border that moves nothing changes no width");
 });
 
 test("Run is in the Layout only while a Flow is open, between the Canvas and the Tutor, and a hide the person chose stays", { skip }, () => {
@@ -119,10 +127,25 @@ test("a Panel hidden from the menu comes back where it was, wherever it was move
 
 test("two Panels can be grouped as tabs, and a Panel hidden from a group of tabs returns as a tab of it", { skip }, () => {
   const t = wideReport.tabs;
-  assert.deepEqual(t.tabs, ["canvas", "chat"]);
+  assert.deepEqual(t.tabs, ["right", "run"]);
   assert.equal(t.gone, true);
-  assert.deepEqual(t.back, ["canvas", "chat"]);
+  assert.deepEqual(t.back, ["right", "run"]);
   assert.ok(t.tabElements >= 2);
+});
+
+test("a trip through a narrow window brings the tabs and the sizes back", { skip }, () => {
+  const t = wideReport.trip;
+  assert.deepEqual(t.narrowIn, ["canvas"]);
+  assert.deepEqual(t.groups, ["right", "run"]);
+  for (const [id, w] of Object.entries(t.sizes) as [string, number][]) assert.ok(Math.abs(t.sizesAfter[id] - w) <= 3, `${id} was ${w} and is ${t.sizesAfter[id]}`);
+});
+
+test("the Canvas cannot be dropped into a group of tabs, and no Panel can be dropped behind it, while other drops are offered", { skip }, () => {
+  assert.deepEqual(wideReport.drops, { tutorOntoBuilder: true, tutorOntoCanvas: false, canvasOntoBuilder: false });
+});
+
+test("a Panel the library took out of the Layout comes back and is not saved as hidden; a failing add does not leave the Layout stuck", { skip }, () => {
+  assert.deepEqual(wideReport.stray, { threw: true, runAfterFailure: true, tutorBack: true, tutorSavedHidden: false });
 });
 
 test("the Canvas cannot be hidden: with every other Panel hidden its row stays checked and disabled, with a reason", { skip }, () => {
@@ -149,4 +172,10 @@ test("in a narrow window only the Canvas is in the Layout and a Panel opens as a
   assert.equal(narrowReport.closeButton.open, null);
   assert.equal(narrowReport.scrim.open, null);
   assert.equal(narrowReport.canvasRow.disabled, "true");
+});
+
+test("a drawer open when the window grows wide is closed properly: the focus goes to the Panels button, and an old opener is not kept", { skip }, () => {
+  assert.deepEqual(narrowReport.grown, { open: null, focusOnPanels: true, scrim: false, wide: true, inDock: narrowReport.grown.inDock });
+  assert.ok(narrowReport.grown.inDock.includes("canvas") && narrowReport.grown.inDock.length >= 3, "the Panels are back in the Layout");
+  assert.deepEqual(narrowReport.afterGrown, { open: null, focusOnPanels: true });
 });

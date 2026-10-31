@@ -78,9 +78,10 @@ const order = () => {
 test("the page loads without errors and its Panels stand in the order of the registry", { skip }, () => {
   assert.deepEqual(report.errors, []);
   assert.ok(report.registry.length >= 5);
-  // Left to right on the screen (the page lists the cards by position): the registry order, for the Panels that are shown.
-  assert.deepEqual(report.cards, order().cards.filter((id) => report.cards.includes(id)));
-  assert.ok(report.cards.includes("main") && report.cards.length >= 2);
+  // Left to right on the screen (the page lists the cards by position): the registry order of every Panel that should be shown (the saved layout hides some).
+  const wanted = new Set<string>(report.wanted);
+  assert.ok(wanted.size >= 1);
+  assert.deepEqual(report.cards, order().cards.filter((id) => id === "main" || wanted.has(id)));
 });
 
 test("the header has one control for Panels and no per-Panel button", { skip }, () => {
@@ -104,9 +105,10 @@ test("the Panels menu lists every Panel with a check mark; a Panel that cannot b
 });
 
 test("a layout saved by an earlier version still loads, and an id no Panel has is ignored and never written back", { skip }, () => {
-  assert.deepEqual(report.saved, { chatShown: false, filesShown: true, chatSizeCarried: true, ghostIgnored: true });
+  assert.deepEqual(report.saved, { chatShown: false, filesShown: true, ghostIgnored: true });
   const ids = (report.registry as { id: string }[]).map((d) => d.id);
   assert.deepEqual(report.stored, ["canvasFolded", "sized", ...ids.map((id) => `${id}Folded`), "chat"].sort(), "the old key names, the one size the person set, and nothing about an unknown id");
+  assert.deepEqual(report.storedSizes, { sized: { chat: true }, chat: 300 }, "the sizes an old save held are written back untouched");
 });
 
 test("the menu works by keyboard and mouse: it opens on the first row, moves, toggles, and closes by Escape (focus back), Tab and a click outside", { skip }, () => {

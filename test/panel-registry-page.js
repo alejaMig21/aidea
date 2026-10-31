@@ -21,12 +21,14 @@ const openMenu = async () => { if (document.getElementById("panels-menu").hidden
     report.width = document.documentElement.clientWidth;
     report.registry = layoutRegistry.map((d) => ({ id: d.id, title: d.title, side: d.side, conditional: !!d.available }));
     report.cards = cards();
+    // what the saved layout and the registry say should be on screen, from the Panels' own state (not from the page): a Panel that is missing must fail the test
+    report.wanted = layoutRegistry.filter((d) => !layoutState[`${d.id}Folded`] && (!d.available || d.available())).map((d) => d.id);
     report.headerControls = document.querySelectorAll("#panels-control > button").length; // the menu's own rows are not header controls
     report.perPanelButtons = document.querySelectorAll("[id^='fold-']").length;
     report.menuClosedAtStart = document.getElementById("panels-menu").hidden;
     report.entries = entries();
     // what the saved layout of an older version (plus an id nobody knows) did
-    report.saved = { chatShown: shown("chat"), filesShown: shown("files"), chatSizeCarried: layoutSized.chat, ghostIgnored: !("ghost" in layoutState) && !("ghostFolded" in layoutState) };
+    report.saved = { chatShown: shown("chat"), filesShown: shown("files"), ghostIgnored: !("ghost" in layoutState) && !("ghostFolded" in layoutState) };
 
     // keyboard: open, move, toggle, escape
     const button = document.getElementById("panels-button");
@@ -61,7 +63,9 @@ const openMenu = async () => { if (document.getElementById("panels-menu").hidden
     key(document.activeElement, "Escape");
 
     // the stored layout keeps the old key names and never holds an id nobody declares
-    report.stored = Object.keys(JSON.parse(localStorage.getItem("aidea.layout") || "{}")).sort();
+    const storedLayout = JSON.parse(localStorage.getItem("aidea.layout") || "{}");
+    report.stored = Object.keys(storedLayout).sort();
+    report.storedSizes = { sized: storedLayout.sized, chat: storedLayout.chat };
 
     // a conditional Panel (Run) is enabled when what it needs exists
     const conditional = report.registry.find((d) => d.conditional);
