@@ -92,9 +92,22 @@ const handler: Handler = async (req, res, core) => {
   }
 
   if (req.method === "POST" && url.pathname === "/open-in-editor") {
-    const input = (await core.readJson(req, res)) as { project?: unknown; node?: unknown } | null | undefined;
+    const input = (await core.readJson(req, res)) as { project?: unknown; node?: unknown; file?: unknown; line?: unknown } | null | undefined;
     if (input === undefined) return true; // readJson already answered
-    const found = locate(core, res, input?.project, input?.node);
+    // A Node (its file and first line), or a file by its path in the Project (what the Code panel shows) with an optional line: the same path check for both.
+    let found: { project: { id: string }; file: string; line: number } | null;
+    if (input?.node === undefined && input?.file !== undefined) {
+      if (input.line !== undefined && (!Number.isInteger(input.line) || (input.line as number) < 1)) return core.send(res, 400, { error: "line must be a positive whole number" }), true;
+      const at = locateFile(core, res, input.project, input.file);
+      if (!at) return true;
+      try {
+        if (!statSync(at.file).isFile()) return core.send(res, 400, { error: `${at.path} is not a file, so there is nothing to open.` }), true;
+      } catch { /* the editor says so */ }
+      found = { project: at.project, file: at.file, line: (input.line as number | undefined) ?? 1 };
+    } else {
+      const n = locate(core, res, input?.project, input?.node);
+      found = n && { project: n.project, file: n.file, line: n.node.line };
+    }
     if (!found) return true;
     // Array arguments and no shell: file names cannot inject commands.
     // AIDEA_EDITOR (+ AIDEA_EDITOR_ARGS, a JSON array, for wrappers such as `node script.js`) overrides the person's
@@ -109,11 +122,11 @@ const handler: Handler = async (req, res, core) => {
     let tail: string[];
     if (process.env.AIDEA_EDITOR) {
       editor = process.env.AIDEA_EDITOR;
-      tail = ["--goto", `${found.file}:${found.node.line}`];
+      tail = ["--goto", `${found.file}:${found.line}`];
     } else {
       const { editor: id = "vscode", editorTemplate } = core.preferences.get(found.project.id);
       try {
-        const built = editorCommand(id, editorTemplate, found.file, found.node.line);
+        const built = editorCommand(id, editorTemplate, found.file, found.line);
         editor = id === "vscode" ? defaultEditor() : built.command;
         tail = built.args;
       } catch (e) {
@@ -142,7 +155,7 @@ const handler: Handler = async (req, res, core) => {
       return true;
     }
     child?.unref();
-    core.send(res, 200, { opened: `${found.file}:${found.node.line}` });
+    core.send(res, 200, { opened: `${found.file}:${found.line}` });
     return true;
   }
   return false;

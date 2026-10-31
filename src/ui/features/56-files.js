@@ -2,7 +2,7 @@
 // core lists: ignored folders (dependencies, caches, build output, version control) stay closed, a file in a language aidea can read says which.
 // The tree is asked for only while the panel is on screen, because the core reads the folder to answer. Names are prefixed "files".
 // Keys (ARIA tree): Up and Down move between rows, Right opens a folder or enters it, Left closes it or goes to its parent, Enter and Space toggle a folder
-// or choose a file: choosing a file shows its text in the Code panel (55-code.js).
+// or choose a file: choosing a file shows its text in a tab of the Code panel (55-code.js), and the file of the tab shown there is the one marked.
 {
   const style = document.createElement("style");
   style.textContent = `
@@ -93,10 +93,16 @@ function filesList(folder, depth) {
 
 // Chooses a file: it is marked and its text opens in the Code panel.
 function filesChoose(path) {
-  filesSelected = path;
-  for (const li of filesPane.querySelectorAll("li[data-kind='file']")) li.setAttribute("aria-selected", String(li.dataset.path === path));
+  filesMark(path);
   codeOpenFile(path);
 }
+
+// Marks the file whose text the Code panel shows; the Code panel says when its tab changes (a tab chosen there, a Node's file, a tab closed).
+function filesMark(path) {
+  filesSelected = path;
+  for (const li of filesPane.querySelectorAll("li[data-kind='file']")) li.setAttribute("aria-selected", String(li.dataset.path === path));
+}
+document.addEventListener("code-tab-changed", (e) => filesMark(e.detail.path));
 
 // The rows the person can move to now: entries whose folders are all open.
 const filesRows = (tree) => [...tree.querySelectorAll("li[data-path]")].filter((li) => li.offsetParent !== null);
