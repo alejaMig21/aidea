@@ -6,12 +6,22 @@
 
 **Blocked by:** None (can start immediately). It blocks 08: the docking layout needs the registry to exist.
 
-**Status:** ready-for-agent
+**Status:** implemented (commits 705c524 and e224689; review pending)
 
-- [ ] The six existing Panels are declared in one registry and nothing else in the interface lists them by name (the layout, the menu, the grid and the saved layout read the registry); a test fails if a Panel is wired outside it.
-- [ ] The header holds one "Panels" button and no per-Panel buttons; the menu lists every Panel with a check mark and shows or hides it, and the Canvas can be hidden from it as before.
-- [ ] A Panel that is unavailable (Run with no Flow open) is listed, disabled, with the reason as text.
-- [ ] Registering a seventh, empty Panel in the console adds a menu entry and a card without any other edit, and the header's controls stay the same (verified live and by a test on the page's shape).
-- [ ] The menu works by keyboard (open, move, toggle with Space or Enter, Escape closes and returns the focus) and is labelled for screen readers; in a narrow window choosing a Panel opens its drawer.
-- [ ] Saved layouts are keyed by Panel id: layouts saved before this ticket still load, and an id the registry no longer knows is ignored.
-- [ ] Nothing the person saw before changes: same default arrangement, same sizes, auto-fold order, drawers and separators; verified live at 1920, 1280 and narrow, and the existing tests still pass.
+- [x] The Panels are declared in one registry (`layoutRegister` in `07-layout.js`) and nothing else lists them by name: the cards, separators, grid, sizes, saved layout and menu are built from it. (A test fails if a card, separator or button of a Panel is written in the page again, and checks the registry keeps Run and the Tutor with separate bodies. Five Panels are declared; the Canvas stays in the page because its content is the page's own and is a row of the menu.)
+- [x] The header holds one "Panels" button and no per-Panel buttons; the menu lists every Panel with a check mark and shows or hides it, and the Canvas can be hidden from it as before.
+- [x] A Panel that is unavailable (Run with no Flow open) is listed, disabled, with the reason as text.
+- [x] Registering a seventh Panel adds a menu entry, a card, a separator and a body without any other edit, and the header's controls stay the same. (`test/panel-registry.test.ts` runs the real page in headless Chrome and does it; also done in the real Electron window.)
+- [x] The menu works by keyboard (opens on the first row, Up, Down, Home, End, Space and Enter toggle and leave it open, Escape closes and returns the focus, Tab closes) and is a `role=menu` of `menuitemcheckbox` rows; in a narrow window choosing a Panel opens its drawer and closes the menu. (Real key presses measured in the Electron window. Not measured with a screen reader.)
+- [x] Saved layouts keep the old key names (`<id>Folded`, the weight under the id): a layout saved by an earlier version, with an id nobody declares, loads and the unknown id is ignored (the page test seeds one).
+- [~] Nothing the person saw before changes: same default arrangement, sizes, auto-fold order, drawers and separators; verified live at 1920, 1280 and narrow, and the existing tests still pass. (Default arrangement identical at 1266 and 1920; drawers and the Canvas-hidden separators measured in the real window; widths were set by resizing the viewport, not the window.)
+
+## What was built
+
+A registry of declarations `{ id, title, side, min, weight, startsHidden, foldRank, pane, adopt, icon, available, unavailable }`. `layoutRegister` creates the card (`.panel-card`), its separator and its body, puts them where the side says, keeps the lists the layout code reads (`layoutNames`, `layoutLeft`, minimums, weights, fold order) and rebuilds the grid and the menu. Margins and separators come from `layoutFrame`, not from CSS per Panel; drawers and the folded look are two classes (`is-drawer`, `data-folded`) instead of one rule per id. The ids of the Panels and of their bodies did not change (`chat`, `files`, `code`, `run`, `right`, `pane-*`), so the features that fill them needed no edit. The Details panel is adopted into the Tutor's card. Auto-fold gives up Panels by `foldRank` (Builder, Run, Tutor, Files, Code).
+
+## Measurements (real Electron window, visible, main monitor, widths by viewport)
+
+Header controls: the project switcher, Refresh, How aidea works, Animations, Pause and step, and Panels: no per-Panel button. At 1266 with no function open the cards are Builder 268, Canvas 582, Tutor 385, the same as before the ticket; Files and Code ticked from the menu at 1266 give Files 232, Code 320, Canvas 394, Tutor 280 (the Builder folds on its own, as before); with a Flow open the menu enables Run and the cards are 260, 398, 288 and 280; with the Canvas hidden the separators are Builder and Tutor only, as they should be between three neighbours; a Notes Panel declared in the console added one menu row and one card, and the header still had one control; at 1920 the cards are 264, Notes 240, Canvas 572, Run 419, Tutor 378 without sideways overflow; at 700 px the Tutor chosen from the menu opens as a drawer and the menu closes. No page errors. Found by looking at the screenshot, not by a test: the first version drew the check mark on every row; fixed and covered by a test.
+
+Not measured: a second monitor; a screen reader; the arrow-key move of a separator after the change (its code is the one used before); a drag at 1266 px moves almost nothing because the Canvas minimum binds (as before).
