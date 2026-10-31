@@ -1,0 +1,296 @@
+{
+ "lst": {
+  "kind": "seq",
+  "type": "list",
+  "id": 0,
+  "len": 3,
+  "items": [
+   {
+    "kind": "scalar",
+    "type": "int",
+    "value": 3
+   },
+   {
+    "kind": "scalar",
+    "type": "int",
+    "value": 1
+   },
+   {
+    "kind": "scalar",
+    "type": "int",
+    "value": 2
+   }
+  ],
+  "hidden": 0
+ },
+ "d": {
+  "kind": "map",
+  "id": 1,
+  "len": 3,
+  "entries": [
+   [
+    {
+     "kind": "scalar",
+     "type": "str",
+     "value": "a"
+    },
+    {
+     "kind": "scalar",
+     "type": "int",
+     "value": 1
+    }
+   ],
+   [
+    {
+     "kind": "scalar",
+     "type": "str",
+     "value": "b"
+    },
+    {
+     "kind": "seq",
+     "type": "list",
+     "id": 2,
+     "len": 2,
+     "items": [
+      {
+       "kind": "scalar",
+       "type": "int",
+       "value": 1
+      },
+      {
+       "kind": "scalar",
+       "type": "int",
+       "value": 2
+      }
+     ],
+     "hidden": 0
+    }
+   ],
+   [
+    {
+     "kind": "scalar",
+     "type": "int",
+     "value": 3
+    },
+    {
+     "kind": "map",
+     "id": 3,
+     "len": 1,
+     "entries": [
+      [
+       {
+        "kind": "scalar",
+        "type": "str",
+        "value": "x"
+       },
+       {
+        "kind": "scalar",
+        "type": "NoneType",
+        "value": null
+       }
+      ]
+     ],
+     "hidden": 0
+    }
+   ]
+  ],
+  "hidden": 0
+ },
+ "a": {
+  "kind": "object",
+  "type": "Node",
+  "id": 4,
+  "fields": {
+   "value": {
+    "kind": "scalar",
+    "type": "int",
+    "value": 1
+   },
+   "next": {
+    "kind": "object",
+    "type": "Node",
+    "id": 5,
+    "fields": {
+     "value": {
+      "kind": "scalar",
+      "type": "int",
+      "value": 2
+     },
+     "next": {
+      "kind": "ref",
+      "id": 4
+     }
+    },
+    "hidden": 0
+   }
+  },
+  "hidden": 0
+ },
+ "b": {
+  "kind": "ref",
+  "id": 5
+ },
+ "t": {
+  "kind": "object",
+  "type": "Tree",
+  "id": 6,
+  "fields": {
+   "v": {
+    "kind": "scalar",
+    "type": "int",
+    "value": 5
+   },
+   "left": {
+    "kind": "object",
+    "type": "Tree",
+    "id": 7,
+    "fields": {
+     "v": {
+      "kind": "scalar",
+      "type": "int",
+      "value": 2
+     },
+     "left": {
+      "kind": "scalar",
+      "type": "NoneType",
+      "value": null
+     },
+     "right": {
+      "kind": "scalar",
+      "type": "NoneType",
+      "value": null
+     }
+    },
+    "hidden": 0
+   },
+   "right": {
+    "kind": "object",
+    "type": "Tree",
+    "id": 8,
+    "fields": {
+     "v": {
+      "kind": "scalar",
+      "type": "int",
+      "value": 9
+     },
+     "left": {
+      "kind": "scalar",
+      "type": "NoneType",
+      "value": null
+     },
+     "right": {
+      "kind": "scalar",
+      "type": "NoneType",
+      "value": null
+     }
+    },
+    "hidden": 0
+   }
+  },
+  "hidden": 0
+ },
+ "shared": {
+  "kind": "seq",
+  "type": "list",
+  "id": 9,
+  "len": 1,
+  "items": [
+   {
+    "kind": "scalar",
+    "type": "int",
+    "value": 0
+   }
+  ],
+  "hidden": 0
+ },
+ "x": {
+  "kind": "map",
+  "id": 10,
+  "len": 1,
+  "entries": [
+   [
+    {
+     "kind": "scalar",
+     "type": "str",
+     "value": "p"
+    },
+    {
+     "kind": "ref",
+     "id": 9
+    }
+   ]
+  ],
+  "hidden": 0
+ },
+ "y": {
+  "kind": "map",
+  "id": 11,
+  "len": 1,
+  "entries": [
+   [
+    {
+     "kind": "scalar",
+     "type": "str",
+     "value": "q"
+    },
+    {
+     "kind": "ref",
+     "id": 9
+    }
+   ]
+  ],
+  "hidden": 0
+ },
+ "s": {
+  "kind": "object",
+  "type": "Slots",
+  "id": 12,
+  "fields": {
+   "a": {
+    "kind": "scalar",
+    "type": "int",
+    "value": 1
+   },
+   "b": {
+    "kind": "seq",
+    "type": "list",
+    "id": 13,
+    "len": 1,
+    "items": [
+     {
+      "kind": "scalar",
+      "type": "int",
+      "value": 2
+     }
+    ],
+    "hidden": 0
+   }
+  },
+  "hidden": 0
+ },
+ "fh": {
+  "kind": "opaque",
+  "type": "TextIOWrapper",
+  "text": "<TextIOWrapper>"
+ },
+ "th": {
+  "kind": "opaque",
+  "type": "lock",
+  "text": "<lock>"
+ },
+ "gen": {
+  "kind": "opaque",
+  "type": "generator",
+  "text": "<generator>"
+ },
+ "fn": {
+  "kind": "opaque",
+  "type": "function",
+  "text": "<function>"
+ },
+ "cls": {
+  "kind": "opaque",
+  "type": "type",
+  "text": "<type>"
+ }
+}

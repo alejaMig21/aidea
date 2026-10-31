@@ -1,0 +1,10 @@
+cycle a.next.next -> {"kind": "ref", "id": 4}
+alias x['p'] id: 9 | y['q']: {'kind': 'ref', 'id': 9}
+opaque: {'fh': 'opaque:TextIOWrapper', 'th': 'opaque:lock', 'gen': 'opaque:generator', 'fn': 'opaque:function', 'cls': 'opaque:type'}
+slots: object ['a', 'b']
+list10000   limited   {'shape_ms': 0.17, 'repr_ms': 0.573, 'shape_bytes': 4881, 'repr_bytes': 97}
+list10000   unlimited {'shape_ms': 11.03, 'repr_ms': 0.386, 'shape_bytes': 498978, 'repr_bytes': 97}
+linked1000  limited   {'shape_ms': 0.06, 'repr_ms': 0.007, 'shape_bytes': 1156, 'repr_bytes': 176}
+linked1000  unlimited {'shape_ms': 5.5, 'repr_ms': 0.008, 'shape_bytes': 137965, 'repr_bytes': 176}
+1000 visits over a 10000 list, limited total ms 277.1 visits 2003
+1000 visits over a 10000 list, unlimited total ms 21699.0 visits 2003

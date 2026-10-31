@@ -1,0 +1,148 @@
+{
+ "a": {
+  "kind": "object",
+  "type": "Node",
+  "id": 0,
+  "fields": {
+   "value": {
+    "kind": "scalar",
+    "type": "number",
+    "value": 1
+   },
+   "next": {
+    "kind": "object",
+    "type": "Node",
+    "id": 1,
+    "fields": {
+     "value": {
+      "kind": "scalar",
+      "type": "number",
+      "value": 2
+     },
+     "next": {
+      "kind": "ref",
+      "id": 0
+     }
+    },
+    "hidden": 0
+   }
+  },
+  "hidden": 0
+ },
+ "x": {
+  "kind": "object",
+  "type": "Object",
+  "id": 2,
+  "fields": {
+   "p": {
+    "kind": "seq",
+    "type": "Array",
+    "id": 3,
+    "len": 1,
+    "items": [
+     {
+      "kind": "scalar",
+      "type": "number",
+      "value": 0
+     }
+    ],
+    "hidden": 0
+   }
+  },
+  "hidden": 0
+ },
+ "y": {
+  "kind": "object",
+  "type": "Object",
+  "id": 4,
+  "fields": {
+   "q": {
+    "kind": "ref",
+    "id": 3
+   }
+  },
+  "hidden": 0
+ },
+ "fn": {
+  "kind": "opaque",
+  "type": "function",
+  "text": "<function fn>"
+ },
+ "m": {
+  "kind": "map",
+  "type": "Map",
+  "id": 5,
+  "len": 1,
+  "entries": [
+   [
+    {
+     "kind": "scalar",
+     "type": "string",
+     "value": "k"
+    },
+    {
+     "kind": "seq",
+     "type": "Array",
+     "id": 6,
+     "len": 1,
+     "items": [
+      {
+       "kind": "scalar",
+       "type": "number",
+       "value": 1
+      }
+     ],
+     "hidden": 0
+    }
+   ]
+  ],
+  "hidden": 0
+ },
+ "s": {
+  "kind": "seq",
+  "type": "Set",
+  "id": 7,
+  "len": 1,
+  "items": [
+   {
+    "kind": "scalar",
+    "type": "number",
+    "value": 1
+   }
+  ],
+  "hidden": 0
+ },
+ "pr": {
+  "kind": "opaque",
+  "type": "Promise",
+  "id": 8,
+  "text": "<Promise>"
+ },
+ "sym": {
+  "kind": "opaque",
+  "type": "symbol",
+  "text": "Symbol(s)"
+ },
+ "big": {
+  "kind": "scalar",
+  "type": "bigint",
+  "value": "10"
+ },
+ "u": {
+  "kind": "scalar",
+  "type": "undefined",
+  "value": "undefined"
+ },
+ "d": {
+  "kind": "object",
+  "type": "Date",
+  "id": 9,
+  "fields": {},
+  "hidden": 0
+ },
+ "nan": {
+  "kind": "scalar",
+  "type": "number",
+  "value": null
+ }
+}
