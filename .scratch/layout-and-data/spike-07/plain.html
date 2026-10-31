@@ -1,0 +1,16 @@
+<!doctype html><meta charset="utf-8"><title>spike plain</title><link rel="stylesheet" href="shared.css">
+<style>
+ .split { display:flex; width:100%; height:100%; } .split.sr { flex-direction:row; } .split.sc { flex-direction:column; }
+ .cell { flex:1 1 0; min-width:0; min-height:0; position:relative; } .split.sr > .cell { min-width:var(--mw); } .split.sc > .cell { min-height:var(--mh); }
+ .sash { flex:0 0 8px; position:relative; z-index:2; } .sr > .sash { cursor:col-resize; } .sc > .sash { cursor:row-resize; }
+ .sash:hover, .sash:focus-visible, .sash.on { background:rgba(110,168,255,.35); outline:none; }
+ .group { height:100%; display:flex; flex-direction:column; background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden; box-sizing:border-box; }
+ .tabs { flex:0 0 34px; display:flex; background:var(--bar); }
+ .tab { font:inherit; font-size:13.5px; padding:0 14px; color:var(--muted); background:none; border:0; cursor:grab; user-select:none; }
+ .tab.active { color:var(--text); background:var(--panel); } .tab:focus-visible { outline:2px solid var(--accent); }
+ .gbody { flex:1; min-height:0; position:relative; } .gbody > .body { position:absolute; inset:0; } .gbody > .body.off { display:none; }
+ #preview { position:fixed; z-index:50; pointer-events:none; background:rgba(110,168,255,.25); border:2px solid var(--accent); border-radius:8px; display:none; }
+ #ghost { position:fixed; z-index:60; pointer-events:none; padding:6px 14px; background:var(--selected); border-radius:8px; display:none; }
+</style>
+<div id="bar">aidea (plain JS spike)</div><div id="app"></div><div id="preview"></div><div id="ghost"></div>
+<script type="module" src="plain.js"></script>

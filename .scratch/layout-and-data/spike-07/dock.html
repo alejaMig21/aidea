@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8"><title>spike dockview</title><link rel="stylesheet" href="shared.css">
+<style>
+ /* The whole cost of making dockview look like the cards of ui-style.md (count these lines in the ADR). */
+ .dockview-theme-aidea {
+  --dv-group-view-background-color: var(--panel);
+  --dv-tabs-and-actions-container-background-color: var(--bar);
+  --dv-tabs-and-actions-container-height: 34px;
+  --dv-tabs-and-actions-container-font-size: 13.5px;
+  --dv-tab-font-size: 13.5px;
+  --dv-activegroup-visiblepanel-tab-background-color: var(--panel);
+  --dv-activegroup-hiddenpanel-tab-background-color: var(--bar);
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--panel);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: var(--bar);
+  --dv-activegroup-visiblepanel-tab-color: var(--text);
+  --dv-activegroup-hiddenpanel-tab-color: var(--muted);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--label);
+  --dv-inactivegroup-hiddenpanel-tab-color: var(--muted);
+  --dv-separator-border: transparent;
+  --dv-sash-color: transparent;
+  --dv-active-sash-color: var(--accent);
+  --dv-drag-over-background-color: rgba(110,168,255,.25);
+  --dv-drag-over-border: 2px solid var(--accent);
+  --dv-background-color: var(--bg);
+ }
+ .dockview-theme-aidea .dv-groupview { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; box-sizing: border-box; }
+</style>
+<div id="bar">aidea (dockview-core spike)</div><div id="app"></div>
+<script src="node_modules/dockview-core/dist/dockview-core.min.js"></script>
+<script type="module" src="dock.js"></script>

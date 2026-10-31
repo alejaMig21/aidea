@@ -1,0 +1,954 @@
+{
+ "plain@x1": {
+  "loadMs": 131,
+  "errs": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "keyboard": {
+   "before": 547,
+   "tabOrder": [
+    "BUTTON.tab active[]",
+    "DIV.body[]",
+    "DIV.sash[separator]",
+    "BUTTON.tab active[]",
+    "DIV.body[]",
+    "DIV.sash[separator]",
+    "BUTTON.tab active[]",
+    "DIV.body[]",
+    "DIV.sash[separator]",
+    "BUTTON.tab active[]",
+    "DIV.body[]",
+    "DIV.sash[separator]"
+   ],
+   "sash": {
+    "tabindex": "0",
+    "role": "separator"
+   },
+   "afterArrowLeft": 527
+  },
+  "splitter": {
+   "frames": 136,
+   "p50": 16.7,
+   "p95": 16.8,
+   "max": 17.3,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 2264,
+   "scriptMs": 8,
+   "layoutMs": 39,
+   "styleMs": 3,
+   "taskMs": 179,
+   "previewAtEnd": false
+  },
+  "splitterBack": {
+   "frames": 136,
+   "p50": 16.7,
+   "p95": 17.1,
+   "max": 17.3,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 2284,
+   "scriptMs": 7,
+   "layoutMs": 47,
+   "styleMs": 3,
+   "taskMs": 200,
+   "previewAtEnd": false
+  },
+  "splitterWidths": {
+   "before": 525,
+   "afterDrag": 374,
+   "afterBack": 545
+  },
+  "minBuilder": {
+   "min": 268,
+   "gotGroup": 268
+  },
+  "minPush": {
+   "widths": [
+    268,
+    200,
+    240,
+    547,
+    240,
+    369
+   ],
+   "mins": [
+    268,
+    200,
+    240,
+    376,
+    240,
+    288
+   ]
+  },
+  "moveA": {
+   "frames": 176,
+   "p50": 16.7,
+   "p95": 17.1,
+   "max": 17.4,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 2949,
+   "scriptMs": 27,
+   "layoutMs": 7,
+   "styleMs": 4,
+   "taskMs": 157,
+   "previewAtEnd": true
+  },
+  "moveB": {
+   "frames": 177,
+   "p50": 16.7,
+   "p95": 17,
+   "max": 17.2,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 2955,
+   "scriptMs": 32,
+   "layoutMs": 7,
+   "styleMs": 4,
+   "taskMs": 173,
+   "previewAtEnd": true
+  },
+  "moveC": {
+   "frames": 176,
+   "p50": 16.7,
+   "p95": 17,
+   "max": 17.1,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 2959,
+   "scriptMs": 34,
+   "layoutMs": 7,
+   "styleMs": 4,
+   "taskMs": 178,
+   "previewAtEnd": true
+  },
+  "moveD": {
+   "frames": 174,
+   "p50": 16.7,
+   "p95": 17,
+   "max": 17.4,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 2904,
+   "scriptMs": 29,
+   "layoutMs": 7,
+   "styleMs": 4,
+   "taskMs": 166,
+   "previewAtEnd": true
+  },
+  "afterMoves": [
+   [
+    "builder",
+    true,
+    "304,560,955,512"
+   ],
+   [
+    "files",
+    true,
+    "8,40,288,512"
+   ],
+   [
+    "code",
+    false,
+    "8,560,288,512"
+   ],
+   [
+    "canvas",
+    true,
+    "304,40,955,512"
+   ],
+   [
+    "run",
+    true,
+    "1267,40,645,1032"
+   ],
+   [
+    "tutor",
+    true,
+    "8,560,288,512"
+   ]
+  ],
+  "structure": {
+   "tutorWithCode": true,
+   "runStacked": true
+  },
+  "serialiseDetail": {
+   "builder": [
+    true,
+    953,
+    953,
+    476,
+    476
+   ],
+   "files": [
+    true,
+    286,
+    286,
+    476,
+    476
+   ],
+   "code": [
+    false,
+    0,
+    0,
+    0,
+    0
+   ],
+   "canvas": [
+    true,
+    953,
+    953,
+    476,
+    476
+   ],
+   "run": [
+    true,
+    643,
+    643,
+    996,
+    996
+   ],
+   "tutor": [
+    true,
+    286,
+    286,
+    476,
+    476
+   ]
+  },
+  "serialise": {
+   "jsonBytes": 338,
+   "roundTripMaxPxDiff": 0,
+   "visibilityMismatches": 0,
+   "sample": "{\"t\":\"s\",\"dir\":\"row\",\"ch\":[{\"t\":\"s\",\"dir\":\"col\",\"ch\":[{\"t\":\"g\",\"ps\":[\"files\"],\"a\":\"files\"},{\"t\":\"g\",\"ps\":[\"code\",\"tutor\"],\"a\":\"tutor\"}],\"w\":[512,512]},{\"t\":\"s\",\"dir\":\"col\",\"ch\":[{\"t\":\"g\",\"ps\":[\"canvas\"],\"a\":\"canvas\"},{\"t\":\"g\",\"ps\":[\"builder\"],\"a\":\"builder\"}],\"w\":[512,512]},{\"t\":\"g\",\"ps\":[\"run\"],\"a\":"
+  },
+  "unknownId": {
+   "threw": false,
+   "panels": "n/a"
+  }
+ },
+ "dockview@x1": {
+  "loadMs": 270,
+  "errs": [
+   "dockview: failed to deserialize layout. Reverting changes TypeError: Cannot read properties of undefined (reading 'parentElement')\n    at Zt.renderPanel (http://127.0.0.1:11713/node_modules/dockview-core/dist/dockview-core.min.js:4320:107882)\n    at Zt.openPanel (http://127.0.0.1:11713/node_modules/dockview-core/dist/dockview-core.min.js:4320:108308)\n    at Hn.doAddPanel (http://127.0.0.1:11713/node_modules/dockview-core/dist/dockview-core.min.js:4320:221936)\n    at Hn.openPanel (http://127.0.0.1:11713/node_modules/dockview-core/dist/dockview-core.min.js:4320:218690)\n    at r (http://127.0.0.1:11713/node_modules/dockview-core/dist/dockview-core.min.js:4320:347766)\n    at Object.fromJSON (http://127.0.0.1:11713/node_modules/dockview-core/dist/dockview-core.min.js:4320:348050)\n    at $e._deserializeNode (http://127.0.0.1:11713/node_modules/dockview-core/dist/dockview-core.min.js:4320:45810)\n    at http://127.0.0.1:11713/node_modules/dockview-core/dist/dockview-core.min.js:4320:45660\n    at Array.map (<anonymous>)\n    at $e._deserializeNode (http://127.0.0.1:11713/node_modules/dockview-core/dist/dockview-core.min.js:4320:45641)"
+  ],
+  "keyboard": {
+   "before": 488,
+   "tabOrder": [
+    "DIV.dv-tab dv-active-tab[tab]",
+    "DIV.dv-tab dv-active-tab[tab]",
+    "DIV.dv-tab dv-active-tab[tab]",
+    "DIV.dv-tab dv-active-tab[tab]",
+    "DIV.dv-tab dv-active-tab[tab]",
+    "DIV.dv-tab dv-active-tab[tab]",
+    "DIV.body[]",
+    "DIV.body[]",
+    "DIV.body[]",
+    "DIV.body[]",
+    "DIV.body[]",
+    "DIV.body[]"
+   ],
+   "sash": {
+    "tabindex": null,
+    "role": null
+   }
+  },
+  "splitter": {
+   "frames": 137,
+   "p50": 16.7,
+   "p95": 17.1,
+   "max": 17.4,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 2303,
+   "scriptMs": 29,
+   "layoutMs": 57,
+   "styleMs": 13,
+   "taskMs": 271,
+   "previewAtEnd": false
+  },
+  "splitterBack": {
+   "frames": 144,
+   "p50": 16.6,
+   "p95": 17.1,
+   "max": 17.6,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 2410,
+   "scriptMs": 27,
+   "layoutMs": 106,
+   "styleMs": 18,
+   "taskMs": 419,
+   "previewAtEnd": false
+  },
+  "splitterWidths": {
+   "before": 486,
+   "afterDrag": 367,
+   "afterBack": 659
+  },
+  "minBuilder": {
+   "min": 268,
+   "gotGroup": 261
+  },
+  "minPush": {
+   "widths": [
+    553,
+    193,
+    233,
+    369,
+    233,
+    281
+   ],
+   "mins": [
+    268,
+    200,
+    240,
+    376,
+    240,
+    288
+   ]
+  },
+  "moveA": {
+   "frames": 149,
+   "p50": 16.7,
+   "p95": 17.1,
+   "max": 17.2,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 2488,
+   "scriptMs": 12,
+   "layoutMs": 9,
+   "styleMs": 12,
+   "taskMs": 197,
+   "previewAtEnd": true
+  },
+  "moveB": {
+   "frames": 148,
+   "p50": 16.7,
+   "p95": 17.1,
+   "max": 17.3,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 2481,
+   "scriptMs": 9,
+   "layoutMs": 4,
+   "styleMs": 6,
+   "taskMs": 120,
+   "previewAtEnd": true
+  },
+  "moveC": {
+   "frames": 149,
+   "p50": 16.7,
+   "p95": 17,
+   "max": 17.6,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 2493,
+   "scriptMs": 10,
+   "layoutMs": 5,
+   "styleMs": 7,
+   "taskMs": 140,
+   "previewAtEnd": true
+  },
+  "moveD": {
+   "frames": 149,
+   "p50": 16.7,
+   "p95": 17.1,
+   "max": 17.4,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 2487,
+   "scriptMs": 11,
+   "layoutMs": 7,
+   "styleMs": 10,
+   "taskMs": 176,
+   "previewAtEnd": true
+  },
+  "afterMoves": [
+   [
+    "builder",
+    true,
+    "645,560,623,512"
+   ],
+   [
+    "files",
+    true,
+    "8,40,629,512"
+   ],
+   [
+    "code",
+    true,
+    "8,560,629,512"
+   ],
+   [
+    "canvas",
+    true,
+    "645,40,623,512"
+   ],
+   [
+    "run",
+    true,
+    "1276,40,636,1032"
+   ],
+   [
+    "tutor",
+    true,
+    "8,560,629,512"
+   ]
+  ],
+  "structure": {
+   "tutorWithCode": true,
+   "runStacked": true
+  },
+  "serialiseDetail": {
+   "builder": [
+    true,
+    621,
+    622,
+    476,
+    476
+   ],
+   "files": [
+    true,
+    627,
+    627,
+    476,
+    476
+   ],
+   "code": [
+    true,
+    629,
+    629,
+    478,
+    478
+   ],
+   "canvas": [
+    true,
+    621,
+    622,
+    476,
+    476
+   ],
+   "run": [
+    true,
+    634,
+    634,
+    996,
+    996
+   ],
+   "tutor": [
+    true,
+    627,
+    627,
+    476,
+    476
+   ]
+  },
+  "serialise": {
+   "jsonBytes": 1316,
+   "roundTripMaxPxDiff": 479,
+   "visibilityMismatches": 0,
+   "sample": "{\"grid\":{\"root\":{\"type\":\"branch\",\"data\":[{\"type\":\"branch\",\"data\":[{\"type\":\"leaf\",\"data\":{\"views\":[\"files\"],\"activeView\":\"files\",\"id\":\"2\"},\"size\":512},{\"type\":\"leaf\",\"data\":{\"views\":[\"code\",\"tutor\"],\"activeView\":\"tutor\",\"id\":\"3\"},\"size\":512}],\"size\":628.6666666666666},{\"type\":\"branch\",\"data\":[{\"type\""
+  },
+  "unknownId": {
+   "threw": true,
+   "msg": "Cannot read properties of undefined (reading 'parentElement')",
+   "panelsLeft": 0
+  },
+  "popout": {
+   "ok": true,
+   "pages": 2,
+   "runInPopup": true,
+   "mainStillHasRun": false,
+   "afterCloseRunBackInMain": true
+  }
+ },
+ "plain@x4": {
+  "loadMs": 627,
+  "errs": [],
+  "keyboard": {
+   "before": 547,
+   "tabOrder": [
+    "BUTTON.tab active[]",
+    "DIV.body[]",
+    "DIV.sash[separator]",
+    "BUTTON.tab active[]",
+    "DIV.body[]",
+    "DIV.sash[separator]",
+    "BUTTON.tab active[]",
+    "DIV.body[]",
+    "DIV.sash[separator]",
+    "BUTTON.tab active[]",
+    "DIV.body[]",
+    "DIV.sash[separator]"
+   ],
+   "sash": {
+    "tabindex": "0",
+    "role": "separator"
+   },
+   "afterArrowLeft": 527
+  },
+  "splitter": {
+   "frames": 167,
+   "p50": 16.7,
+   "p95": 17.1,
+   "max": 17.5,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 2780,
+   "scriptMs": 34,
+   "layoutMs": 180,
+   "styleMs": 11,
+   "taskMs": 811,
+   "previewAtEnd": false
+  },
+  "splitterBack": {
+   "frames": 173,
+   "p50": 16.7,
+   "p95": 17.1,
+   "max": 17.2,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 2895,
+   "scriptMs": 29,
+   "layoutMs": 192,
+   "styleMs": 14,
+   "taskMs": 882,
+   "previewAtEnd": false
+  },
+  "splitterWidths": {
+   "before": 525,
+   "afterDrag": 374,
+   "afterBack": 545
+  },
+  "minBuilder": {
+   "min": 268,
+   "gotGroup": 268
+  },
+  "minPush": {
+   "widths": [
+    268,
+    200,
+    240,
+    547,
+    240,
+    369
+   ],
+   "mins": [
+    268,
+    200,
+    240,
+    376,
+    240,
+    288
+   ]
+  },
+  "moveA": {
+   "frames": 199,
+   "p50": 16.7,
+   "p95": 17,
+   "max": 17.2,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 3321,
+   "scriptMs": 121,
+   "layoutMs": 30,
+   "styleMs": 17,
+   "taskMs": 648,
+   "previewAtEnd": true
+  },
+  "moveB": {
+   "frames": 206,
+   "p50": 16.7,
+   "p95": 17,
+   "max": 17.3,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 3432,
+   "scriptMs": 154,
+   "layoutMs": 30,
+   "styleMs": 17,
+   "taskMs": 803,
+   "previewAtEnd": true
+  },
+  "moveC": {
+   "frames": 206,
+   "p50": 16.7,
+   "p95": 17,
+   "max": 17.4,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 3455,
+   "scriptMs": 161,
+   "layoutMs": 28,
+   "styleMs": 17,
+   "taskMs": 840,
+   "previewAtEnd": true
+  },
+  "moveD": {
+   "frames": 197,
+   "p50": 16.7,
+   "p95": 17.1,
+   "max": 17.7,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 3299,
+   "scriptMs": 129,
+   "layoutMs": 30,
+   "styleMs": 19,
+   "taskMs": 742,
+   "previewAtEnd": true
+  },
+  "afterMoves": [
+   [
+    "builder",
+    true,
+    "304,560,955,512"
+   ],
+   [
+    "files",
+    true,
+    "8,40,288,512"
+   ],
+   [
+    "code",
+    false,
+    "8,560,288,512"
+   ],
+   [
+    "canvas",
+    true,
+    "304,40,955,512"
+   ],
+   [
+    "run",
+    true,
+    "1267,40,645,1032"
+   ],
+   [
+    "tutor",
+    true,
+    "8,560,288,512"
+   ]
+  ],
+  "structure": {
+   "tutorWithCode": true,
+   "runStacked": true
+  },
+  "serialiseDetail": {
+   "builder": [
+    true,
+    953,
+    953,
+    476,
+    476
+   ],
+   "files": [
+    true,
+    286,
+    286,
+    476,
+    476
+   ],
+   "code": [
+    false,
+    0,
+    0,
+    0,
+    0
+   ],
+   "canvas": [
+    true,
+    953,
+    953,
+    476,
+    476
+   ],
+   "run": [
+    true,
+    643,
+    643,
+    996,
+    996
+   ],
+   "tutor": [
+    true,
+    286,
+    286,
+    476,
+    476
+   ]
+  },
+  "serialise": {
+   "jsonBytes": 338,
+   "roundTripMaxPxDiff": 0,
+   "visibilityMismatches": 0,
+   "sample": "{\"t\":\"s\",\"dir\":\"row\",\"ch\":[{\"t\":\"s\",\"dir\":\"col\",\"ch\":[{\"t\":\"g\",\"ps\":[\"files\"],\"a\":\"files\"},{\"t\":\"g\",\"ps\":[\"code\",\"tutor\"],\"a\":\"tutor\"}],\"w\":[512,512]},{\"t\":\"s\",\"dir\":\"col\",\"ch\":[{\"t\":\"g\",\"ps\":[\"canvas\"],\"a\":\"canvas\"},{\"t\":\"g\",\"ps\":[\"builder\"],\"a\":\"builder\"}],\"w\":[512,512]},{\"t\":\"g\",\"ps\":[\"run\"],\"a\":"
+  },
+  "unknownId": {
+   "threw": false,
+   "panels": "n/a"
+  }
+ },
+ "dockview@x4": {
+  "loadMs": 1435,
+  "errs": [
+   "dockview: failed to deserialize layout. Reverting changes TypeError: Cannot read properties of undefined (reading 'parentElement')\n    at Zt.renderPanel (http://127.0.0.1:11713/node_modules/dockview-core/dist/dockview-core.min.js:4320:107882)\n    at Zt.openPanel (http://127.0.0.1:11713/node_modules/dockview-core/dist/dockview-core.min.js:4320:108308)\n    at Hn.doAddPanel (http://127.0.0.1:11713/node_modules/dockview-core/dist/dockview-core.min.js:4320:221936)\n    at Hn.openPanel (http://127.0.0.1:11713/node_modules/dockview-core/dist/dockview-core.min.js:4320:218690)\n    at r (http://127.0.0.1:11713/node_modules/dockview-core/dist/dockview-core.min.js:4320:347766)\n    at Object.fromJSON (http://127.0.0.1:11713/node_modules/dockview-core/dist/dockview-core.min.js:4320:348050)\n    at $e._deserializeNode (http://127.0.0.1:11713/node_modules/dockview-core/dist/dockview-core.min.js:4320:45810)\n    at http://127.0.0.1:11713/node_modules/dockview-core/dist/dockview-core.min.js:4320:45660\n    at Array.map (<anonymous>)\n    at $e._deserializeNode (http://127.0.0.1:11713/node_modules/dockview-core/dist/dockview-core.min.js:4320:45641)"
+  ],
+  "keyboard": {
+   "before": 488,
+   "tabOrder": [
+    "DIV.dv-tab dv-active-tab[tab]",
+    "DIV.dv-tab dv-active-tab[tab]",
+    "DIV.dv-tab dv-active-tab[tab]",
+    "DIV.dv-tab dv-active-tab[tab]",
+    "DIV.dv-tab dv-active-tab[tab]",
+    "DIV.dv-tab dv-active-tab[tab]",
+    "DIV.body[]",
+    "DIV.body[]",
+    "DIV.body[]",
+    "DIV.body[]",
+    "DIV.body[]",
+    "DIV.body[]"
+   ],
+   "sash": {
+    "tabindex": null,
+    "role": null
+   }
+  },
+  "splitter": {
+   "frames": 192,
+   "p50": 16.7,
+   "p95": 33.1,
+   "max": 50.3,
+   "over25": 10,
+   "over50": 2,
+   "longTasks": 5,
+   "wallMs": 3468,
+   "scriptMs": 161,
+   "layoutMs": 348,
+   "styleMs": 56,
+   "taskMs": 1527,
+   "previewAtEnd": false
+  },
+  "splitterBack": {
+   "frames": 229,
+   "p50": 16.7,
+   "p95": 33.3,
+   "max": 33.8,
+   "over25": 24,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 4229,
+   "scriptMs": 135,
+   "layoutMs": 533,
+   "styleMs": 81,
+   "taskMs": 2169,
+   "previewAtEnd": false
+  },
+  "splitterWidths": {
+   "before": 486,
+   "afterDrag": 367,
+   "afterBack": 659
+  },
+  "minBuilder": {
+   "min": 268,
+   "gotGroup": 261
+  },
+  "minPush": {
+   "widths": [
+    553,
+    193,
+    233,
+    369,
+    233,
+    281
+   ],
+   "mins": [
+    268,
+    200,
+    240,
+    376,
+    240,
+    288
+   ]
+  },
+  "moveA": {
+   "frames": 148,
+   "p50": 16.7,
+   "p95": 17,
+   "max": 17.1,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 2480,
+   "scriptMs": 57,
+   "layoutMs": 39,
+   "styleMs": 53,
+   "taskMs": 872,
+   "previewAtEnd": true
+  },
+  "moveB": {
+   "frames": 149,
+   "p50": 16.7,
+   "p95": 17.1,
+   "max": 17.6,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 2492,
+   "scriptMs": 39,
+   "layoutMs": 16,
+   "styleMs": 24,
+   "taskMs": 471,
+   "previewAtEnd": true
+  },
+  "moveC": {
+   "frames": 149,
+   "p50": 16.6,
+   "p95": 17.1,
+   "max": 17.2,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 2486,
+   "scriptMs": 47,
+   "layoutMs": 18,
+   "styleMs": 27,
+   "taskMs": 569,
+   "previewAtEnd": true
+  },
+  "moveD": {
+   "frames": 149,
+   "p50": 16.7,
+   "p95": 17.1,
+   "max": 17.7,
+   "over25": 0,
+   "over50": 0,
+   "longTasks": 0,
+   "wallMs": 2493,
+   "scriptMs": 48,
+   "layoutMs": 31,
+   "styleMs": 45,
+   "taskMs": 756,
+   "previewAtEnd": true
+  },
+  "afterMoves": [
+   [
+    "builder",
+    true,
+    "645,560,623,512"
+   ],
+   [
+    "files",
+    true,
+    "8,40,629,512"
+   ],
+   [
+    "code",
+    true,
+    "8,560,629,512"
+   ],
+   [
+    "canvas",
+    true,
+    "645,40,623,512"
+   ],
+   [
+    "run",
+    true,
+    "1276,40,636,1032"
+   ],
+   [
+    "tutor",
+    true,
+    "8,560,629,512"
+   ]
+  ],
+  "structure": {
+   "tutorWithCode": true,
+   "runStacked": true
+  },
+  "serialiseDetail": {
+   "builder": [
+    true,
+    621,
+    622,
+    476,
+    476
+   ],
+   "files": [
+    true,
+    627,
+    627,
+    476,
+    476
+   ],
+   "code": [
+    true,
+    629,
+    629,
+    478,
+    478
+   ],
+   "canvas": [
+    true,
+    621,
+    622,
+    476,
+    476
+   ],
+   "run": [
+    true,
+    634,
+    634,
+    996,
+    996
+   ],
+   "tutor": [
+    true,
+    627,
+    627,
+    476,
+    476
+   ]
+  },
+  "serialise": {
+   "jsonBytes": 1316,
+   "roundTripMaxPxDiff": 479,
+   "visibilityMismatches": 0,
+   "sample": "{\"grid\":{\"root\":{\"type\":\"branch\",\"data\":[{\"type\":\"branch\",\"data\":[{\"type\":\"leaf\",\"data\":{\"views\":[\"files\"],\"activeView\":\"files\",\"id\":\"2\"},\"size\":512},{\"type\":\"leaf\",\"data\":{\"views\":[\"code\",\"tutor\"],\"activeView\":\"tutor\",\"id\":\"3\"},\"size\":512}],\"size\":628.6666666666666},{\"type\":\"branch\",\"data\":[{\"type\""
+  },
+  "unknownId": {
+   "threw": true,
+   "msg": "Cannot read properties of undefined (reading 'parentElement')",
+   "panelsLeft": 0
+  },
+  "popout": {
+   "ok": true,
+   "pages": 2,
+   "runInPopup": true,
+   "mainStillHasRun": false,
+   "afterCloseRunBackInMain": true
+  }
+ }
+}

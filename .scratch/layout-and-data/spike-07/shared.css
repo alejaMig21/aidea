@@ -1,0 +1,9 @@
+/* Tokens copied from src/ui/index.html (ui-style.md): surfaces, text, card radius 12, gap 8. */
+:root { --bg:#0e1014; --bar:#12151b; --canvas:#11141a; --panel:#151921; --raised:#1b2030; --selected:#252c40; --line:#222838; --text:#e6e9f0; --label:#b4bccd; --muted:#8a93a8; --accent:#6ea8ff; --sans: system-ui, sans-serif; --mono: ui-monospace, Consolas, monospace; }
+html, body { margin:0; height:100%; background:var(--bg); color:var(--text); font:13px/1.4 var(--sans); overflow:hidden; }
+#app { position:absolute; inset:40px 8px 8px 8px; }
+#bar { position:absolute; left:0; right:0; top:0; height:40px; background:var(--bar); display:flex; align-items:center; padding:0 12px; font-size:15px; }
+.body { height:100%; overflow:auto; font-size:13.5px; }
+.msg { margin:8px; padding:8px 10px; background:var(--raised); border-radius:10px; }
+.row { height:26px; line-height:26px; padding-left:14px; font-size:13px; }
+.code { font:12.5px/1.6 var(--mono); white-space:pre; padding:8px; }
