@@ -1,6 +1,6 @@
 # Interface style
 
-The interface is plain CSS and JavaScript (ADR 0003). Its look comes from one scale of sizes and colours that every Panel shares: the Builder, the Canvas and the right slot (Tutor, Run). A Panel that adds its own size or colour stands out from the rest, so a change to the look uses this scale and, when the scale is missing something, extends the scale first.
+The interface is plain CSS and JavaScript (ADR 0003). Its look comes from one scale of sizes and colours that every Panel shares: the Builder, the Canvas, Run and the Tutor. A Panel that adds its own size or colour stands out from the rest, so a change to the look uses this scale and, when the scale is missing something, extends the scale first.
 
 ## Sizes
 
@@ -13,7 +13,7 @@ Defined by use in `src/ui/index.html` and the feature files. Pick the size by th
 | 12px | secondary text: hints, descriptions, metadata, buttons inside cards |
 | 12.5px, `--mono`, line height 1.6 | code text: the source lines of the Code layer, the values and output of Playback |
 | 13px | controls and diagram text |
-| 13.5px | the title of a Panel of the right slot (Tutor, Run), a button that folds it |
+| 13.5px | the title of a Panel (Builder, Run, Tutor) |
 | 13.5px | reading text: the chat, a question, an explanation, anything the person reads or answers |
 | 14px | emphasis inside a card (a card title, a step title) |
 | 15px | the app title (`h1`) |

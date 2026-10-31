@@ -112,7 +112,7 @@ function drawRequirements(g, nodes, rects, select) {
   g.append(...cards, ...nodes.flatMap((n) => reqTrace(n, at(n))));
 }
 
-// The right panel also lists what a card only shows in part.
+// The Tutor panel also lists what a card only shows in part.
 const showRationaleWithoutRequirements = showRationale;
 showRationale = (n) => {
   showRationaleWithoutRequirements(n);

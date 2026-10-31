@@ -8,9 +8,9 @@ const PARTS: Record<string, Part> = {
   "first look": {
     name: "The first look",
     hint: "What am I looking at?",
-    what: `The window has three panels side by side: the "Builder" on the left, where you talk to Claude Code; the "Canvas" in the middle, where your project is drawn as layers; and the "Tutor" on the right, which teaches you. In the top bar, the project name opens your recent projects, "Open folder..." and "Home". The buttons at the right of the top bar show or hide the panels; in a wide window you can hide the "Canvas" too, and in a narrow one the Builder and the right panel open over it.`,
+    what: `The window has three panels side by side: the "Builder" on the left, where you talk to Claude Code; the "Canvas" in the middle, where your project is drawn as layers; and the "Tutor" on the right, which teaches you. When you open a function's flow, a fourth panel, "Run", appears between the Canvas and the Tutor. In the top bar, the project name opens your recent projects, "Open folder..." and "Home". The buttons at the right of the top bar show or hide the panels; in a wide window you can hide the "Canvas" too, and in a narrow one the panels open over it.`,
     question: "Which of the three would you look at first, and why?",
-    example: "Hide the Builder and the right panel to give the drawing the whole window, then bring them back.",
+    example: "Hide the Builder and the Tutor to give the drawing the whole window, then bring them back.",
     narration: "Let's start with what is on your screen right now.",
     tryIt: `Press the buttons at the right of the top bar one by one, for example "Show or hide the Canvas", and see which panel comes and goes. Press each one again to bring it back.`,
   },
@@ -35,7 +35,7 @@ const PARTS: Record<string, Part> = {
   proposals: {
     name: "Proposals",
     hint: "How do changes get in?",
-    what: `When the builder or the Tutor wants to change a written layer, it makes a Proposal. A Proposal is drawn with a dashed outline on the Canvas, the chat shows a line with a "Review" button, and nothing is saved until you press "Accept" in the right panel; "Reject" throws it away. If the builder suggests something that is already there, or already waiting, the chat says so, and for a waiting one it has an "Open it" button.`,
+    what: `When the builder or the Tutor wants to change a written layer, it makes a Proposal. A Proposal is drawn with a dashed outline on the Canvas, the chat shows a line with a "Review" button, and nothing is saved until you press "Accept" in the Tutor panel; "Reject" throws it away. If the builder suggests something that is already there, or already waiting, the chat says so, and for a waiting one it has an "Open it" button.`,
     question: "Why might you want to read a change before accepting it?",
     example: "The builder suggests a requirement you did not ask for; you reject it and nothing changes.",
     narration: "Nothing reaches your written layers without your say. Every change arrives as a Proposal first.",

@@ -229,15 +229,15 @@
   <button type="button" id="refresh" title="Read the code of this project again, after you edited it" hidden>Refresh</button>
   <button type="button" id="guide-open" title="A short class on how aidea works (a quick tour until the Tutor is available)">How aidea works</button>
   <div id="fold-buttons" role="group" aria-label="Show or hide panels">
-    <button type="button" id="fold-chat" aria-pressed="true" aria-label="Chat" title="Show or hide the chat"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M6 3v10"/></svg></button>
+    <button type="button" id="fold-chat" aria-pressed="true" aria-label="Builder" title="Show or hide the Builder"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M6 3v10"/></svg></button>
     <button type="button" id="fold-canvas" aria-pressed="true" aria-label="Canvas" title="Show or hide the Canvas"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M5 3v10M11 3v10"/></svg></button>
     <button type="button" id="fold-run" aria-pressed="false" aria-label="Run" title="Show or hide Run"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M7 3v10"/></svg></button>
     <button type="button" id="fold-right" aria-pressed="true" aria-label="Tutor" title="Show or hide the Tutor"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M10 3v10"/></svg></button>
   </div>
 </header>
 <!-- DOM order is the keyboard order and matches the visual order: Builder, separator, Canvas, separator, Run, separator, Tutor. -->
-<section id="chat" aria-label="Chat"><h2 class="card-head">Builder</h2></section>
-<div id="sepc" role="separator" aria-orientation="vertical" aria-label="Resize chat" tabindex="0"></div>
+<section id="chat" aria-label="Builder"><h2 class="card-head">Builder</h2></section>
+<div id="sepc" role="separator" aria-orientation="vertical" aria-label="Resize the Builder" tabindex="0"></div>
 <main>
   <svg id="canvas" role="img" aria-label="Canvas"><g id="world"></g></svg>
   <p id="no-code" hidden></p>

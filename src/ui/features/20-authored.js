@@ -1,4 +1,4 @@
-// Authored layers: Business, Requirements and Architecture Nodes on the Canvas, Rationale in the right panel.
+// Authored layers: Business, Requirements and Architecture Nodes on the Canvas, Rationale in the Tutor panel.
 // The core validates and shapes everything; this file only draws what GET /authored returns.
 const AUTHORED_LAYERS = [
   { key: "business", label: "Business", detail: (n) => n.block },

@@ -284,16 +284,14 @@ draw = async (nodes) => {
   await drawWithoutPlayback(nodes);
 };
 
-// The Run panel belongs to the Flow layer: opening a Flow shows it, leaving hides it and pauses the replay.
+// The Run panel belongs to the Flow layer: opening a Flow makes it available (shown unless the person hid it), leaving makes it unavailable and pauses the replay.
 const showLayerWithoutPlayback = showLayer;
 showLayer = (which) => {
   showLayerWithoutPlayback(which);
   if (which !== "flow" || !pbNode()) { pbStop(); layoutSetRunAvailable(false); }
   else {
-    const runWasOff = !layoutRunAvailable;
-    layoutSetRunAvailable(true);
+    layoutSetRunAvailable(true); // Run appears unless the person folded it: that choice stays
     if (pbRenderedFor !== pbGraph) pbRender(); // keep what the person typed unless the graph changed
-    if (runWasOff) layoutShowPane("run"); // only when it first appears: a fold the person chose stays
     if (pbRecording) { $("algorithm").classList.add("has-recording"); pbShowStep(); }
   }
 };

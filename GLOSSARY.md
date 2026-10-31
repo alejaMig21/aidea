@@ -195,5 +195,5 @@ A Layout saved with a name, to return to it in one click. Some come with aidea a
 _Avoid_: Profile, theme
 
 **Run**:
-The Panel for running the open function: the form for the data of a test and the Playback. It appears while a Flow is open and is visible at the same time as the Tutor.
+The Panel for running the open function: the form for the data of a test and the Playback. It is a card of its own between the Canvas and the Tutor, never part of the Tutor's: it appears while a Flow is open, and the person can hide it like any other Panel.
 _Avoid_: Algorithm column, Algorithm panel

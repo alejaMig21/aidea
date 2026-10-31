@@ -26,6 +26,8 @@ const layoutEdge = 8; // the margin between a card and the window's edge
     body.canvas-folded main, body.canvas-folded #sepx { display: none; }
     body.canvas-folded.run-folded #sepr { display: none; }
     body.canvas-folded.chat-folded #sepc, body.canvas-folded.run-folded.right-folded #sepc { display: none; }
+    /* With the Canvas and the Builder both hidden, the first card on screen has no neighbour on its left: it gets the window margin. */
+    body.canvas-folded.chat-folded:not(.run-folded) #run, body.canvas-folded.chat-folded.run-folded #right { margin-left: ${layoutEdge}px; }
     /* The failure line lives in <main> over the Canvas; with the Canvas hidden it moves to the body (layoutApply) and floats at the bottom of the window. */
     body > #error { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; max-width: min(560px, calc(100vw - 32px)); z-index: 25; padding: 6px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
     #fold-canvas:disabled, #fold-run:disabled { opacity: .45; cursor: default; }
@@ -187,6 +189,7 @@ function layoutShowPane(name) {
 function layoutSetRunAvailable(on) {
   if (layoutRunAvailable === on) return;
   layoutRunAvailable = on;
+  if (!on && layoutDrawer === "run") layoutDrawer = null; // the Flow closed under an open Run drawer: nothing left to show in it
   layoutApply();
 }
 
