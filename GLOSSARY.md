@@ -9,11 +9,11 @@ The single zoomable, pannable surface where all layers of a project are shown as
 _Avoid_: Whiteboard, diagram, board
 
 **Layer**:
-One level of abstraction of a project (business, requirements, architecture, components and data, algorithms, code) that becomes visible at a given zoom depth.
+One level of abstraction of a project (business, requirements, architecture, components and data, flow, code) that becomes visible at a given zoom depth.
 _Avoid_: Level, tier, view
 
 **Lens**:
-Information laid over a layer that already exists, such as a measurement of cost on the Components and Algorithms layers, without becoming a layer of its own or changing the stack of layers.
+Information laid over a layer that already exists, such as a measurement of cost on the Components and Flow layers, without becoming a layer of its own or changing the stack of layers.
 _Avoid_: Overlay layer, mode
 
 **Authored layer**:
@@ -36,9 +36,9 @@ _Avoid_: Explanation, notes
 A named set of nodes on the architecture layer that together realise an architectural pattern, with each node labelled by its role in it.
 _Avoid_: Template, blueprint
 
-**Algorithm graph**:
-The flowchart of one function: its steps, decisions and loops drawn with the notation engineers know for flowcharts, so that Playback can animate it.
-_Avoid_: UML diagram
+**Flow**:
+The flowchart of one function: its steps, decisions and loops drawn with the notation engineers know for flowcharts, so that Playback can animate it. Also the name of the layer that draws it.
+_Avoid_: Algorithm graph, Algorithms (as a layer name), UML diagram
 
 **Notation**:
 The shapes and arrows a layer draws with, and what each of them means. Every layer follows the notation engineers already know for that kind of diagram, in aidea's own visual style, and says in its legend what it covers and what it leaves out.
@@ -57,7 +57,7 @@ How sure a derived layer is about a relationship it drew: resolved, inferred fro
 _Avoid_: Confidence, accuracy
 
 **Playback**:
-An animated run of an algorithm graph showing which step is active and how values change.
+An animated run of a Flow showing which step is active and how values change.
 _Avoid_: Simulation, debug view
 
 **Recording**:
@@ -190,4 +190,4 @@ _Avoid_: Sidebar, panel, pane
 The column that belongs to the Tutor: explanations, questions and class mode. It holds nothing else.
 
 **Algorithm column**:
-The column for everything about the algorithms layer: the form for the data of a test and the Playback. Its tab is always in the right slot and is enabled only while an algorithm is open.
+The column for everything about the Flow layer: the form for the data of a test and the Playback. Its tab is always in the right slot and is enabled only while a Flow is open. (Becomes the Run panel in ticket 02 of layout-and-data.)

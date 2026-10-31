@@ -46,7 +46,7 @@ const ALLOWED: Record<string, Record<string, string>> = {
     "cp-label": "the word written on a relationship (the relationship rows)",
     "cp-q": "the ? beside an unresolved relationship (the unresolved row)",
   },
-  algorithms: {
+  flow: {
     "flow-label": "the exit label written on an edge (the Diamond and Red dashed rows)",
     exception: "the exception type written on a red edge (the Red dashed row)",
     "has-recording": "the state of the whole graph while a Playback is loaded",
@@ -135,7 +135,7 @@ test("the page ran without errors and recorded a run of the function", { skip },
   assert.ok(report.recording && report.recording.steps > 5, "no recording was played");
 });
 
-for (const layer of ["business", "requirements", "architecture", "components", "algorithms"]) {
+for (const layer of ["business", "requirements", "architecture", "components", "flow"]) {
   test(`${layer}: every legend entry corresponds to something drawn`, { skip }, () => {
     const { rows, colours, drawnTones } = report.layers[layer];
     const problems = [

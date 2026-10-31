@@ -78,7 +78,7 @@ test("a long function through the algorithm route lays out", async () => {
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "long.py"), `def long(x):\n${Array.from({ length: 800 }, (_, i) => `    x = x + ${i}`).join("\n")}\n    return x\n`);
   await t.post("/projects", { path: dir });
-  const res = await t.get(`/algorithm?project=${encodeURIComponent(dir)}&node=long.long`);
+  const res = await t.get(`/flow?project=${encodeURIComponent(dir)}&node=long.long`);
   assert.equal(res.status, 200);
   const g = (await res.json()) as { rects: unknown[] };
   assert.equal(g.rects.length, 803); // start, 800 assignments, return, end

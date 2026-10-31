@@ -43,7 +43,7 @@ function traceCell(tag, text, className) {
 }
 
 function traceRender() {
-  const rec = authoredShown === "algorithms" && pbGraph ? pbRecording : null;
+  const rec = authoredShown === "flow" && pbGraph ? pbRecording : null;
   traceBox.hidden = !rec;
   if (!rec) { traceBody.replaceChildren(); return; }
   const label = new Map((algoGraph?.steps ?? []).map((s) => [s.id, s.label]));

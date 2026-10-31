@@ -22,7 +22,7 @@ type Edge = { from: string; to: string; label?: string; back?: boolean };
 type Rect = { id: string; x: number; y: number; width: number; height: number };
 
 const algorithm = (node: string) =>
-  t.get(`/algorithm?project=${encodeURIComponent(fixture("flow"))}&node=${encodeURIComponent(node)}`);
+  t.get(`/flow?project=${encodeURIComponent(fixture("flow"))}&node=${encodeURIComponent(node)}`);
 
 // Edges described by the labels of their ends, so the expectations read like the picture.
 const describe = (steps: Step[], edges: Edge[]) => {
@@ -30,7 +30,7 @@ const describe = (steps: Step[], edges: Edge[]) => {
   return edges.map((e) => `${label.get(e.from)} -> ${label.get(e.to)}${e.label ? ` [${e.label}]` : ""}${e.back ? " (back)" : ""}`).sort();
 };
 
-test("a method with a loop and a branch becomes an Algorithm graph with matching steps and branches", async () => {
+test("a method with a loop and a branch becomes a Flow with matching steps and branches", async () => {
   const res = await algorithm("shapes.Scorer.classify");
   assert.equal(res.status, 200);
   const g = await res.json();
@@ -154,7 +154,7 @@ test("a file that can no longer be read as Python is reported, not turned into a
   cpSync(fixture("flow"), dir, { recursive: true });
   await t.post("/projects", { path: dir });
   writeFileSync(join(dir, "shapes.py"), "def drain(total:\n    return total\n");
-  const res = await t.get(`/algorithm?project=${encodeURIComponent(dir)}&node=shapes.drain`);
+  const res = await t.get(`/flow?project=${encodeURIComponent(dir)}&node=shapes.drain`);
   assert.equal(res.status, 422);
   assert.match((await res.json()).error, /cannot be read as Python/);
 });
@@ -183,11 +183,11 @@ test("the core lays the graph out top to bottom and frames it", async () => {
   assert.deepEqual(g.frame, { x: -24, y: -24, width: right + 48, height: bottom + 48 });
 });
 
-test("asking for an Algorithm graph with bad input gives clear errors", async () => {
+test("asking for a Flow with bad input gives clear errors", async () => {
   const project = encodeURIComponent(fixture("flow"));
-  assert.equal((await t.get("/algorithm")).status, 400);
-  assert.equal((await t.get(`/algorithm?project=${project}`)).status, 400);
-  assert.equal((await t.get(`/algorithm?project=${encodeURIComponent(fixture("flow") + "-never-opened")}&node=x`)).status, 404);
+  assert.equal((await t.get("/flow")).status, 400);
+  assert.equal((await t.get(`/flow?project=${project}`)).status, 400);
+  assert.equal((await t.get(`/flow?project=${encodeURIComponent(fixture("flow") + "-never-opened")}&node=x`)).status, 404);
   assert.equal((await algorithm("shapes.nope")).status, 404);
   const notAFunction = await algorithm("shapes.Scorer");
   assert.equal(notAFunction.status, 422);

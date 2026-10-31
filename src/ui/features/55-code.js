@@ -40,7 +40,7 @@ let codeLost = ""; // the sentence shown instead of a Node that a refresh could 
 let codeRequest = 0; // numbers the requests so a slow answer cannot replace a newer one
 let codeProject = null;
 
-const codeLabel = (layer) => layer === "algorithms" ? "Algorithms" : layerBar.querySelector(`[data-layer="${layer}"]`)?.textContent ?? layer; // the Algorithms tab also names the open function
+const codeLabel = (layer) => layer === "flow" ? "Flow" : layerBar.querySelector(`[data-layer="${layer}"]`)?.textContent ?? layer; // the Algorithms tab also names the open function
 const codeBackTarget = () => {
   const back = codeFocus?.back ?? "components";
   return layerBar.querySelector(`[data-layer="${back}"]`)?.disabled ? "components" : back;
@@ -224,5 +224,5 @@ notationRegisterLegend("code", {
     [notationSwatch(`<text x="22" y="16" text-anchor="end" style="fill:var(--muted);font:12px var(--mono)">12</text>`), "Grey numbers: the line numbers of the file, left out when you copy the text", "#code-body .cl"],
   ],
   colours: [["accent", "Blue: the lines in focus"]],
-  notShown: ["Syntax colours: the text is shown exactly as written", "Editing: the view is read-only, use Open in my editor to change the file", "Files over 500 KB, or files that are not text", "What the code does when it runs (see Algorithms and Playback)"],
+  notShown: ["Syntax colours: the text is shown exactly as written", "Editing: the view is read-only, use Open in my editor to change the file", "Files over 500 KB, or files that are not text", "What the code does when it runs (see Flow and Playback)"],
 });

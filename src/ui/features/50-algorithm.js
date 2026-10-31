@@ -43,10 +43,10 @@ svg.prepend(defs);
 
 const algoGroup = el("g", { id: "algorithm" });
 const algoTab = document.createElement("button");
-algoTab.textContent = "Algorithms";
-algoTab.dataset.layer = "algorithms";
+algoTab.textContent = "Flow";
+algoTab.dataset.layer = "flow";
 algoTab.disabled = true;
-algoTab.onclick = () => showLayer("algorithms");
+algoTab.onclick = () => showLayer("flow");
 layerBar.append(algoTab);
 
 // This view is one more layer: shown only when asked for, hidden by every other layer.
@@ -54,7 +54,7 @@ const showLayerWithoutAlgorithms = showLayer;
 showLayer = (which) => {
   showLayerWithoutAlgorithms(which);
   if (algoGroup.parentNode !== $("world")) $("world").append(algoGroup);
-  algoGroup.style.display = which === "algorithms" ? "" : "none";
+  algoGroup.style.display = which === "flow" ? "" : "none";
 };
 
 // One symbol per step kind (flowchart notation): stadium = start, end, return, raise; diamond = if, match, case, loops;
@@ -144,7 +144,7 @@ function flowReplay(visits, index, previous) {
 {
   const sw = (inner) => notationSwatch(`<g style="fill:var(--raised);stroke:var(--control);stroke-width:1.4">${inner}</g>`);
   const arrow = (colour, dash) => notationSwatch(`<path d="M2 12H36" style="stroke:${colour};stroke-width:1.6;${dash ? "stroke-dasharray:5 4" : ""}"/><path d="M34 7L42 12L34 17" style="fill:none;stroke:${colour};stroke-width:1.5"/>`);
-  notationRegisterLegend("algorithms", {
+  notationRegisterLegend("flow", {
     shapes: [
       [sw(`<rect x="3" y="5" width="38" height="14" rx="7"/>`), "Rounded: start, end and return", ".flow-start, .flow-end, .flow-return"],
       [sw(`<rect x="3" y="5" width="38" height="14" rx="7" style="stroke:var(--danger);fill:#ff8a8018"/>`), "Rounded, red: raise (the function stops with an error)", ".flow-raise"],
@@ -187,7 +187,7 @@ let algoOpenId = null; // the function whose graph is open, so a refresh can rea
 async function algoOpen(id, keepView = false) {
   const project = current;
   const request = ++algoRequest;
-  const res = await fetch(`/algorithm?project=${encodeURIComponent(project)}&node=${encodeURIComponent(id)}`);
+  const res = await fetch(`/flow?project=${encodeURIComponent(project)}&node=${encodeURIComponent(id)}`);
   const body = await res.json();
   if (project !== current || request !== algoRequest) return false; // another Project or function was opened meanwhile
   $("error").textContent = res.ok ? "" : body.error;
@@ -196,9 +196,9 @@ async function algoOpen(id, keepView = false) {
   algoOpenId = id;
   drawAlgorithm(body);
   algoTab.disabled = false;
-  algoTab.textContent = `Algorithm: ${id.split(".").pop()}`;
+  algoTab.textContent = `Flow: ${id.split(".").pop()}`;
   document.dispatchEvent(new CustomEvent("algorithm-opened", { detail: body }));
-  showLayer("algorithms");
+  showLayer("flow");
   if (!keepView) fit(body.frame, 1); // a flow graph is never blown up past its natural size
   return true;
 }

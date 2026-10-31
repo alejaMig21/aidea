@@ -151,7 +151,7 @@ async function refreshProject() {
     if (has(module)) await componentsLoad(module);
     else if (testsOpen) await componentsLoad(null, true);
     else await draw(body.nodes);
-    if (layer === "algorithms") { if (!(has(algo) && await algoOpen(algo, true))) showLayer("components"); }
+    if (layer === "flow") { if (!(has(algo) && await algoOpen(algo, true))) showLayer("components"); }
     await codeRefresh(body.nodes, layer);
     if (!has(codeSelected)) codeSelected = null;
     if (project === current) { Object.assign(view, saved); apply(); }

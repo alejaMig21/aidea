@@ -7,7 +7,7 @@ import { adapterFor } from "../src/core/adapters.ts";
 import type { Flow } from "../src/core/adapters.ts";
 import { startTestCore } from "./helpers.ts";
 
-// The flow graph of a TypeScript or JavaScript function, asked through the adapter (the protocol seam) and through the core's /algorithm route.
+// The flow graph of a TypeScript or JavaScript function, asked through the adapter (the protocol seam) and through the core's /flow route.
 // The expected steps and edges are written by hand from the code of each fixture, in the shape the Python flow has (see algorithm.test.ts).
 
 const roots: string[] = [];
@@ -279,10 +279,10 @@ let t: Awaited<ReturnType<typeof startTestCore>>;
 before(async () => { t = await startTestCore(); });
 after(() => t.core.close());
 
-test("the /algorithm route lays out the graph of a TypeScript function like a Python one", async () => {
+test("the /flow route lays out the graph of a TypeScript function like a Python one", async () => {
   const dir = project(sources);
   await t.post("/projects", { path: dir });
-  const res = await t.get(`/algorithm?project=${encodeURIComponent(dir)}&node=${encodeURIComponent("src/shapes.classify")}`);
+  const res = await t.get(`/flow?project=${encodeURIComponent(dir)}&node=${encodeURIComponent("src/shapes.classify")}`);
   assert.equal(res.status, 200);
   const g = await res.json();
   assert.equal(g.steps.length, 8);

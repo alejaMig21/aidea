@@ -18,7 +18,7 @@ export const LAYER_CONCEPTS: Record<string, string[]> = {
   requirements: ["functional vs non-functional requirement", "acceptance criteria"],
   architecture: ["container", "relationship", "boundary"],
   components: ["module", "class", "dependency"],
-  algorithms: ["decision", "loop", "trace"],
+  flow: ["decision", "loop", "trace"],
 };
 export const isLayer = (x: unknown): x is string => typeof x === "string" && Object.hasOwn(LAYER_CONCEPTS, x);
 

@@ -33,7 +33,7 @@
 
   // The elements that belong to a layer. Components is everything in the world except the authored layers and the Algorithm graph.
   const roots = (layer) => layer === "components" ? [...$("world").children].filter((c) => c !== authoredGroup && c !== algoGroup)
-    : layer === "algorithms" ? [algoGroup] : [authoredGroup.querySelector(`[data-layer="${layer}"]`)];
+    : layer === "flow" ? [algoGroup] : [authoredGroup.querySelector(`[data-layer="${layer}"]`)];
   const within = (layer) => roots(layer).flatMap((r) => [r, ...r.querySelectorAll("*")]);
   const matching = (layer, selector) => roots(layer).flatMap((r) => [...(r.matches(selector) ? [r] : []), ...r.querySelectorAll(selector)]);
 
@@ -67,9 +67,9 @@
   // Algorithms: open a function the way the UI does (double-click on its Node in Components), then record a run that raises.
   showLayer("components");
   $("world").querySelector('rect[data-id="tour.tour"]').dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
-  await until(() => algoGraph && authoredShown === "algorithms" && $("pb-record"), "the Algorithm graph");
+  await until(() => algoGraph && authoredShown === "flow" && $("pb-record"), "the Algorithm graph");
   await pause(100);
-  collect("algorithms");
+  collect("flow");
   $("pb-v-items").value = "[1, -2, 5, 120]";
   $("pb-v-mode").value = '"fast"';
   $("pb-v-path").value = '"missing.txt"';
@@ -77,7 +77,7 @@
   await until(() => pbRecording, "the recording");
   pbGo(pbRecording.visits.length - 1);
   await pause(1000);
-  collect("algorithms");
+  collect("flow");
   report.recording = { steps: pbRecording.visits.length, error: pbRecording.error?.type };
 
   for (const [layer, got] of Object.entries(seen)) {

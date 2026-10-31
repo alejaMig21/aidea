@@ -289,7 +289,7 @@ draw = async (nodes) => {
 const showLayerWithoutPlayback = showLayer;
 showLayer = (which) => {
   showLayerWithoutPlayback(which);
-  if (which !== "algorithms" || !pbNode()) { pbStop(); rightSetTabEnabled("algorithm", false); }
+  if (which !== "flow" || !pbNode()) { pbStop(); rightSetTabEnabled("algorithm", false); }
   else {
     rightSetTabEnabled("algorithm", true);
     if (pbRenderedFor !== pbGraph) pbRender(); // keep what the person typed unless the graph changed

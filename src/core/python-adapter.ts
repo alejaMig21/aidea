@@ -21,7 +21,7 @@ export const pythonAdapter: LanguageAdapter = {
     try {
       return JSON.parse(await runPython("flow.py", [file, qualifiedName], { timeoutMs: 30_000 }));
     } catch (e) {
-      explain(e, "Building the Algorithm graph took too long");
+      explain(e, "Building the Flow took too long");
     }
   },
 

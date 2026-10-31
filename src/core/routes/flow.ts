@@ -1,4 +1,4 @@
-// Algorithms layer: the control-flow graph of one function, laid out and framed by the core.
+// Flow layer: the control-flow graph of one function, laid out and framed by the core.
 import { AdapterError, adapterFor } from "../adapters.ts";
 import { frameOf, layoutFlow } from "../layout.ts";
 import { locate, moduleAndName } from "../locate.ts";
@@ -6,13 +6,13 @@ import type { Handler } from "../types.ts";
 
 const handler: Handler = async (req, res, core) => {
   const url = new URL(req.url ?? "/", "http://core");
-  if (req.method !== "GET" || url.pathname !== "/algorithm") return false;
+  if (req.method !== "GET" || url.pathname !== "/flow") return false;
 
   const found = locate(core, res, url.searchParams.get("project"), url.searchParams.get("node"));
   if (!found) return true;
   const { project, node, file } = found;
   if (node.kind !== "function") {
-    core.send(res, 422, { error: "The Node is not a function: only functions have an Algorithm graph" });
+    core.send(res, 422, { error: "The Node is not a function: only functions have a Flow" });
     return true;
   }
 
@@ -20,7 +20,7 @@ const handler: Handler = async (req, res, core) => {
 
   const adapter = adapterFor(project.path);
   if (!adapter.flow) {
-    core.send(res, 422, { error: "This project's language cannot draw an Algorithm graph yet" });
+    core.send(res, 422, { error: "This project's language cannot draw a Flow yet" });
     return true;
   }
   let flow;

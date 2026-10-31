@@ -31,7 +31,7 @@ async function graphOf(source: string, name: string): Promise<Graph> {
   writeFileSync(join(dir, "m.py"), source);
   const opened = await t.post("/projects", { path: dir });
   assert.ok(opened.ok);
-  const res = await t.get(`/algorithm?project=${encodeURIComponent(dir)}&node=${encodeURIComponent("m." + name)}`);
+  const res = await t.get(`/flow?project=${encodeURIComponent(dir)}&node=${encodeURIComponent("m." + name)}`);
   assert.equal(res.status, 200);
   return res.json();
 }

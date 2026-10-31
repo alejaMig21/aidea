@@ -1,5 +1,5 @@
 // Language adapters: everything that depends on the language of a Project's code lives behind one of these.
-// The routes (projects.ts, algorithm.ts, playback.ts) only talk to `adapterFor(...)`; the first adapter is Python (python-adapter.ts).
+// The routes (projects.ts, flow.ts, playback.ts) only talk to `adapterFor(...)`; the first adapter is Python (python-adapter.ts).
 // ADR 0004 explains why.
 //
 // An adapter has three operations. `analyze` is required; `flow` and `run` are optional, and the routes answer
@@ -85,7 +85,7 @@ export function adapterFor(projectPath: string): LanguageAdapter {
         relationships: all.flatMap((a) => a.relationships), unresolved: all.reduce((n, a) => n + a.unresolved, 0),
       };
     },
-    ...(mine.some((a) => a.flow) && { flow: async (file: string, name: string) => { const o = of(file, "draw an Algorithm graph for"); if (!o.adapter?.flow) throw o.says(); return o.adapter.flow(file, name); } }),
+    ...(mine.some((a) => a.flow) && { flow: async (file: string, name: string) => { const o = of(file, "draw a Flow for"); if (!o.adapter?.flow) throw o.says(); return o.adapter.flow(file, name); } }),
     ...(mine.some((a) => a.examples) && { examples: async (path: string, file: string, name: string) => { const o = of(file, "read tests of"); return o.adapter?.examples ? o.adapter.examples(path, file, name) : []; } }),
     ...(mine.some((a) => a.run) && { run: async (req: RunRequest) => { const o = of(req.file, "run functions of"); if (!o.adapter?.run) throw o.says(); return o.adapter.run(req); } }),
   };

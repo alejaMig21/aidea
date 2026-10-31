@@ -183,7 +183,7 @@ const COMPONENTS_ELEMENTS: Record<string, Element> = {
     what: "One named action in the code, which takes some values and gives something back.",
     question: "What goes in, and what comes out?",
     example: "apply_discount takes a cart and a code and returns the new total.",
-    narration: "Functions are single actions. The Algorithms layer opens one up step by step.",
+    narration: "Functions are single actions. The Flow layer opens one up step by step.",
   },
   relationship: {
     name: "Relationship",
@@ -203,7 +203,7 @@ const COMPONENTS_ELEMENTS: Record<string, Element> = {
   },
 };
 
-const ALGORITHMS_ELEMENTS: Record<string, Element> = {
+const FLOW_ELEMENTS: Record<string, Element> = {
   "start and end": {
     name: "Start and end",
     hint: "Where does it begin and finish?",
@@ -287,13 +287,13 @@ export const LAYER_HELP: Record<string, LayerHelp> = {
     order: ["package", "class", "function", "relationship", "certainty"],
     elements: COMPONENTS_ELEMENTS,
   },
-  algorithms: {
-    name: "Algorithms",
+  flow: {
+    name: "Flow",
     what: "The path through one function, step by step: what happens, where it chooses and where it repeats. It is drawn from the code, never written by hand.",
     question: "What does this function do, in what order, and what can make it go another way?",
     example: "Pay: check the cart, charge the card, save the order.",
     order: ["start and end", "step", "decision", "loop", "return or error", "input and output"],
-    elements: ALGORITHMS_ELEMENTS,
+    elements: FLOW_ELEMENTS,
   },
 };
 

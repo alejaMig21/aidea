@@ -44,7 +44,7 @@ test("opening a project, drawing a flow and running a function all go through th
   assert.deepEqual((await opened.json()).nodes.map((n: { id: string }) => n.id), ["m", "m.f"]);
 
   const q = `project=${encodeURIComponent(dir)}&node=m.f`;
-  const flow = await t.get(`/algorithm?${q}`);
+  const flow = await t.get(`/flow?${q}`);
   assert.equal(flow.status, 200);
   assert.equal((await flow.json()).steps.length, 2);
   assert.deepEqual(calls, [`analyze ${dir}`, "flow f"]);
@@ -60,9 +60,9 @@ test("an adapter that cannot draw a flow answers in plain words, not with a cras
   const { flow, ...noFlow } = fake;
   registerAdapter("python", noFlow);
   try {
-    const res = await t.get(`/algorithm?project=${encodeURIComponent(dir)}&node=m.f`);
+    const res = await t.get(`/flow?project=${encodeURIComponent(dir)}&node=m.f`);
     assert.equal(res.status, 422);
-    assert.match((await res.json()).error, /cannot draw an Algorithm graph yet/);
+    assert.match((await res.json()).error, /cannot draw a Flow yet/);
   } finally {
     registerAdapter("python", fake);
   }
@@ -75,10 +75,10 @@ test("in a project that holds two languages, a function of the language without 
     writeFileSync(join(mixed, "n.ts"), "export function g() { return 1; }\n");
     assert.equal((await t.post("/projects", { path: mixed })).status, 201);
     const q = (node: string) => `project=${encodeURIComponent(mixed)}&node=${node}`;
-    const ts = await t.get(`/algorithm?${q("n.g")}`); // TypeScript has a flow now: it is drawn by its own adapter, not Python's
+    const ts = await t.get(`/flow?${q("n.g")}`); // TypeScript has a flow now: it is drawn by its own adapter, not Python's
     assert.equal(ts.status, 200);
     assert.equal((await ts.json()).steps[0].label, "g()");
-    assert.equal((await t.get(`/algorithm?${q("m.f")}`)).status, 200); // the Python function still draws
+    assert.equal((await t.get(`/flow?${q("m.f")}`)).status, 200); // the Python function still draws
     registerAdapter("python", { ...fake, async run() { return { outcome: { steps: [] }, interpreter: "fake" }; } });
     const run = await t.post("/playback", { project: mixed, node: "n.g" });
     assert.equal(run.status, 422);

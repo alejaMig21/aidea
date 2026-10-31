@@ -298,7 +298,7 @@ test("the Prober gets its own short instructions, the layer's concepts as data i
   await t.runProbe({ layer: "business", redo: true, model: "sonnet" });
   assert.equal(launches.find((l) => l.role === "prober")!.model, "sonnet");
   launches.length = 0;
-  assert.equal((await t.post("/tutor/probes", { project, layer: "algorithms", model: "gpt" })).status, 400);
+  assert.equal((await t.post("/tutor/probes", { project, layer: "flow", model: "gpt" })).status, 400);
   const other = await newCore([], "sonnet");
   await other.runProbe({ layer: "components" });
   assert.equal(launches.find((l) => l.role === "prober")!.model, "sonnet", "the learner model setting is the default");
@@ -309,7 +309,7 @@ test("the request is checked: an open Project and a known layer", async () => {
   assert.equal((await t.post("/tutor/probes", { project: "/nope", layer: "architecture" })).status, 400);
   const bad = await t.post("/tutor/probes", { project, layer: "plumbing" });
   assert.equal(bad.status, 400);
-  assert.match((await bad.json()).error, /business.*requirements.*architecture.*components.*algorithms/s);
+  assert.match((await bad.json()).error, /business.*requirements.*architecture.*components.*flow/s);
   assert.equal((await fetch(t.core.url + `/tutor/probes?project=${encodeURIComponent(project)}&layer=plumbing`)).status, 400);
   assert.equal((await fetch(t.core.url + `/tutor/probes?project=%2Fnope&layer=business`)).status, 400);
 });
@@ -317,7 +317,7 @@ test("the request is checked: an open Project and a known layer", async () => {
 test("a Prober that ends without handing over a result is reported and stores nothing", async () => {
   const t = await newCore();
   prober = () => (async function* () { yield { type: "text", text: "I forgot" } as AgentEvent; })();
-  const events = await t.runProbe({ layer: "algorithms" });
+  const events = await t.runProbe({ layer: "flow" });
   assert.ok(events.some((e) => e.type === "error" && /result/i.test(e.message)));
-  assert.equal((await t.get(`/tutor/probes?project=${encodeURIComponent(project)}&layer=algorithms`)).result, null);
+  assert.equal((await t.get(`/tutor/probes?project=${encodeURIComponent(project)}&layer=flow`)).result, null);
 });

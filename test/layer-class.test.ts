@@ -33,7 +33,7 @@ async function newCore() {
 }
 after(() => cores.forEach((c) => c.close()));
 
-const LAYERS = ["business", "requirements", "architecture", "components", "algorithms"];
+const LAYERS = ["business", "requirements", "architecture", "components", "flow"];
 const JARGON = /\b(UML|C4|ISO|DDD|SOLID|hexagonal|polymorphism|cyclomatic|AST|CFG|idempotent)\b/i;
 
 test("each of the five layers has teaching content: a description, a guiding question, an example, and per element a hint, what it is, a question, an example and a narration", async () => {
@@ -97,5 +97,5 @@ test("an unknown layer is refused naming the layers", async () => {
   const t = await newCore();
   const res = await t.post("/tutor/classes", { project, layer: "code" });
   assert.equal(res.status, 400);
-  assert.match((await res.json()).error, /business, requirements, architecture, components, algorithms/);
+  assert.match((await res.json()).error, /business, requirements, architecture, components, flow/);
 });

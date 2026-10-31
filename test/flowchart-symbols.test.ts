@@ -17,7 +17,7 @@ type Edge = { from: string; to: string; label?: string; exit?: string; exception
 type Rect = { id: string; x: number; y: number; width: number; height: number };
 
 async function tour() {
-  const res = await t.get(`/algorithm?project=${encodeURIComponent(fixture("flow"))}&node=symbols.tour`);
+  const res = await t.get(`/flow?project=${encodeURIComponent(fixture("flow"))}&node=symbols.tour`);
   assert.equal(res.status, 200);
   const g = (await res.json()) as { steps: Step[]; edges: Edge[]; rects: Rect[] };
   const step = (label: string) => {
@@ -65,7 +65,7 @@ test("calls to the known input and output functions carry an io flag", async () 
 });
 
 test("a call in any expression position flags its step: with items, for iterables, if tests, return values; eval is not I/O", async () => {
-  const res = await t.get(`/algorithm?project=${encodeURIComponent(fixture("flow"))}&node=symbols.reads`);
+  const res = await t.get(`/flow?project=${encodeURIComponent(fixture("flow"))}&node=symbols.reads`);
   const steps = ((await res.json()) as { steps: Step[] }).steps;
   const io = (label: string) => steps.find((s) => s.label === label)?.io;
   assert.equal(io("with open(path)"), "input");
@@ -74,7 +74,7 @@ test("a call in any expression position flags its step: with items, for iterable
   assert.equal(io("return input('again? ')"), "input");
   assert.ok(!io("eval('1')"));
   assert.ok(steps.find((s) => s.label === "pass")?.io === undefined);
-  const rects = ((await (await t.get(`/algorithm?project=${encodeURIComponent(fixture("flow"))}&node=symbols.reads`)).json()) as { rects: Rect[]; steps: Step[] });
+  const rects = ((await (await t.get(`/flow?project=${encodeURIComponent(fixture("flow"))}&node=symbols.reads`)).json()) as { rects: Rect[]; steps: Step[] });
   const ret = rects.rects.find((r) => r.id === rects.steps.find((s) => s.label === "return input('again? ')")!.id)!;
   assert.equal(ret.height, 40, "a return that reads input is still a terminator, not a parallelogram");
 });

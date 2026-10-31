@@ -24,7 +24,7 @@ after(() => {
 type Entry = { step: string; locals: Record<string, string> };
 const record = (node: string, body: Record<string, unknown> = {}) => t.post("/playback", { project, node, ...body });
 const labelsOf = async (node: string) => {
-  const g = await (await t.get(`/algorithm?project=${encodeURIComponent(project)}&node=${encodeURIComponent(node)}`)).json();
+  const g = await (await t.get(`/flow?project=${encodeURIComponent(project)}&node=${encodeURIComponent(node)}`)).json();
   const label = new Map<string, string>(g.steps.map((s: { id: string; label: string }) => [s.id, s.label]));
   return (entry: Entry) => label.get(entry.step);
 };
