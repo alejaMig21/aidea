@@ -1,7 +1,8 @@
 // Files panel: the folder hierarchy of the open Project (GET /files), a tree whose folders open and close. It is read-only and shows what the
 // core lists: ignored folders (dependencies, caches, build output, version control) stay closed, a file in a language aidea can read says which.
 // The tree is asked for only while the panel is on screen, because the core reads the folder to answer. Names are prefixed "files".
-// Keys (ARIA tree): Up and Down move between rows, Right opens a folder or enters it, Left closes it or goes to its parent, Enter and Space toggle a folder.
+// Keys (ARIA tree): Up and Down move between rows, Right opens a folder or enters it, Left closes it or goes to its parent, Enter and Space toggle a folder
+// or choose a file: choosing a file shows its text in the Code panel (55-code.js).
 {
   const style = document.createElement("style");
   style.textContent = `
@@ -12,8 +13,9 @@
     #pane-files li:focus-visible { outline: none; }
     #pane-files li:focus-visible > .files-row { outline: 2px solid var(--accent); outline-offset: -2px; }
     #pane-files .files-row { display: flex; align-items: center; gap: 6px; min-height: 26px; padding: 2px 14px 2px calc(14px + var(--depth) * 14px); color: var(--text); font: 13px var(--sans); }
-    #pane-files li[aria-expanded] > .files-row:not(.files-ignored) { cursor: pointer; }
-    #pane-files li[aria-expanded] > .files-row:not(.files-ignored):hover { background: var(--raised); }
+    #pane-files li[aria-expanded] > .files-row:not(.files-ignored), #pane-files li[data-kind="file"] > .files-row { cursor: pointer; }
+    #pane-files li[aria-expanded] > .files-row:not(.files-ignored):hover, #pane-files li[data-kind="file"] > .files-row:hover { background: var(--raised); }
+    #pane-files li[aria-selected="true"] > .files-row { background: var(--selected); box-shadow: inset 3px 0 0 var(--accent); }
     #pane-files .files-caret { flex: none; width: 10px; font-size: 11px; color: var(--muted); }
     #pane-files .files-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     #pane-files .files-tag { flex: none; font-size: 12px; color: var(--muted); }
@@ -28,6 +30,7 @@ const filesPane = $("pane-files");
 const filesOpenFolders = new Set(); // the folders the person opened, kept while the tree is read again
 let filesLoadedFor = null; // the Project whose tree is on screen
 let filesFailedFor = null; // the Project whose last read failed: it is not tried again until something changes
+let filesSelected = null; // the path of the file chosen, shown in the Code panel
 let filesLoading = false; // a read is under way: nothing starts a second one
 let filesStale = true; // what is on screen may differ from the disk (the Project was opened or refreshed)
 
@@ -57,7 +60,13 @@ function filesRow(entry, depth) {
   const row = filesEl("div", { className: `files-row${ignored ? " files-ignored" : ""}${entry.kind === "file" && !entry.analysed ? " files-plain" : ""}`, title }, caret, filesEl("span", { className: "files-name", textContent: entry.name }), ...tag);
   row.style.setProperty("--depth", depth);
   li.append(row);
-  if (entry.kind === "file" || ignored) return li;
+  if (entry.kind === "file") {
+    li.setAttribute("aria-selected", String(entry.path === filesSelected));
+    li.chooseFile = () => filesChoose(entry.path);
+    row.onclick = () => { li.focus(); li.chooseFile(); };
+    return li;
+  }
+  if (ignored) return li;
   let group = null;
   li.openFolder = (open) => {
     li.setAttribute("aria-expanded", String(open));
@@ -82,6 +91,13 @@ function filesList(folder, depth) {
   return ul;
 }
 
+// Chooses a file: it is marked and its text opens in the Code panel.
+function filesChoose(path) {
+  filesSelected = path;
+  for (const li of filesPane.querySelectorAll("li[data-kind='file']")) li.setAttribute("aria-selected", String(li.dataset.path === path));
+  codeOpenFile(path);
+}
+
 // The rows the person can move to now: entries whose folders are all open.
 const filesRows = (tree) => [...tree.querySelectorAll("li[data-path]")].filter((li) => li.offsetParent !== null);
 
@@ -98,7 +114,7 @@ function filesKey(tree, e) {
     case "End": go(rows.at(-1)); break;
     case "ArrowRight": if (folder && !open) li.openFolder(true); else if (folder) go(rows[at + 1]); break;
     case "ArrowLeft": if (folder && open) li.openFolder(false); else go(li.parentElement.closest("li[data-path]")); break;
-    case "Enter": case " ": if (!folder) return; li.openFolder(!open); break;
+    case "Enter": case " ": if (folder) li.openFolder(!open); else li.chooseFile(); break;
     default: return;
   }
   e.preventDefault();
@@ -115,7 +131,7 @@ async function filesLoad() {
     const body = await res.json();
     if (project !== current) return; // another Project was opened meanwhile: filesEnsure reads that one
     if (!res.ok) { filesLoadedFor = null; filesFailedFor = project; filesNote(body.error ?? "The files could not be read."); return; }
-    if (filesLoadedFor !== project) filesOpenFolders.clear(); // another Project: its folders start closed
+    if (filesLoadedFor !== project) { filesOpenFolders.clear(); filesSelected = null; } // another Project: its folders start closed and no file is chosen
     const kept = { scroll: filesPane.scrollTop, focus: document.activeElement?.closest?.("#pane-files li[data-path]")?.dataset.path };
     filesLoadedFor = project;
     filesFailedFor = null;

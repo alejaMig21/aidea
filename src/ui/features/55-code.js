@@ -1,68 +1,69 @@
-// Code layer: the exact source text behind what the person is looking at, as a view in the Canvas area (not a floating box).
-// It shows the whole file of a Node with line numbers, the Node's lines (or an Algorithm step's) highlighted and scrolled into view.
-// All text comes from the core (GET /source?whole=1); nothing here derives anything from the code. Names start with "code" because
-// every feature file shares one global scope.
+// Code panel: the exact source text behind what the person is looking at, in a card of its own beside the Canvas (not a layer, not a floating box).
+// It shows the whole file with line numbers and syntax colours, the lines of a Node or a Flow step highlighted and scrolled into view.
+// A file is chosen in the Files panel; a Node's code is opened from the Details ("View code") or from a step of a Flow.
+// All text comes from the core (GET /source); nothing here derives anything from the code. Names start with "code" because every feature
+// file shares one global scope.
 {
   const style = document.createElement("style");
   style.textContent = `
-    #code-view { position: absolute; left: 15px; right: 15px; top: 62px; bottom: 15px; z-index: 0; display: flex; flex-direction: column; min-height: 0; background: var(--raised); border: 1px solid var(--control); border-radius: 12px; overflow: hidden; }
-    body.code-open #zoom { display: none; }
-    #code-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+    #pane-code { flex: 1 1 auto; min-height: 0; padding: 0; gap: 0; overflow: hidden; }
+    #code-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px; border-bottom: 1px solid var(--line); flex: none; }
     #code-head .where { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
     #code-head strong { font-size: 14px; font-weight: 500; color: var(--text); }
     #code-head .lines { margin-left: 8px; font-size: 12px; color: var(--muted); }
     #code-head button { font-size: 13px; }
-    #code-head button.quiet { background: transparent; color: var(--text); border: 1px solid var(--control); }
     #code-head input { flex: 1 1 100%; min-width: 0; font-size: 13px; }
     #code-head .note { flex-basis: 100%; font-size: 12px; color: var(--muted); }
     #code-body { position: relative; flex: 1 1 auto; min-height: 0; overflow: auto; padding: 8px 0; font: 12.5px/1.6 var(--mono); font-variant-ligatures: none; /* the text is shown exactly as written */ color: var(--text); }
     #code-body .cl { width: max-content; min-width: 100%; padding: 0 12px; white-space: pre; tab-size: 4; }
     #code-body .cl::before { content: attr(data-n); display: inline-block; width: var(--gutter, 4ch); margin-right: 16px; text-align: right; color: var(--muted); user-select: none; }
     #code-body .cl.hit { background: color-mix(in srgb, var(--accent) 16%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
-    #code-body .said { margin: 0; padding: 14px 16px; font: 13.5px/1.5 var(--sans); white-space: normal; }
+    #code-body .said { margin: 0; padding: 14px 16px; font: 13.5px/1.5 var(--sans); white-space: normal; color: var(--muted); }
+    #code-body .tk-k { color: var(--syn-keyword); } #code-body .tk-s { color: var(--syn-string); } #code-body .tk-n { color: var(--syn-number); } #code-body .tk-c { color: var(--muted); }
     #panel .code-pick { margin: 6px 0 10px; font-size: 13.5px; overflow-wrap: anywhere; }
   `;
   document.head.append(style);
 }
 
-const codeView = Object.assign(document.createElement("section"), { id: "code-view", hidden: true });
-codeView.setAttribute("aria-label", "Code layer");
-const codeHead = Object.assign(document.createElement("div"), { id: "code-head" });
+const codeHead = Object.assign(document.createElement("div"), { id: "code-head", hidden: true });
 const codeBody = Object.assign(document.createElement("div"), { id: "code-body", tabIndex: 0 });
-codeView.append(codeHead, codeBody);
-document.querySelector("main").append(codeView);
+$("pane-code").append(codeHead, codeBody);
 
-const CODE_EMPTY = "Select a class, function or module on Components, or open a step of a Flow.";
-let codeFocus = null; // what the view shows: { node, step: { algo, id } | null, back: the layer it was opened from }
-let codeSelected = null; // the Node selected on Components; the Code tab and "View code" open it
-let codePending = false; // a Node was selected after the view was last opened
+const CODE_EMPTY = "Choose a file in Files, or select a class, function or module on Components and press View code.";
+let codeFocus = null; // what the panel shows: { node, step: { algo, id } | null } for a Node, { path } for a file
+let codeSelected = null; // the Node selected on Components; "View code" opens it
 let codeLost = ""; // the sentence shown instead of a Node that a refresh could not find any more
 let codeRequest = 0; // numbers the requests so a slow answer cannot replace a newer one
 let codeProject = null;
 
-const codeLabel = (layer) => layer === "flow" ? "Flow" : layerBar.querySelector(`[data-layer="${layer}"]`)?.textContent ?? layer; // the Flow tab also names the open function
-const codeBackTarget = () => {
-  const back = codeFocus?.back ?? "components";
-  return layerBar.querySelector(`[data-layer="${back}"]`)?.disabled ? "components" : back;
+// Syntax colours. ponytail: a line at a time with one regular expression per language, so a string or comment that spans lines is coloured wrongly
+// after its first line; a real parser per language is the upgrade if that bothers anyone. Files over 4000 lines are shown plain.
+const codeWords = (w) => `\\b(?:${w.trim().split(/\s+/).join("|")})\\b`;
+const codeLanguages = {
+  python: { ext: ["py", "pyw"], comment: "#", words: "False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield" },
+  script: { ext: ["js", "mjs", "cjs", "jsx", "ts", "tsx", "mts", "cts"], comment: "//", words: "abstract as async await break case catch class const continue debugger default delete do else enum export extends false finally for from function if implements import in instanceof interface let new null of private protected public readonly return static super switch this throw true try type typeof undefined var void while with yield" },
 };
-
-function codeBackButton() {
-  const target = codeBackTarget();
-  const back = Object.assign(document.createElement("button"), { type: "button", className: "quiet", textContent: `Back to ${codeLabel(target)}` });
-  back.setAttribute("aria-label", `Back to the ${codeLabel(target)} layer`);
-  back.onclick = codeGoBack;
-  return back;
-}
-function codeGoBack() {
-  const target = codeBackTarget();
-  showLayer(target);
-  layerBar.querySelector(`[data-layer="${target}"]`)?.focus();
+for (const l of Object.values(codeLanguages)) l.re = new RegExp(`(${l.comment}.*$)|("(?:\\\\.|[^"\\\\])*"|'(?:\\\\.|[^'\\\\])*'|\`(?:\\\\.|[^\`\\\\])*\`)|(\\b\\d[\\d_.]*\\b)|(${codeWords(l.words)})`, "g");
+const codeLanguageOf = (file) => Object.values(codeLanguages).find((l) => l.ext.includes(file.slice(file.lastIndexOf(".") + 1).toLowerCase()));
+// The pieces of one line: [class, text] pairs, "" for plain text.
+function codeSegments(text, language) {
+  const out = [];
+  let at = 0;
+  for (const m of text.matchAll(language.re)) {
+    if (m.index > at) out.push(["", text.slice(at, m.index)]);
+    out.push([m[1] !== undefined ? "tk-c" : m[2] !== undefined ? "tk-s" : m[3] !== undefined ? "tk-n" : "tk-k", m[0]]);
+    at = m.index + m[0].length;
+  }
+  if (at < text.length) out.push(["", text.slice(at)]);
+  return out;
 }
 
 // A plain sentence in place of the file (nothing in focus, a file that cannot be shown, a Node that is gone).
-function codeSay(text, withBack) {
-  codeHead.replaceChildren(...(withBack ? [codeBackButton()] : []));
-  codeHead.hidden = !withBack;
+function codeSay(text, where) {
+  const title = where && Object.assign(document.createElement("div"), { className: "where" });
+  title?.append(Object.assign(document.createElement("strong"), { textContent: where }));
+  codeHead.replaceChildren(...(title ? [title] : []));
+  codeHead.hidden = !where;
   const p = Object.assign(document.createElement("p"), { className: "said", textContent: text });
   p.setAttribute("role", "status");
   codeBody.replaceChildren(p);
@@ -103,18 +104,22 @@ function codeEditorControls(nodeId) {
   return [picker, btn, template, note];
 }
 
+// `nodeId` is the Node behind the text, when there is one: only then is "Open in my editor" offered (ticket 06 adds it for any file).
 function codeRender(body, nodeId) {
   const where = Object.assign(document.createElement("div"), { className: "where" });
-  const lines = body.endLine > body.line ? `lines ${body.line} to ${body.endLine}` : `line ${body.line}`;
-  where.append(Object.assign(document.createElement("strong"), { textContent: body.file }), Object.assign(document.createElement("span"), { className: "lines", textContent: lines }));
-  codeHead.replaceChildren(where, ...codeEditorControls(nodeId), codeBackButton());
+  where.append(Object.assign(document.createElement("strong"), { textContent: body.file }));
+  if (body.line) where.append(Object.assign(document.createElement("span"), { className: "lines", textContent: body.endLine > body.line ? `lines ${body.line} to ${body.endLine}` : `line ${body.line}` }));
+  codeHead.replaceChildren(where, ...(nodeId ? codeEditorControls(nodeId) : []));
   codeHead.hidden = false;
   const rows = body.text.split(/\r?\n/);
   if (rows.length > 1 && rows[rows.length - 1] === "") rows.pop();
+  const language = rows.length <= 4000 ? codeLanguageOf(body.file) : undefined;
   codeBody.style.setProperty("--gutter", `${Math.max(3, String(rows.length).length)}ch`);
   const frag = document.createDocumentFragment();
   rows.forEach((text, i) => {
-    const row = Object.assign(document.createElement("div"), { className: i + 1 >= body.line && i + 1 <= body.endLine ? "cl hit" : "cl", textContent: text });
+    const row = Object.assign(document.createElement("div"), { className: body.line && i + 1 >= body.line && i + 1 <= body.endLine ? "cl hit" : "cl" });
+    if (language) row.append(...codeSegments(text, language).map(([cls, part]) => (cls ? Object.assign(document.createElement("span"), { className: cls, textContent: part }) : document.createTextNode(part))));
+    else row.textContent = text;
     row.dataset.n = i + 1;
     frag.append(row);
   });
@@ -123,58 +128,72 @@ function codeRender(body, nodeId) {
   codeBody.setAttribute("aria-label", `Source text of ${body.file}`);
 }
 
-// Scrolls the highlighted lines into view; the view must be on screen for the measures to mean anything.
+// Scrolls the highlighted lines into view; the panel must be on screen for the measures to mean anything.
 function codeScroll() {
   const first = codeBody.querySelector(".hit");
-  if (first) codeBody.scrollTop = Math.max(0, first.offsetTop - codeBody.offsetTop - codeBody.clientHeight / 3);
+  codeBody.scrollTop = first ? Math.max(0, first.offsetTop - codeBody.clientHeight / 3) : 0;
 }
 
-// Reads a Node's file into the view without showing the layer. `range` ({from, to}) and `step` ({algo, id}) come from a step of an Algorithm graph.
-async function codeLoad(nodeId, range, step, back) {
+// Reads a Node's file, or a file by its path, into the panel without showing it. `range` ({from, to}) and `step` ({algo, id}) come from a step of a Flow.
+async function codeLoad(focus, range) {
   const project = current, request = ++codeRequest;
-  const query = `project=${encodeURIComponent(project)}&node=${encodeURIComponent(nodeId)}&whole=1${range ? `&from=${range.from}&to=${range.to}` : ""}`;
-  const res = await fetch(`/source?${query}`);
+  const target = focus.path !== undefined ? `file=${encodeURIComponent(focus.path)}` : `node=${encodeURIComponent(focus.node)}&whole=1`;
+  const res = await fetch(`/source?project=${encodeURIComponent(project)}&${target}${range ? `&from=${range.from}&to=${range.to}` : ""}`);
   const body = await res.json();
-  if (project !== current || request !== codeRequest) return false; // another Project or Node was opened meanwhile
-  codeFocus = { node: nodeId, step, back };
-  codePending = false;
+  if (project !== current || request !== codeRequest) return false; // another Project or file was opened meanwhile
+  codeFocus = focus;
   codeLost = "";
-  if (res.ok) codeRender(body, nodeId); else codeSay(body.error, true);
+  if (res.ok) codeRender(body, focus.node); else codeSay(body.error, focus.path ?? focus.node);
   return res.ok;
 }
 
-// Opens the Code layer on a Node; the way back is the layer the person comes from.
+// Shows the panel (a drawer in a narrow window) and the highlighted lines in it.
+async function codeShow(ok) {
+  layoutShowPane("code");
+  await new Promise((done) => requestAnimationFrame(done)); // the card has its size once the layout has been applied
+  if (ok) codeScroll();
+}
+
+// Opens the panel on a Node's code; `step` marks it as the lines of a Flow step.
 async function codeOpen(nodeId, range, step = null) {
   if (!current) return false;
-  const ok = await codeLoad(nodeId, range, step, authoredShown === "code" ? codeFocus?.back ?? "components" : authoredShown);
-  if (codeFocus?.node !== nodeId) return false; // a newer request owns the view
-  showLayer("code");
-  codeScroll();
+  const focus = { node: nodeId, step };
+  const ok = await codeLoad(focus, range);
+  if (codeFocus !== focus) return false; // a newer request owns the panel
+  await codeShow(ok);
   return ok;
 }
 
-// A refresh read the code again: the view shows the same Node if it still exists and says so if it does not. `layer` is where the person was.
-async function codeRefresh(nodes, layer) {
+// Opens the panel on a file by its path in the Project (what the Files panel knows), optionally with lines to highlight.
+async function codeOpenFile(path, range) {
+  if (!current) return false;
+  const focus = { path };
+  const ok = await codeLoad(focus, range);
+  if (codeFocus !== focus) return false;
+  await codeShow(ok);
+  return ok;
+}
+
+// A refresh read the code again: the panel shows the same Node or file again, and says so if the Node does not exist any more.
+async function codeRefresh(nodes) {
   if (!codeFocus) return;
-  const { node, step, back } = codeFocus;
+  const { node, step, path } = codeFocus;
+  if (path !== undefined) { await codeLoad({ path }); return; }
   if (!nodes.some((n) => n.id === node)) {
     codeFocus = null;
     codeLost = `${node.split(".").pop()} is not in the code any more: it was moved, renamed or deleted. Select another on Components.`;
-    if (layer === "code") codeSay(codeLost, true);
+    codeSay(codeLost);
     return;
   }
-  // A step's lines are the graph's: from Code the graph is read again (that switches layer, so Code is shown again below); from Algorithms it already was.
-  if (step && layer === "code" && !(algoGraph && algoOpenId === step.algo) && nodes.some((n) => n.id === step.algo)) await algoOpen(step.algo, true);
+  // A step's lines are the graph's: they are kept only while that Flow is still the one open.
   const s = step && algoGraph && algoOpenId === step.algo ? algoGraph.steps.find((x) => x.id === step.id) : null;
-  await codeLoad(node, s ? { from: s.line, to: s.endLine ?? s.line } : undefined, s ? step : null, back);
-  if (layer === "code") { showLayer("code"); codeScroll(); }
+  await codeLoad({ node, step: s ? step : null }, s ? { from: s.line, to: s.endLine ?? s.line } : undefined);
 }
 
-// Selecting a Node does not open code by itself: the panel offers "View code", and so does the Code tab.
+// Selecting a Node does not open code by itself: the Details offer "View code".
 function onSelect(nodeId) {
   if (!current) return;
   codeSelected = nodeId;
-  codePending = true;
   const n = algoNodes.find((x) => x.id === nodeId);
   const view = Object.assign(document.createElement("button"), { type: "button", textContent: "View code" });
   view.setAttribute("aria-label", `View the code of ${n?.name ?? nodeId}`);
@@ -186,43 +205,11 @@ function onSelect(nodeId) {
   );
 }
 
-// The tab: with a Node selected since last time it opens that Node; otherwise it shows what was shown (or says how to pick something).
-codeTab.disabled = true;
-codeTab.title = "Read the code behind a Node";
-codeTab.onclick = () => {
-  if (codePending && codeSelected && codeSelected !== codeFocus?.node) codeOpen(codeSelected);
-  else showLayer("code");
-};
-
-const showLayerWithoutCode = showLayer;
-showLayer = (which) => {
-  showLayerWithoutCode(which);
-  codeView.hidden = which !== "code";
-  document.body.classList.toggle("code-open", which === "code");
-  layerBar.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" }); // the bar scrolls in a narrow Canvas: the layer on screen stays visible
-  if (which === "code" && !codeFocus) codeSay(codeLost || CODE_EMPTY, Boolean(codeLost));
-};
-
-// A Project with nodes has code to read; a different Project starts with nothing in focus.
+// A different Project starts with nothing in focus.
 const drawWithoutCode = draw;
 draw = async (nodes) => {
-  if (codeProject !== current) { codeProject = current; codeFocus = null; codeSelected = null; codePending = false; codeLost = ""; codeBody.replaceChildren(); }
+  if (codeProject !== current) { codeProject = current; codeFocus = null; codeSelected = null; codeLost = ""; codeSay(CODE_EMPTY); }
   await drawWithoutCode(nodes);
-  codeTab.disabled = !nodes.length;
 };
 
-// Escape goes back to the layer the view was opened from, unless it is closing something else first.
-document.addEventListener("keydown", (e) => {
-  if (e.key !== "Escape" || authoredShown !== "code" || e.cancelBubble || !legendPop.hidden || layoutDrawer || !$("switcher-menu").hidden) return;
-  if (document.activeElement?.matches?.("input, select, textarea")) return;
-  codeGoBack();
-}, true);
-
-notationRegisterLegend("code", {
-  shapes: [
-    [notationSwatch(`<rect x="2" y="4" width="40" height="16" style="fill:color-mix(in srgb, var(--accent) 16%, transparent);stroke:none"/><rect x="2" y="4" width="3" height="16" style="fill:var(--accent);stroke:none"/>`), "Tinted lines with a bar: the lines of the Node or the Flow step you opened", "#code-body .cl.hit"],
-    [notationSwatch(`<text x="22" y="16" text-anchor="end" style="fill:var(--muted);font:12px var(--mono)">12</text>`), "Grey numbers: the line numbers of the file, left out when you copy the text", "#code-body .cl"],
-  ],
-  colours: [["accent", "Blue: the lines in focus"]],
-  notShown: ["Syntax colours: the text is shown exactly as written", "Editing: the view is read-only, use Open in my editor to change the file", "Files over 500 KB, or files that are not text", "What the code does when it runs (see Flow and Playback)"],
-});
+codeSay(CODE_EMPTY);

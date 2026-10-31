@@ -24,7 +24,7 @@
   async function refresh() {
     const mine = ++token;
     const project = current, layer = layerKey();
-    if (!project || layer === "code") { offer.hidden = true; return; } // the Code layer is not a Tutor layer: it has no Probe
+    if (!project) { offer.hidden = true; return; }
     let result = null;
     try {
       const res = await fetch(`/tutor/probes?project=${encodeURIComponent(project)}&layer=${layer}`);

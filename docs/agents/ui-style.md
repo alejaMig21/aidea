@@ -11,7 +11,7 @@ Defined by use in `src/ui/index.html` and the feature files. Pick the size by th
 | 11px | labels: uppercase, `letter-spacing: .08em`, `--muted` (the `h2` of a Panel, a card's kind) |
 | 11px, `--accent` | the name of the phase of a question card (Predict, Review of an earlier class): uppercase, same letter-spacing |
 | 12px | secondary text: hints, descriptions, metadata, buttons inside cards |
-| 12.5px, `--mono`, line height 1.6 | code text: the source lines of the Code layer, the values and output of Playback |
+| 12.5px, `--mono`, line height 1.6 | code text: the source lines of the Code panel, the values and output of Playback |
 | 13px | controls and diagram text |
 | 13.5px | the title of a Panel (Builder, Run, Tutor) |
 | 13.5px | reading text: the chat, a question, an explanation, anything the person reads or answers |
@@ -28,6 +28,8 @@ Three tokens, with their contrast on the panels (all above the 4.5:1 minimum): `
 Text is left-aligned on one edge; a field, a button, a card and a section share the same width and the same margin on both sides; a card never touches the edge of its Panel.
 
 A tree (Files) has rows 26px tall, each level indented 14px more, names at 13px and the language tag at 12px in `--muted`; names of ignored or unreadable entries are `--muted` too, ignored ones in italics.
+
+Source text (the Code panel) may use three syntax colours, `--syn-keyword`, `--syn-string` and `--syn-number`, and `--muted` for comments. They are for text inside code only and carry no meaning; they are not used anywhere else.
 
 ## Checking a change
 

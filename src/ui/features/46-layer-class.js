@@ -109,11 +109,10 @@
     if (unavailable && project === current) guideTour(true);
   };
 
-  // Every layer has the button, except Code; leaving a layer ends its tour (the tour of the app stays).
+  // Every layer has the button; leaving a layer ends its tour (the tour of the app stays).
   const showLayerWithoutClass = showLayer;
   showLayer = (which) => {
     if (which !== authoredShown && !guideTourOpen) { tour.hidden = true; note.hidden = true; }
     showLayerWithoutClass(which);
-    businessWalkOpener.hidden = which === "code";
   };
 }

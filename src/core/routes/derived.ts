@@ -2,10 +2,10 @@ import { spawn } from "node:child_process";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { EDITORS, editorCommand, parseTemplate } from "../editors.ts";
-import { locate } from "../locate.ts";
+import { locate, locateFile } from "../locate.ts";
 import type { Handler } from "../types.ts";
 
-const SOURCE_LIMIT = 500 * 1024; // the Code layer shows a file whole, so a file past this is refused
+const SOURCE_LIMIT = 500 * 1024; // the Code panel shows a file whole, so a file past this is refused
 
 // Node cannot start a `.cmd` shim such as VS Code's `code` without a shell, so on Windows prefer the real executable.
 function defaultEditor(): string {
@@ -19,33 +19,45 @@ function defaultEditor(): string {
 const handler: Handler = async (req, res, core) => {
   const url = new URL(req.url ?? "/", "http://core");
 
+  // A Node's source (`node`), or a whole file by its path in the Project (`file`, what the Files panel knows): both use the same refusals.
   if (req.method === "GET" && url.pathname === "/source") {
-    const found = locate(core, res, url.searchParams.get("project"), url.searchParams.get("node"));
-    if (!found) return true;
-    const { node, file } = found;
     const refuse = (status: number, error: string) => (core.send(res, status, { error }), true);
+    const byPath = url.searchParams.get("node") === null && url.searchParams.get("file") !== null;
+    let file: string, name: string, node: { line: number; endLine: number } | null = null;
+    if (byPath) {
+      const found = locateFile(core, res, url.searchParams.get("project"), url.searchParams.get("file"));
+      if (!found) return true;
+      ({ file, path: name } = found);
+      try { if (statSync(file).isDirectory()) return refuse(400, `${name} is a folder, not a file.`); } catch { /* read below says so */ }
+    } else {
+      const found = locate(core, res, url.searchParams.get("project"), url.searchParams.get("node"));
+      if (!found) return true;
+      ({ file } = found);
+      name = found.node.file;
+      node = found.node;
+    }
     let buffer: Buffer;
     try {
-      if (statSync(file).size > SOURCE_LIMIT) return refuse(413, `${node.file} is too big to show here (over 500 KB). Open it in your editor instead.`);
+      if (statSync(file).size > SOURCE_LIMIT) return refuse(413, `${name} is too big to show here (over 500 KB). Open it in your editor instead.`);
       buffer = readFileSync(file);
     } catch {
-      return refuse(404, `${node.file} could not be read. It may have been moved or deleted; refresh the Project.`);
+      return refuse(404, `${name} could not be read. It may have been moved or deleted; refresh the Project.`);
     }
-    if (buffer.includes(0)) return refuse(415, `${node.file} is not text, so there is no code to show.`);
+    if (buffer.includes(0)) return refuse(415, `${name} is not text, so there is no code to show.`);
     const text = buffer.toString("utf-8");
-    // `whole=1` answers with the entire file; the Node's lines (or `from` and `to`, for a step of an Algorithm) are the ones to highlight.
-    if (url.searchParams.get("whole") === "1") {
+    // `whole=1` (always, for a file by path) answers with the entire file; the Node's lines (or `from` and `to`, for a step of a Flow) are the ones to highlight.
+    if (byPath || url.searchParams.get("whole") === "1") {
       const count = text.split(/\r?\n/).length - (/\r?\n$/.test(text) ? 1 : 0);
-      let [line, endLine] = [node.line, node.endLine];
+      let [line, endLine] = [node?.line, node?.endLine];
       const [from, to] = [url.searchParams.get("from"), url.searchParams.get("to")];
       if (from !== null || to !== null) {
         [line, endLine] = [Number(from ?? NaN), Number(to ?? NaN)];
         if (!Number.isInteger(line) || !Number.isInteger(endLine) || line < 1 || endLine < line || endLine > count) return refuse(400, "from and to must be line numbers inside the file");
       }
-      core.send(res, 200, { file: node.file, line, endLine, text });
+      core.send(res, 200, { file: name, line, endLine, text });
       return true;
     }
-    core.send(res, 200, { file: node.file, line: node.line, endLine: node.endLine, text: text.split(/\r?\n/).slice(node.line - 1, node.endLine).join("\n") });
+    core.send(res, 200, { file: name, line: node!.line, endLine: node!.endLine, text: text.split(/\r?\n/).slice(node!.line - 1, node!.endLine).join("\n") });
     return true;
   }
 

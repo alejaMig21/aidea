@@ -1,16 +1,16 @@
-// Work-session layout: the Builder (chat), Files, Run and the Tutor (right) are four side Panels, each its own card around the Canvas. They are
+// Work-session layout: the Builder (chat), Files, Code, Run and the Tutor (right) are five side Panels, each its own card around the Canvas. They are
 // resized by dragging or with the arrow keys, and folded from the top bar.
-// The grid itself lives in index.html; this file sets its five tracks (--chat-track, --files-track, --canvas-track, --run-track, --right-track),
-// folds panes that do not fit, runs the drawers of narrow windows, and remembers sizes. Names are prefixed "layout" or "right" because every
-// feature file shares one global scope. The key "right" is the Tutor panel, "run" is Run, which only exists while a Flow is open, and "files"
-// is the Files panel, which starts hidden.
+// The grid itself lives in index.html; this file sets its six tracks (--chat-track, --files-track, --code-track, --canvas-track, --run-track,
+// --right-track), folds panes that do not fit, runs the drawers of narrow windows, and remembers sizes. Names are prefixed "layout" or "right"
+// because every feature file shares one global scope. The key "right" is the Tutor panel, "run" is Run (it only exists while a Flow is open),
+// and "files" and "code" start hidden.
 const layoutKey = "aidea.layout";
 const layoutCanvasMin = 360; // the Canvas is never squeezed below this (wide windows)
-const layoutCanvasFr = 800; // the Canvas weight; the panes' weights (380, 300, 420, 540 by default) are on the same scale
-const layoutPaneMin = { chat: 268, files: 240, run: 288, right: 288 }; // 260 and 280 px cards plus their 8px window margin
-const layoutNames = ["chat", "files", "run", "right"]; // left to right
-const layoutLeft = ["chat", "files"]; // the panes on the left of the Canvas; Run and the Tutor are on its right
-const layoutLabel = { chat: "Builder", files: "Files", run: "Run", right: "Tutor" };
+const layoutCanvasFr = 800; // the Canvas weight; the panes' weights (380, 300, 560, 420, 540 by default) are on the same scale
+const layoutPaneMin = { chat: 268, files: 240, code: 320, run: 288, right: 288 }; // 260 and 280 px cards plus their 8px window margin
+const layoutNames = ["chat", "files", "code", "run", "right"]; // left to right
+const layoutLeft = ["chat", "files", "code"]; // the panes on the left of the Canvas; Run and the Tutor are on its right
+const layoutLabel = { chat: "Builder", files: "Files", code: "Code", run: "Run", right: "Tutor" };
 const layoutNarrowBelow = 760; // narrower windows show the panes as drawers
 const layoutStep = 20;
 const layoutSeparatorWidth = 8; // the gap between two cards
@@ -19,27 +19,20 @@ const layoutEdge = 8; // the margin between a card and the window's edge
 {
   const style = document.createElement("style");
   style.textContent = `
-    #sepc, #sepf, #sepx, #sepr { grid-area: sepc; width: ${layoutSeparatorWidth}px; cursor: col-resize; touch-action: none; background: transparent; }
-    #sepf { grid-area: sepf; } #sepx { grid-area: sepx; } #sepr { grid-area: sepr; }
-    #sepc:hover, #sepf:hover, #sepx:hover, #sepr:hover, #sepc:focus-visible, #sepf:focus-visible, #sepx:focus-visible, #sepr:focus-visible, #sepc.dragging, #sepf.dragging, #sepx.dragging, #sepr.dragging { background: var(--accent); outline: none; }
-    body.chat-folded #chat, body.chat-folded #sepc, body.files-folded #files, body.files-folded #sepf, body.run-folded #run, body.run-folded #sepx, body.right-folded #right, body.right-folded #sepr { display: none; }
-    body.chat-folded:not(.files-folded) #files { margin-left: ${layoutEdge}px; } body.chat-folded.files-folded main { margin-left: ${layoutEdge}px; }
-    body.right-folded.run-folded main { margin-right: ${layoutEdge}px; } body.right-folded:not(.run-folded) #run { margin-right: ${layoutEdge}px; }
-    /* With the Canvas hidden the panes share its room and a separator stands only between two neighbours that are on screen. */
-    body.canvas-folded main, body.canvas-folded #sepx { display: none; }
-    body.canvas-folded.run-folded #sepr { display: none; }
-    body.canvas-folded.chat-folded #sepc, body.canvas-folded.files-folded.run-folded.right-folded #sepc { display: none; }
-    body.canvas-folded.run-folded.right-folded #sepf { display: none; }
-    /* With the Canvas and every pane on its left hidden, the first card on screen has no neighbour on its left: it gets the window margin. */
-    body.canvas-folded.chat-folded.files-folded:not(.run-folded) #run, body.canvas-folded.chat-folded.files-folded.run-folded #right { margin-left: ${layoutEdge}px; }
+    #sepc, #sepf, #sepk, #sepx, #sepr { width: ${layoutSeparatorWidth}px; cursor: col-resize; touch-action: none; background: transparent; }
+    #sepc { grid-area: sepc; } #sepf { grid-area: sepf; } #sepk { grid-area: sepk; } #sepx { grid-area: sepx; } #sepr { grid-area: sepr; }
+    #sepc:hover, #sepf:hover, #sepk:hover, #sepx:hover, #sepr:hover, #sepc:focus-visible, #sepf:focus-visible, #sepk:focus-visible, #sepx:focus-visible, #sepr:focus-visible,
+    #sepc.dragging, #sepf.dragging, #sepk.dragging, #sepx.dragging, #sepr.dragging { background: var(--accent); outline: none; }
+    [role="separator"][hidden] { display: none; }
+    body.chat-folded #chat, body.files-folded #files, body.code-folded #code, body.run-folded #run, body.right-folded #right, body.canvas-folded main { display: none; }
     /* The failure line lives in <main> over the Canvas; with the Canvas hidden it moves to the body (layoutApply) and floats at the bottom of the window. */
     body > #error { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; max-width: min(560px, calc(100vw - 32px)); z-index: 25; padding: 6px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
     #fold-canvas:disabled, #fold-run:disabled { opacity: .45; cursor: default; }
     .drawer-close, #scrim { display: none; }
     body.narrow { --canvas-min: 0px; }
     body.narrow #scrim:not([hidden]) { display: block; position: fixed; inset: 51px 0 0 0; z-index: 15; background: rgba(0, 0, 0, .5); }
-    body.narrow.drawer-chat #chat, body.narrow.drawer-files #files, body.narrow.drawer-run #run, body.narrow.drawer-right #right { display: flex; position: fixed; top: 51px; bottom: 0; z-index: 20; width: min(360px, calc(100vw - 16px)); box-shadow: 0 14px 36px rgba(0, 0, 0, .5); }
-    body.narrow.drawer-chat #chat, body.narrow.drawer-files #files { left: 0; }
+    body.narrow.drawer-chat #chat, body.narrow.drawer-files #files, body.narrow.drawer-code #code, body.narrow.drawer-run #run, body.narrow.drawer-right #right { display: flex; position: fixed; top: 51px; bottom: 0; z-index: 20; width: min(360px, calc(100vw - 16px)); box-shadow: 0 14px 36px rgba(0, 0, 0, .5); }
+    body.narrow.drawer-chat #chat, body.narrow.drawer-files #files, body.narrow.drawer-code #code { left: 0; }
     body.narrow.drawer-run #run, body.narrow.drawer-right #right { right: 0; }
     body.narrow .drawer-close:not([hidden]) { display: block; position: absolute; top: 6px; right: 8px; z-index: 1; padding: 3px 10px; background: transparent; color: var(--text); border: 1px solid var(--control); }
   `;
@@ -60,55 +53,60 @@ const layoutEdge = 8; // the margin between a card and the window's edge
 
 // ---- Sizes and folded state. A pane's size is a flex weight (fr), so every visible pane grows and shrinks with the window.
 // Folded (by the person or automatically) means a 0 track with its separator hidden. Automatic folds are never saved.
-// The defaults give the Tutor room (Builder 380, Files 300, Run 420, Tutor 540); a size the person saved by resizing wins over them.
-const layoutDefault = { chat: 380, files: 300, run: 420, right: 540 };
-const layoutState = { ...layoutDefault, chatFolded: false, filesFolded: true, runFolded: false, rightFolded: false, canvasFolded: false };
+// The defaults give the Tutor room (Builder 380, Files 300, Code 560, Run 420, Tutor 540); a size the person saved by resizing wins over them.
+const layoutDefault = { chat: 380, files: 300, code: 560, run: 420, right: 540 };
+const layoutState = { ...layoutDefault, chatFolded: false, filesFolded: true, codeFolded: true, runFolded: false, rightFolded: false, canvasFolded: false };
 // A size is the person's own only once they have dragged a separator: folding a pane used to save all the numbers as if they were choices, and the
 // defaults could then never reach anyone who had used the app. Saves from before the marks count as the person's own when they differ from the old defaults.
-const layoutSized = { chat: false, files: false, run: false, right: false };
+const layoutSized = { chat: false, files: false, code: false, run: false, right: false };
 let layoutRunAvailable = false; // Run has something to show only while a Flow is open
 try {
   const saved = JSON.parse(localStorage.getItem(layoutKey) || "{}");
   for (const f of ["chatFolded", "runFolded", "rightFolded", "canvasFolded"]) layoutState[f] = saved[f] === true;
-  layoutState.filesFolded = saved.filesFolded !== false; // Files stays hidden until the person shows it
+  for (const f of ["filesFolded", "codeFolded"]) layoutState[f] = saved[f] !== false; // these stay hidden until the person shows them
   for (const n of layoutNames) {
     if (saved[n] > 0 && (saved.sized ? saved.sized[n] === true : saved[n] !== { chat: 340, right: 320 }[n])) { layoutState[n] = saved[n]; layoutSized[n] = true; }
   }
 } catch {}
 const layoutSave = () => {
   try {
-    localStorage.setItem(layoutKey, JSON.stringify({ chatFolded: layoutState.chatFolded, filesFolded: layoutState.filesFolded, runFolded: layoutState.runFolded, rightFolded: layoutState.rightFolded, canvasFolded: layoutState.canvasFolded, sized: layoutSized, ...Object.fromEntries(layoutNames.filter((n) => layoutSized[n]).map((n) => [n, layoutState[n]])) }));
+    localStorage.setItem(layoutKey, JSON.stringify({ chatFolded: layoutState.chatFolded, filesFolded: layoutState.filesFolded, codeFolded: layoutState.codeFolded, runFolded: layoutState.runFolded, rightFolded: layoutState.rightFolded, canvasFolded: layoutState.canvasFolded, sized: layoutSized, ...Object.fromEntries(layoutNames.filter((n) => layoutSized[n]).map((n) => [n, layoutState[n]])) }));
   } catch {}
 };
 
+// Where a pane's card ends and the next begins: the track of the panes between it and the edge it is measured from.
+const layoutBefore = (names) => names.reduce((n, o) => n + (layoutShown[o] ? layoutTrack(o) + layoutSeparatorWidth : 0), 0);
 const layoutPanes = {
   chat: { sep: $("sepc"), el: $("chat"), button: $("fold-chat"), fold: "chatFolded", cls: "chat-folded", edge: (x) => x },
-  // Files sits between the Builder and the Canvas: its card ends at its own separator and begins where the Builder's ends.
-  files: { sep: $("sepf"), el: $("files"), button: $("fold-files"), fold: "filesFolded", cls: "files-folded", edge: (x) => x - (layoutShown.chat ? layoutTrack("chat") + layoutSeparatorWidth : 0) },
+  // The panes on the left end at their own separator and begin where the ones before them end.
+  files: { sep: $("sepf"), el: $("files"), button: $("fold-files"), fold: "filesFolded", cls: "files-folded", edge: (x) => x - layoutBefore(["chat"]) },
+  code: { sep: $("sepk"), el: $("code"), button: $("fold-code"), fold: "codeFolded", cls: "code-folded", edge: (x) => x - layoutBefore(["chat", "files"]) },
   // Run sits between the Canvas and the Tutor: its card ends where the Tutor's separator begins.
-  run: { sep: $("sepx"), el: $("run"), button: $("fold-run"), fold: "runFolded", cls: "run-folded", edge: (x) => layoutWidth() - (layoutShown.right ? layoutTrack("right") + layoutSeparatorWidth : 0) - x },
+  run: { sep: $("sepx"), el: $("run"), button: $("fold-run"), fold: "runFolded", cls: "run-folded", edge: (x) => layoutWidth() - layoutBefore(["right"]) - x },
   right: { sep: $("sepr"), el: $("right"), button: $("fold-right"), fold: "rightFolded", cls: "right-folded", edge: (x) => layoutWidth() - x },
 };
-let layoutShown = { chat: true, files: false, run: false, right: true }; // what is really on screen: the person's choice minus automatic folds
+let layoutShown = { chat: true, files: false, code: false, run: false, right: true }; // what is really on screen: the person's choice minus automatic folds
+let layoutMargin = {}; // the window margin each card carries (8px for the outermost card on each side)
 let layoutNarrow = false;
 let layoutCanvasHidden = false; // the person's choice, unless it would leave nothing on screen or the window shows drawers
-let layoutDrawer = null; // "chat" | "files" | "run" | "right" | null, only in narrow windows
+let layoutDrawer = null; // "chat" | "files" | "code" | "run" | "right" | null, only in narrow windows
 let layoutOpener = null; // the button that opened the drawer, which gets the focus back
 let layoutLastOpened = "chat"; // the pane the person opened last is the one auto-fold keeps
 
 const layoutWidth = () => document.documentElement.clientWidth;
 // What the person wants on screen: Run only counts while a Flow is open.
 const layoutWanted = (name) => (name === "run" ? layoutRunAvailable && !layoutState.runFolded : !layoutState[layoutPanes[name].fold]);
+const layoutAnyLeft = (shown) => layoutLeft.some((n) => shown[n]);
 // A side without a pane leaves the Canvas an 8px margin; a pane costs its track minimum plus its separator.
-const layoutEdges = (shown) => (shown.chat || shown.files ? 0 : layoutEdge) + (shown.run || shown.right ? 0 : layoutEdge);
+const layoutEdges = (shown) => (layoutAnyLeft(shown) ? 0 : layoutEdge) + (shown.run || shown.right ? 0 : layoutEdge);
 const layoutNeed = (shown) => (layoutCanvasHidden ? 0 : layoutCanvasMin) + layoutNames.reduce((n, p) => n + (shown[p] ? layoutPaneMin[p] + layoutSeparatorWidth : 0), 0) + layoutEdges(shown);
-// The card plus its 8px window margin: only the outermost card on each side has one (the Builder and the Tutor always do).
-const layoutTrack = (name) => layoutPanes[name].el.offsetWidth + (name === "files" ? (layoutShown.chat ? 0 : layoutEdge) : name === "run" ? (layoutShown.right ? 0 : layoutEdge) : layoutEdge);
+// The card plus the window margin it carries.
+const layoutTrack = (name) => layoutPanes[name].el.offsetWidth + (layoutMargin[name] ?? 0);
 
 function layoutResolve() {
   layoutNarrow = layoutWidth() < layoutNarrowBelow;
   layoutCanvasHidden = !layoutNarrow && layoutState.canvasFolded && layoutNames.some(layoutWanted);
-  if (layoutNarrow) { layoutShown = { chat: false, files: false, run: false, right: false }; return; }
+  if (layoutNarrow) { layoutShown = Object.fromEntries(layoutNames.map((n) => [n, false])); return; }
   layoutDrawer = null;
   layoutShown = Object.fromEntries(layoutNames.map((n) => [n, layoutWanted(n)]));
   // The pane opened last is the last to be folded for lack of room.
@@ -119,6 +117,27 @@ function layoutResolve() {
 function layoutMax(name) {
   const others = layoutNames.filter((n) => n !== name && layoutShown[n]);
   return Math.max(layoutPaneMin[name], layoutWidth() - (layoutCanvasHidden ? 0 : layoutCanvasMin) - layoutSeparatorWidth - others.reduce((n, o) => n + layoutTrack(o) + layoutSeparatorWidth, 0) - layoutEdges(layoutShown));
+}
+
+// Margins and separators follow from what is on screen. The card at each window edge carries the 8px margin; with the Canvas hidden those are the
+// first and last cards shown, otherwise the first of the panes on its left and the last of the panes on its right. A separator stands between two
+// cards that are both on screen: with the Canvas visible each pane has the one on its Canvas side; with it hidden, a left pane's own separator
+// stands between it and whatever comes next, and Run's is not needed.
+function layoutFrame() {
+  const order = layoutNames.filter((n) => layoutShown[n]);
+  const first = order.find((n) => layoutLeft.includes(n) || layoutCanvasHidden);
+  const last = [...order].reverse().find((n) => !layoutLeft.includes(n) || layoutCanvasHidden);
+  layoutMargin = {};
+  for (const [name, p] of Object.entries(layoutPanes)) {
+    const [l, r] = [name === first ? layoutEdge : 0, name === last ? layoutEdge : 0];
+    layoutMargin[name] = l + r;
+    p.el.style.marginLeft = `${l}px`;
+    p.el.style.marginRight = `${r}px`;
+    p.sep.hidden = !layoutShown[name] || (layoutCanvasHidden && (layoutLeft.includes(name) ? order.indexOf(name) === order.length - 1 : name === "run" || !layoutShown.run));
+  }
+  const main = document.querySelector("main");
+  main.style.marginLeft = `${!layoutCanvasHidden && !layoutAnyLeft(layoutShown) ? layoutEdge : 0}px`;
+  main.style.marginRight = `${!layoutCanvasHidden && !(layoutShown.run || layoutShown.right) ? layoutEdge : 0}px`;
 }
 
 function layoutApply() {
@@ -137,6 +156,7 @@ function layoutApply() {
   canvasButton.setAttribute("aria-pressed", String(!layoutCanvasHidden));
   canvasButton.title = layoutNarrow ? "The Canvas stays on screen in a narrow window" : canvasButton.disabled ? "The Canvas stays on screen while every other panel is hidden" : "Show or hide the Canvas";
   $("scrim").hidden = !layoutDrawer;
+  layoutFrame();
   for (const [name, p] of Object.entries(layoutPanes)) {
     const open = layoutNarrow && layoutDrawer === name;
     body.classList.toggle(p.cls, !layoutShown[name]);
@@ -187,7 +207,7 @@ $("scrim").onclick = layoutCloseDrawer;
 // Capture phase: the switcher's own Escape handler closes its popover first, and that Escape must not also close a drawer.
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && layoutDrawer && $("switcher-menu").hidden) layoutCloseDrawer(); }, true);
 
-// Opens a pane ("chat", "files", "run" or "right", the Tutor), as a drawer in a narrow window.
+// Opens a pane ("chat", "files", "code", "run" or "right", the Tutor), as a drawer in a narrow window.
 function layoutShowPane(name) {
   if (layoutNarrow) layoutOpenDrawer(name);
   else { layoutState[layoutPanes[name].fold] = false; layoutLastOpened = name; layoutApply(); layoutSave(); }

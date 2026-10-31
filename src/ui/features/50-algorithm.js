@@ -1,5 +1,5 @@
 // Algorithms layer: double-click a function on the Components layer to see its Algorithm graph;
-// double-click a step to see its lines in the Code layer. The core builds and lays out the graph; this only draws it, in flowchart notation.
+// double-click a step to see its lines in the Code panel. The core builds and lays out the graph; this only draws it, in flowchart notation.
 const algoStyle = document.createElement("style");
 algoStyle.textContent = `
   .flow-edge { stroke: #4a546c; fill: none; stroke-width: 1.6; marker-end: url(#flow-arrow); }

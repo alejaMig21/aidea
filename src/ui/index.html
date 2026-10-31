@@ -17,18 +17,21 @@
     --line: #1d222c; --control: #2c3345; --text: #e6e8ee; --muted: #9aa3b2; --label: #c9cfdb;
     --accent: #8aa4ff; --accent-soft: #b3c4ff; --on-accent: #0e1014; --proposal: #1a2140;
     --authored: #f2b45a; --derived: #4fd1b5; --danger: #ff8a80; --unresolved: #5b6578;
+    /* Syntax colours: only inside source text (the Code panel), never for meaning. Contrast on --panel (the card behind code): keyword 8.6, string 10.2, number 9.5; comments use --muted (6.9). */
+    --syn-keyword: #c3a6ff; --syn-string: #8fd4a8; --syn-number: #f0b27a;
     /* Colour meaning, the same on every layer (45-notation.js): accent = active or in flight, derived = visited or derived, authored = authored, danger = error, unresolved = unresolved or inferred. */
     --module: var(--raised); --class: var(--raised); --function: var(--raised);
     --sans: "Inter", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, monospace;
   }
   * { box-sizing: border-box; }
-  /* Panels: Builder | separator | Files | separator | Canvas | separator | Run | separator | Tutor, each a rounded card under the top bar. The separators are the gaps between cards.
-     Each track is minmax(minimum, weight in fr); 07-layout.js sets the five --*-track values (a folded pane is a 0 track) and the defaults below only
+  /* Panels: Builder | separator | Files | separator | Code | separator | Canvas | separator | Run | separator | Tutor, each a rounded card under the top bar. The separators are the gaps between cards.
+     Each track is minmax(minimum, weight in fr); 07-layout.js sets the six --*-track values (a folded pane is a 0 track) and the defaults below only
      matter before it runs. The shell is exactly the window tall (dvh follows mobile toolbars, vh is the fallback); only the cards scroll inside. */
   html { height: 100%; }
-  body { --chat-track: minmax(268px, 380fr); --canvas-track: minmax(376px, 800fr); --files-track: 0px; --run-track: 0px; --right-track: minmax(288px, 540fr); margin: 0; height: 100%; height: 100vh; height: 100dvh; overflow: hidden; display: grid; grid-template-columns: var(--chat-track) auto var(--files-track) auto var(--canvas-track) auto var(--run-track) auto var(--right-track); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "top top top top top top top top top" "chat sepc files sepf main sepx run sepr right"; background: var(--bg); color: var(--text); font: 13px/1.4 var(--sans); }
-  #chat, #files, main, #run, #right { margin-bottom: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  body { --chat-track: minmax(268px, 380fr); --canvas-track: minmax(376px, 800fr); --files-track: 0px; --code-track: 0px; --run-track: 0px; --right-track: minmax(288px, 540fr); margin: 0; height: 100%; height: 100vh; height: 100dvh; overflow: hidden; display: grid; grid-template-columns: var(--chat-track) auto var(--files-track) auto var(--code-track) auto var(--canvas-track) auto var(--run-track) auto var(--right-track); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "top top top top top top top top top top top" "chat sepc files sepf code sepk main sepx run sepr right"; background: var(--bg); color: var(--text); font: 13px/1.4 var(--sans); }
+  #chat, #files, #code, main, #run, #right { margin-bottom: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
   #chat { grid-area: chat; margin-left: 8px; min-width: 0; display: flex; flex-direction: column; }
+  #code { grid-area: code; min-width: 0; display: flex; flex-direction: column; }
   #files { grid-area: files; min-width: 0; display: flex; flex-direction: column; }
   #run { grid-area: run; min-width: 0; display: flex; flex-direction: column; }
   #right { grid-area: right; margin-right: 8px; min-width: 0; display: flex; flex-direction: column; }
@@ -177,7 +180,7 @@
   #layers .badge { margin-left: 6px; padding: 0 6px; border-radius: 9px; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 700; }
   /* Visual order: authored tabs, then derived tabs; other controls (Zoom out) last. Features append buttons in any order. */
   #layers [data-layer="business"] { order: 1; } #layers [data-layer="requirements"] { order: 2; } #layers [data-layer="architecture"] { order: 3; }
-  #layers [data-layer="components"] { order: 4; } #layers [data-layer="flow"] { order: 5; } #layers [data-layer="code"] { order: 6; }
+  #layers [data-layer="components"] { order: 4; } #layers [data-layer="flow"] { order: 5; }
   #layers > :not([data-layer]) { order: 9; margin-left: 8px; padding: 3px 10px; font-size: 13px; flex: none; }
   #zoom { position: absolute; right: 15px; bottom: 15px; z-index: 1; display: flex; align-items: center; gap: 2px; padding: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; color: var(--muted); }
   #zoom button { background: transparent; border: 0; padding: 3px 9px; font-size: 14px; font-weight: 400; color: var(--muted); }
@@ -232,16 +235,19 @@
   <div id="fold-buttons" role="group" aria-label="Show or hide panels">
     <button type="button" id="fold-chat" aria-pressed="true" aria-label="Builder" title="Show or hide the Builder"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M6 3v10"/></svg></button>
     <button type="button" id="fold-files" aria-pressed="false" aria-label="Files" title="Show or hide the Files"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M4.5 6h3M4.5 8.5h3M4.5 11h3"/></svg></button>
+    <button type="button" id="fold-code" aria-pressed="false" aria-label="Code" title="Show or hide the Code"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M6.5 6 4.5 8l2 2M9.5 6l2 2-2 2"/></svg></button>
     <button type="button" id="fold-canvas" aria-pressed="true" aria-label="Canvas" title="Show or hide the Canvas"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M5 3v10M11 3v10"/></svg></button>
     <button type="button" id="fold-run" aria-pressed="false" aria-label="Run" title="Show or hide Run"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M7 3v10"/></svg></button>
     <button type="button" id="fold-right" aria-pressed="true" aria-label="Tutor" title="Show or hide the Tutor"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M10 3v10"/></svg></button>
   </div>
 </header>
-<!-- DOM order is the keyboard order and matches the visual order: Builder, separator, Files, separator, Canvas, separator, Run, separator, Tutor. -->
+<!-- DOM order is the keyboard order and matches the visual order: Builder, separator, Files, separator, Code, separator, Canvas, separator, Run, separator, Tutor. -->
 <section id="chat" aria-label="Builder"><h2 class="card-head">Builder</h2></section>
 <div id="sepc" role="separator" aria-orientation="vertical" aria-label="Resize the Builder" tabindex="0"></div>
 <section id="files" aria-label="Files"><h2 class="card-head">Files</h2><div id="pane-files"></div></section>
 <div id="sepf" role="separator" aria-orientation="vertical" aria-label="Resize Files" tabindex="0"></div>
+<section id="code" aria-label="Code"><h2 class="card-head">Code</h2><div id="pane-code"></div></section>
+<div id="sepk" role="separator" aria-orientation="vertical" aria-label="Resize Code" tabindex="0"></div>
 <main>
   <svg id="canvas" role="img" aria-label="Canvas"><g id="world"></g></svg>
   <p id="no-code" hidden></p>

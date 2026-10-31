@@ -32,12 +32,24 @@ test("no text a person reads names an area of the window a column or the Run pan
 test("Run and the Tutor are separate cards with their own top-bar button and separator, never one inside the other", () => {
   const html = readFileSync(join(root, "src", "ui", "index.html"), "utf8").replaceAll("\r\n", "\n");
   const at = (id: string) => { const i = html.indexOf(`id="${id}"`); assert.ok(i >= 0, `#${id} exists`); return i; };
-  for (const id of ["fold-run", "fold-files", "pane-run", "pane-files", "pane-tutor"]) at(id);
+  for (const id of ["fold-run", "fold-files", "fold-code", "pane-run", "pane-files", "pane-code", "pane-tutor"]) at(id);
   // The cards stand side by side in this order, so Run is neither inside the Tutor's card nor the other way round.
-  const order = ["sepc", "files", "sepf", "canvas", "sepx", "run", "sepr", "right", "scrim"].map(at);
-  assert.deepEqual([...order].sort((a, b) => a - b), order, "Builder | Files | Canvas | Run | Tutor, each separator between two cards");
+  const order = ["sepc", "files", "sepf", "code", "sepk", "canvas", "sepx", "run", "sepr", "right", "scrim"].map(at);
+  assert.deepEqual([...order].sort((a, b) => a - b), order, "Builder | Files | Code | Canvas | Run | Tutor, each separator between two cards");
   assert.ok(at("pane-run") > at("run") && at("pane-run") < at("sepr"), "Run's body is inside Run's card");
   assert.ok(at("pane-tutor") > at("right") && at("pane-tutor") < at("scrim"), "the Tutor's body is inside the Tutor's card");
+});
+
+// Code is a Panel, not a layer: the Layer bar lists only what the Canvas draws.
+test("there is no Code layer: no tab, no layer id, no legend, and no layer help for it", async () => {
+  const found: string[] = [];
+  for (const file of uiFiles) {
+    for (const l of lines(file)) if (/dataset\.layer\s*=\s*"code"|data-layer="code"|showLayer\(\s*"code"|authoredShown\s*===\s*"code"|notationRegisterLegend\(\s*"code"|\bcodeTab\b/.test(l.text)) found.push(`${file.slice(root.length + 1)}:${l.n}: ${l.text.trim().slice(0, 100)}`);
+  }
+  assert.deepEqual(found, [], `a Code layer is back:\n${found.join("\n")}`);
+  const { layers } = (await (await t.get("/layers/help")).json()) as { layers: Record<string, unknown> };
+  assert.equal(layers.code, undefined);
+  assert.equal((await t.post("/tutor/classes", { project: "x", layer: "code" })).status, 400);
 });
 
 test("the glossary defines Panel, Layout, Preset and Run, and no longer defines Column, Algorithm column or Tutor column", () => {

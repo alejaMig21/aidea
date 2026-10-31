@@ -92,10 +92,6 @@ layerBar.replaceChildren(...[{ key: "components", label: "Components" }, ...AUTH
   b.onclick = () => showLayer(key);
   return b;
 }));
-// The Code layer draws itself in 55-code.js, which enables this tab once a Project with code is open.
-const codeTab = Object.assign(document.createElement("button"), { textContent: "Code", disabled: true });
-codeTab.dataset.layer = "code";
-layerBar.append(codeTab);
 
 // Each time a Project is drawn, fetch its authored files fresh and keep the chosen layer.
 const drawDerived = draw;
