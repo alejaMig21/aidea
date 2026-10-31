@@ -34,11 +34,10 @@ playbackStyle.textContent = `
 `;
 document.head.append(playbackStyle);
 
-// The Run panel: in the right slot beside the Tutor, shown only while a Flow is open.
+// The Run panel: its own card next to the Canvas, shown only while a Flow is open.
 // Proposals stay in #panel, outside it, so deciding on them works whatever is open.
-const pbPane = document.createElement("div");
-rightRegisterPanel("run", "Run", pbPane); // in the page from the start so pbRender can find its fields by id
-rightSetPanelShown("run", false); // until a Flow is open
+const pbPane = $("pane-run"); // in the page from the start so pbRender can find its fields by id
+layoutSetRunAvailable(false); // until a Flow is open
 let pbGraph = null;     // the open Algorithm graph
 let pbRecording = null; // the recording being replayed
 let pbIndex = 0;
@@ -210,7 +209,7 @@ async function pbOfferTestInputs(box, node) {
 
 // Builds the panel: the inputs always, the controls once there is a recording.
 function pbRender() {
-  if (!pbNode()) { rightSetPanelShown("run", false); return; } // the function is gone (another Project): nothing to show
+  if (!pbNode()) { layoutSetRunAvailable(false); return; } // the function is gone (another Project): nothing to show
   pbRenderedFor = pbGraph;
   const node = pbNode();
   const useExample = () => {
@@ -281,7 +280,7 @@ draw = async (nodes) => {
   pbRecording = null;
   pbIndex = 0;
   pbRenderedFor = null;
-  rightSetPanelShown("run", false);
+  layoutSetRunAvailable(false);
   await drawWithoutPlayback(nodes);
 };
 
@@ -289,11 +288,12 @@ draw = async (nodes) => {
 const showLayerWithoutPlayback = showLayer;
 showLayer = (which) => {
   showLayerWithoutPlayback(which);
-  if (which !== "flow" || !pbNode()) { pbStop(); rightSetPanelShown("run", false); }
+  if (which !== "flow" || !pbNode()) { pbStop(); layoutSetRunAvailable(false); }
   else {
-    rightSetPanelShown("run", true);
+    const runWasOff = !layoutRunAvailable;
+    layoutSetRunAvailable(true);
     if (pbRenderedFor !== pbGraph) pbRender(); // keep what the person typed unless the graph changed
-    rightShowPanel("run");
+    if (runWasOff) layoutShowPane("run"); // only when it first appears: a fold the person chose stays
     if (pbRecording) { $("algorithm").classList.add("has-recording"); pbShowStep(); }
   }
 };

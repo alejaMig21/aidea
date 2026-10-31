@@ -8,11 +8,11 @@ const PARTS: Record<string, Part> = {
   "first look": {
     name: "The first look",
     hint: "What am I looking at?",
-    what: `The window has three panels side by side: the "Builder" on the left, where you talk to Claude Code; the "Canvas" in the middle, where your project is drawn as layers; and the "Tutor" on the right, which teaches you. In the top bar, the project name opens your recent projects, "Open folder..." and "Home". The three buttons at the right of the top bar show or hide the panels; in a wide window you can hide the "Canvas" too, and in a narrow one the Builder and the right panel open over it.`,
+    what: `The window has three panels side by side: the "Builder" on the left, where you talk to Claude Code; the "Canvas" in the middle, where your project is drawn as layers; and the "Tutor" on the right, which teaches you. In the top bar, the project name opens your recent projects, "Open folder..." and "Home". The buttons at the right of the top bar show or hide the panels; in a wide window you can hide the "Canvas" too, and in a narrow one the Builder and the right panel open over it.`,
     question: "Which of the three would you look at first, and why?",
     example: "Hide the Builder and the right panel to give the drawing the whole window, then bring them back.",
     narration: "Let's start with what is on your screen right now.",
-    tryIt: `Press the three buttons at the right of the top bar one by one, for example "Show or hide the Canvas", and see which panel comes and goes. Press each one again to bring it back.`,
+    tryIt: `Press the buttons at the right of the top bar one by one, for example "Show or hide the Canvas", and see which panel comes and goes. Press each one again to bring it back.`,
   },
   builder: {
     name: "The Builder",
@@ -89,7 +89,7 @@ const PARTS: Record<string, Part> = {
   playback: {
     name: "Playback",
     hint: "Can I watch the code run?",
-    what: `On "Components", double-click a function to open its flowchart. The "Run" panel then opens beside the Tutor and lets you fill in "Test data" and press "Record a run", which runs that function for real on your computer. "Play" and the step arrows then replay what happened, one step at a time, without running it again. A short sentence under the flowchart tells in plain words what happened at each step. If you tick "Guess first", you are asked to predict the next step before it is shown.`,
+    what: `On "Components", double-click a function to open its flowchart. The "Run" panel then opens as its own panel next to the Canvas and lets you fill in "Test data" and press "Record a run", which runs that function for real on your computer. "Play" and the step arrows then replay what happened, one step at a time, without running it again. A short sentence under the flowchart tells in plain words what happened at each step. If you tick "Guess first", you are asked to predict the next step before it is shown.`,
     question: "Where does this function take another way, and what value decides it?",
     example: "Watch which branch a discount check takes for a cart of two items.",
     narration: "Last, you can watch a real run of the code, one step at a time.",

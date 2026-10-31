@@ -29,6 +29,17 @@ test("no text a person reads names an area of the window a column or the Run pan
   assert.deepEqual(found, [], `old window vocabulary:\n${found.join("\n")}`);
 });
 
+test("Run and the Tutor are separate cards with their own top-bar button and separator, never one inside the other", () => {
+  const html = readFileSync(join(root, "src", "ui", "index.html"), "utf8");
+  const card = (id: string) => html.slice(html.indexOf(`id="${id}"`));
+  for (const id of ["run", "sepx", "fold-run", "pane-run", "right", "sepr", "fold-right", "pane-tutor"]) assert.ok(html.includes(`id="${id}"`), `#${id} exists`);
+  const tutorCard = card("right").slice(0, card("right").indexOf("</div>\n<div id=\"scrim\""));
+  assert.ok(!tutorCard.includes('id="pane-run"') && !tutorCard.includes('id="run"'), "Run is not inside the Tutor's card");
+  const runCard = card("run").slice(0, card("run").indexOf('id="sepr"'));
+  assert.ok(!runCard.includes('id="pane-tutor"'), "the Tutor is not inside Run's card");
+  assert.ok(html.indexOf('id="run"') < html.indexOf('id="right"'), "Run sits between the Canvas and the Tutor");
+});
+
 test("the glossary defines Panel, Layout, Preset and Run, and no longer defines Column, Algorithm column or Tutor column", () => {
   const glossary = readFileSync(join(root, "GLOSSARY.md"), "utf8");
   for (const term of ["Panel", "Layout", "Preset", "Run"]) assert.match(glossary, new RegExp(`^\\*\\*${term}\\*\\*:`, "m"), `${term} is defined`);

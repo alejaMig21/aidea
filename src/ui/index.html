@@ -22,13 +22,14 @@
     --sans: "Inter", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, monospace;
   }
   * { box-sizing: border-box; }
-  /* Columns: chat | separator | Canvas | separator | right slot, as three rounded cards under the top bar. The separators are the gaps between cards.
-     Each track is minmax(minimum, weight in fr); 07-layout.js sets the three --*-track values (a folded pane is a 0 track) and the defaults below only
+  /* Panels: Builder | separator | Canvas | separator | Run | separator | Tutor, each a rounded card under the top bar. The separators are the gaps between cards.
+     Each track is minmax(minimum, weight in fr); 07-layout.js sets the four --*-track values (a folded pane is a 0 track) and the defaults below only
      matter before it runs. The shell is exactly the window tall (dvh follows mobile toolbars, vh is the fallback); only the cards scroll inside. */
   html { height: 100%; }
-  body { --chat-track: minmax(268px, 380fr); --canvas-track: minmax(376px, 800fr); --right-track: minmax(288px, 540fr); margin: 0; height: 100%; height: 100vh; height: 100dvh; overflow: hidden; display: grid; grid-template-columns: var(--chat-track) auto var(--canvas-track) auto var(--right-track); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "top top top top top" "chat sepc main sepr right"; background: var(--bg); color: var(--text); font: 13px/1.4 var(--sans); }
-  #chat, main, #right { margin-bottom: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  body { --chat-track: minmax(268px, 380fr); --canvas-track: minmax(376px, 800fr); --run-track: 0px; --right-track: minmax(288px, 540fr); margin: 0; height: 100%; height: 100vh; height: 100dvh; overflow: hidden; display: grid; grid-template-columns: var(--chat-track) auto var(--canvas-track) auto var(--run-track) auto var(--right-track); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "top top top top top top top" "chat sepc main sepx run sepr right"; background: var(--bg); color: var(--text); font: 13px/1.4 var(--sans); }
+  #chat, main, #run, #right { margin-bottom: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
   #chat { grid-area: chat; margin-left: 8px; min-width: 0; display: flex; flex-direction: column; }
+  #run { grid-area: run; min-width: 0; display: flex; flex-direction: column; }
   #right { grid-area: right; margin-right: 8px; min-width: 0; display: flex; flex-direction: column; }
   main { grid-area: main; min-width: 0; position: relative; background-color: var(--canvas); background-image: radial-gradient(circle, #283044 1px, transparent 1.3px); background-size: 18px 18px; }
   h1 { font-size: 15px; margin: 0; }
@@ -188,22 +189,12 @@
   .node-sub { fill: var(--muted); font: 400 12px var(--mono); }
   .dot-authored { fill: var(--authored); } .dot-derived { fill: var(--derived); }
   /* Right card */
-  /* The Panels of the right slot (Tutor, Run), stacked: each has a title that folds it and a body that scrolls on its own. */
-  #right-panels { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-  .rpanel { flex: 0 0 auto; min-height: 0; display: flex; flex-direction: column; border-bottom: 1px solid var(--line); }
-  .rpanel[hidden] { display: none; }
-  .rpanel.rpanel-open { flex: 1 1 0; }
-  .rpanel-head { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: transparent; color: var(--muted); font-size: 13.5px; padding: 11px 14px; border-radius: 0; border-bottom: 1px solid var(--line); flex: none; }
-  .rpanel-head::before { content: "\25B8"; font-size: 11px; }
-  .rpanel-open > .rpanel-head { color: var(--text); }
-  .rpanel-open > .rpanel-head::before { content: "\25BE"; }
-  .rpanel:not(.rpanel-open) > .rpanel-head { border-bottom: 0; }
-  .rpanel:not(.rpanel-open) > div { display: none; }
-  .rpanel > div { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 8px; }
-  .rpanel p { margin: 0; color: var(--muted); }
-  .rpanel :disabled { cursor: not-allowed; }
+  /* The bodies of the Tutor and Run panels: each card scrolls on its own. */
+  #pane-tutor, #pane-run { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 8px; }
+  #pane-tutor p, #pane-run p { margin: 0; color: var(--muted); }
+  #pane-tutor :disabled, #pane-run :disabled { cursor: not-allowed; }
   /* The Tutor panel: one left edge, one width, one margin (16px) for the field, the button, the cards and the sections. */
-  .rpanel > #pane-tutor { align-items: stretch; justify-content: flex-start; text-align: left; gap: 14px; padding: 16px; }
+  #pane-tutor { align-items: stretch; justify-content: flex-start; text-align: left; gap: 14px; padding: 16px; }
   #pane-tutor > * { min-width: 0; }
   #pane-tutor p { line-height: 1.45; font-size: 12px; }
   #tutor-head { display: flex; flex-direction: column; gap: 8px; }
@@ -240,10 +231,11 @@
   <div id="fold-buttons" role="group" aria-label="Show or hide panels">
     <button type="button" id="fold-chat" aria-pressed="true" aria-label="Chat" title="Show or hide the chat"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M6 3v10"/></svg></button>
     <button type="button" id="fold-canvas" aria-pressed="true" aria-label="Canvas" title="Show or hide the Canvas"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M5 3v10M11 3v10"/></svg></button>
-    <button type="button" id="fold-right" aria-pressed="true" aria-label="Right panel" title="Show or hide the right panel"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M10 3v10"/></svg></button>
+    <button type="button" id="fold-run" aria-pressed="false" aria-label="Run" title="Show or hide Run"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M7 3v10"/></svg></button>
+    <button type="button" id="fold-right" aria-pressed="true" aria-label="Tutor" title="Show or hide the Tutor"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M10 3v10"/></svg></button>
   </div>
 </header>
-<!-- DOM order is the keyboard order and matches the visual order: chat, separator, Canvas, separator, right slot. -->
+<!-- DOM order is the keyboard order and matches the visual order: Builder, separator, Canvas, separator, Run, separator, Tutor. -->
 <section id="chat" aria-label="Chat"><h2 class="card-head">Builder</h2></section>
 <div id="sepc" role="separator" aria-orientation="vertical" aria-label="Resize chat" tabindex="0"></div>
 <main>
@@ -257,9 +249,12 @@
     <button type="button" id="zoom-fit" aria-label="Fit the Canvas to its content">Fit</button>
   </div>
 </main>
-<div id="sepr" role="separator" aria-orientation="vertical" aria-label="Resize right panel" tabindex="0"></div>
-<div id="right" role="region" aria-label="Right panel">
-  <div id="right-panels"></div>
+<div id="sepx" role="separator" aria-orientation="vertical" aria-label="Resize Run" tabindex="0"></div>
+<section id="run" aria-label="Run"><h2 class="card-head">Run</h2><div id="pane-run"></div></section>
+<div id="sepr" role="separator" aria-orientation="vertical" aria-label="Resize the Tutor" tabindex="0"></div>
+<div id="right" role="region" aria-label="Tutor">
+  <h2 class="card-head">Tutor</h2>
+  <div id="pane-tutor"></div>
   <aside id="panel" aria-label="Details"></aside>
 </div>
 <div id="scrim" hidden></div>
