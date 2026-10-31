@@ -49,6 +49,10 @@ The Panels are placed by `dockview-core` (ADR 0007, vendored in `src/ui/vendor/d
 
 A library rule that wins over these needs `!important` on the one property; say so in a comment next to it.
 
+## Focus
+
+The ring that shows where the keyboard is: 2px `--accent`, offset 2px (`:focus-visible` in `src/ui/index.html`). A control that fills its card (the Canvas, whose `svg` has no margin and sits inside a card that clips) draws it inside, with offset -2px, so the card does not cut it. The ring shows for the keyboard only: a click on the Canvas gives it focus without a ring (the browser's own white ring is turned off with `:focus:not(:focus-visible)`).
+
 ## Checking a change
 
 Before a commit that changes the look: take full-screen captures (the second monitor, `AIDEA_DISPLAY=secondary`, headless scripts for anything that needs a browser) of the Panels side by side, and compare sizes, greys and margins. The legend check (`test/legend-check.test.ts`) and the language-neutral text test (`test/language-neutral-text.test.ts`) must pass.
