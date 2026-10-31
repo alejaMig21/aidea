@@ -39,7 +39,7 @@ const notationKey = "aidea.animations";
     svg#canvas.nt-hl [data-ref]:not([data-ends]):not(.nt-near) { opacity: .35; }
     #motion-toggle { margin-left: auto; flex: none; padding: 4px 10px; background: transparent; color: var(--text); border: 1px solid var(--control); font-size: 12.5px; font-weight: 400; }
     #motion-toggle b { font-weight: 600; color: var(--accent); } #motion-toggle[aria-pressed="false"] b { color: var(--muted); }
-    #fold-buttons { margin-left: 0; }
+    #panels-control { margin-left: 0; }
     @media (max-width: 480px) { #motion-toggle .word { display: none; } }
     #layers { max-width: calc(100% - 68px); }
     #legend-button { position: absolute; right: 15px; top: 15px; z-index: 2; width: 30px; height: 30px; padding: 0; border-radius: 50%; background: var(--panel); color: var(--text); border: 1px solid var(--control); font-weight: 600; }
@@ -59,7 +59,7 @@ const notationStored = () => { try { return localStorage.getItem(notationKey); }
 let notationOn = (notationStored() ?? (matchMedia("(prefers-reduced-motion: reduce)").matches ? "off" : "on")) === "on";
 const notationToggle = Object.assign(document.createElement("button"), { type: "button", id: "motion-toggle", title: "Turn all motion on or off" });
 notationToggle.setAttribute("aria-label", "Animations");
-$("fold-buttons").before(notationToggle);
+$("panels-control").before(notationToggle);
 
 let notationStepping = false; // "Pause and step" (48-stepmode.js) holds the loop still too
 function notationSync() {

@@ -16,7 +16,7 @@ const chrome = [process.env.CHROME_PATH, "C:/Program Files/Google/Chrome/Applica
 if (!chrome && process.env.AIDEA_REQUIRE_CHROME) throw new Error("AIDEA_REQUIRE_CHROME is set but Chrome was not found (set CHROME_PATH to its executable)");
 const skip = chrome ? false : "Chrome was not found (set CHROME_PATH to its executable; set AIDEA_REQUIRE_CHROME=1 to fail instead of skipping)";
 
-type Entry = { title: string; checked: string; disabled: boolean; reason: string; markVisible: boolean };
+type Entry = { title: string; id: string; checked: string; disabled: boolean; reason: string; markVisible: boolean; focusable: boolean };
 let report: any;
 let core: Awaited<ReturnType<typeof startCore>>;
 let proxy: Server;
@@ -68,9 +68,17 @@ after(() => {
   if (scratch) rmSync(scratch, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 });
 
-test("the page loads without errors and its Panels stand in order from the registry", { skip }, () => {
+// What is expected comes from the page's own registry (a Panel declared there appears here by itself): left Panels, the Canvas, then right Panels.
+const order = () => {
+  const reg = report.registry as { id: string; title: string; side: string; conditional: boolean }[];
+  const left = reg.filter((d) => d.side === "left"), right = reg.filter((d) => d.side !== "left");
+  return { left, right, titles: [...left.map((d) => d.title), "Canvas", ...right.map((d) => d.title)], cards: [...left.map((d) => d.id), "main", ...right.map((d) => d.id)] };
+};
+
+test("the page loads without errors and its Panels stand in the order of the registry", { skip }, () => {
   assert.deepEqual(report.errors, []);
-  assert.deepEqual(report.cards, ["chat", "files", "code", "main", "run", "right"]);
+  assert.ok(report.registry.length >= 5);
+  assert.deepEqual(report.cards, order().cards);
 });
 
 test("the header has one control for Panels and no per-Panel button", { skip }, () => {
@@ -79,30 +87,51 @@ test("the header has one control for Panels and no per-Panel button", { skip }, 
   assert.equal(report.menuClosedAtStart, true);
 });
 
-test("the Panels menu lists every Panel with a check mark; Run is listed, disabled, with the reason", { skip }, () => {
-  const titles = (report.entries as Entry[]).map((e) => e.title);
-  assert.deepEqual(titles, ["Builder", "Files", "Code", "Canvas", "Run", "Tutor"]);
-  const run = (report.entries as Entry[]).find((e) => e.title === "Run")!;
-  assert.equal(run.disabled, true);
-  assert.match(run.reason, /Flow/);
-  assert.ok((report.entries as Entry[]).filter((e) => e.title !== "Run").every((e) => !e.disabled));
+test("the Panels menu lists every Panel with a check mark; a Panel that cannot be used is listed with its reason", { skip }, () => {
+  const entries = report.entries as Entry[];
+  assert.deepEqual(entries.map((e) => e.title), order().titles);
+  const conditional = new Set(order().left.concat(order().right).filter((d) => d.conditional).map((d) => d.title));
+  assert.ok(conditional.size >= 1);
+  for (const e of entries) {
+    assert.equal(e.disabled, conditional.has(e.title), `${e.title} is unusable only when it depends on something`);
+    assert.equal(e.reason !== "", e.disabled, `${e.title}: a reason is shown exactly when it cannot be used`);
+  }
+  assert.match(entries.find((e) => e.title === "Run")!.reason, /Flow/);
   // The check mark is drawn only for a Panel that is on screen (it was once drawn on every row).
-  assert.ok((report.entries as Entry[]).every((e) => e.markVisible === (e.checked === "true")), "a check mark appears exactly on the checked rows");
+  assert.ok(entries.every((e) => e.markVisible === (e.checked === "true")), "a check mark appears exactly on the checked rows");
 });
 
-test("a layout saved by an earlier version still loads, and an id no Panel has is ignored", { skip }, () => {
+test("a layout saved by an earlier version still loads, and an id no Panel has is ignored and never written back", { skip }, () => {
   assert.deepEqual(report.saved, { chatShown: false, filesShown: true, chatWeight: 300, ghostIgnored: true });
-  assert.deepEqual(report.stored, ["canvasFolded", "chat", "chatFolded", "codeFolded", "filesFolded", "rightFolded", "runFolded", "sized"].sort().filter((k) => report.stored.includes(k)), "the saved layout keeps the old key names");
-  for (const k of ["chatFolded", "filesFolded", "codeFolded", "runFolded", "rightFolded", "canvasFolded"]) assert.ok(report.stored.includes(k), k);
+  const ids = (report.registry as { id: string }[]).map((d) => d.id);
+  assert.deepEqual(report.stored, ["canvasFolded", "sized", ...ids.map((id) => `${id}Folded`), "chat"].sort(), "the old key names, the one size the person set, and nothing about an unknown id");
 });
 
-test("the menu works by keyboard: it opens on the first item, moves, toggles with Space and Escape gives the focus back", { skip }, () => {
+test("the menu works by keyboard and mouse: it opens on the first row, moves, toggles, and closes by Escape (focus back), Tab and a click outside", { skip }, () => {
   assert.deepEqual(report.menuOpen, { hidden: false, expanded: "true", focusIsItem: true, moved: true });
   assert.deepEqual(report.toggle, { was: true, now: false, stillOpen: true, checked: "false" });
   assert.deepEqual(report.escape, { hidden: true, focusOnButton: true });
+  assert.deepEqual(report.closes, { byTab: true, byOutsideClick: true });
 });
 
-test("a seventh Panel is one declaration: a menu entry, a card, a separator and a body appear and the header does not grow", { skip }, () => {
+test("a row that cannot be used stays reachable by keyboard so its reason can be read, and does nothing when activated", { skip }, () => {
+  assert.equal(report.unusable.focused, true);
+  assert.notEqual(report.unusable.reason, "");
+  assert.equal(report.unusable.shownAfter, report.unusable.shownBefore);
+  assert.ok((report.entries as Entry[]).every((e) => e.focusable), "rows are focusable by script and out of the Tab order");
+});
+
+test("a Panel that depends on something is enabled and shown once it is available", { skip }, () => {
+  assert.deepEqual(report.conditional, { id: report.conditional.id, enabled: true, shown: true });
+});
+
+test("hiding the Canvas from the menu leaves one separator between each two neighbouring Panels, and showing it brings it back", { skip }, () => {
+  assert.equal(report.canvasHidden.canvasShown, false);
+  assert.equal(report.canvasHidden.visibleSeparators, report.canvasHidden.panelsShown - 1);
+  assert.equal(report.canvasBack.canvasShown, true);
+});
+
+test("a new Panel is one declaration: a menu entry, a card, a separator and a body appear and the header does not grow", { skip }, () => {
   const s = report.seventh;
   assert.equal(s.entriesAfter, s.entriesBefore + 1);
   assert.deepEqual([s.hasCard, s.hasPane, s.hasSeparator], [true, true, true]);
@@ -110,5 +139,5 @@ test("a seventh Panel is one declaration: a menu entry, a card, a separator and 
   assert.equal(s.headerAfter, 1);
   assert.equal(s.hiddenAtStart, true);
   assert.equal(s.shownAfterMenu, true);
-  assert.deepEqual(report.finalCards, ["chat", "files", "code", "main", "run", "right", "notes"]);
+  assert.deepEqual(report.finalCards, [...order().cards, "notes"]);
 });

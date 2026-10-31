@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately). It blocks 08: the docking layout needs the registry to exist.
 
-**Status:** implemented (commits 705c524 and e224689; review pending)
+**Status:** resolved (commits 705c524, e224689 and the review fixes after them)
 
 - [x] The Panels are declared in one registry (`layoutRegister` in `07-layout.js`) and nothing else lists them by name: the cards, separators, grid, sizes, saved layout and menu are built from it. (A test fails if a card, separator or button of a Panel is written in the page again, and checks the registry keeps Run and the Tutor with separate bodies. Five Panels are declared; the Canvas stays in the page because its content is the page's own and is a row of the menu.)
 - [x] The header holds one "Panels" button and no per-Panel buttons; the menu lists every Panel with a check mark and shows or hides it, and the Canvas can be hidden from it as before.
@@ -19,6 +19,12 @@
 ## What was built
 
 A registry of declarations `{ id, title, side, min, weight, startsHidden, foldRank, pane, adopt, icon, available, unavailable }`. `layoutRegister` creates the card (`.panel-card`), its separator and its body, puts them where the side says, keeps the lists the layout code reads (`layoutNames`, `layoutLeft`, minimums, weights, fold order) and rebuilds the grid and the menu. Margins and separators come from `layoutFrame`, not from CSS per Panel; drawers and the folded look are two classes (`is-drawer`, `data-folded`) instead of one rule per id. The ids of the Panels and of their bodies did not change (`chat`, `files`, `code`, `run`, `right`, `pane-*`), so the features that fill them needed no edit. The Details panel is adopted into the Tutor's card. Auto-fold gives up Panels by `foldRank` (Builder, Run, Tutor, Files, Code).
+
+## Review (fresh context, Standards and Spec separately), fixed
+
+Fixed: the tests repeated the list of Panels (a new Panel declared in the registry would have broken them): they now read the registry from the page; a test compared a list with a filter of itself and another passed trivially for an unknown id (now exact, and the unknown id must not be written back); the browser test covers a Panel that depends on something becoming enabled, the Canvas hidden (one separator between each two neighbours), Tab and a click outside closing the menu, and a row that cannot be used staying reachable; rows that cannot be used are now `aria-disabled` (still focusable, so the keyboard and a screen reader reach the reason) instead of `disabled`; the menu no longer touches the page on every resize and drag step; the ids `run`, `chat` and `right` were hard-coded inside the generic registry code and are now facts on the declarations (`available`, `legacySize`); `layoutDefault` was never read and is gone; a drawer returns the focus to where the person was, not always to the Panels button; a Panel declared while the menu is open does not take the focus away; `#fold-buttons` is now `#panels-control`.
+
+Known and left: the Canvas is a special row of the menu, always between the left and the right Panels (it scales, but it is not a declaration); a Panel's body is still filled by feature code that looks it up by id, and the Panel list appears in the guide text and the glossary by hand; the Panels' narrow-window drawer has no focus trap and no `aria-modal` (ticket 11); the browser test runs at one width, so the narrow drawer and the fold order are checked by hand only; the check of keys uses synthetic events, the real key presses were measured in the Electron window.
 
 ## Measurements (real Electron window, visible, main monitor, widths by viewport)
 

@@ -17,7 +17,6 @@ const layoutRegistry = [];
 const layoutNames = []; // the ids in that order (kept in step with the registry)
 const layoutLeft = []; // the ids of the Panels on the left of the Canvas
 const layoutPaneMin = {}; // minimum track width (the card plus its 8px window margin)
-const layoutDefault = {}; // default weight, on the same scale as the Canvas's
 const layoutDef = {}; // the declaration of each Panel, by id
 let layoutFoldOrder = []; // what auto-fold gives up first: choosing a file must not hide the Files panel it was chosen in
 const layoutState = { canvasFolded: false }; // per Panel: its weight (by id) and `<id>Folded`
@@ -46,7 +45,8 @@ const layoutSave = () => {
 };
 
 // Declares a Panel. { id, title, side: "left" | "right", min, weight, startsHidden, foldRank, pane: id of its body (or null), adopt: ids of elements
-// already in the page that move into its card, icon: svg shapes for the menu, available: () => boolean with unavailable: the reason when it is not }.
+// already in the page that move into its card, icon: svg shapes for the menu, available: () => boolean with unavailable: the reason when it is not,
+// legacySize: the weight an old save held when it was never the person's own }.
 // Folded state keeps the old names (`<id>Folded`), so layouts saved by earlier versions still load; a saved id nobody declares is ignored.
 function layoutRegister(def) {
   const d = { side: "right", min: 288, weight: 400, startsHidden: false, foldRank: 50, pane: null, adopt: [], icon: "", ...def };
@@ -58,14 +58,13 @@ function layoutRegister(def) {
   layoutLeft.splice(0, layoutLeft.length, ...left.map((x) => x.id));
   layoutFoldOrder = [...layoutRegistry].sort((a, b) => a.foldRank - b.foldRank).map((x) => x.id);
   layoutPaneMin[d.id] = d.min;
-  layoutDefault[d.id] = d.weight;
   layoutState[d.id] = d.weight;
   layoutSized[d.id] = false;
   const saved = layoutSaved[`${d.id}Folded`];
   layoutState[`${d.id}Folded`] = d.startsHidden ? saved !== false : saved === true; // a Panel that starts hidden stays hidden until the person shows it
   const size = layoutSaved[d.id];
-  if (size > 0 && (layoutSaved.sized ? layoutSaved.sized[d.id] === true : size !== { chat: 340, right: 320 }[d.id])) { layoutState[d.id] = size; layoutSized[d.id] = true; }
-  layoutShown[d.id] = !layoutState[`${d.id}Folded`] && d.id !== "run";
+  if (size > 0 && (layoutSaved.sized ? layoutSaved.sized[d.id] === true : size !== d.legacySize)) { layoutState[d.id] = size; layoutSized[d.id] = true; }
+  layoutShown[d.id] = !layoutState[`${d.id}Folded`] && !d.available; // a Panel that depends on something is not on screen until it is available
   layoutBuild(d);
   if (layoutReady) { layoutGrid(); panelsBuild(); layoutApply(); }
 }
@@ -230,9 +229,9 @@ function layoutSet(name, px) {
 }
 
 // ---- Drawers (narrow windows): one panel over the Canvas at a time, opened from the Panels menu.
-function layoutOpenDrawer(name) {
+function layoutOpenDrawer(name, opener) {
   layoutDrawer = name;
-  layoutOpener = panelsButton;
+  layoutOpener = opener ?? (document.activeElement && document.activeElement !== document.body ? document.activeElement : panelsButton);
   layoutApply();
   layoutPanes[name].el.focus();
 }
@@ -262,7 +261,7 @@ function layoutSetRunAvailable(on) {
 
 // Shows or hides a Panel (a drawer in a narrow window) on the person's choice, from the menu.
 function layoutToggle(name) {
-  if (layoutNarrow) { layoutDrawer === name ? layoutCloseDrawer() : layoutOpenDrawer(name); return; }
+  if (layoutNarrow) { layoutDrawer === name ? layoutCloseDrawer() : layoutOpenDrawer(name, panelsButton); return; }
   // Hiding is the person's choice and is saved; showing a pane that had no room makes auto-fold take another one.
   layoutState[`${name}Folded`] = layoutShown[name];
   if (!layoutNames.some(layoutWanted)) layoutState.canvasFolded = false; // the last pane to go leaves the Canvas, never an empty window
@@ -293,8 +292,9 @@ const panelsMenu = $("panels-menu");
 const panelsItems = () => [...panelsMenu.querySelectorAll("[role=menuitemcheckbox]")];
 
 function panelsBuild() {
+  const hadFocus = document.activeElement?.closest?.("#panels-menu") ? document.activeElement.dataset.panel : null;
   const row = (id, title, icon, toggle) => {
-    const b = Object.assign(document.createElement("button"), { type: "button" });
+    const b = Object.assign(document.createElement("button"), { type: "button", tabIndex: -1 });
     b.setAttribute("role", "menuitemcheckbox");
     b.dataset.title = title;
     b.dataset.panel = id;
@@ -302,12 +302,13 @@ function panelsBuild() {
     b.querySelector(".check").setAttribute("aria-hidden", "true");
     b.insertAdjacentHTML("beforeend", layoutSvg(icon));
     b.append(Object.assign(document.createElement("span"), { className: "label", textContent: title }));
-    b.onclick = () => { toggle(); if (layoutNarrow) panelsClose(false); };
+    b.onclick = () => { if (b.getAttribute("aria-disabled") === "true") return; toggle(); if (layoutNarrow) panelsClose(false); };
     return b;
   };
   const side = (left) => layoutRegistry.filter((d) => (d.side === "left") === left).map((d) => row(d.id, d.title, d.icon, () => layoutToggle(d.id)));
   panelsMenu.replaceChildren(...side(true), row("canvas", "Canvas", '<path d="M5 3v10M11 3v10"/>', layoutToggleCanvas), ...side(false));
   panelsSync();
+  if (hadFocus) panelsItems().find((b) => b.dataset.panel === hadFocus)?.focus(); // a Panel declared while the menu is open does not take the focus away
 }
 
 // Updates the rows in place (checked, disabled, reason) so the focus stays where it is while the layout changes.
@@ -324,7 +325,9 @@ function panelsSync() {
       if (!layoutAvailable(id)) why = layoutDef[id].unavailable ?? "Not available now";
     }
     b.setAttribute("aria-checked", String(on));
-    b.disabled = !!why;
+    b.setAttribute("aria-disabled", String(!!why)); // not `disabled`: the row stays focusable, so the keyboard and a screen reader reach the reason
+    const shownReason = b.querySelector(".reason")?.textContent ?? "";
+    if (shownReason === why) continue; // layoutApply runs on every resize and drag step: touch the page only when the text changes
     b.querySelector(".reason")?.remove();
     if (why) b.querySelector(".label").append(Object.assign(document.createElement("span"), { className: "reason", textContent: why }));
   }
@@ -334,7 +337,7 @@ function panelsOpen() {
   panelsMenu.hidden = false;
   panelsButton.setAttribute("aria-expanded", "true");
   panelsSync();
-  (panelsItems().find((b) => !b.disabled) ?? panelsItems()[0])?.focus();
+  (panelsItems().find((b) => b.getAttribute("aria-disabled") !== "true") ?? panelsItems()[0])?.focus();
 }
 function panelsClose(focusButton) {
   panelsMenu.hidden = true;
@@ -343,7 +346,7 @@ function panelsClose(focusButton) {
 }
 panelsButton.onclick = () => (panelsMenu.hidden ? panelsOpen() : panelsClose(true));
 panelsMenu.onkeydown = (e) => {
-  const items = panelsItems().filter((b) => !b.disabled), at = items.indexOf(document.activeElement);
+  const items = panelsItems(), at = items.indexOf(document.activeElement);
   const go = (b) => { b?.focus(); e.preventDefault(); };
   if (e.key === "ArrowDown") go(items[(at + 1) % items.length]);
   else if (e.key === "ArrowUp") go(items[(at - 1 + items.length) % items.length]);
@@ -354,14 +357,14 @@ panelsMenu.onkeydown = (e) => {
   else if (e.key === "Tab") panelsClose(false);
 };
 panelsMenu.onkeyup = (e) => { if (e.key === " " || e.key === "Enter") e.preventDefault(); };
-document.addEventListener("click", (e) => { if (!panelsMenu.hidden && !$("fold-buttons").contains(e.target)) panelsClose(false); });
+document.addEventListener("click", (e) => { if (!panelsMenu.hidden && !$("panels-control").contains(e.target)) panelsClose(false); });
 
 // ---- The Panels of aidea, in screen order. The body ids (pane-*) are the ones the features fill; `adopt` moves the Details into the Tutor's card.
-layoutRegister({ id: "chat", title: "Builder", side: "left", min: 268, weight: 380, foldRank: 10, icon: '<path d="M6 3v10"/>' });
+layoutRegister({ id: "chat", title: "Builder", side: "left", min: 268, weight: 380, legacySize: 340, foldRank: 10, icon: '<path d="M6 3v10"/>' });
 layoutRegister({ id: "files", title: "Files", side: "left", min: 240, weight: 300, startsHidden: true, foldRank: 40, pane: "pane-files", icon: '<path d="M4.5 6h3M4.5 8.5h3M4.5 11h3"/>' });
 layoutRegister({ id: "code", title: "Code", side: "left", min: 320, weight: 560, startsHidden: true, foldRank: 50, pane: "pane-code", icon: '<path d="M6.5 6 4.5 8l2 2M9.5 6l2 2-2 2"/>' });
 layoutRegister({ id: "run", title: "Run", side: "right", min: 288, weight: 420, foldRank: 20, pane: "pane-run", icon: '<path d="M7 3v10"/>', available: () => layoutRunAvailable, unavailable: "Open a function's Flow to use Run" });
-layoutRegister({ id: "right", title: "Tutor", side: "right", min: 288, weight: 540, foldRank: 30, pane: "pane-tutor", adopt: ["panel"], icon: '<path d="M10 3v10"/>' });
+layoutRegister({ id: "right", title: "Tutor", side: "right", min: 288, weight: 540, legacySize: 320, foldRank: 30, pane: "pane-tutor", adopt: ["panel"], icon: '<path d="M10 3v10"/>' });
 
 // The Tutor's entry point stays disabled until the Tutor exists. The head of the panel is the topic field
 // (50-tutor.js), the "Start a class" button and one line of help; the other files add the rest below it.

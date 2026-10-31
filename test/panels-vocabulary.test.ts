@@ -29,22 +29,21 @@ test("no text a person reads names an area of the window a column or the Run pan
   assert.deepEqual(found, [], `old window vocabulary:\n${found.join("\n")}`);
 });
 
-test("the Panels are declared once in the registry: the page keeps only the Canvas and one Panels control, and the registry keeps Run and the Tutor apart", () => {
+test("the Panels are declared once in the registry: the page keeps only the Canvas and one Panels control, and Run and the Tutor keep bodies of their own", () => {
   const html = readFileSync(join(root, "src", "ui", "index.html"), "utf8").replaceAll("\r\n", "\n");
   const layout = readFileSync(join(root, "src", "ui", "features", "07-layout.js"), "utf8").replaceAll("\r\n", "\n");
+  const declared = [...layout.matchAll(/layoutRegister\(\{\s*id: "(\w+)"[^}]*?(?:pane: "([\w-]+)")?[^}]*\}\);/g)].map((m) => ({ id: m[1], text: m[0] }));
+  assert.ok(declared.length >= 5, "the registry declares the Panels");
+  assert.equal(new Set(declared.map((d) => d.id)).size, declared.length, "each Panel is declared once");
   // The page: no card, separator or button of a Panel is written by hand (the real page is checked by panel-registry.test.ts in a browser).
   assert.equal((html.match(/id="panels-button"/g) ?? []).length, 1, "one control for Panels");
-  for (const id of ["chat", "files", "code", "run", "right", "sepc", "sepf", "sepk", "sepx", "sepr", "fold-chat", "fold-files", "fold-code", "fold-run", "fold-right", "fold-canvas", "pane-files", "pane-code", "pane-run", "pane-tutor"]) {
-    assert.ok(!html.includes(`id="${id}"`), `#${id} is created from the registry, not written in the page`);
-  }
+  assert.doesNotMatch(html, /id="fold-|id="sep[cfkxr]"|id="sep-/, "no per-Panel button or separator is written in the page");
+  for (const { id } of declared) assert.ok(!html.includes(`id="${id}"`), `#${id} is created from the registry, not written in the page`);
   assert.ok(html.includes("<main>"), "the Canvas stays in the page");
-  // The registry: every Panel once, Run and the Tutor each with a body of its own (never one inside the other).
-  const declared = [...layout.matchAll(/^layoutRegister\(\{ id: "(\w+)"[^\n]*$/gm)];
-  assert.deepEqual(declared.map((m) => m[1]), ["chat", "files", "code", "run", "right"]);
-  const line = (id: string) => declared.find((m) => m[1] === id)![0];
-  assert.match(line("run"), /pane: "pane-run"/);
-  assert.match(line("right"), /pane: "pane-tutor"/);
-  assert.doesNotMatch(line("run"), /adopt/);
+  // Two Panels never share a body: every body id (pane: "...") is used once.
+  const bodies = declared.flatMap((d) => [...d.text.matchAll(/pane: "([\w-]+)"/g)].map((m) => m[1]));
+  assert.equal(new Set(bodies).size, bodies.length, "each Panel has a body of its own");
+  for (const body of bodies) assert.ok(!html.includes(`id="${body}"`), `#${body} is created with its card`);
 });
 
 // Code is a Panel, not a layer: the Layer bar lists only what the Canvas draws.

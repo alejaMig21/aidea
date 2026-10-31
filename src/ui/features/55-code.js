@@ -90,8 +90,10 @@ const codeEditor = (() => {
   const btn = Object.assign(document.createElement("button"), { type: "button", textContent: "Open in my editor" });
   btn.onclick = async () => {
     if (!codeActive?.path) return;
-    const r = await fetch("/open-in-editor", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ project: current, file: codeActive.path, line: codeActive.hit?.line ?? 1 }) });
-    $("error").textContent = r.ok ? "" : (await r.json()).error;
+    try {
+      const r = await fetch("/open-in-editor", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ project: current, file: codeActive.path, line: codeActive.hit?.line ?? 1 }) });
+      $("error").textContent = r.ok ? "" : (await r.json()).error;
+    } catch { $("error").textContent = "Could not reach aidea to open the editor."; }
   };
   const picker = document.createElement("select");
   picker.className = "agent-opt";
@@ -301,7 +303,7 @@ async function codeOpenFocus(focus, range) {
   let tab = open, ok = true;
   if (!tab) {
     const r = await codeFetch(focus, range);
-    if (project !== current) return false; // another Project was opened meanwhile
+    if (project !== current || request !== codeRequest) return false; // another Project, or a newer choice, owns the panel: no tab is left behind for this one
     tab = codeTabFor(focus, r);
     codeFill(tab, focus, r);
     ok = r.ok;
@@ -371,3 +373,11 @@ draw = async (nodes) => {
   }
   await drawWithoutCode(nodes);
 };
+
+// A card that was hidden loses its scroll: when the panel comes back on screen (from the Panels menu, say) the tab shown is put back where it was.
+let codeWasOnScreen = false;
+document.addEventListener("layout-applied", () => {
+  const now = layoutShown.code || layoutDrawer === "code";
+  if (now && !codeWasOnScreen && codeActive) codeRestore(codeActive, false);
+  codeWasOnScreen = now;
+});

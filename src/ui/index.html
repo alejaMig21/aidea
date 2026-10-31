@@ -108,7 +108,7 @@
   #opening, #languages { min-width: 0; font-size: 12px; color: var(--muted); } /* secondary text of the shared scale */
   #languages { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #no-code { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); width: min(420px, calc(100% - 30px)); margin: 0; text-align: left; font-size: 13.5px; line-height: 1.5; color: var(--text); }
-  #fold-buttons { margin-left: auto; position: relative; flex: none; }
+  #panels-control { margin-left: auto; position: relative; flex: none; }
   #refresh, #guide-open, #panels-button { flex: none; padding: 4px 12px; font-size: 13px; font-weight: 400; background: transparent; color: var(--text); border: 1px solid var(--control); white-space: nowrap; } /* the top bar's text buttons: controls of the shared scale */
   #guide-open { margin-left: auto; }
   #guide-open ~ #motion-toggle { margin-left: 0; } /* the guide button leads the right-hand group */
@@ -118,8 +118,8 @@
   /* The Panels menu: one control in the header whatever the number of Panels; one row each, with a check mark when it is shown. */
   #panels-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 10; width: 264px; max-height: calc(100vh - 60px); overflow-y: auto; background: #101319; border: 1px solid var(--control); border-radius: 12px; padding: 6px; box-shadow: 0 14px 36px rgba(0, 0, 0, .5); }
   #panels-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; text-align: left; background: transparent; color: var(--text); border: 0; font-size: 13px; font-weight: 400; }
-  #panels-menu button:hover:not(:disabled), #panels-menu button:focus-visible { background: var(--selected); filter: none; }
-  #panels-menu button:disabled { color: var(--muted); cursor: default; }
+  #panels-menu button:hover:not([aria-disabled="true"]), #panels-menu button:focus-visible { background: var(--selected); filter: none; }
+  #panels-menu button[aria-disabled="true"] { color: var(--muted); cursor: default; }
   #panels-menu .check { flex: none; width: 12px; font-size: 12px; color: var(--accent); }
   #panels-menu [aria-checked="false"] .check { visibility: hidden; }
   #panels-menu svg { flex: none; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; }
@@ -236,7 +236,7 @@
   <span id="languages"></span>
   <button type="button" id="refresh" title="Read the code of this project again, after you edited it" hidden>Refresh</button>
   <button type="button" id="guide-open" title="A short class on how aidea works (a quick tour until the Tutor is available)">How aidea works</button>
-  <div id="fold-buttons">
+  <div id="panels-control">
     <button type="button" id="panels-button" aria-haspopup="menu" aria-expanded="false" aria-controls="panels-menu" title="Show or hide the panels">Panels <span class="caret" aria-hidden="true">&#9662;</span></button>
     <div id="panels-menu" role="menu" aria-label="Panels" hidden></div>
   </div>
