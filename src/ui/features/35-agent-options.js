@@ -32,7 +32,7 @@
   `;
   document.head.append(modeStyle);
 
-  // Direct / Class mode, at the foot of the Builder column: whether the builder waits at a Blocking decision until the person has answered a short class.
+  // Direct / Class mode, at the foot of the Builder panel: whether the builder waits at a Blocking decision until the person has answered a short class.
   const modeRow = Object.assign(document.createElement("div"), { className: "mode-row" });
   const seg = Object.assign(document.createElement("div"), { className: "seg" });
   seg.setAttribute("role", "group");
@@ -52,7 +52,7 @@
   row.before(modeRow);
   const pressMode = (id) => { for (const b of Object.values(modeButtons)) b.setAttribute("aria-pressed", String(b.dataset.mode === id)); };
 
-  // The Tutor's own settings, in the Tutor column: its model and the review question at the start of a class
+  // The Tutor's own settings, in the Tutor panel: its model and the review question at the start of a class
   // (on unless the person turns it off; the choice is remembered for the Project).
   const reviewBox = Object.assign(document.createElement("input"), { type: "checkbox", id: "review-question", checked: true, disabled: true });
   const settings = Object.assign(document.createElement("div"), { id: "tutor-settings" });

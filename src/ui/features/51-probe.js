@@ -1,4 +1,4 @@
-// The Probe offer in the Tutor column (ticket 06): before a layer's first class the person may check what they know (five questions
+// The Probe offer in the Tutor panel (ticket 06): before a layer's first class the person may check what they know (five questions
 // at most) or skip it. It never blocks: "Start a class" is always there. The questions are drawn by 50-tutor.js; the core decides
 // everything (what is asked, what is stored). Names are prefixed "probe" because every feature file shares one global scope.
 {

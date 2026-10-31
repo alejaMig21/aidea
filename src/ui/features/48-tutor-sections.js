@@ -1,4 +1,4 @@
-// The folded sections of the Tutor column (Plan, Differences, Contract): one line each (a title and a summary), opened with a click.
+// The folded sections of the Tutor panel (Plan, Differences, Contract): one line each (a title and a summary), opened with a click.
 // What is open is remembered in this browser only; the page works the same when the browser keeps nothing. During a class every
 // section stays folded (50-tutor.js closes them). Each section's own file fills the body and the summary.
 const tutorSectionsKey = "aidea.tutor-sections";

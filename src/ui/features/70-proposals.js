@@ -89,7 +89,7 @@ const node = (tag, props = {}, ...children) => {
 };
 const show = (v) => (typeof v === "string" ? v : JSON.stringify(v));
 
-// The plain line for a Proposal the core refused (shared by the chat and the Tutor column): `who` is "Claude" or "The Tutor".
+// The plain line for a Proposal the core refused (shared by the chat and the Tutor panel): `who` is "Claude" or "The Tutor".
 // Returns [text, "Open it" button or nothing], to append to the line.
 function proposalRefusedParts(event, who) {
   const why = event.reason === "pending" ? "a proposal with that name is already waiting for you. Review it first. " : `the ${event.layer} layer already has it. `;

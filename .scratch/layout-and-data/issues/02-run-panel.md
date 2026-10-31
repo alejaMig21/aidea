@@ -4,7 +4,11 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** implemented (commit dd8f525); review pending
+**Status:** resolved (commits dd8f525 and the review fixes after it)
+
+Review (fresh context, Standards and Spec reported separately) found: the guide still said "Tutor tab" (fixed, with a test), stale "column" and "Algorithms tab" in comments (fixed), no row in `ui-style.md` for a Panel title (added). Kept on purpose: the "Function" header inside Run (it shows the function's name; renaming it is cheap later) and `rightShowPanel("run")` re-opening Run when a Flow is opened. Not done: the 50/50 split when both panels are open squeezes the Tutor at short heights (measured 330 px each at 1280x720, 510 px each at 1920x1080); ticket 08 replaces this stacking with free docking. The hardcoded `#202531` in Run's divider was already there.
+
+Measured later in the same window: at 1920x1080 and 1280x720 the Tutor and Run panels are both shown (510 and 330 px each), the right slot is 590 and 389 px wide, and nothing overflows sideways (`r-1920.png`, `r-1280.png`). Those two widths were measured by resizing the viewport, like the 700 px one.
 
 ## Verification notes (2026-10-31)
 

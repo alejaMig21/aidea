@@ -1,4 +1,4 @@
-// The Tutor column's class: "Start a class" opens a stream from POST /tutor/classes; the Tutor's messages and its questions
+// The Tutor panel's class: "Start a class" opens a stream from POST /tutor/classes; the Tutor's messages and its questions
 // are drawn here, and each answer goes back through POST /tutor/answer. No domain logic lives here: the core grades and decides.
 // Names are prefixed "tutor" because every feature file shares one global scope.
 {

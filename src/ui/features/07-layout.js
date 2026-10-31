@@ -82,7 +82,7 @@ function rightSetPanelShown(id, shown) {
 }
 
 
-// ---- Sizes and folded state. A pane's size is a flex weight (fr), so every visible column grows and shrinks with the window.
+// ---- Sizes and folded state. A pane's size is a flex weight (fr), so every visible pane grows and shrinks with the window.
 // Folded (by the person or automatically) means a 0 track with its separator hidden. Automatic folds are never saved.
 // The defaults give the Tutor room (Builder 380, Tutor 540); a size the person saved by resizing wins over them.
 const layoutDefault = { chat: 380, right: 540 };

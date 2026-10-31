@@ -14,7 +14,7 @@ const uiFiles = [join(root, "src", "ui", "index.html"), ...readdirSync(join(root
 test("the guide to aidea calls the areas of the window Panels, never columns, and names the Run panel", async () => {
   const text = JSON.stringify(await (await t.get("/guide")).json());
   assert.doesNotMatch(text, /\bcolumns?\b/i);
-  assert.doesNotMatch(text, /"Algorithms" tab|\\"Algorithms\\" tab/);
+  assert.doesNotMatch(text, /(Algorithms|Tutor)\\?" tab/, "the right slot has no tabs any more");
   assert.match(text, /Run/);
   assert.match(text, /panels?/i);
 });

@@ -40,7 +40,7 @@ let codeLost = ""; // the sentence shown instead of a Node that a refresh could 
 let codeRequest = 0; // numbers the requests so a slow answer cannot replace a newer one
 let codeProject = null;
 
-const codeLabel = (layer) => layer === "flow" ? "Flow" : layerBar.querySelector(`[data-layer="${layer}"]`)?.textContent ?? layer; // the Algorithms tab also names the open function
+const codeLabel = (layer) => layer === "flow" ? "Flow" : layerBar.querySelector(`[data-layer="${layer}"]`)?.textContent ?? layer; // the Flow tab also names the open function
 const codeBackTarget = () => {
   const back = codeFocus?.back ?? "components";
   return layerBar.querySelector(`[data-layer="${back}"]`)?.disabled ? "components" : back;
