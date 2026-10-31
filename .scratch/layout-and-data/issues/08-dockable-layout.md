@@ -2,7 +2,7 @@
 
 **What to build:** The six Panels (Canvas, Files, Code, Builder, Tutor, Run) can be shown or hidden, resized by dragging their borders, placed side by side or stacked, nested, and grouped as tabs. Dragging a Panel by its title shows where it will land. A Panel has a usable minimum size and says so rather than breaking. The default Layout looks like today's window. Dragging and resizing feel smooth. Built with the engine chosen in ticket 07.
 
-**Blocked by:** 07 (docking engine decision).
+**Blocked by:** 07 (docking engine decision), 18 (Panel registry and the Panels menu: docking works on declared Panels, not on a hand-wired list).
 
 **Status:** ready-for-agent
 
