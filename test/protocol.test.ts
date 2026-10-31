@@ -105,3 +105,16 @@ test("the interface fonts are served from the core with the font content type, a
   assert.equal((await t.get("/fonts/OFL-Inter.txt")).status, 404);
   assert.equal((await t.get("/fonts/..%2Findex.html")).status, 404);
 });
+
+test("the docking library ships with the application: its script and licence are served from the core, and only the files in that folder", async () => {
+  const script = await t.get("/vendor/dockview/dockview-core.min.js");
+  assert.equal(script.status, 200);
+  assert.match(script.headers.get("content-type") ?? "", /javascript/);
+  assert.ok((await script.text()).includes("createDockview"));
+  assert.match(await (await t.get("/vendor/dockview/LICENCE.md")).text(), /MIT/);
+
+  assert.equal((await t.get("/vendor/dockview/missing.js")).status, 404);
+  assert.equal((await t.get("/vendor/dockview/..%2F..%2Findex.html")).status, 404);
+  assert.equal((await t.get("/vendor/dockview/../../index.html")).status, 404);
+  assert.equal((await t.get("/vendor/dockview/%2e%2e/index.html")).status, 404);
+});
