@@ -1,10 +1,10 @@
-# The docking Layout is built in plain code; a docking library is not adopted yet
+# The docking Layout is built on dockview-core
 
-**This is a recommendation for the person to confirm.** It amends ADR 0003; it does not replace it. It was written by the agent from a throwaway prototype (`.scratch/layout-and-data/spike-07/`) and nothing in the interface changes until the person agrees.
+**Accepted by the person (2026-10-31).** It amends ADR 0003: the no-framework rule stays for everything else, and the docking engine is the one exception. The spike (`.scratch/layout-and-data/spike-07/`) first recommended plain code and named one condition that would flip it: the second window in the first docking release. The person said they want the second window in the first release, so the condition was met and the decision is `dockview-core`. The measurements below are unchanged; they now describe what ticket 08 has to work around.
 
 ADR 0003 said that if plain code cannot reach the smoothness needed for resizable, foldable Panels, adopting a framework is the expected next step. Ticket layout-and-data/07 tested that on the hardest cases of a Unity-like Layout: resize by dragging, side by side and stacked, nested, tabs, drag a Panel by its title to a new place with a landing preview, serialise to JSON and restore. The same six stand-in Panels (Builder, Files, Code, Canvas, Run, Tutor, with heavy content: 2,000 code lines, 500 SVG nodes, 300 chat cards) were put into (a) about 100 lines of plain JavaScript and (b) `dockview-core` 8.8.3, the one candidate chosen. Chosen because it is MIT, needs no React and no build step (one script file), and is maintained (thirteen releases in the last month, the last on 2026-10-30); the only other framework-free candidate found, golden-layout 2.6.0, is MIT but has had no release since February 2023.
 
-**Recommendation: build the docking Layout in plain code (ticket 08) and keep ADR 0003's no-framework rule.** Plain code met the smoothness criterion with no help, costs about 3 KB, and gives full control of the three things ADR 0003's own consequences already promise to test: feel, size and the Panel model of the Panel registry (ticket 18). The library is better at exactly one thing that the plain prototype did not build, the second window (stories 43 to 45). If the person wants that in the first docking release, adopt `dockview-core` instead; see "When this changes".
+**Decision: build the docking Layout on `dockview-core` (MIT, no React), vendored in the repository so the app needs no network.** Plain code met the smoothness criterion and costs about 3 KB, and the spike would have chosen it, but it did not build the second window (stories 43 to 45), the person wants that in the first release, and the library already does it (`addPopoutGroup`). What this costs is listed under Consequences: size, its own CSS, no keyboard on splitters, and a restore that must be protected from unknown ids.
 
 ## What was measured
 
@@ -50,10 +50,16 @@ Drag moves are smooth in both. The splitter is where they differ: at 1x both are
 
 ## Consequences
 
-- ADR 0003 stands for the Layout: the docking engine is plain JavaScript on the Panel registry of ticket 18 (a Panel is an id, a title and a minimum size; the engine needs nothing else). Ticket 08 builds it and measures it again on the real window.
-- The second window (stories 43 to 45) is a separate piece of work after 08, not part of it, because the prototype did not settle its cost in plain code. In the library's popout the Panel's DOM moves into a window opened by the same page, so it keeps the same JavaScript context; plain code would have to do the same move and open the window under Electron's rules, which is the part that was not built.
-- The serialised Layout is a small tree of splits and groups of Panel ids with sizes (the shape in the prototype is a good starting point for ticket 09), and unknown ids are dropped on load.
-- Minimum sizes live in the registry and are enforced by the browser (`min-width` on each cell), so they cannot be bypassed by dragging.
+- Ticket 08 builds the Layout on `dockview-core` and the Panel registry of ticket 18: a registry declaration becomes a dockview panel (id, title, minimum size, whether it starts hidden), so a new Panel is still one declaration. The grid, separators and drawers of `src/ui/features/07-layout.js` are replaced by it, not reused.
+- The library is **vendored** (one script file plus its CSS copied into the repository, with its MIT licence), never loaded from a network, and the repository's `package.json` gains no runtime dependency for it. Updating it is a deliberate act. `dockview-enterprise` is not used: its licence is not permissive on its face.
+- `defaultRenderer: "always"`, because the default unmounts hidden tabs and would lose the chat scroll and the Canvas zoom.
+- Minimum sizes are counted by the library with its 8 px gap, so every minimum in the registry is padded by the gap.
+- A saved Layout is filtered before it is restored: the library's restore throws and leaves an empty window on one unknown Panel id, and ticket 18 requires unknown ids to be ignored. A restore that fails for any reason falls back to the default Layout instead of an empty window.
+- Its 166 KB of CSS is overridden onto the shared scale. What the overrides cannot reach (close buttons, tab geometry) is new to `docs/agents/ui-style.md`, so the scale is extended first, in the same commit, as that document requires.
+- The library's splitters are not focusable. Ticket 11 gives them keyboard control (and moving a Panel by keyboard) in our own code on top of the library, because the library's keyboard support is in the package that is not used.
+- The second window (ticket 10) is the library's popout: the Panel's DOM moves into a window opened by the same page, so it keeps one JavaScript context and stays in step with the main window by construction. What was not measured is how Electron's window-open rules treat it; ticket 10 measures that first.
+- The narrow-window drawers are rewritten, as they would have been in plain code.
+- The serialised Layout is the library's own JSON plus our Panel ids; ticket 09 stores it in the per-user preferences store, never inside a Project.
 
 ## What could not be measured
 
@@ -64,4 +70,4 @@ Drag moves are smooth in both. The splitter is where they differ: at 1x both are
 
 ## When this changes
 
-Adopt `dockview-core` (or revisit) if the person wants the second window in the first docking release, or if ticket 08 measured on the real window shows the plain splitter or Panel drag dropping frames at 1x.
+Revisit if the library stops being maintained, if its licence changes, or if ticket 08 measured on the real Electron window shows the splitter or Panel drag dropping frames at 1x (the spike saw drops only under 4x CPU throttling).

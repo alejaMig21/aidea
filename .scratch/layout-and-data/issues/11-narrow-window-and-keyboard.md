@@ -6,6 +6,8 @@
 
 **Status:** ready-for-agent
 
+**Added by ADR 0007 (dockview-core):** the library's splitters are not focusable and its keyboard docking is in a package that is not used, so this ticket gives the splitters keyboard control and a way to move a Panel by keyboard, in our own code on top of the library.
+
 - [ ] At the narrowest supported width no Panel is cut and the Canvas stays usable.
 - [ ] Show, hide and move focus between Panels with documented keys; no key trap.
 - [ ] The visible focus follows the interface style rules.

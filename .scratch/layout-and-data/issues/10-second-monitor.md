@@ -6,6 +6,8 @@
 
 **Status:** ready-for-agent
 
+**In the first docking release (decided 2026-10-31, ADR 0007).** The person wants the second window in the first version, which is why the Layout is built on `dockview-core`: its popout moves a Panel's DOM into a window opened by the same page, so the second window keeps one JavaScript context and stays in step with the main one by construction. The first thing this ticket measures is the part the spike could not: how Electron's window-open rules treat that popout (placement on the other monitor, closing it, a window that was dragged to a monitor that is later unplugged).
+
 - [ ] A Panel moved to the second window shows live updates from the main one (selection, Playback steps, Tutor messages).
 - [ ] Closing the second window returns its Panels to the main window without losing state.
 - [ ] With one monitor, the option is not offered or says why it is unavailable.

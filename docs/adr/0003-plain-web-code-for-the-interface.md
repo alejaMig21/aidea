@@ -11,4 +11,4 @@ aidea's interface is written in plain JavaScript and CSS, with no framework, no 
 - aidea writes its own components (resizable and foldable columns, message list, permission cards) and must test their smoothness on real use, not only that they work.
 - The interface has a dark theme only in the first version.
 - Revisit this decision once the first version is in a person's hands, with smoothness as the criterion.
-- Amended by [ADR 0007](0007-docking-layout-in-plain-code.md) (a recommendation, to be confirmed by the person): the docking Layout is built in plain code; a docking library was measured and not adopted yet.
+- Amended by [ADR 0007](0007-docking-layout-with-dockview-core.md) (accepted by the person): the docking Layout is built on `dockview-core`, vendored in the repository. It is the one exception; the rest of the interface stays plain JavaScript and CSS.

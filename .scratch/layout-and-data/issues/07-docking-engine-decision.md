@@ -4,7 +4,7 @@
 
 **Blocked by:** 04 (Code panel: the six Panels exist).
 
-**Status:** ready-for-agent
+**Status:** resolved: the person chose `dockview-core` (2026-10-31) because they want the second window in the first docking release, which was the spike's own flip condition (ADR 0007).
 
 - [ ] Both prototypes live on a `prototype/` branch and are measured on the same scenario (drag, resize, nested split) on the real window.
 - [x] A recommendation with the numbers or observations behind it, and a DECISION line in the log for the person to confirm (DECISION 6, `.scratch/overnight/LOG.md` entry 21).
