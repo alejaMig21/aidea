@@ -84,6 +84,13 @@ test("the page loads without errors and its Panels stand in the order of the reg
   assert.deepEqual(report.cards, order().cards.filter((id) => id === "main" || wanted.has(id)));
 });
 
+test("the cards stand out from what lies between them: the space around and between the sections is the page's dark background", { skip }, () => {
+  const { workspace, page, card } = report.gapLook;
+  assert.notEqual(workspace, card, "the area that holds the sections has the colour of the cards, so the sections melt into it");
+  assert.ok(workspace === page || workspace === "rgba(0, 0, 0, 0)", `the workspace is ${workspace}, the page is ${page}`);
+  assert.equal(page, "rgb(14, 16, 20)");
+});
+
 test("the Canvas keeps its own look inside the docking Layout: its dark surface and its dot grid", { skip }, () => {
   assert.match(report.canvasLook.image, /radial-gradient/, "the dot grid was lost when the Layout restyled the Canvas");
   assert.equal(report.canvasLook.color, "rgb(17, 20, 26)");

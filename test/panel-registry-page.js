@@ -21,6 +21,8 @@ const openMenu = async () => { if (document.getElementById("panels-menu").hidden
     report.width = document.documentElement.clientWidth;
     report.registry = layoutRegistry.map((d) => ({ id: d.id, title: d.title, side: d.side, conditional: !!d.available }));
     report.cards = cards();
+    // What shows between and around the cards is the page's dark background, not the colour of the cards (they must stand out from it).
+    report.gapLook = { workspace: getComputedStyle(document.querySelector(".dv-dockview")).backgroundColor, page: getComputedStyle(document.body).backgroundColor, card: getComputedStyle(document.querySelector(".dv-groupview")).backgroundColor };
     report.canvasLook = { image: getComputedStyle(document.querySelector("main")).backgroundImage, color: getComputedStyle(document.querySelector("main")).backgroundColor };
     // what the saved layout and the registry say should be on screen, from the Panels' own state (not from the page): a Panel that is missing must fail the test
     report.wanted = layoutRegistry.filter((d) => !layoutState[`${d.id}Folded`] && (!d.available || d.available())).map((d) => d.id);

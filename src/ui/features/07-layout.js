@@ -138,6 +138,8 @@ function layoutBuild(d) {
       --dv-inactivegroup-visiblepanel-tab-color: var(--text); --dv-inactivegroup-hiddenpanel-tab-color: var(--muted);
       --dv-drag-over-background-color: rgba(138, 164, 255, .22); --dv-drag-over-border: 2px solid var(--accent);
     }
+    /* The area that holds the sections shows the page's dark background in the gaps and around them, so the cards stand out from it as they did in the fixed grid (the library paints it with the card colour). */
+    .dockview-theme-aidea .dv-dockview, .dockview-theme-aidea.dv-dockview { background-color: transparent; }
     .dockview-theme-aidea .dv-groupview { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel); }
     .dockview-theme-aidea .dv-tabs-and-actions-container { border-bottom: 1px solid var(--line); }
     .dockview-theme-aidea .dv-tab { padding: 0 14px; font-weight: 600; }
