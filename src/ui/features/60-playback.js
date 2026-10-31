@@ -23,6 +23,8 @@ playbackStyle.textContent = `
   #pane-run .pb-error { color: var(--danger); font-size: 12px; }
   #pane-run .pb-warning, #pane-run .pb-hint { color: var(--muted); font-size: 12px; margin: 4px 0; }
   #pane-run .pb-check { flex-direction: row; align-items: center; gap: 6px; }
+  #pane-run .pb-speed { flex-direction: row; align-items: center; justify-content: space-between; }
+  #pane-run .pb-speed select { width: auto; flex: none; padding: 4px 8px; font-size: 13px; }
   #pane-run input[type="range"] { flex: 1; min-width: 0; padding: 0; accent-color: var(--accent); }
   #pane-run #pb-position { font-size: 12px; color: var(--muted); }
   #pane-run #pb-guess:empty { display: none; }
@@ -44,6 +46,9 @@ let pbIndex = 0;
 let pbPrevIndex = -1; // the step shown before, so the token knows which edge to travel
 let pbRenderedFor = null; // the graph the form was last built for: the form is rebuilt only when this changes
 let pbTimer = null;
+const pbSpeeds = [["Slow", 1200], ["Normal", 600], ["Fast", 300], ["Very fast", 120]]; // milliseconds per step
+const pbSpeedKey = "aidea.playback.speed";
+let pbSpeed = (() => { try { const v = Number(localStorage.getItem(pbSpeedKey)); return pbSpeeds.some(([, ms]) => ms === v) ? v : 600; } catch { return 600; } })(); // remembered between visits
 let pbOwnPython = true;    // the "Project's own interpreter" box: on unless the person unticks it
 let pbGuessOn = false;    // "Guess first": off until the person turns it on
 let pbGuessResult = null;  // what to say once the guessed step is shown: { at: index of the step guessed, text }
@@ -128,15 +133,45 @@ function pbGo(index) {
   pbShowStep();
 }
 
-function pbPlayPause() {
-  if (pbTimer) { pbStop(); pbShowStep(); return; }
-  if (pbIndex >= pbRecording.visits.length - 1) pbIndex = 0;
+function pbStart() {
   pbTimer = setInterval(() => {
     if (pbIndex >= pbRecording.visits.length - 1) { pbStop(); pbShowStep(); return; }
     pbGo(pbIndex + 1);
-  }, 600);
+  }, pbSpeed);
+}
+function pbPlayPause() {
+  if (pbTimer) { pbStop(); pbShowStep(); return; }
+  if (pbIndex >= pbRecording.visits.length - 1) pbIndex = 0;
+  pbStart();
   pbShowStep();
 }
+// A new speed takes effect at once, also while playing; the choice is remembered.
+function pbSetSpeed(ms) {
+  pbSpeed = ms;
+  try { localStorage.setItem(pbSpeedKey, String(ms)); } catch { /* not remembered; the page still works */ }
+  if ($("pb-speed")) $("pb-speed").value = ms;
+  if (pbTimer) { pbStop(); pbStart(); }
+}
+
+// Keys: Space play or pause, left and right arrows step, Home and End jump, - and + change the speed.
+// They never act while the person types in a field or has a control focused that uses the same key.
+document.addEventListener("keydown", (e) => {
+  if (!pbRecording?.visits.length || authoredShown !== "flow" || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
+  if (e.target.closest?.("input, select, textarea, [contenteditable]") || (e.key === " " && e.target.closest?.("button, a"))) return;
+  const keys = {
+    " ": pbPlayPause,
+    ArrowLeft: () => { pbStop(); pbGo(pbIndex - 1); },
+    ArrowRight: pbStepForward,
+    Home: () => { pbStop(); pbGo(0); },
+    End: () => { pbStop(); pbGo(pbRecording.visits.length - 1); },
+    "-": () => pbSetSpeed(pbSpeeds[Math.max(0, pbSpeeds.findIndex(([, ms]) => ms === pbSpeed) - 1)][1]),
+    "+": () => pbSetSpeed(pbSpeeds[Math.min(pbSpeeds.length - 1, pbSpeeds.findIndex(([, ms]) => ms === pbSpeed) + 1)][1]),
+  };
+  keys["="] = keys["+"];
+  if (!keys[e.key]) return;
+  e.preventDefault();
+  keys[e.key]();
+});
 
 async function pbRecord() {
   const message = $("pb-message");
@@ -233,17 +268,20 @@ function pbRender() {
       pbEl("hr"),
       pbEl("h3", { textContent: "Playback" }),
       pbEl("div", { className: "pb-row" },
-        pbEl("button", { className: "step", textContent: "‹", title: "Step back", onclick: () => { pbStop(); pbGo(pbIndex - 1); } }),
+        pbEl("button", { className: "step", textContent: "‹", title: "Step back (←)", onclick: () => { pbStop(); pbGo(pbIndex - 1); } }),
         pbEl("input", { id: "pb-slider", type: "range", min: 0, max: pbRecording.visits.length - 1, value: pbIndex, oninput: (e) => { pbStop(); pbGo(Number(e.target.value)); } }),
-        pbEl("button", { id: "pb-forward", className: "step", textContent: "›", title: "Step forward", onclick: pbStepForward }),
+        pbEl("button", { id: "pb-forward", className: "step", textContent: "›", title: "Step forward (→)", onclick: pbStepForward }),
       ),
       pbEl("label", { className: "pb-check" }, pbEl("input", { id: "pb-guess-on", type: "checkbox", checked: pbGuessOn, onchange: (e) => { pbGuessOn = e.target.checked; if (!pbGuessOn) pbGuessClose(); } }), "Guess first: predict the next step before it shows"),
       pbEl("div", { id: "pb-guess" }),
       pbEl("div", { className: "pb-row" },
-        pbEl("button", { textContent: "⏮", title: "Back to the start", onclick: () => { pbStop(); pbGo(0); } }),
-        pbEl("button", { id: "pb-play", className: "primary", textContent: "Play", onclick: pbPlayPause }),
+        pbEl("button", { textContent: "⏮", title: "Back to the start (Home)", onclick: () => { pbStop(); pbGo(0); } }),
+        pbEl("button", { id: "pb-play", className: "primary", textContent: "Play", title: "Play or pause (Space)", onclick: pbPlayPause }),
+        pbEl("button", { title: "Jump to the end (End)", textContent: "⏭", onclick: () => { pbStop(); pbGo(pbRecording.visits.length - 1); } }),
         pbEl("span", { id: "pb-position" }),
       ),
+      pbEl("label", { className: "pb-speed" }, "Speed", pbEl("select", { id: "pb-speed", onchange: (e) => pbSetSpeed(Number(e.target.value)) }, ...pbSpeeds.map(([t, ms]) => pbEl("option", { value: ms, textContent: t, selected: ms === pbSpeed })))),
+      pbEl("p", { id: "pb-keys", className: "pb-hint", textContent: "Keys: Space play or pause, ← → step, Home and End jump, - and + change the speed." }),
       pbEl("p", { id: "pb-narration" }),
       pbEl("div", { id: "pb-values", className: "pb-values" }),
       pbEl("pre", { id: "pb-output" }),
