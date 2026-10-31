@@ -4,7 +4,7 @@
 
 **Blocked by:** 07 (docking engine decision, done), 18 (Panel registry and the Panels menu, done).
 
-**Status:** built and reviewed; the Electron numbers below were taken by the person's session (see the last box)
+**Status:** resolved (commits 2cde2ea, 72d08e7, 506ac92 and the review fixes 75b504d and 642e45e); ticket 19 saves and restores the arrangement, ticket 11 brings back the keyboard.
 
 **Decided (ADR 0007, accepted 2026-10-31):** built on `dockview-core`, vendored in the repository (the script and its CSS copied in with the MIT licence text kept in a notice file, no network, no runtime dependency in `package.json`); `dockview-enterprise` is not used. What this ticket must handle because of that choice: a registry declaration becomes a dockview panel (a new Panel is still one declaration); `defaultRenderer: "always"` so hidden Panels keep their scroll and zoom; every minimum padded by the library's 8 px gap; the library's 166 KB of CSS overridden onto the shared scale, with a row added to `docs/agents/ui-style.md` for what the overrides cannot reach (close buttons, tab geometry) in the same commit; the narrow-window drawers rewritten (the fixed grid and its drawers are replaced, not reused); smoothness measured again on the real Electron window at 1x (the spike saw dropped frames only under 4x CPU throttling).
 
@@ -18,7 +18,7 @@
 - [~] The default Layout matches today's window at 1920 and 1280 (same Panels, order and widths within a few pixels), and Files and Code still start hidden. (Default: yes, exact at 1920 and within 2 px at 1280 and 1266. With Run open at 1280 it differs: Canvas 390 against 412 and Builder 270 against 260, because every minimum is padded by the library's gap.)
 - [~] The automatic fold when there is no room, Run appearing only with a Flow open, and the drawers of a narrow window behave as before.
 - [x] The library's look is on the shared scale (`docs/agents/ui-style.md` extended in the same commit); the MIT notice is in the repository.
-- [~] Smoothness is measured on the real Electron window and written in the ticket (frames over 25 ms while dragging a splitter and a Panel), not only that it works. (Numbers below were taken by the person's session in the real window; I could not launch Electron myself, so the box stays at [~] until they are re-run on a build of the final code.)
+- [x] Smoothness is measured on the real Electron window and written in the ticket (frames over 25 ms while dragging a splitter and a Panel), not only that it works. (Measured twice in the real window, the second time after the review fixes: dragging a border 0 of 142 frames over 25 ms, worst 17 ms; dragging the Tutor's tab to the left edge of the Canvas 0 of 16, worst 17 ms, landing preview shown. At 1x, with the real mouse. The 4x CPU-throttled numbers (4 of 55 frames for a Panel drag, worst 67 ms) are from headless Chrome only.)
 
 ## What was built
 
@@ -59,3 +59,8 @@ Taken by the person's session on the code of the first three commits. Default at
 Today's window (main, before this ticket) against the Layout, default (Builder / Canvas / Tutor): 1920: 413 / 886 / 590 against 413 / 886 / 590; 1280: 271 / 588 / 389 against 271 / 588 / 390; 1266: 268 / 581 / 384 against 271 / 581 / 383. With Run open (Builder / Canvas / Run / Tutor): 1920: 329 / 709 / 372 / 470 against the same; 1280: 260 / 412 / 288 / 280 against 270 / 390 / 290 / 290 (the minimums are bigger by the gap, so the Canvas is 22 px narrower there). Real mouse (Playwright): a border dragged, a Panel dragged by its tab across the Canvas to its left (the drop preview showed), a Panel dropped on another tab bar to make tabs, hide and show, the drawer at 700 px, auto-fold at 1100, 900 and 780, Files and Code with a file open (Code keeps its scroll while another Panel is hidden), the Details in the Tutor: all worked and no page errors. Frames over 25 ms: border drag 0 of 122 (1x), 0 of 230 (4x CPU throttling); Panel drag 0 of 41 (1x), 4 of 55 at 4x (worst frame 67 ms). Screenshots were looked at.
 
 Not measured: the real Electron window (last box stays open: the person's session measures frames there); a second monitor; a screen reader; stacked and nested groups under auto-fold; window drag-resizing in Electron.
+
+
+## Re-measured after the review fixes (real Electron window, visible, main monitor, 1266 px viewport, real mouse)
+
+Default arrangement Builder 271, Canvas 581, Tutor 383 (before the docking engine: 268, 581, 384). Border drag 0 of 142 frames over 25 ms, worst 17 ms. Tutor tab dragged onto the left edge of the Canvas: preview shown, Panel moved (Builder, Tutor, Canvas), 0 of 16 frames over 25 ms. Files and Code from the Panels menu, a file chosen: Code shows it. At 700 px the Tutor opens as a 360 px drawer; back to wide the Panels return (Files 242, Code 322, Tutor 300, Canvas 362). The white outline around the Canvas group is gone (screenshot looked at). No page errors. Not measured: a second monitor, a screen reader, the Canvas dragged by a person into a group (blocked by a test with synthetic drag events, not tried with the real mouse), stacked and nested groups under auto-fold.
