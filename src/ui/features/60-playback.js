@@ -48,7 +48,7 @@ let pbRenderedFor = null; // the graph the form was last built for: the form is 
 let pbTimer = null;
 const pbSpeeds = [["Slow", 1200], ["Normal", 600], ["Fast", 300], ["Very fast", 120]]; // milliseconds per step
 const pbSpeedKey = "aidea.playback.speed";
-let pbSpeed = (() => { try { const v = Number(localStorage.getItem(pbSpeedKey)); return pbSpeeds.some(([, ms]) => ms === v) ? v : 600; } catch { return 600; } })(); // remembered between visits
+let pbSpeed = (() => { try { const v = Number(savedServed.speed ?? localStorage.getItem(pbSpeedKey)); return pbSpeeds.some(([, ms]) => ms === v) ? v : 600; } catch { return 600; } })(); // remembered between visits
 let pbOwnPython = true;    // the "Project's own interpreter" box: on unless the person unticks it
 let pbGuessOn = false;    // "Guess first": off until the person turns it on
 let pbGuessResult = null;  // what to say once the guessed step is shown: { at: index of the step guessed, text }
@@ -148,7 +148,8 @@ function pbPlayPause() {
 // A new speed takes effect at once, also while playing; the choice is remembered.
 function pbSetSpeed(ms) {
   pbSpeed = ms;
-  try { localStorage.setItem(pbSpeedKey, String(ms)); } catch { /* not remembered; the page still works */ }
+  try { localStorage.setItem(pbSpeedKey, String(ms)); } catch { /* the core below still remembers */ }
+  savedPut("speed", ms);
   if ($("pb-speed")) $("pb-speed").value = ms;
   if (pbTimer) { pbStop(); pbStart(); }
 }

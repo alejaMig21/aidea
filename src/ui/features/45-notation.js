@@ -56,7 +56,7 @@ const notationClip = (text, max) => (text.length > max ? `${text.slice(0, max - 
 
 // ---- Animations switch: on by default, off when the system asks to reduce motion, remembered between sessions.
 const notationStored = () => { try { return localStorage.getItem(notationKey); } catch { return null; } };
-let notationOn = (notationStored() ?? (matchMedia("(prefers-reduced-motion: reduce)").matches ? "off" : "on")) === "on";
+let notationOn = (savedServed.notation ?? notationStored() ?? (matchMedia("(prefers-reduced-motion: reduce)").matches ? "off" : "on")) === "on";
 const notationToggle = Object.assign(document.createElement("button"), { type: "button", id: "motion-toggle", title: "Turn all motion on or off" });
 notationToggle.setAttribute("aria-label", "Animations");
 $("panels-control").before(notationToggle);
@@ -74,6 +74,7 @@ function notationSync() {
 notationToggle.onclick = () => {
   notationOn = !notationOn;
   try { localStorage.setItem(notationKey, notationOn ? "on" : "off"); } catch {}
+  savedPut("notation", notationOn ? "on" : "off");
   notationSync();
 };
 document.addEventListener("visibilitychange", notationSync);

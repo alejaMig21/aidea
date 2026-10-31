@@ -2,7 +2,7 @@
 // What is open is remembered in this browser only; the page works the same when the browser keeps nothing. During a class every
 // section stays folded (50-tutor.js closes them). Each section's own file fills the body and the summary.
 const tutorSectionsKey = "aidea.tutor-sections";
-const tutorSectionsRead = () => { try { const s = JSON.parse(localStorage.getItem(tutorSectionsKey) || "{}"); return s && typeof s === "object" ? s : {}; } catch { return {}; } };
+let tutorSectionsNow = (() => { try { const s = savedServed.sections ?? JSON.parse(localStorage.getItem(tutorSectionsKey) || "{}"); return s && typeof s === "object" ? s : {}; } catch { return {}; } })();
 
 {
   const style = document.createElement("style");
@@ -30,11 +30,13 @@ function tutorSection(id, title) {
   const body = Object.assign(document.createElement("div"), { className: "tutor-section-body" });
   head.append(summary);
   el.append(head, body);
-  el.open = tutorSectionsRead()[id] === true;
+  el.open = tutorSectionsNow[id] === true;
   // A class folds every section on its own; that is not the person's choice and is not remembered.
   el.addEventListener("toggle", () => {
     if ($("pane-tutor").classList.contains("tutor-live")) return;
-    try { localStorage.setItem(tutorSectionsKey, JSON.stringify({ ...tutorSectionsRead(), [id]: el.open })); } catch { /* nothing is remembered; the page still works */ }
+    tutorSectionsNow = { ...tutorSectionsNow, [id]: el.open };
+    try { localStorage.setItem(tutorSectionsKey, JSON.stringify(tutorSectionsNow)); } catch { /* the core below still remembers */ }
+    savedPut("sections", tutorSectionsNow);
   });
   return { el, body, summarise: (text) => { summary.textContent = text; } };
 }

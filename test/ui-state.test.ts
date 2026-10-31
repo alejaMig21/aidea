@@ -41,3 +41,16 @@ test("a Layout that is not a JSON object is refused and the saved one stays", as
     assert.deepEqual(saved(await (await fetch(core.url + "/")).text()), { layout: { ok: 1 } });
   } finally { core.close(); }
 });
+
+test("the notation switch, the playback speed and the Tutor sections are kept the same way, and only valid values are taken", async () => {
+  const core = await startCore({ port: 0 });
+  const send = (name: string, body: unknown) => fetch(core.url + "/ui/" + name, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  try {
+    for (const [name, good, bad] of [["notation", "off", ["maybe", 1, null]], ["speed", 300, ["fast", -1, null, Number.MAX_SAFE_INTEGER + 1e300]], ["sections", { details: true }, [[], "x", null]], ["layout", { a: 1 }, [[], "x", null]]] as const) {
+      assert.equal((await send(name, good)).status, 200, name);
+      for (const b of bad as readonly unknown[]) assert.equal((await send(name, b)).status, 400, `${name}: ${JSON.stringify(b)}`);
+    }
+    for (const other of ["elsewhere", "constructor", "toString"]) assert.equal((await send(other, "x")).status, 404, "only the four names are kept");
+    assert.deepEqual(saved(await (await fetch(core.url + "/")).text()), { layout: { a: 1 }, notation: "off", speed: 300, sections: { details: true } });
+  } finally { core.close(); }
+});
