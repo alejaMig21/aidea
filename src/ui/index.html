@@ -24,17 +24,12 @@
     --sans: "Inter", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, monospace;
   }
   * { box-sizing: border-box; }
-  /* Panels: Builder | separator | Files | separator | Code | separator | Canvas | separator | Run | separator | Tutor, each a rounded card under the top bar. The separators are the gaps between cards.
-     Each track is minmax(minimum, weight in fr); 07-layout.js sets the six --*-track values (a folded pane is a 0 track) and the defaults below only
-     matter before it runs. The shell is exactly the window tall (dvh follows mobile toolbars, vh is the fallback); only the cards scroll inside. */
+  /* Panels: each a rounded card under the top bar, around the Canvas. They are declared once in the registry of 07-layout.js, which creates the cards
+     and their separators (the gaps between cards) and sets the grid; each track is minmax(minimum, weight in fr) in a --<id>-track value (a folded pane is a 0 track). The shell is exactly the window tall (dvh follows mobile toolbars, vh is the fallback); only the cards scroll inside. */
   html { height: 100%; }
-  body { --chat-track: minmax(268px, 380fr); --canvas-track: minmax(376px, 800fr); --files-track: 0px; --code-track: 0px; --run-track: 0px; --right-track: minmax(288px, 540fr); margin: 0; height: 100%; height: 100vh; height: 100dvh; overflow: hidden; display: grid; grid-template-columns: var(--chat-track) auto var(--files-track) auto var(--code-track) auto var(--canvas-track) auto var(--run-track) auto var(--right-track); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "top top top top top top top top top top top" "chat sepc files sepf code sepk main sepx run sepr right"; background: var(--bg); color: var(--text); font: 13px/1.4 var(--sans); }
-  #chat, #files, #code, main, #run, #right { margin-bottom: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-  #chat { grid-area: chat; margin-left: 8px; min-width: 0; display: flex; flex-direction: column; }
-  #code { grid-area: code; min-width: 0; display: flex; flex-direction: column; }
-  #files { grid-area: files; min-width: 0; display: flex; flex-direction: column; }
-  #run { grid-area: run; min-width: 0; display: flex; flex-direction: column; }
-  #right { grid-area: right; margin-right: 8px; min-width: 0; display: flex; flex-direction: column; }
+  body { margin: 0; height: 100%; height: 100vh; height: 100dvh; overflow: hidden; display: grid; grid-template-rows: auto minmax(0, 1fr); background: var(--bg); color: var(--text); font: 13px/1.4 var(--sans); }
+  .panel-card, main { margin-bottom: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .panel-card { min-width: 0; display: flex; flex-direction: column; }
   main { grid-area: main; min-width: 0; position: relative; background-color: var(--canvas); background-image: radial-gradient(circle, #283044 1px, transparent 1.3px); background-size: 18px 18px; }
   h1 { font-size: 15px; margin: 0; }
   h2 { font-size: 11px; margin: 0; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 500; }
@@ -113,16 +108,24 @@
   #opening, #languages { min-width: 0; font-size: 12px; color: var(--muted); } /* secondary text of the shared scale */
   #languages { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #no-code { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); width: min(420px, calc(100% - 30px)); margin: 0; text-align: left; font-size: 13.5px; line-height: 1.5; color: var(--text); }
-  #fold-buttons { margin-left: auto; display: flex; gap: 12px; flex: none; }
-  #refresh, #guide-open { flex: none; padding: 4px 12px; font-size: 13px; font-weight: 400; background: transparent; color: var(--text); border: 1px solid var(--control); white-space: nowrap; } /* the top bar's text buttons: controls of the shared scale */
+  #fold-buttons { margin-left: auto; position: relative; flex: none; }
+  #refresh, #guide-open, #panels-button { flex: none; padding: 4px 12px; font-size: 13px; font-weight: 400; background: transparent; color: var(--text); border: 1px solid var(--control); white-space: nowrap; } /* the top bar's text buttons: controls of the shared scale */
   #guide-open { margin-left: auto; }
   #guide-open ~ #motion-toggle { margin-left: 0; } /* the guide button leads the right-hand group */
-  @media (max-width: 480px) { #switcher-label { display: none; } #topbar { gap: 8px; padding: 0 8px; } #fold-buttons { gap: 8px; } #refresh, #guide-open { padding: 4px 8px; } }
+  @media (max-width: 480px) { #switcher-label { display: none; } #topbar { gap: 8px; padding: 0 8px; } #refresh, #guide-open, #panels-button { padding: 4px 8px; } }
   @media (max-width: 759px) { #switcher-menu { position: fixed !important; top: 49px !important; left: 8px !important; width: min(338px, calc(100vw - 16px)) !important; } }
-  #fold-buttons button { width: 30px; height: 30px; padding: 0; display: grid; place-items: center; background: transparent; color: var(--text); border: 1px solid var(--control); }
-  #fold-buttons button[aria-pressed="false"] { color: var(--muted); }
-  #fold-buttons rect { stroke: currentColor; }
-  #fold-buttons svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; cursor: inherit; }
+  #panels-button .caret { margin-left: 4px; font-size: 9px; color: var(--muted); }
+  /* The Panels menu: one control in the header whatever the number of Panels; one row each, with a check mark when it is shown. */
+  #panels-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 10; width: 264px; max-height: calc(100vh - 60px); overflow-y: auto; background: #101319; border: 1px solid var(--control); border-radius: 12px; padding: 6px; box-shadow: 0 14px 36px rgba(0, 0, 0, .5); }
+  #panels-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; text-align: left; background: transparent; color: var(--text); border: 0; font-size: 13px; font-weight: 400; }
+  #panels-menu button:hover:not(:disabled), #panels-menu button:focus-visible { background: var(--selected); filter: none; }
+  #panels-menu button:disabled { color: var(--muted); cursor: default; }
+  #panels-menu .check { flex: none; width: 12px; font-size: 12px; color: var(--accent); }
+  #panels-menu svg { flex: none; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+  #panels-menu rect { stroke: currentColor; }
+  #panels-menu .label { flex: 1 1 auto; min-width: 0; }
+  #panels-menu .reason { display: block; font-size: 12px; color: var(--muted); }
+  @media (max-width: 759px) { #panels-menu { position: fixed; top: 49px; right: 8px; width: min(300px, calc(100vw - 16px)); } }
   /* Project switcher popover */
   #switcher-menu { position: absolute; top: calc(100% + 6px); left: 19px; z-index: 10; width: 338px; max-height: calc(100vh - 60px); overflow-y: auto; background: #101319; border: 1px solid var(--control); border-radius: 12px; padding: 8px; box-shadow: 0 14px 36px rgba(0, 0, 0, .5); }
   #switcher-menu h2 { padding: 6px 10px 4px; }
@@ -232,22 +235,13 @@
   <span id="languages"></span>
   <button type="button" id="refresh" title="Read the code of this project again, after you edited it" hidden>Refresh</button>
   <button type="button" id="guide-open" title="A short class on how aidea works (a quick tour until the Tutor is available)">How aidea works</button>
-  <div id="fold-buttons" role="group" aria-label="Show or hide panels">
-    <button type="button" id="fold-chat" aria-pressed="true" aria-label="Builder" title="Show or hide the Builder"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M6 3v10"/></svg></button>
-    <button type="button" id="fold-files" aria-pressed="false" aria-label="Files" title="Show or hide the Files"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M4.5 6h3M4.5 8.5h3M4.5 11h3"/></svg></button>
-    <button type="button" id="fold-code" aria-pressed="false" aria-label="Code" title="Show or hide the Code"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M6.5 6 4.5 8l2 2M9.5 6l2 2-2 2"/></svg></button>
-    <button type="button" id="fold-canvas" aria-pressed="true" aria-label="Canvas" title="Show or hide the Canvas"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M5 3v10M11 3v10"/></svg></button>
-    <button type="button" id="fold-run" aria-pressed="false" aria-label="Run" title="Show or hide Run"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M7 3v10"/></svg></button>
-    <button type="button" id="fold-right" aria-pressed="true" aria-label="Tutor" title="Show or hide the Tutor"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M10 3v10"/></svg></button>
+  <div id="fold-buttons">
+    <button type="button" id="panels-button" aria-haspopup="menu" aria-expanded="false" aria-controls="panels-menu" title="Show or hide the panels">Panels <span class="caret" aria-hidden="true">&#9662;</span></button>
+    <div id="panels-menu" role="menu" aria-label="Panels" hidden></div>
   </div>
 </header>
-<!-- DOM order is the keyboard order and matches the visual order: Builder, separator, Files, separator, Code, separator, Canvas, separator, Run, separator, Tutor. -->
-<section id="chat" aria-label="Builder"><h2 class="card-head">Builder</h2></section>
-<div id="sepc" role="separator" aria-orientation="vertical" aria-label="Resize the Builder" tabindex="0"></div>
-<section id="files" aria-label="Files"><h2 class="card-head">Files</h2><div id="pane-files"></div></section>
-<div id="sepf" role="separator" aria-orientation="vertical" aria-label="Resize Files" tabindex="0"></div>
-<section id="code" aria-label="Code"><h2 class="card-head">Code</h2><div id="pane-code"></div></section>
-<div id="sepk" role="separator" aria-orientation="vertical" aria-label="Resize Code" tabindex="0"></div>
+<!-- The side Panels (Builder, Files, Code, Run, Tutor) are created by 07-layout.js from its registry, each with its separator, in this order around the Canvas.
+     DOM order is the keyboard order and matches the visual order. -->
 <main>
   <svg id="canvas" role="img" aria-label="Canvas"><g id="world"></g></svg>
   <p id="no-code" hidden></p>
@@ -259,14 +253,7 @@
     <button type="button" id="zoom-fit" aria-label="Fit the Canvas to its content">Fit</button>
   </div>
 </main>
-<div id="sepx" role="separator" aria-orientation="vertical" aria-label="Resize Run" tabindex="0"></div>
-<section id="run" aria-label="Run"><h2 class="card-head">Run</h2><div id="pane-run"></div></section>
-<div id="sepr" role="separator" aria-orientation="vertical" aria-label="Resize the Tutor" tabindex="0"></div>
-<div id="right" role="region" aria-label="Tutor">
-  <h2 class="card-head">Tutor</h2>
-  <div id="pane-tutor"></div>
-  <aside id="panel" aria-label="Details"></aside>
-</div>
+<aside id="panel" aria-label="Details"></aside><!-- the Tutor panel adopts it -->
 <div id="scrim" hidden></div>
 <section id="home" aria-label="Home"><div class="h-col">
   <div class="h-head">

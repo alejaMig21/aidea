@@ -29,15 +29,22 @@ test("no text a person reads names an area of the window a column or the Run pan
   assert.deepEqual(found, [], `old window vocabulary:\n${found.join("\n")}`);
 });
 
-test("Run and the Tutor are separate cards with their own top-bar button and separator, never one inside the other", () => {
+test("the Panels are declared once in the registry: the page keeps only the Canvas and one Panels control, and the registry keeps Run and the Tutor apart", () => {
   const html = readFileSync(join(root, "src", "ui", "index.html"), "utf8").replaceAll("\r\n", "\n");
-  const at = (id: string) => { const i = html.indexOf(`id="${id}"`); assert.ok(i >= 0, `#${id} exists`); return i; };
-  for (const id of ["fold-run", "fold-files", "fold-code", "pane-run", "pane-files", "pane-code", "pane-tutor"]) at(id);
-  // The cards stand side by side in this order, so Run is neither inside the Tutor's card nor the other way round.
-  const order = ["sepc", "files", "sepf", "code", "sepk", "canvas", "sepx", "run", "sepr", "right", "scrim"].map(at);
-  assert.deepEqual([...order].sort((a, b) => a - b), order, "Builder | Files | Code | Canvas | Run | Tutor, each separator between two cards");
-  assert.ok(at("pane-run") > at("run") && at("pane-run") < at("sepr"), "Run's body is inside Run's card");
-  assert.ok(at("pane-tutor") > at("right") && at("pane-tutor") < at("scrim"), "the Tutor's body is inside the Tutor's card");
+  const layout = readFileSync(join(root, "src", "ui", "features", "07-layout.js"), "utf8").replaceAll("\r\n", "\n");
+  // The page: no card, separator or button of a Panel is written by hand (the real page is checked by panel-registry.test.ts in a browser).
+  assert.equal((html.match(/id="panels-button"/g) ?? []).length, 1, "one control for Panels");
+  for (const id of ["chat", "files", "code", "run", "right", "sepc", "sepf", "sepk", "sepx", "sepr", "fold-chat", "fold-files", "fold-code", "fold-run", "fold-right", "fold-canvas", "pane-files", "pane-code", "pane-run", "pane-tutor"]) {
+    assert.ok(!html.includes(`id="${id}"`), `#${id} is created from the registry, not written in the page`);
+  }
+  assert.ok(html.includes("<main>"), "the Canvas stays in the page");
+  // The registry: every Panel once, Run and the Tutor each with a body of its own (never one inside the other).
+  const declared = [...layout.matchAll(/^layoutRegister\(\{ id: "(\w+)"[^\n]*$/gm)];
+  assert.deepEqual(declared.map((m) => m[1]), ["chat", "files", "code", "run", "right"]);
+  const line = (id: string) => declared.find((m) => m[1] === id)![0];
+  assert.match(line("run"), /pane: "pane-run"/);
+  assert.match(line("right"), /pane: "pane-tutor"/);
+  assert.doesNotMatch(line("run"), /adopt/);
 });
 
 // Code is a Panel, not a layer: the Layer bar lists only what the Canvas draws.
