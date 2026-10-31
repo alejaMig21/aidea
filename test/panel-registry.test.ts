@@ -84,6 +84,11 @@ test("the page loads without errors and its Panels stand in the order of the reg
   assert.deepEqual(report.cards, order().cards.filter((id) => id === "main" || wanted.has(id)));
 });
 
+test("the Canvas keeps its own look inside the docking Layout: its dark surface and its dot grid", { skip }, () => {
+  assert.match(report.canvasLook.image, /radial-gradient/, "the dot grid was lost when the Layout restyled the Canvas");
+  assert.equal(report.canvasLook.color, "rgb(17, 20, 26)");
+});
+
 test("the header has one control for Panels and no per-Panel button", { skip }, () => {
   assert.equal(report.headerControls, 1);
   assert.equal(report.perPanelButtons, 0);

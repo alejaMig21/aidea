@@ -143,9 +143,9 @@ function layoutBuild(d) {
     .dockview-theme-aidea .dv-tab { padding: 0 14px; font-weight: 600; }
     .dockview-theme-aidea .dv-tab.dv-active-tab:not(:only-child) { box-shadow: inset 0 -2px 0 var(--accent); } /* with several tabs in a group, the one in front is underlined */
     .dockview-theme-aidea .dv-default-tab-action { display: none !important; }
-    .panel-card, main { width: 100%; height: 100%; background: var(--panel); border: 0; border-radius: 0 0 12px 12px; margin: 0; overflow: hidden; }
-    main { background-color: var(--canvas); }
-    .panel-card { min-width: 0; display: flex; flex-direction: column; }
+    /* The Canvas keeps its own look (index.html: the dark surface with its dot grid): only the size, the radius and the margin are set here. A \`background\` shorthand on it would drop the dots. */
+    .panel-card, main { width: 100%; height: 100%; border: 0; border-radius: 0 0 12px 12px; margin: 0; overflow: hidden; }
+    .panel-card { min-width: 0; display: flex; flex-direction: column; background: var(--panel); }
     /* The failure line lives in <main> over the Canvas; with the Canvas hidden it moves to the body (layoutApply) and floats at the bottom of the window. */
     body > #error { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; max-width: min(560px, calc(100vw - 32px)); z-index: 25; padding: 6px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
     .drawer-close, .drawer-title, #scrim { display: none; }
