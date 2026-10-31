@@ -30,11 +30,19 @@ import json
 import os
 import sys
 import sysconfig
+import threading
+import types
 
 from effects import import_aliases, is_effect, resolve_alias  # sits next to this file; analyze.py reaches import_aliases through here
 
 MAX_STEPS = 2000  # a run that records more steps than this is cut short (for example an endless loop)
 MAX_TEXT = 80
+# Limits of the structured form of one visit (measured in .scratch/layout-and-data/spike-12): depth, items per container,
+# nodes per visit, and the bytes of all structured forms in one recording.
+SHAPE_DEPTH, SHAPE_ITEMS, SHAPE_NODES, SHAPE_BYTES = 6, 100, 500, 4_000_000
+# Values that are drawn as a labelled box, never opened.
+OPAQUE = (types.FunctionType, types.BuiltinFunctionType, types.MethodType, types.GeneratorType, types.CoroutineType,
+          types.ModuleType, types.FrameType, types.TracebackType, io.IOBase, threading.Thread, type(threading.Lock()), type)
 
 # Audit events that are stopped while the function runs. Python names them after the operation.
 BLOCKED_EVENTS = {
@@ -137,6 +145,109 @@ def short(value, limit=MAX_TEXT):
 
 def snapshot(frame):
     return {name: short(value) for name, value in list(frame.f_locals.items()) if not name.startswith("__")}
+
+
+class Shaper:
+    """The structured form of the locals, next to their text. One per run, so an object keeps the same id on every visit.
+
+    NEVER calls repr, a property or any method the person wrote: it reads the built-in containers through their built-in
+    methods and the fields of an object straight from __dict__ / __slots__ descriptors. Objects are kept alive for the
+    run, so Python cannot reuse an id for another object; ids count up in the order objects are first seen."""
+
+    def __init__(self):
+        self.ids, self.keep, self.previous, self.bytes, self.full = {}, [], {}, 0, False
+
+    def number(self, value):
+        key = id(value)
+        if key not in self.ids:
+            self.ids[key] = len(self.ids)
+            self.keep.append(value)
+        return self.ids[key]
+
+    def shape(self, value, seen, budget, depth=0):
+        kind = type(value)
+        if value is None or kind in (bool, int, float, str):
+            if budget[0] <= 0:
+                return {"kind": "cut", "type": kind.__name__, "reason": "nodes"}
+            budget[0] -= 1
+            return self.scalar(value)
+        if isinstance(value, OPAQUE):
+            return {"kind": "opaque", "type": kind.__name__}
+        number = self.number(value)
+        if number in seen:
+            return {"kind": "ref", "id": number}
+        seen.add(number)
+        base = next((b for b in (list, tuple, set, frozenset, dict) if isinstance(value, b)), None)
+        if budget[0] <= 0 or depth >= SHAPE_DEPTH:
+            cut = {"kind": "cut", "id": number, "type": kind.__name__, "reason": "depth" if budget[0] > 0 else "nodes"}
+            if base:
+                cut["len"] = base.__len__(value)
+            return cut
+        budget[0] -= 1
+        sub = lambda v: self.shape(v, seen, budget, depth + 1)
+        if base is dict:
+            items = list(dict.items(value))
+            return {"kind": "map", "id": number, "type": kind.__name__, "len": len(items), "hidden": max(0, len(items) - SHAPE_ITEMS),
+                    "entries": [[sub(k), sub(v)] for k, v in items[:SHAPE_ITEMS]]}
+        if base:
+            items = list(base.__iter__(value))
+            return {"kind": "seq", "id": number, "type": kind.__name__, "len": len(items), "hidden": max(0, len(items) - SHAPE_ITEMS),
+                    "items": [sub(v) for v in items[:SHAPE_ITEMS]]}
+        fields = self.fields(value)
+        if fields is None:
+            return {"kind": "opaque", "type": kind.__name__}
+        return {"kind": "object", "id": number, "type": kind.__name__, "hidden": max(0, len(fields) - SHAPE_ITEMS),
+                "fields": {k: sub(v) for k, v in fields[:SHAPE_ITEMS]}}
+
+    @staticmethod
+    def scalar(value):
+        kind = type(value)
+        if kind is float and (value != value or value in (float("inf"), float("-inf"))):
+            return {"kind": "scalar", "type": "float", "value": repr(value), "tag": "float"}  # JSON has no nan or inf
+        if kind is int and abs(value) > 2**53:
+            return {"kind": "scalar", "type": "int", "value": str(value), "tag": "int"}  # JSON.parse would round it
+        if kind is str and len(value) > MAX_TEXT:
+            value = value[: MAX_TEXT - 1] + "…"
+        return {"kind": "scalar", "type": kind.__name__, "value": value}
+
+    @staticmethod
+    def fields(value):
+        found, slotted = [], False
+        for cls in type(value).__mro__:
+            slots = cls.__dict__.get("__slots__", ())
+            slotted = slotted or "__slots__" in cls.__dict__
+            for name in (slots,) if isinstance(slots, str) else slots:
+                descriptor = cls.__dict__.get(name)
+                if isinstance(descriptor, types.MemberDescriptorType):
+                    try:
+                        found.append((name, descriptor.__get__(value)))
+                    except AttributeError:  # a slot that was never set
+                        pass
+        try:
+            instance = object.__getattribute__(value, "__dict__")  # not getattr: a __getattr__ of the person's would run
+        except AttributeError:
+            instance = None
+        if isinstance(instance, dict):
+            found.extend(dict.items(instance))
+        return found if slotted or isinstance(instance, dict) else None
+
+    def snapshot(self, frame):
+        """{local name: shape} for one visit, or None once the recording's byte budget is spent."""
+        if self.full:
+            return None
+        seen, budget, shapes = set(), [SHAPE_NODES], {}
+        for name, value in list(frame.f_locals.items()):
+            if name.startswith("__"):
+                continue
+            shapes[name] = self.shape(value, seen, budget)
+            text = json.dumps(shapes[name], separators=(",", ":"))
+            if self.previous.get(name) != text:
+                shapes[name]["changed"] = True
+            self.previous[name] = text
+            self.bytes += len(text)
+        if self.bytes > SHAPE_BYTES:
+            self.full = True
+        return shapes
 
 
 def resolve(module, parts, instance):
@@ -257,11 +368,18 @@ def main():
 
     trace, out, state = [], io.StringIO(), {"last": None, "result": None, "raising": False, "frame": None}
     recording = {"truncated": False}
+    shaper = Shaper()
 
     def record(step, frame):
         if len(trace) >= MAX_STEPS:
             raise StopRecording()
-        trace.append({"step": step, "locals": snapshot(frame)})
+        visit = {"step": step, "locals": snapshot(frame)}
+        shapes = shaper.snapshot(frame)
+        if shapes is not None:
+            visit["shapes"] = shapes
+        elif not recording.get("shapesTruncated"):
+            recording["shapesTruncated"] = True  # the byte budget is spent: later visits keep their text only
+        trace.append(visit)
 
     def local_trace(frame, event, arg):
         if event == "line":

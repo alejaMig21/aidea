@@ -152,7 +152,8 @@ function readRecording(core: Core, project: Project, args: Record<string, unknow
   const mine = [...core.recordings.values()].filter((r): r is Record<string, any> => (r as any)?.project === project.id);
   const found = typeof args.id === "string" ? mine.find((r) => r.id === args.id) : typeof args.node === "string" ? mine.findLast((r) => r.node === args.node) : undefined;
   if (!found) return fail("There is no recording for that id or function in this Project. A recording exists only after the person has played the function.");
-  let visits: unknown[] = Array.isArray(found.visits) ? found.visits : [];
+  // The structured shapes are for drawing; the Tutor reads the text form, which is far smaller.
+  let visits: unknown[] = Array.isArray(found.visits) ? found.visits.map(({ shapes, ...visit }: Record<string, unknown>) => visit) : [];
   const total = visits.length;
   const render = () => JSON.stringify({ ...found, project: undefined, visits });
   while (render().length > MAX_TEXT_CHARS && visits.length > 1) visits = visits.slice(0, Math.floor(visits.length / 2));
