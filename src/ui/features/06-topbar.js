@@ -152,7 +152,7 @@ async function refreshProject() {
     else if (testsOpen) await componentsLoad(null, true);
     else await draw(body.nodes);
     if (layer === "flow") { if (!(has(algo) && await algoOpen(algo, true))) showLayer("components"); }
-    await codeRefresh(body.nodes, layer);
+    await codeRefresh(body.nodes);
     document.dispatchEvent(new CustomEvent("project-refreshed", { detail: { id: project } }));
     if (!has(codeSelected)) codeSelected = null;
     if (project === current) { Object.assign(view, saved); apply(); }

@@ -4,7 +4,13 @@
 
 **Blocked by:** 03 (Files panel).
 
-**Status:** implemented (review pending)
+**Status:** resolved (commit 7e00c35 and the review fixes after it)
+
+## Review (fresh context, Standards and Spec separately) and what changed after it
+
+Fixed: a project refresh that finished while a file click was still loading discarded the click (the refresh now takes no request number of its own; measured live: a click during a refresh shows the chosen file); choosing a file at 1266 px with Run open folded the Files panel it was chosen in (auto-fold now gives up the Builder first, then Run and the Tutor, then Files and Code; measured: Files stays and Run folds); a pipe or device file by path could hang the read (the core answers 400 for anything that is not a regular file); the tokenizer did not colour `0xFF` or `1e5`, coloured `obj.type` as a keyword and had no cap on long lines (lines over 1000 characters are plain); `codeLost` was written and never read, `codeOpen` and `codeOpenFile` were one function twice, and `codeRefresh` got an argument it ignored; the guide never mentioned the Code panel (it does now). Ticket 06 now says "Open in my editor" must work for any file, which needs the core's open-in-editor route to accept a path.
+
+Known and left: the narrow drawer for Code replaces the Files drawer, so the tree is closed after each pick (one drawer at a time); the Code drawer is at most 360 px; `file=` can read anything inside the Project, including folders the Files tree lists as ignored and `.env` (it is the person's own Project and the route is local, but worth a decision if aidea ever serves anything but its own window); folders in the tree carry no `aria-selected`; a 500 KB file draws one row per line with no windowing; there is no automated test of the interface behaviour (opening on a file choice, showing and hiding, Canvas hidden), only of the protocol and of the page's shape.
 
 - [x] The layers list and the layer help no longer contain Code; a test fails if a Code layer reappears. (`test/panels-vocabulary.test.ts`: no tab, layer id, legend or `showLayer("code")` in the interface; the layer help has no `code`; a class on `code` is refused.)
 - [x] Choosing a file in Files shows its source in the Code panel; the Code panel can be shown or hidden on its own.

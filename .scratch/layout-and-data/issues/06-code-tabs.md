@@ -9,5 +9,5 @@
 - [ ] Opening a second file adds a tab; closing a tab shows the previous one.
 - [ ] Each tab remembers the lines highlighted and the scroll position.
 - [ ] Refresh updates the shown tab from disk; a file that was deleted is shown as gone, not as an error page.
-- [ ] "Open in my editor" works from the Code panel with the existing editor settings.
+- [ ] "Open in my editor" works from the Code panel with the existing editor settings, for any file shown there, not only for a Node's code (the core's open-in-editor route must accept a file path as well as a Node).
 - [ ] Verified live.

@@ -32,18 +32,17 @@ $("pane-code").append(codeHead, codeBody);
 const CODE_EMPTY = "Choose a file in Files, or select a class, function or module on Components and press View code.";
 let codeFocus = null; // what the panel shows: { node, step: { algo, id } | null } for a Node, { path } for a file
 let codeSelected = null; // the Node selected on Components; "View code" opens it
-let codeLost = ""; // the sentence shown instead of a Node that a refresh could not find any more
 let codeRequest = 0; // numbers the requests so a slow answer cannot replace a newer one
 let codeProject = null;
 
 // Syntax colours. ponytail: a line at a time with one regular expression per language, so a string or comment that spans lines is coloured wrongly
-// after its first line; a real parser per language is the upgrade if that bothers anyone. Files over 4000 lines are shown plain.
+// after its first line; a real parser per language is the upgrade if that bothers anyone. Files over 4000 lines and lines over 1000 characters are shown plain.
 const codeWords = (w) => `\\b(?:${w.trim().split(/\s+/).join("|")})\\b`;
 const codeLanguages = {
   python: { ext: ["py", "pyw"], comment: "#", words: "False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield" },
   script: { ext: ["js", "mjs", "cjs", "jsx", "ts", "tsx", "mts", "cts"], comment: "//", words: "abstract as async await break case catch class const continue debugger default delete do else enum export extends false finally for from function if implements import in instanceof interface let new null of private protected public readonly return static super switch this throw true try type typeof undefined var void while with yield" },
 };
-for (const l of Object.values(codeLanguages)) l.re = new RegExp(`(${l.comment}.*$)|("(?:\\\\.|[^"\\\\])*"|'(?:\\\\.|[^'\\\\])*'|\`(?:\\\\.|[^\`\\\\])*\`)|(\\b\\d[\\d_.]*\\b)|(${codeWords(l.words)})`, "g");
+for (const l of Object.values(codeLanguages)) l.re = new RegExp(`(${l.comment}.*$)|("(?:\\\\.|[^"\\\\])*"|'(?:\\\\.|[^'\\\\])*'|\`(?:\\\\.|[^\`\\\\])*\`)|(\\b0[xX][\\da-fA-F_]+\\b|\\b\\d[\\d_.]*(?:[eE][+-]?\\d+)?\\b)|((?<!\\.)${codeWords(l.words)})`, "g");
 const codeLanguageOf = (file) => Object.values(codeLanguages).find((l) => l.ext.includes(file.slice(file.lastIndexOf(".") + 1).toLowerCase()));
 // The pieces of one line: [class, text] pairs, "" for plain text.
 function codeSegments(text, language) {
@@ -118,7 +117,7 @@ function codeRender(body, nodeId) {
   const frag = document.createDocumentFragment();
   rows.forEach((text, i) => {
     const row = Object.assign(document.createElement("div"), { className: body.line && i + 1 >= body.line && i + 1 <= body.endLine ? "cl hit" : "cl" });
-    if (language) row.append(...codeSegments(text, language).map(([cls, part]) => (cls ? Object.assign(document.createElement("span"), { className: cls, textContent: part }) : document.createTextNode(part))));
+    if (language && text.length <= 1000) row.append(...codeSegments(text, language).map(([cls, part]) => (cls ? Object.assign(document.createElement("span"), { className: cls, textContent: part }) : document.createTextNode(part))));
     else row.textContent = text;
     row.dataset.n = i + 1;
     frag.append(row);
@@ -135,14 +134,14 @@ function codeScroll() {
 }
 
 // Reads a Node's file, or a file by its path, into the panel without showing it. `range` ({from, to}) and `step` ({algo, id}) come from a step of a Flow.
-async function codeLoad(focus, range) {
-  const project = current, request = ++codeRequest;
+// A refresh (`quiet`) takes no request number of its own, so a file chosen while it runs is never discarded; a choice made during it discards the refresh.
+async function codeLoad(focus, range, quiet = false) {
+  const project = current, request = quiet ? codeRequest : ++codeRequest;
   const target = focus.path !== undefined ? `file=${encodeURIComponent(focus.path)}` : `node=${encodeURIComponent(focus.node)}&whole=1`;
   const res = await fetch(`/source?project=${encodeURIComponent(project)}&${target}${range ? `&from=${range.from}&to=${range.to}` : ""}`);
   const body = await res.json();
   if (project !== current || request !== codeRequest) return false; // another Project or file was opened meanwhile
   codeFocus = focus;
-  codeLost = "";
   if (res.ok) codeRender(body, focus.node); else codeSay(body.error, focus.path ?? focus.node);
   return res.ok;
 }
@@ -154,40 +153,33 @@ async function codeShow(ok) {
   if (ok) codeScroll();
 }
 
-// Opens the panel on a Node's code; `step` marks it as the lines of a Flow step.
-async function codeOpen(nodeId, range, step = null) {
+async function codeOpenFocus(focus, range) {
   if (!current) return false;
-  const focus = { node: nodeId, step };
   const ok = await codeLoad(focus, range);
   if (codeFocus !== focus) return false; // a newer request owns the panel
   await codeShow(ok);
   return ok;
 }
 
+// Opens the panel on a Node's code; `step` marks it as the lines of a Flow step.
+const codeOpen = (nodeId, range, step = null) => codeOpenFocus({ node: nodeId, step }, range);
+
 // Opens the panel on a file by its path in the Project (what the Files panel knows), optionally with lines to highlight.
-async function codeOpenFile(path, range) {
-  if (!current) return false;
-  const focus = { path };
-  const ok = await codeLoad(focus, range);
-  if (codeFocus !== focus) return false;
-  await codeShow(ok);
-  return ok;
-}
+const codeOpenFile = (path, range) => codeOpenFocus({ path }, range);
 
 // A refresh read the code again: the panel shows the same Node or file again, and says so if the Node does not exist any more.
 async function codeRefresh(nodes) {
   if (!codeFocus) return;
   const { node, step, path } = codeFocus;
-  if (path !== undefined) { await codeLoad({ path }); return; }
+  if (path !== undefined) { await codeLoad({ path }, undefined, true); return; }
   if (!nodes.some((n) => n.id === node)) {
     codeFocus = null;
-    codeLost = `${node.split(".").pop()} is not in the code any more: it was moved, renamed or deleted. Select another on Components.`;
-    codeSay(codeLost);
+    codeSay(`${node.split(".").pop()} is not in the code any more: it was moved, renamed or deleted. Select another on Components.`);
     return;
   }
   // A step's lines are the graph's: they are kept only while that Flow is still the one open.
   const s = step && algoGraph && algoOpenId === step.algo ? algoGraph.steps.find((x) => x.id === step.id) : null;
-  await codeLoad({ node, step: s ? step : null }, s ? { from: s.line, to: s.endLine ?? s.line } : undefined);
+  await codeLoad({ node, step: s ? step : null }, s ? { from: s.line, to: s.endLine ?? s.line } : undefined, true);
 }
 
 // Selecting a Node does not open code by itself: the Details offer "View code".
@@ -208,7 +200,7 @@ function onSelect(nodeId) {
 // A different Project starts with nothing in focus.
 const drawWithoutCode = draw;
 draw = async (nodes) => {
-  if (codeProject !== current) { codeProject = current; codeFocus = null; codeSelected = null; codeLost = ""; codeSay(CODE_EMPTY); }
+  if (codeProject !== current) { codeProject = current; codeFocus = null; codeSelected = null; codeSay(CODE_EMPTY); }
   await drawWithoutCode(nodes);
 };
 

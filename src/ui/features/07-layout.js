@@ -10,6 +10,7 @@ const layoutCanvasFr = 800; // the Canvas weight; the panes' weights (380, 300, 
 const layoutPaneMin = { chat: 268, files: 240, code: 320, run: 288, right: 288 }; // 260 and 280 px cards plus their 8px window margin
 const layoutNames = ["chat", "files", "code", "run", "right"]; // left to right
 const layoutLeft = ["chat", "files", "code"]; // the panes on the left of the Canvas; Run and the Tutor are on its right
+const layoutFoldOrder = ["chat", "run", "right", "files", "code"]; // what auto-fold gives up first: choosing a file must not hide the Files panel it was chosen in
 const layoutLabel = { chat: "Builder", files: "Files", code: "Code", run: "Run", right: "Tutor" };
 const layoutNarrowBelow = 760; // narrower windows show the panes as drawers
 const layoutStep = 20;
@@ -109,8 +110,8 @@ function layoutResolve() {
   if (layoutNarrow) { layoutShown = Object.fromEntries(layoutNames.map((n) => [n, false])); return; }
   layoutDrawer = null;
   layoutShown = Object.fromEntries(layoutNames.map((n) => [n, layoutWanted(n)]));
-  // The pane opened last is the last to be folded for lack of room.
-  for (const n of [...layoutNames.filter((x) => x !== layoutLastOpened), layoutLastOpened]) if (layoutNeed(layoutShown) > layoutWidth()) layoutShown[n] = false;
+  // For lack of room the Builder folds first, then Run and the Tutor, then Files and Code; the pane opened last is the last to go.
+  for (const n of [...layoutFoldOrder.filter((x) => x !== layoutLastOpened), layoutLastOpened]) if (layoutNeed(layoutShown) > layoutWidth()) layoutShown[n] = false;
 }
 
 // Most a pane's track may take: the window minus the Canvas minimum, the other panes and this separator.

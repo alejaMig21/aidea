@@ -28,7 +28,11 @@ const handler: Handler = async (req, res, core) => {
       const found = locateFile(core, res, url.searchParams.get("project"), url.searchParams.get("file"));
       if (!found) return true;
       ({ file, path: name } = found);
-      try { if (statSync(file).isDirectory()) return refuse(400, `${name} is a folder, not a file.`); } catch { /* read below says so */ }
+      try {
+        const kind = statSync(file);
+        if (kind.isDirectory()) return refuse(400, `${name} is a folder, not a file.`);
+        if (!kind.isFile()) return refuse(400, `${name} is not a regular file, so there is no code to show.`); // a pipe or a device would hang the read
+      } catch { /* read below says so */ }
     } else {
       const found = locate(core, res, url.searchParams.get("project"), url.searchParams.get("node"));
       if (!found) return true;
