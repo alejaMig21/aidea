@@ -2,7 +2,7 @@
 
 **What to build:** The person saves the current Layout as a named Preset, switches Presets in one click, renames and deletes their own, and resets to the default. aidea ships built-in Presets that cannot be deleted or overwritten: the default, the classic IDE arrangement (Files, Code, bottom area) and Canvas only. The current Layout and the Presets survive closing and reopening aidea. They are stored by the core in the per-user preferences store, never inside a Project folder. The person chooses whether a Layout is remembered per Project or shared.
 
-**Blocked by:** 08 (dockable Layout).
+**Blocked by:** 08 (the docking engine), 19 (the Layout as saved data that is restored safely).
 
 **Status:** ready-for-agent
 
