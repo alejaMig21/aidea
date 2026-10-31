@@ -10,6 +10,10 @@
 
 - [ ] At the narrowest supported width no Panel is cut and the Canvas stays usable.
 - [ ] Show, hide and move focus between Panels with documented keys; no key trap.
-- [ ] The visible focus follows the interface style rules.
+- [ ] The borders between Panels can be focused and moved with the arrow keys (they were, before the docking engine of ticket 08 replaced the fixed grid: `role=separator` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax`, 20 px a step); the library's own sashes are not focusable, so this is built on top of them.
+- [ ] A Panel can be moved by keyboard (to the left or right of another, stacked, or into a tab group), not only with the mouse and the Panels menu.
+- [ ] The tabs of a group are an ARIA tab list: arrow keys switch the tab shown, and the selected tab is announced.
+- [ ] The order of Tab through the page follows the order on screen (with the library the order of the page's elements is not the order of the Panels on screen).
+- [ ] The visible focus follows the interface style rules (the focus ring of the shared scale, also on the active group of the Canvas, which had a white outline).
 - [ ] The layer tabs all stay reachable at 1280 and below (the problem of the superseded clipped-tabs ticket), by shrinking or grouping, not by sideways scrolling.
 - [ ] Verified live at 1920, 1280, 1100 and narrow.
