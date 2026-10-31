@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** superseded by `.scratch/layout-and-data/issues/04-code-panel.md` (Code stops being a layer) and `08-dockable-layout.md`; the clipped-tab problem is revisited there if it still shows.
 
 - [ ] At 1280 and 1100 px wide, with the chat and the right panel open, all six tabs are visible and none is cut; at 1920 nothing changes.
 - [ ] Sizes and colours stay on the shared scale (`docs/agents/ui-style.md`).
