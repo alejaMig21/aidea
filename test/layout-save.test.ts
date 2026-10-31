@@ -23,9 +23,9 @@ let arrangeReport: any, reopenReport: any, legacyReport: any, garbageReport: any
 let core: Awaited<ReturnType<typeof startCore>>;
 let scratch = "";
 
-function startProxy(coreUrl: string, project: string, mode: string, stored: string | null, withRun: string | null) {
+function startProxy(coreUrl: string, project: string, mode: string, stored: string | null, withRun: string | null, local: boolean) {
   const target = new URL(coreUrl);
-  const seed = `<script>window.PANELS_PROJECT = ${JSON.stringify(project)}; window.SAVE_MODE = ${JSON.stringify(mode)}; window.SAVE_STORED = ${JSON.stringify(stored)}; window.SAVE_WITH_RUN = ${JSON.stringify(withRun)}; ${stored ? `localStorage.setItem("aidea.layout", window.SAVE_STORED);` : ""}</script>`;
+  const seed = `<script>window.PANELS_PROJECT = ${JSON.stringify(project)}; window.SAVE_MODE = ${JSON.stringify(mode)}; window.SAVE_STORED = ${JSON.stringify(stored)}; window.SAVE_WITH_RUN = ${JSON.stringify(withRun)}; ${stored && local ? `localStorage.setItem("aidea.layout", window.SAVE_STORED);` : ""}</script>`;
   const drive = `<script>${readFileSync(new URL("./layout-save-page.js", import.meta.url), "utf8")}</script>`;
   return new Promise<Server>((resolve) => {
     const server = createServer((req, res) => {
@@ -44,8 +44,10 @@ function startProxy(coreUrl: string, project: string, mode: string, stored: stri
   });
 }
 
-async function load(mode: string, stored: string | null = null, withRun: string | null = null) {
-  const proxy = await startProxy(core.url, fixture("shop"), mode, stored, withRun);
+// `local`: the page starts with the save in its localStorage (a save of an older version). Without it the page can only get the Layout from the core, as a
+// relaunched desktop app does: the proxy is on another port, so it is another address, and the browser profile is a new one.
+async function load(mode: string, stored: string | null = null, withRun: string | null = null, local = false, from = core) {
+  const proxy = await startProxy(from.url, fixture("shop"), mode, stored, withRun, local);
   try {
     const { stdout } = await promisify(execFile)(chrome!, [
       "--headless=new", "--disable-gpu", "--no-first-run", "--disable-extensions", `--user-data-dir=${join(scratch, "profile-" + mode)}`, "--window-size=1900,1000",
@@ -65,8 +67,10 @@ before(async () => {
   core = await startCore({ port: 0, recentsFile: join(scratch, "recents.json"), preferencesFile: join(scratch, "preferences.json"), learnerDir: join(scratch, "learner") });
   arrangeReport = await load("arrange");
   reopenReport = await load("reopen", arrangeReport.arranged.stored, arrangeReport.arranged.withRun);
-  legacyReport = await load("legacy", LEGACY);
-  garbageReport = await load("legacy", GARBAGE);
+  for (const [name, text] of [["legacy", LEGACY], ["garbage", GARBAGE]]) { // a core that has saved nothing: the save is in the page's localStorage
+    const fresh = await startCore({ port: 0, recentsFile: join(scratch, "recents.json"), preferencesFile: join(scratch, `${name}.json`), learnerDir: join(scratch, "learner") });
+    try { (name === "legacy" ? (legacyReport = await load("legacy", text, null, true, fresh)) : (garbageReport = await load("legacy", text, null, true, fresh))); } finally { fresh.close(); }
+  }
 });
 
 after(() => {

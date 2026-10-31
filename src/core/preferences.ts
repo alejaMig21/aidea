@@ -6,7 +6,7 @@ export type Choice = { mode: string; model: string; tutorModel: string };
 // classMode: "class" holds the builder at a Blocking decision until a decision class is answered; absent means "direct".
 // reviewQuestion: false turns off the review question at the start of a class; absent means on.
 // editor: an id from editors.ts or "custom"; editorTemplate: the command the person typed for "custom". Absent editor means VS Code.
-export type Stored = Partial<Choice> & { classMode?: "class" | "direct"; reviewQuestion?: boolean; editor?: string; editorTemplate?: string };
+export type Stored = Partial<Choice> & { classMode?: "class" | "direct"; reviewQuestion?: boolean; editor?: string; editorTemplate?: string; layout?: Record<string, unknown> };
 export type Preferences = {
   // The stored choice for a Project (any field may be missing, or no longer offered by the adapter).
   get: (project: string) => Stored;

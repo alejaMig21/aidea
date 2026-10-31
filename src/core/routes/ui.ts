@@ -6,7 +6,7 @@ const ui = fileURLToPath(new URL("../../ui/", import.meta.url));
 
 // Serves the page with every file in ui/features/ inlined as a script, in filename order,
 // so each feature adds its own file instead of editing a shared one.
-const handler: Handler = async (req, res) => {
+const handler: Handler = async (req, res, core) => {
   // Fonts shipped with the application (no network needed). Only plain *.woff2 names that exist in ui/fonts/ are served.
   const font = req.method === "GET" ? /^\/fonts\/([\w-]+\.woff2)$/.exec(req.url ?? "")?.[1] : undefined;
   if (font && readdirSync(ui + "fonts").includes(font)) {
@@ -26,12 +26,24 @@ const handler: Handler = async (req, res) => {
     }
     return true;
   }
+  // The window Layout the person left, kept in the preferences file under the key "~ui" (not a path, so no Project can have it). It is not in the page's localStorage:
+  // the desktop app's address changes at every launch, and localStorage belongs to one address.
+  if (req.method === "PUT" && req.url === "/ui/layout") {
+    const body = await core.readJson(req, res);
+    if (body === undefined) return true; // readJson already answered
+    if (!body || typeof body !== "object" || Array.isArray(body)) core.send(res, 400, { error: "The Layout must be a JSON object" });
+    else { core.preferences.set("~ui", { layout: body as Record<string, unknown> }); core.send(res, 200, { ok: true }); }
+    return true;
+  }
   if (req.method !== "GET" || req.url !== "/") return false;
   const scripts = readdirSync(ui + "features")
     .sort()
     .map((file) => `<script>\n${readFileSync(ui + "features/" + file, "utf8")}\n</script>`)
     .join("\n");
-  const html = readFileSync(ui + "index.html", "utf8").replace("<!--features-->", () => scripts);
+  // The saved state travels in a <meta> as URI-encoded JSON: no character of it can close a tag.
+  const layout = core.preferences.get("~ui").layout;
+  const saved = `<meta name="aidea-saved" content="${encodeURIComponent(JSON.stringify(layout ? { layout } : {}))}">`;
+  const html = readFileSync(ui + "index.html", "utf8").replace("<!--features-->", () => saved + scripts);
   res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
   res.end(html);
   return true;

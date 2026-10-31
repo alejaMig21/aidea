@@ -34,7 +34,10 @@ let layoutBusy = false; // true while this file adds or removes Panels, so a rem
 // What is saved: the folded flags of each Panel (`<id>Folded`, the names the fixed grid used) and `dock`, the arrangement as the library describes it (groups, tabs,
 // sizes). The sizes a fixed-grid save holds (`sized` and the weight under each id) are written back as they were and used only when there is no `dock` yet.
 let layoutSaved = {};
-try { layoutSaved = JSON.parse(localStorage.getItem(layoutKey) || "{}") ?? {}; } catch {}
+// The core keeps the Layout in its preferences file and serves it inside the page (a <meta>): the desktop app has a new address at every launch, and localStorage
+// belongs to one address. localStorage stays as the fallback (a page served without it) and is written as before.
+const layoutServed = (() => { try { return JSON.parse(decodeURIComponent(document.querySelector("meta[name=aidea-saved]")?.content ?? "")).layout; } catch { return undefined; } })();
+try { layoutSaved = layoutServed ?? JSON.parse(localStorage.getItem(layoutKey) || "{}") ?? {}; } catch {}
 if (!layoutSaved || typeof layoutSaved !== "object") layoutSaved = {};
 layoutState.canvasFolded = layoutSaved.canvasFolded === true;
 let layoutRestored = false; // false until the saved arrangement has been read: the first default arrangement must not overwrite it
@@ -43,7 +46,9 @@ const layoutSave = () => {
     if (layoutRestored && !layoutNarrow && layoutApi.panels.length) layoutSaved.dock = layoutApi.toJSON(); // a narrow window shows the Canvas only: the arrangement saved before it stays
     const old = Object.fromEntries(layoutNames.filter((n) => layoutSaved[n] > 0).map((n) => [n, layoutSaved[n]]));
     const text = JSON.stringify({ ...(layoutSaved.sized ? { sized: layoutSaved.sized } : {}), ...old, canvasFolded: layoutState.canvasFolded, ...Object.fromEntries(layoutNames.map((n) => [`${n}Folded`, layoutState[`${n}Folded`]])), ...(layoutSaved.dock ? { dock: layoutSaved.dock } : {}) });
-    if (text !== localStorage.getItem(layoutKey)) localStorage.setItem(layoutKey, text);
+    if (text === localStorage.getItem(layoutKey)) return;
+    localStorage.setItem(layoutKey, text);
+    fetch("/ui/layout", { method: "PUT", headers: { "content-type": "application/json" }, body: text, keepalive: true }).catch(() => {}); // not saved: the page still works
   } catch {}
 };
 
