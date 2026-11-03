@@ -36,6 +36,10 @@ Kinds of plugin (a Panel, a language adapter, a layer or drawing, Tutor content,
 ## 3. A terminal section
 DECIDED 2026-11-03 (during topic 1): the first version only SHOWS. One tab per process that Play started, with its output, its state (alive or exited) and stop and restart buttons; nothing can be typed. It is built so that a second kind of tab, an interactive console, can be added later without redoing the first. The interactive console (and its native pseudo-terminal dependency and its security rule) stays open for a later interview.
 
+DECIDED 2026-11-03 (option D, proposed by the person): BOTH the Tutor and the Builder can read the terminal's output. The flow the person wants: when something fails, the Tutor explains the cause to the person and the Builder then works knowing the cause; if the person already knows the cause, they skip the Tutor and tell the Builder directly, or let the Builder work out the cause by itself. Fit with the existing design: the Tutor already has read-only tools (`src/core/tutor-reads.ts`: the layers, one Node, the Project's files, a Playback recording), so a read-only tool for terminal output is the same kind and keeps Tutor story 26 true (it cannot run commands or change files).
+DECIDED 2026-11-03: the reading is always started by the person, never by a mode. The person selects the error text in the terminal with the mouse and three buttons appear: "Explain" (the Tutor), "Fix" (the Builder) and "Explain and fix". The person rejected tying it to the Class and Direct modes (see topic 8). Fit: `src/ui/features/54-select.js` already shows a small control next to any selected text ("Just define", "Enter the Tutor"; the text only travels as data, limit 2000 characters), so this extends that control for terminal text.
+Still to settle: how the three buttons relate to the two existing ones on the same selection; what a beginner who does not know what to select is shown (for example a failed part offers its last error pre-selected); what is done about secrets and hostile text in the selected output; how many fail-and-fix rounds are allowed; the 2000-character limit against long errors (a Python traceback can exceed it).
+
 Original notes: A Panel to run commands and watch processes. Shell in the Project folder; relation to the Builder's permission cards and to topics 1 and Run; a native pseudo-terminal dependency (ADR 0003 asks for no new dependency without a reason); what the person sees of processes aidea started.
 
 ## 4. Project versions (first plugin we write)
@@ -53,3 +57,6 @@ Two journeys: a public repository that is not theirs (understand first), and a n
 - Merge the Canvas's own title bar with the layer bar (it would remove a double bar).
 - Ticket `layout-and-data/05`: choose the visual effect; the agent shows three options live.
 - `language-adapters/05`: the security decision about running TypeScript and JavaScript.
+
+## 8. The Class and Direct modes of the Builder
+Raised 2026-11-03. The person has never liked them and says that what each mode does is not understandable. Today (Tutor spec stories 21 and 23) Class makes the Builder stop at each Blocking decision until a short class is answered, and Direct lets it work without stopping. Questions: what problem do the modes solve for the person, is a mode switch the right control at all, would the choice be better made at the moment it matters (as with the three buttons chosen for a failed part), and how are the names and the explanation changed if the switch stays. Affects the Builder panel, the Tutor spec and GLOSSARY.md.
