@@ -35,6 +35,16 @@ const pmPanelRow = (title) => [...document.querySelectorAll("#panels-menu [role=
     const item = document.querySelector('#pm-installed [data-plugin-id="fixture.clean"]');
     report.item = { icon: item.querySelector(".pm-icon")?.textContent, title: item.querySelector(".pm-title")?.textContent, desc: item.querySelector(".pm-desc")?.textContent, publisher: item.querySelector(".pm-publisher")?.textContent, version: item.querySelector(".pm-version")?.textContent, badges: [...item.querySelectorAll(".pm-badge")].map((b) => b.textContent) };
     report.countsAfterInstall = pmAll("button[data-section]").map((s) => [s.dataset.section, s.querySelector(".pm-count")?.textContent ?? ""]);
+    // "Ask the Tutor" opens a class about the plugin (the id only), and closes the manager so the Tutor can be seen.
+    window.tutorUi = { isRunning: () => false, startClass: (o) => { report.askTutor = { payload: o.payload, managerClosed: !pmVisible(document.getElementById("plugins-manager")) }; } };
+    const loudRow = pmRow("Title of fixture.loud");
+    report.askButton = !!loudRow.querySelector(".pm-ask-tutor");
+    const loudId = loudRow.dataset.qId;
+    loudRow.querySelector(".pm-ask-tutor").click();
+    report.askTutor.expected = loudId;
+    document.getElementById("plugins-button").click(); // the manager closed itself: open it again for the steps that follow
+    await pmUntil(() => pmVisible(document.getElementById("plugins-manager")));
+    await pmUntil(() => pmRow("Title of fixture.loud"));
     // The loud plugin cannot be installed until each blocking finding is confirmed.
     const loud = pmRow("Title of fixture.loud");
     const boxes = [...loud.querySelectorAll("input[data-confirm]")];

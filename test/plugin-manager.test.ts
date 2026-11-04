@@ -173,3 +173,10 @@ test("a section folds away and unfolds, and its header says which", { skip }, ()
   assert.deepEqual(page.fold, { hidden: true, expanded: "false" });
   assert.deepEqual(page.unfold, { shown: true, expanded: "true" });
 });
+
+test("a plugin in the quarantine can be put to the Tutor: the class is about its id only, and the manager closes", { skip }, () => {
+  assert.equal(page.askButton, true);
+  assert.deepEqual(Object.keys(page.askTutor.payload).sort(), ["plugin", "project"]);
+  assert.equal(page.askTutor.payload.plugin, page.askTutor.expected);
+  assert.equal(page.askTutor.managerClosed, true);
+});

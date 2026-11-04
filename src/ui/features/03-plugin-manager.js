@@ -155,6 +155,9 @@ function pmQuarantineRow(entry) {
     if (status === 200) await pluginsSync(); // a new plugin is live at once
     await pmRefresh();
   };
+  // A class about this plugin: the Tutor reads it (as untrusted data) and says whether installing it looks like a good idea. It only advises; the decision stays here.
+  const ask = pmEl("button", { type: "button", className: "pm-ask-tutor", title: "The Tutor reads this plugin and tells you what it does and whether installing it looks like a good idea" }, "Ask the Tutor");
+  ask.onclick = () => { pmClose(); window.tutorUi?.startClass({ payload: { project: current, plugin: entry.id } }); };
   const discard = pmEl("button", { type: "button", className: "pm-discard" }, "Discard");
   discard.onclick = async () => { await pmJson("POST", "/plugins/quarantine/discard", { id: entry.id }); await pmRefresh(); };
   row.append(
@@ -166,7 +169,7 @@ function pmQuarantineRow(entry) {
       pmEl("div", { className: "pm-source", title: entry.source }, entry.source),
       ...(update ? [pmEl("div", { className: "pm-meta", id: `pm-diff-${entry.id}` }, `Update from ${update.version.from} to ${update.version.to}. Files: ${update.files.added.length} added, ${update.files.removed.length} removed, ${update.files.changed.length} changed. New capabilities: ${update.capabilities.added.join(", ") || "none"}.`)] : []),
       findings,
-      pmEl("div", { className: "pm-actions" }, install, discard),
+      pmEl("div", { className: "pm-actions" }, install, ...(manifest ? [ask] : []), discard),
     ),
   );
   if (!manifest) install.disabled = true;

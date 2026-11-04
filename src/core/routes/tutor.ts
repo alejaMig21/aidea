@@ -15,6 +15,7 @@ import { layerClassMessage } from "../layer-help.ts";
 import { guideClassMessage } from "../guide.ts";
 import { driftClassMessage, driftOf } from "../drift.ts";
 import { limitOf, selectionMessage, sourceProblem, validSelection } from "../select.ts";
+import { pluginClassMessage } from "../tutor-reads.ts";
 import { LAYER_CONCEPTS, isLayer } from "../probe.ts";
 
 const MAX_MESSAGE_CHARS = 20_000;
@@ -59,12 +60,14 @@ const handler: Handler = async (req, res, core) => {
   const badSource = sourceProblem(body?.source);
   if (badSource) return reject(400, badSource);
   if (selection !== undefined && !validSelection(selection, body?.source)) return reject(400, `selection must be the selected text, at most ${limitOf(body?.source)} characters`);
+  const plugin = body?.plugin;
+  if (plugin !== undefined && (typeof plugin !== "string" || !core.quarantine.get(plugin))) return reject(400, "plugin must be the id of a plugin waiting in the quarantine");
   const held = body?.decision === undefined ? undefined : heldDecision(core, project.id, body.decision);
   if (held && "error" in held) return reject(400, held.error);
-  const opening = held ? decisionMessage(held.proposal) : guide ? guideClassMessage() : layer ? layerClassMessage(layer) : difference ? driftClassMessage(difference) : selection ? selectionMessage(selection) : body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
+  const opening = held ? decisionMessage(held.proposal) : guide ? guideClassMessage() : layer ? layerClassMessage(layer) : difference ? driftClassMessage(difference) : selection ? selectionMessage(selection) : plugin ? pluginClassMessage(plugin) : body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
   // One review question about an earlier idea opens a FREE class (started with "Start a class"), unless the person turned it off. A class on a layer, on selected text,
   // on a difference, on a decision or on how aidea works is something the person asked for on purpose: a review before it would only be in the way.
-  const free = !held && !layer && !difference && !selection && !guide;
+  const free = !held && !layer && !difference && !selection && !guide && !plugin;
   const review = !free || !reviewQuestionOn(core, project.id) ? undefined : pickReview(core, project.id, typeof topic === "string" ? [topic] : []);
   const message = review && typeof opening === "string" ? opening + "\n" + reviewMessage(review) : opening;
   if (typeof message !== "string" || !message.trim() || message.length > MAX_MESSAGE_CHARS) {
