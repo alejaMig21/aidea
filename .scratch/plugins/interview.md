@@ -37,3 +37,6 @@ DECIDED 2026-11-04 (option A, "for now"): only the person installs, enables and 
 
 ## 12. How aidea gets from today to the kernel and plugins
 DECIDED 2026-11-04: step by step, never leaving aidea unusable (option A, as the agent recommended). After version 1: first the kernel and the plugin API; then the existing features become built-in plugins one at a time, starting with the ones closest to it (the Panels Terminal, Files and Code already live in the Panel registry), with the app working after each step and the existing tests kept. Old code and plugins live side by side for a while. Not chosen: rewriting everything at once, and only new things being plugins.
+
+## 13. Creator Mode from the first version
+DECIDED 2026-11-04: the first version of the plugin system includes both the plugin-writing skill (instructions that let an agent write a plugin well: start small, look at the live app, copy a template) and the live inspection (a read-only query of the services, slots, settings and style tokens the running app offers), so the Builder can create plugins from the first day (option A, as the agent recommended). Not chosen: later, and inspection only. The agent writes the plugin into the quarantine folder; installing stays with the person (decision 11).
