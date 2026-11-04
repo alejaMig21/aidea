@@ -3,6 +3,11 @@ import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import { isAbsolute, join, resolve, sep } from "node:path";
 
 export const API_VERSION = "0.1";
+// Whether this aidea can run a plugin that asks for `api` (docs/plugin-api.md): before 1.0 only the exact version; from 1.0 the same major and a minor that is not newer.
+export function compatible(api: string): boolean {
+  const [pm, pn] = api.split(".").map(Number), [km, kn] = API_VERSION.split(".").map(Number);
+  return km === 0 ? pm === km && pn === kn : pm === km && pn <= kn;
+}
 export const CAPABILITIES = ["network", "files", "processes", "window", "secrets"] as const;
 const MAX_MANIFEST_BYTES = 64 * 1024;
 const MAX_ICON_BYTES = 256 * 1024;

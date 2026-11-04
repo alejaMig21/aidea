@@ -2,15 +2,15 @@
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { readManifest } from "./manifest.ts";
+import { API_VERSION, compatible, readManifest } from "./manifest.ts";
 import type { Manifest } from "./manifest.ts";
 import { createPluginState } from "./state.ts";
 import type { PluginState as Chosen } from "./state.ts";
 
-export type PluginState = "active" | "inactive" | "failed";
+export type PluginState = "active" | "inactive" | "failed" | "incompatible";
 export type PluginInfo = { id: string; title: string; version: string; state: PluginState; reason?: string; ui: boolean; builtin: boolean; required: boolean }; // `ui`: it has an interface half; `builtin`: it ships with aidea; `required`: it ships with aidea and cannot be removed or switched off
 type Undo = () => unknown;
-type Entry = { id: string; folder: string; builtin: boolean; manifest?: Manifest; state: PluginState; reason?: string; undo: Undo[]; returned?: Undo; ran?: boolean }; // `ran`: its code was activated in this session; `returned`: what `activate` returned, run after every other undo
+type Entry = { id: string; folder: string; builtin: boolean; manifest?: Manifest; state: PluginState; reason?: string; undo: Undo[]; returned?: Undo; ran?: boolean; waiting?: boolean }; // `ran`: its code was activated in this session; `returned`: what `activate` returned, run after every other undo
 
 // What an event listener or a guard rule may answer. Only "deny" and "ask" count; anything else, an "allow" included, is ignored (a plugin can only tighten).
 export type Verdict = { decision: "allow" } | { decision: "deny"; reason: string } | { decision: "ask"; question: string };
@@ -110,10 +110,23 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
     return full;
   }
 
-  async function activate(id: string): Promise<Entry | undefined> {
+  async function activateOne(id: string): Promise<Entry | undefined> {
     const entry = entries.get(id);
     if (!entry || !entry.manifest || entry.state === "active") return entry;
     const { main } = entry.manifest;
+    if (!compatible(entry.manifest.api)) {
+      entry.state = "incompatible";
+      entry.reason = `asks for API ${entry.manifest.api}; this aidea offers ${API_VERSION}`;
+      return entry;
+    }
+    const missing = entry.manifest.requires.find((k) => !services.has(k));
+    if (missing) { // it waits: it starts by itself when what it needs is there
+      entry.state = "inactive";
+      entry.waiting = true;
+      entry.reason = `needs the service "${missing}"`;
+      return entry;
+    }
+    entry.waiting = false;
     entry.ran = true;
     try {
       for (const [name, d] of Object.entries(entry.manifest.events)) {
@@ -139,13 +152,37 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
     return entry;
   }
 
-  async function deactivate(id: string): Promise<Entry | undefined> {
+  async function deactivateOne(id: string): Promise<Entry | undefined> {
     const entry = entries.get(id);
     if (!entry || entry.state !== "active") return entry;
     await undoAll(entry);
     entry.state = "inactive";
     return entry;
   }
+
+  // Keeps the plugins in step with the services: an active plugin whose requirement went away is switched off (and waits); a waiting plugin whose requirement is back starts.
+  async function settle() {
+    for (let round = 0; round < 20; round++) {
+      let changed = false;
+      for (const e of [...entries.values()]) {
+        if (!e.manifest) continue;
+        const missing = e.manifest.requires.find((k) => !services.has(k));
+        if (e.state === "active" && missing) {
+          await undoAll(e);
+          e.state = "inactive";
+          e.waiting = true;
+          e.reason = `needs the service "${missing}"`;
+          changed = true;
+        } else if (e.waiting && e.state === "inactive" && !missing) {
+          await activateOne(e.id);
+          changed = true;
+        }
+      }
+      if (!changed) break;
+    }
+  }
+  const activate = async (id: string) => { const e = await activateOne(id); await settle(); return e; };
+  const deactivate = async (id: string) => { const e = await deactivateOne(id); await settle(); return e; };
 
   async function loadAll() {
     for (const { dir, builtin } of roots) {
@@ -170,8 +207,9 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
     for (const [key, entry] of [...entries]) {
       if (key.includes("#")) continue;
       if (chosen.disabled.has(entry.id) && !entry.manifest?.required) { entry.reason = SWITCHED_OFF; continue; }
-      await activate(entry.id);
+      await activateOne(entry.id);
     }
+    await settle();
   }
 
   // Adds a plugin folder that was installed after the start, and activates it.

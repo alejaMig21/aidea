@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] An incompatible plugin is listed with the reason and does not activate, at install and after a restart.
-- [ ] Removing a plugin another one needs leaves the other inactive with a stated reason, and enabling it again re-activates it.
-- [ ] A required plugin cannot be removed or disabled.
-- [ ] Core API tests pass; `npm run verify` is green.
+- [x] An incompatible plugin is listed with the reason and does not activate, at install and after a restart.
+- [x] Removing a plugin another one needs leaves the other inactive with a stated reason, and enabling it again re-activates it.
+- [x] A required plugin cannot be removed or disabled.
+- [x] Core API tests pass; `npm run verify` is green.

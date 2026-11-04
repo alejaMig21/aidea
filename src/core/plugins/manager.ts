@@ -1,6 +1,7 @@
 // The plugin manager of the kernel: installs a plugin from the quarantine. Only the person's confirmation installs; each blocking finding must be named in it.
 import { cpSync, existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { API_VERSION, compatible } from "./manifest.ts";
 import type { PluginHost, PluginInfo } from "./host.ts";
 import type { PluginState } from "./state.ts";
 import type { Quarantine } from "./quarantine.ts";
@@ -69,6 +70,7 @@ export function createManager(host: PluginHost, quarantine: Quarantine, store: s
       if (!entry) throw new ManagerError(404, "No quarantine entry with that id");
       const manifest = entry.report.manifest;
       if (!manifest) throw new ManagerError(409, "The manifest of this plugin is invalid, so it cannot be installed");
+      if (!compatible(manifest.api)) throw new ManagerError(409, `This plugin asks for API ${manifest.api}; this aidea offers ${API_VERSION}, so it cannot be installed`);
       const missing = entry.report.findings.filter((f) => f.severity === "block" && !confirm.includes(f.key)).map((f) => f.key);
       if (missing.length) throw new ManagerError(409, "Each blocking finding must be confirmed by name", { missing });
       const target = join(store, manifest.id);
