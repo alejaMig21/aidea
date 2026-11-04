@@ -147,3 +147,29 @@ test("a plugin the Builder proposes opens the manager with a message that names 
 test("Escape closes the manager and the button opens it again", { skip }, () => {
   assert.deepEqual([page.closed, page.reopened], [true, true]);
 });
+
+test("the list looks like an extensions list: a search box, sections with a count, and an icon, name, description and publisher for each plugin", { skip }, () => {
+  assert.equal(page.list.search, true);
+  assert.deepEqual(page.list.sections, [["installed", "0", "true"], ["quarantine", "2", "true"], ["add", "", "true"]]);
+  assert.equal(page.list.quarantineItem.icon, "T");
+  assert.equal(page.list.quarantineItem.desc, "A fixture.");
+  assert.equal(page.list.quarantineItem.publisher, "tests");
+  assert.match(page.list.quarantineItem.badge, /quarantine/i);
+  assert.deepEqual([page.item.icon, page.item.title, page.item.desc, page.item.publisher, page.item.version], ["T", "Title of fixture.clean", "A fixture.", "tests", "1.0.0"]);
+  assert.deepEqual(page.item.badges, [], "an active plugin carries no state badge");
+  assert.deepEqual(page.countsAfterInstall, [["installed", "1"], ["quarantine", "1"], ["add", ""]]);
+});
+
+test("search narrows both lists by name, id and publisher, ignores case, says when nothing matches, and clears", { skip }, () => {
+  assert.ok(page.searchAll >= 3);
+  assert.deepEqual(page.searchOne, ["fixture.clean"]);
+  assert.equal(page.searchPublisher, page.searchAll, "every fixture is by tests");
+  assert.deepEqual(page.searchNone.shown, 0);
+  assert.match(page.searchNone.emptyText, /No plugin matches/);
+  assert.deepEqual([page.searchCleared.shown, page.searchCleared.emptyHidden], [page.searchAll, true]);
+});
+
+test("a section folds away and unfolds, and its header says which", { skip }, () => {
+  assert.deepEqual(page.fold, { hidden: true, expanded: "false" });
+  assert.deepEqual(page.unfold, { shown: true, expanded: "true" });
+});

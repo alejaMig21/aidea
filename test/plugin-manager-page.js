@@ -20,11 +20,21 @@ const pmPanelRow = (title) => [...document.querySelectorAll("#panels-menu [role=
     report.opened = pmVisible(document.getElementById("plugins-manager"));
     await pmUntil(() => pmAll("#pm-quarantine [data-q-id]").length >= 2);
     report.note = document.getElementById("pm-note")?.textContent ?? "";
+    // The look of an extensions list: a search box, sections with a count, and for each plugin an icon, its name, a line of description and who made it.
+    const cleanItem = pmRow("Title of fixture.clean");
+    report.list = {
+      search: document.getElementById("pm-search")?.type === "search" && !!document.getElementById("pm-search").placeholder,
+      sections: pmAll("button[data-section]").map((s) => [s.dataset.section, s.querySelector(".pm-count")?.textContent ?? "", s.getAttribute("aria-expanded")]),
+      quarantineItem: { icon: cleanItem.querySelector(".pm-icon")?.textContent, desc: cleanItem.querySelector(".pm-desc")?.textContent, publisher: cleanItem.querySelector(".pm-publisher")?.textContent, badge: cleanItem.querySelector(".pm-badge")?.textContent },
+    };
     report.quarantine = pmAll("#pm-quarantine [data-q-id]").map((r) => ({ title: r.dataset.qTitle, blocking: r.querySelectorAll('[data-finding][data-severity="block"]').length, boxes: r.querySelectorAll("input[data-confirm]").length, installDisabled: r.querySelector(".pm-install")?.disabled }));
     // The clean plugin installs with one click and its Panel appears at once.
     pmRow("Title of fixture.clean").querySelector(".pm-install").click();
     await pmUntil(() => pmPanelRow("Installed live") && document.querySelector('#pm-installed [data-plugin-id="fixture.clean"]') && !pmRow("Title of fixture.clean"));
     report.clean = { panelRow: !!pmPanelRow("Installed live"), inInstalled: !!document.querySelector('#pm-installed [data-plugin-id="fixture.clean"]'), leftQuarantine: !pmRow("Title of fixture.clean") };
+    const item = document.querySelector('#pm-installed [data-plugin-id="fixture.clean"]');
+    report.item = { icon: item.querySelector(".pm-icon")?.textContent, title: item.querySelector(".pm-title")?.textContent, desc: item.querySelector(".pm-desc")?.textContent, publisher: item.querySelector(".pm-publisher")?.textContent, version: item.querySelector(".pm-version")?.textContent, badges: [...item.querySelectorAll(".pm-badge")].map((b) => b.textContent) };
+    report.countsAfterInstall = pmAll("button[data-section]").map((s) => [s.dataset.section, s.querySelector(".pm-count")?.textContent ?? ""]);
     // The loud plugin cannot be installed until each blocking finding is confirmed.
     const loud = pmRow("Title of fixture.loud");
     const boxes = [...loud.querySelectorAll("input[data-confirm]")];
@@ -45,6 +55,25 @@ const pmPanelRow = (title) => [...document.querySelectorAll("#panels-menu [role=
     document.getElementById("pm-add").click();
     await pmUntil(() => (document.getElementById("pm-message")?.textContent ?? "") !== "");
     report.refused = document.getElementById("pm-message").textContent;
+    // Search narrows both lists as the person types, and says so when nothing matches.
+    const search = document.getElementById("pm-search");
+    const shown = () => pmAll("#pm-installed .pm-row, #pm-quarantine .pm-row").filter((r) => !r.hidden).map((r) => r.dataset.pluginId ?? r.dataset.qTitle);
+    const type = (value) => { search.value = value; search.dispatchEvent(new Event("input", { bubbles: true })); };
+    report.searchAll = shown().length;
+    type("fixture.clean");
+    report.searchOne = shown();
+    type("TESTS"); // the publisher, in any case
+    report.searchPublisher = shown().length;
+    type("zzz-nothing");
+    report.searchNone = { shown: shown().length, emptyText: pmVisible(document.getElementById("pm-empty")) ? document.getElementById("pm-empty").textContent : "" };
+    type("");
+    report.searchCleared = { shown: shown().length, emptyHidden: !pmVisible(document.getElementById("pm-empty")) };
+    // A section folds away and back.
+    const head = document.querySelector('button[data-section="installed"]');
+    head.click();
+    report.fold = { hidden: !pmVisible(document.getElementById("pm-installed")), expanded: head.getAttribute("aria-expanded") };
+    head.click();
+    report.unfold = { shown: pmVisible(document.getElementById("pm-installed")), expanded: head.getAttribute("aria-expanded") };
     // The settings form: drawn from the schema, valid values saved, a bad one named and nothing saved.
     const clean = () => document.querySelector('#pm-installed [data-plugin-id="fixture.clean"]');
     await pmWait(600); // a refresh started by the step before would replace the rows and wipe the form

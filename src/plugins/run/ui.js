@@ -80,8 +80,13 @@ export function activate(ui) {
         try {
           let r = await ui.call("play", { project });
           if (r.reason === "needs-accept") {
-            const shown = r.whole ? r.whole.parts.map((p) => `${p.name}: ${p.command}`).join("\n") : `Added: ${r.changes.added.join(", ") || "none"}. Removed: ${r.changes.removed.join(", ") || "none"}. Changed: ${r.changes.changed.join(", ") || "none"}.`;
-            if (window.confirm(`${r.whole ? "This project wants to run these commands on your machine:" : "The run recipe changed since you accepted it:"}\n\n${shown}\n\nAccept and start?`)) {
+            const lines = r.whole ? r.whole.parts.map((p) => `${p.name}: ${p.command}`) : [`Added: ${r.changes.added.join(", ") || "none"}`, `Removed: ${r.changes.removed.join(", ") || "none"}`, `Changed: ${r.changes.changed.join(", ") || "none"}`];
+            const yes = await ui.confirm({
+              title: r.whole ? "This project wants to run these commands on your machine" : "The run recipe changed since you accepted it",
+              message: r.whole ? "Read them before you accept. They run with your own permissions." : "Only what changed is shown. Accepting lets the whole recipe run again.",
+              lines, accept: "Accept and start", cancel: "Cancel",
+            });
+            if (yes) {
               await ui.call("accept", { project });
               r = await ui.call("play", { project });
             } else { say("Not started: the recipe was not accepted."); return; }

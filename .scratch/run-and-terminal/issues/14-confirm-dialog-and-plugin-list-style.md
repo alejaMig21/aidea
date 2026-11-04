@@ -1,6 +1,6 @@
 # 14 - Confirmation dialog and plugin list look like the rest of aidea
 
-Status: needs-triage (user feedback from the live check of 2026-11-04; do not block tickets 08-13)
+Status: built and tested; seen live in Electron on the second monitor (captures in `.scratch/run-and-terminal/live-shots/14-*.png`). Not built: a separate detail view (the item itself carries the actions and the settings form), a marketplace-style rating or download count (there is no marketplace).
 
 ## Problem
 

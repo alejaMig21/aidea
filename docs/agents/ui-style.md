@@ -49,6 +49,21 @@ The Panels are placed by `dockview-core` (ADR 0007, vendored in `src/ui/vendor/d
 
 A library rule that wins over these needs `!important` on the one property; say so in a comment next to it.
 
+## The plugin list and the dialog
+
+The plugin manager is drawn like the list of extensions of a code editor (the person already knows how to read it): a search box, sections that fold with a count, and one item per plugin. The dialog is the one question aidea asks that needs a yes or a no (`dialogConfirm`, `ui.confirm` for plugins): the browser's own `window.confirm` is never used.
+
+| Part | Look |
+|---|---|
+| Search box | full width, 13px, `--bg` field, 1px `--control` border, radius 6px |
+| Section header | a button: chevron (turns when folded), label at the label size (11px uppercase, `--muted`), a round count badge (11px, `--raised`, `--label`) |
+| Item | two columns: a 42px tile, then the text; no border between items; `--raised` on hover; radius 8px |
+| Tile | 42px, radius 8px, `--raised`, the first letter of the plugin's name at 18px weight 600 in `--accent-soft` (plugins have no pictures of their own) |
+| Item text | name 13.5px weight 600 on one line; description 12px `--muted`, one line cut with an ellipsis; then publisher (`--label`), version and id at 12px; actions under them at 12px |
+| Badge on an item | 11px, 1px outline, radius 8px: `--label` for a note ("Ships with aidea"), `--authored` for a warning ("In quarantine", a plugin that is off), `--danger` for a failure. A plugin that is running carries no badge |
+| Dialog | centred on a `rgba(0,0,0,.5)` layer above everything (z-index 200), width up to 520px, `--panel`, 1px `--line`, radius 12px; title 14px weight 600; message 13.5px; what will run (commands) in a `--raised` block at the code size (12.5px, `--mono`); buttons on the right, the primary one `--accent` |
+| Dialog focus | starts on the safe button (Cancel); Tab moves between the two; Escape means no; the focus returns to the control that asked |
+
 ## Focus
 
 The ring that shows where the keyboard is: 2px `--accent`, offset 2px (`:focus-visible` in `src/ui/index.html`). A control that fills its card (the Canvas, whose `svg` has no margin and sits inside a card that clips) draws it inside, with offset -2px, so the card does not cut it. The ring shows for the keyboard only: a click on the Canvas gives it focus without a ring (the browser's own white ring is turned off with `:focus:not(:focus-visible)`).

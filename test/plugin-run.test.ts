@@ -322,3 +322,12 @@ test("after a relaunch no part shows as running and none starts by itself", asyn
   assert.equal((await second.call("output")).body.parts.length, 0);
   assert.equal(await answers(port), false);
 });
+
+// Ticket 14: the plugin list shows what a person reads in an extensions list: what it is, who made it and what it may do.
+test("the list of plugins says what each is, who made it and which capabilities it declares", async () => {
+  const t = await (await setup()).boot();
+  const run = ((await (await fetch(t.core.url + "/plugins")).json()) as any).plugins.find((p: any) => p.id === "run");
+  assert.match(run.description, /Play starts every program/);
+  assert.equal(run.publisher, "aidea");
+  assert.deepEqual(run.capabilities, ["processes", "files", "network"]);
+});

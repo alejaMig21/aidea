@@ -10,7 +10,7 @@ import { createMemorySecretStore, createSettings } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 
 export type PluginState = "active" | "inactive" | "failed" | "incompatible";
-export type PluginInfo = { id: string; title: string; version: string; state: PluginState; reason?: string; ui: boolean; builtin: boolean; required: boolean; settings: boolean }; // `ui`: it has an interface half; `builtin`: it ships with aidea; `required`: it ships with aidea and cannot be removed or switched off
+export type PluginInfo = { id: string; title: string; version: string; state: PluginState; reason?: string; ui: boolean; builtin: boolean; required: boolean; settings: boolean; description: string; publisher: string; capabilities: string[] }; // `ui`: it has an interface half; `builtin`: it ships with aidea; `required`: it ships with aidea and cannot be removed or switched off
 type Undo = () => unknown;
 type Entry = { id: string; folder: string; builtin: boolean; manifest?: Manifest; state: PluginState; reason?: string; undo: Undo[]; returned?: Undo; ran?: boolean; waiting?: boolean }; // `ran`: its code was activated in this session; `returned`: what `activate` returned, run after every other undo
 
@@ -271,7 +271,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
     entries.delete(id);
   }
 
-  const info = (e: Entry): PluginInfo => ({ required: !!e.manifest?.required && e.builtin, id: e.id, title: e.manifest?.title ?? e.id, version: e.manifest?.version ?? "", state: e.state, ...(e.reason ? { reason: e.reason } : {}), ui: !!e.manifest?.ui, builtin: e.builtin, settings: Object.keys(e.manifest?.settings ?? {}).length > 0 });
+  const info = (e: Entry): PluginInfo => ({ required: !!e.manifest?.required && e.builtin, id: e.id, title: e.manifest?.title ?? e.id, version: e.manifest?.version ?? "", state: e.state, ...(e.reason ? { reason: e.reason } : {}), ui: !!e.manifest?.ui, builtin: e.builtin, settings: Object.keys(e.manifest?.settings ?? {}).length > 0, description: e.manifest?.description ?? "", publisher: e.manifest?.publisher ?? "", capabilities: e.manifest?.capabilities ?? [] });
 
   return {
     loadAll,

@@ -42,6 +42,8 @@ async function pluginUiActivate(id) {
     // A named call to the host half of this plugin; resolves with its answer or rejects with its message.
     // The id of the Project that is open now, or null.
     project: () => (typeof current === "undefined" ? null : current),
+    // A question that needs a yes or a no, in the dialog of aidea (never the browser's): ui.confirm({ title, message?, lines?, accept?, cancel? }) resolves true or false.
+    confirm: (options) => dialogConfirm(options),
     // A named call to the host half of this plugin, or of another one (`plugin`); resolves with its answer or rejects with its message.
     async call(name, body = {}, plugin = id) {
       const res = await fetch(`/plugins/${encodeURIComponent(plugin)}/call/${encodeURIComponent(name)}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
