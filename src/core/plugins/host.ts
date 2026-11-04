@@ -289,6 +289,8 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
       try { return { owner: r.owner, answer: r.fn(structuredClone(action)) }; } catch (e) { return { owner: r.owner, answer: { decision: "ask", question: `The rule of the plugin ${r.owner} failed (${reason(e)}); allow this action?` } }; }
     })),
     logs: () => logs.slice(),
+    // What the plugins registered, to compare before and after (the test tool for plugin authors).
+    registry: () => ({ services: [...services.keys()].sort(), events: [...declared.keys()].sort(), listeners: [...listeners.values()].reduce((n, l) => n + l.length, 0), rules: rules.length }),
   };
 }
 

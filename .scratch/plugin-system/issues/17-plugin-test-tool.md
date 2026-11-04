@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] The tool reports a leak when a fixture plugin forgets to undo something.
-- [ ] The Panel and guard-rule contract tests run against the built-in Terminal plugin and a fixture.
-- [ ] It is documented in the skill and in `docs/plugin-api.md`.
-- [ ] `npm run verify` is green.
+- [x] The tool reports a leak when a fixture plugin forgets to undo something.
+- [x] The Panel and guard-rule contract tests run against the built-in Terminal plugin and a fixture.
+- [x] It is documented in the skill and in `docs/plugin-api.md`.
+- [x] `npm run verify` is green.

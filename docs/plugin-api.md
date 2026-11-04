@@ -103,3 +103,7 @@ A plugin interface uses only these CSS variables (the shared scale of `docs/agen
 ## Status words
 
 Every operation of the plugin manager answers with one of: `applied`, `failed`, `restart-required`.
+
+## Testing a plugin
+
+`checkPlugin(folder)` (`src/core/plugins/testkit.ts`) is the test tool for plugin authors, the "testkit". It activates the plugin in a real host, deactivates it twice over, and returns `{ ok, id, kinds, problems }`. A problem is a registry or a running handle (timer, server) that is not back to its baseline after deactivate, a host half that does not activate, a Panel whose interface half lacks an `activate` export, or a guard rule that throws on an ordinary action. Everything you register through `ctx` is undone for you; a leak means you started something outside `ctx` and did not return or register an undo for it (`ctx.effect`).

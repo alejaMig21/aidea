@@ -19,3 +19,7 @@ You write plugins for aidea, a desktop app where the person builds software on l
 - Do not try to reach the plugin manager from the plugin itself: a plugin can never install another plugin.
 - Do not put secrets in the manifest or the code.
 - If the inspection shows an API version different from the one in your template, stop and say so.
+
+## Test it before you propose it
+
+`checkPlugin(folder)` in `src/core/plugins/testkit.ts` boots the real plugin host with your plugin alone, activates it, deactivates it, activates it again, and reports anything not back to its starting point (services, events, listeners, guard rules, timers, servers), plus the contract of each kind it finds: a Panel (the interface half must exist and export `activate`) and a guard rule (it must not throw on an ordinary action). Run it from a test: `const r = await checkPlugin("path/to/folder"); assert.deepEqual(r.problems, [])`. Fix every problem before you call `propose_plugin`.
