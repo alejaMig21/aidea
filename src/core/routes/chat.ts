@@ -1,6 +1,7 @@
 import type { Handler } from "../types.ts";
 import { BUILDER_INSTRUCTIONS } from "../contract.ts";
 import { begin, finish } from "../guard.ts";
+import { fixMessage, limitOf, sourceProblem, validSelection } from "../select.ts";
 import { currentChoice } from "./agent-options.ts";
 
 const MAX_MESSAGE_CHARS = 20_000;
@@ -17,7 +18,18 @@ const handler: Handler = async (req, res, core) => {
   if (body === undefined) return true; // readJson already answered
   const project = typeof body?.project === "string" ? core.projects.get(body.project) : undefined;
   if (!project) return reject(400, "project must be a Project that is already open");
-  const { message, sessionId } = body ?? {};
+  const { sessionId, fix } = body ?? {};
+  let message = body?.message;
+  // "Fix": text the person selected, handed over as data. The core frames it, so the window cannot hand the Builder instructions of its own through this door.
+  if (fix !== undefined) {
+    if (message !== undefined) return reject(400, "send either a message or a fix, not both");
+    const f = fix as { text?: unknown; source?: unknown } | null;
+    if (typeof f !== "object" || f === null || Array.isArray(f)) return reject(400, "fix must be { text, source? }");
+    const bad = sourceProblem(f.source);
+    if (bad) return reject(400, bad);
+    if (!validSelection(f.text, f.source)) return reject(400, `fix.text must be the selected text, at most ${limitOf(f.source)} characters`);
+    message = fixMessage(f.text);
+  }
   if (typeof message !== "string" || !message.trim() || message.length > MAX_MESSAGE_CHARS) {
     return reject(400, `message must be a non-empty string of at most ${MAX_MESSAGE_CHARS} characters`);
   }

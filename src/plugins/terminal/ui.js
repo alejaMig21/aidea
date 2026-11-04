@@ -18,6 +18,7 @@ export function activate(ui) {
       bar.style.cssText = "display:flex;gap:6px;align-items:center;padding:4px 8px;color:var(--muted);font-size:12px";
       text.style.cssText = "margin:0;padding:8px 12px;overflow:auto;flex:1;min-height:0;font:12px/1.45 var(--mono);color:var(--text);white-space:pre-wrap;word-break:break-word";
       message.style.cssText = "margin:0;padding:12px 14px;color:var(--muted)";
+      text.dataset.selectionFix = ""; // an error selected here may be fixed by the Builder as well as explained
       text.dataset.selectionSource = "terminal"; // the selection control gives text selected here the terminal's own, longer limit
       container.style.cssText += ";display:flex;flex-direction:column";
       container.append(tabs, bar, text, message);

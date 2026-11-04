@@ -57,7 +57,7 @@ before(async () => {
     page = JSON.parse(raw.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/&quot;/g, '"').replace(/&amp;/g, "&"));
   } finally { proxy.close(); }
 });
-after(() => { core?.close(); if (scratch) rmSync(scratch, { recursive: true, force: true, maxRetries: 8, retryDelay: 300 }); });
+after(async () => { await core?.plugins.deactivate("run"); /* core.close() does not stop what Play started: a left program keeps the test alive */ core?.close(); if (scratch) rmSync(scratch, { recursive: true, force: true, maxRetries: 8, retryDelay: 300 }); });
 
 test("the page loads without errors and the terminal log is marked as the terminal", { skip }, () => {
   assert.deepEqual(page.errors, []);
@@ -65,7 +65,7 @@ test("the page loads without errors and the terminal log is marked as the termin
   assert.ok(page.terminalLength > 8000, `the output is ${page.terminalLength} characters`);
 });
 test("a selection of more than 8000 characters in the terminal keeps its END, the buttons stay usable and the control says it cut", { skip }, () => {
-  assert.deepEqual(page.longButtons, { Explain: true, "Enter the Tutor": true });
+  assert.deepEqual(page.longButtons, { Explain: true, Fix: true, "Explain and fix": true, "Enter the Tutor": true }); // the terminal also offers the two that hand the text to the Builder (ticket 12)
   assert.match(page.longHint, /last 8000/);
   assert.deepEqual({ ...page.longSent, endsLikeTheOutput: page.longSent.endsLikeTheOutput }, { source: "terminal", length: 8000, endsLikeTheOutput: true });
 });

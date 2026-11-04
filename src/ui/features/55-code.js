@@ -47,6 +47,7 @@ codeTabsEl.setAttribute("aria-label", "Open files");
 const codeHead = Object.assign(document.createElement("div"), { id: "code-head", hidden: true });
 const codeStack = Object.assign(document.createElement("div"), { id: "code-stack" });
 $("pane-code").append(codeTabsEl, codeHead, codeStack);
+$("pane-code").dataset.selectionFix = ""; // text selected here may also be fixed by the Builder (54-select.js)
 
 const CODE_EMPTY = "Choose a file in Files, or select a class, function or module on Components and press View code.";
 const codeEmptyEl = Object.assign(document.createElement("p"), { className: "said", textContent: CODE_EMPTY });

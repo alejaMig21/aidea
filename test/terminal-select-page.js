@@ -31,7 +31,7 @@ const tsButtons = () => Object.fromEntries([...tsPop().querySelectorAll("button"
     document.getElementById("panels-button").click();
     document.querySelector('#panels-menu [data-title="Terminal"]').click();
     document.getElementById("panels-button").click();
-    await tsUntil(() => /line 399/.test(document.querySelector("pre[data-selection-source=terminal]")?.textContent ?? ""));
+    await tsUntil(() => /line 399/.test(document.querySelector("pre[data-selection-source=terminal]")?.textContent ?? ""), 25000); // slow when the suite runs several tests at once
     const log = document.querySelector("pre[data-selection-source=terminal]");
     report.marked = !!log;
     const all = log.textContent.length;

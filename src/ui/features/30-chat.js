@@ -186,22 +186,18 @@
     }
   }
 
-  form.onsubmit = async (e) => {
-    e.preventDefault();
-    if (send.disabled) return; // the builder is still answering: the draft stays in the box
-    const message = input.value.trim();
-    if (!message) { input.value = ""; fit(); return; }
-    if (!current) { add("error", "Open a Project first."); return; }
+  // One turn with the builder: `shown` is what the chat says the person wrote, `extra` the fields of the request that carry it (a message, or a fix of selected text).
+  async function talk(shown, extra) {
+    if (send.disabled) return false; // the builder is still answering
+    if (!current) { add("error", "Open a Project first."); return false; }
     const project = current;
-    input.value = "";
-    fit();
     send.disabled = true;
-    add("you", message);
+    add("you", shown);
     try {
       const res = await fetch("/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ project, message, sessionId: sessions.get(project) }),
+        body: JSON.stringify({ project, ...extra, sessionId: sessions.get(project) }),
       });
       if (!res.ok) { add("error", (await res.json()).error); return; }
       const reader = res.body.getReader();
@@ -223,5 +219,21 @@
       send.disabled = false;
       input.focus();
     }
+    return true;
+  }
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    if (send.disabled) return; // the builder is still answering: the draft stays in the box
+    const message = input.value.trim();
+    if (!message) { input.value = ""; fit(); return; }
+    if (!current) { add("error", "Open a Project first."); return; }
+    input.value = "";
+    fit();
+    talk(message, { message });
+  };
+  // For the selection control: "Fix" hands selected text to the builder; the core frames it as data.
+  window.chatUi = {
+    fix: (text, source) => talk(`Fix this (from the ${source ?? "screen"}): ${text.length > 160 ? text.slice(0, 160) + "…" : text}`, { fix: { text, source } }),
+    isBusy: () => send.disabled,
   };
 }

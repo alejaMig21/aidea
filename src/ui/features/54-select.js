@@ -26,6 +26,9 @@
   pop.setAttribute("aria-label", "Learn about the selected text");
   const define = Object.assign(document.createElement("button"), { type: "button", textContent: "Explain" });
   const enter = Object.assign(document.createElement("button"), { type: "button", textContent: "Enter the Tutor", className: "primary" });
+  // Only where fixing makes sense (the terminal and the Code panel mark themselves with data-selection-fix): the two buttons that hand the text to the Builder.
+  const fix = Object.assign(document.createElement("button"), { type: "button", textContent: "Fix", hidden: true });
+  const explainFix = Object.assign(document.createElement("button"), { type: "button", textContent: "Explain and fix", hidden: true });
   const row = Object.assign(document.createElement("div"), { className: "row" });
   const said = Object.assign(document.createElement("p"), { className: "said", hidden: true });
   said.setAttribute("role", "status");
@@ -38,7 +41,7 @@
   const cancel = Object.assign(document.createElement("button"), { type: "button", textContent: "Cancel" });
   warnRow.append(sendAnyway, cancel);
   warn.append(warnText, warnRow);
-  row.append(define, enter);
+  row.append(define, fix, explainFix, enter);
   pop.append(row, warn, said, hint);
   document.body.append(pop);
 
@@ -78,6 +81,7 @@
     return !!el?.closest?.("input, textarea, select, [contenteditable]:not([contenteditable='false'])");
   };
 
+  const inFixable = (node) => !!(node?.nodeType === 1 ? node : node?.parentElement)?.closest?.("[data-selection-fix]");
   const inTerminal = (node) => !!(node?.nodeType === 1 ? node : node?.parentElement)?.closest?.('[data-selection-source="terminal"]');
 
   function check() {
@@ -94,10 +98,14 @@
     source = fromTerminal ? "terminal" : undefined;
     const tooLong = !fromTerminal && picked.length > MAX;
     const busy = window.tutorUi?.isRunning();
+    const fixable = inFixable(sel.anchorNode) && inFixable(sel.focusNode);
+    const builderBusy = fixable && window.chatUi?.isBusy();
+    fix.hidden = explainFix.hidden = !fixable;
     define.disabled = tooLong;
     enter.disabled = tooLong || busy;
-    hint.textContent = tooLong ? `Select less text: up to ${MAX} characters.` : cut ? `Only the last ${MAX_TERMINAL} characters are sent: the start was cut.` : "A class is running: end it to start another.";
-    hint.hidden = !(tooLong || cut || busy);
+    fix.disabled = explainFix.disabled = tooLong || builderBusy;
+    hint.textContent = tooLong ? `Select less text: up to ${MAX} characters.` : cut ? `Only the last ${MAX_TERMINAL} characters are sent: the start was cut.` : busy ? "A class is running: end it to start another." : "The Builder is answering: wait for it to finish.";
+    hint.hidden = !(tooLong || cut || busy || builderBusy);
     pop.hidden = false;
     const r = sel.getRangeAt(0).getBoundingClientRect();
     const w = pop.offsetWidth, h = pop.offsetHeight;
@@ -113,6 +121,8 @@
   pop.addEventListener("mousedown", (e) => e.preventDefault()); // keeps the selection while a button is pressed
 
   define.onclick = () => sendOrWarn(explain);
+  fix.onclick = () => sendOrWarn(() => { const asked = text, from = source; hide(); window.getSelection()?.removeAllRanges(); window.chatUi?.fix(asked, from); });
+  explainFix.onclick = () => sendOrWarn(() => { explain(); window.chatUi?.fix(text, source); }); // the explanation shows here while the Builder works in the chat
   enter.onclick = () => sendOrWarn(enterTheTutor);
   async function explain() {
     const mine = ++token, project = current, asked = text, from = source;

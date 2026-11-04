@@ -4,10 +4,11 @@
 
 **Blocked by:** 11.
 
-**Status:** ready-for-agent
+**Status:** built and tested; live check pending
 
-- [ ] The terminal and the Code panel show four buttons; the other Panels show two.
-- [ ] "Fix" sends the selection to the Builder as data together with the Contract it already respects; the Builder's change still goes through the usual permission cards and Proposals.
-- [ ] "Explain and fix" produces the Tutor's explanation and the Builder's work from the same selection.
-- [ ] The same limit, secret check (ticket 13) and data-only rule apply as for "Explain".
-- [ ] Core API tests with a fake Builder and page tests pass; verified live on the second monitor.
+- [x] The terminal and the Code panel show four buttons; the other Panels show two.
+- [x] "Fix" sends the selection to the Builder as data together with the Contract it already respects; the Builder's change still goes through the usual permission cards and Proposals.
+- [x] "Explain and fix" produces the Tutor's explanation and the Builder's work from the same selection.
+- [x] The same limit, secret check (ticket 13) and data-only rule apply as for "Explain".
+- [x] Core API tests with a fake Builder and page tests pass (test/fix-selection.test.ts, test/fix-buttons-page.test.ts).
+- [ ] Verified live on the second monitor.
