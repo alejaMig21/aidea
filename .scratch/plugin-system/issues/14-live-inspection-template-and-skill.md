@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] The inspection lists what is really registered, including what active plugins added, and changes nothing.
-- [ ] The template, copied unchanged into the quarantine, passes the scan and installs.
-- [ ] The skill says: start small, inspect the live app, copy the template, check, stop.
-- [ ] Core API tests pass; `npm run verify` is green.
+- [x] The inspection lists what is really registered, including what active plugins added, and changes nothing.
+- [x] The template, copied unchanged into the quarantine, passes the scan and installs.
+- [x] The skill says: start small, inspect the live app, copy the template, check, stop.
+- [x] Core API tests pass; `npm run verify` is green.

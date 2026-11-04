@@ -1,12 +1,26 @@
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { inspect } from "../plugins/api.ts";
 import { ManagerError } from "../plugins/manager.ts";
 import { QuarantineError } from "../plugins/quarantine.ts";
 import type { Handler } from "../types.ts";
+
+const skillFile = fileURLToPath(new URL("../../../docs/plugin-skill.md", import.meta.url));
 
 // The plugin host of the kernel (src/core/plugins). Activate and deactivate are the first operations of the plugin manager; ticket 07 adds the rest.
 const handler: Handler = async (req, res, core) => {
   if (req.method === "GET" && req.url === "/plugins") {
     core.send(res, 200, { plugins: core.plugins.list(), services: core.plugins.services(), events: core.plugins.eventList(), safeMode: core.plugins.safe });
+    return true;
+  }
+  // The live inspection (read-only) and the skill an agent reads before it writes a plugin.
+  if (req.method === "GET" && req.url === "/plugins/inspect") {
+    core.send(res, 200, inspect(core.plugins));
+    return true;
+  }
+  if (req.method === "GET" && req.url === "/plugins/skill") {
+    res.writeHead(200, { "content-type": "text/markdown; charset=utf-8", "cache-control": "no-cache" });
+    res.end(readFileSync(skillFile));
     return true;
   }
   // Switch a plugin on or off, or take it out. Each answers with a status: applied, failed or restart-required.

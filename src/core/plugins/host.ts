@@ -274,6 +274,8 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
       e.state = "failed";
       e.reason = why;
     },
+    // What each active plugin declares (for the live inspection).
+    details: () => [...entries.values()].filter((e) => e.manifest && e.state === "active").map((e) => ({ id: e.id, title: e.manifest!.title, version: e.manifest!.version, requires: e.manifest!.requires, provides: e.manifest!.provides, capabilities: e.manifest!.capabilities, settings: e.manifest!.settings })),
     services: () => [...services].map(([key, s]) => ({ key, owner: s.owner })),
     eventList: () => [...declared].map(([name, d]) => ({ name, owner: d.owner, mode: d.mode, version: d.version })).sort((a, b) => a.name.localeCompare(b.name)),
     // Calls a function that a plugin provided as a service (the way tests and the kernel reach plugin code).
