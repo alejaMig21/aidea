@@ -19,3 +19,6 @@ DECIDED 2026-11-04: in the same window as aidea, with aidea's look (the shared s
 
 ## 6. What the scanner does with a finding
 DECIDED 2026-11-04: some findings block and others only warn (option A, as the agent recommended). Blocking findings: obfuscated code, install scripts, hidden binaries, and doing something the manifest does not declare (for example using the network without saying so). The person can install anyway, only after a confirmation that names each blocking finding. Warnings: capabilities the plugin declared and uses (network, files). The screen must say that a scan lowers the risk and does not prove a plugin is safe. Not chosen: nothing blocks, and every finding blocks with no way past it.
+
+## 7. Updates
+DECIDED 2026-11-04: every update, even a small one, goes through the quarantine, but it is compared with the version the person accepted, and the scanner shows only what changed (new files, new capabilities, new findings). If nothing serious changed it is one click (option A, as the agent recommended). Not chosen: skipping the review for small updates, and a full scan from zero for every update.
