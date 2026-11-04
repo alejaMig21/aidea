@@ -1,0 +1,6 @@
+# Everything is a plugin: interview decisions
+
+Started 2026-11-04. Source of the questions: `.scratch/plugins/research/01-deepseek-plugin-philosophy.md` (section 17). The person answers one question at a time; each decision is recorded here. Background: `.scratch/future/interviews-pending.md` (REVISED section) and ADR 0001.
+
+## 1. The kernel
+DECIDED 2026-11-04: aidea has a small real kernel that is NOT a plugin (option A, as the agent recommended). The kernel is: the plugin loader and the registry of what plugins offer; the plugin manager (quarantine, install, remove, enable, disable, and a safe mode that starts with every third-party plugin off); the window with the Layout and the named slots where plugins put things; the point that decides on guards (plugins contribute rules, the kernel decides); configuration, credentials and the core server; a minimal emergency screen to see and switch off plugins. Everything else (Panels, layers, language adapters, the Tutor, agent adapters, tools, guard rules, Playback, the terminal) is a plugin shipped with aidea on the same API as an installed one. Not chosen: no kernel at all, as DeepSeek does (a broken plugin could leave no way to switch it off), and a larger kernel with the basic Panels in it.
