@@ -6,7 +6,11 @@
 
 **Status:** ready-for-agent
 
-- [ ] A fixture rule that denies stops the action; one that asks pauses it until the person answers.
-- [ ] A fixture that tries to allow something another rule denied is refused at registration or has no effect.
-- [ ] The existing tests of the authored-layer protection pass unchanged.
-- [ ] Core API tests pass; `npm run verify` is green.
+- [x] A fixture rule that denies stops the action; one that asks pauses it until the person answers.
+- [x] A fixture that tries to allow something another rule denied is refused at registration or has no effect.
+- [x] The existing tests of the authored-layer protection pass unchanged.
+- [x] Core API tests pass; `npm run verify` is green.
+
+## Notes (2026-11-04)
+- Guard rules run in front of the Builder's permission requests (the `approve` tool): a deny refuses with no card, an ask puts the question on the card (a `note` field shown above the request), an allow is ignored, a rule that throws makes the person ask. Rules are synchronous.
+- The protection of the authored layers (`guard.ts`) stays as it was: it acts AFTER a Builder turn (it reports and offers to revert changes made outside a Proposal), so it is not an action rule. Its tests pass unchanged. Moving it onto the mechanism is left for when the kernel checks actions of that kind.

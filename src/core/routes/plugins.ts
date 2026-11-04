@@ -5,7 +5,7 @@ import type { Handler } from "../types.ts";
 // The plugin host of the kernel (src/core/plugins). Activate and deactivate are the first operations of the plugin manager; ticket 07 adds the rest.
 const handler: Handler = async (req, res, core) => {
   if (req.method === "GET" && req.url === "/plugins") {
-    core.send(res, 200, { plugins: core.plugins.list(), services: core.plugins.services() });
+    core.send(res, 200, { plugins: core.plugins.list(), services: core.plugins.services(), events: core.plugins.eventList() });
     return true;
   }
   // The quarantine: plugins that were added and are waiting. Nothing of them runs.

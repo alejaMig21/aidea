@@ -169,7 +169,11 @@ const handler: Handler = async (req, res, core) => {
       // If Claude Code drops this request before it is answered, the connection closes: that withdraws the card.
       const gaveUp = new AbortController();
       res.on("close", () => gaveUp.abort());
-      const decision = (await core.permissions.ask(token, args.tool_name, args.input, gaveUp.signal)) ?? { behavior: "deny" as const, message: "The conversation is not running" };
+      // The guard rules of the plugins come first: a deny refuses the action with no card, an ask puts the question on the card. A rule can never allow.
+      const verdict = core.plugins.guardCheck({ kind: "tool", tool: args.tool_name, input: args.input, project: core.permissions.conversationOf(token)?.project });
+      const decision = verdict.decision === "deny"
+        ? { behavior: "deny" as const, message: `A plugin rule refused this action: ${verdict.reason}` }
+        : (await core.permissions.ask(token, args.tool_name, args.input, gaveUp.signal, verdict.decision === "ask" ? verdict.question : undefined)) ?? { behavior: "deny" as const, message: "The conversation is not running" };
       // Claude Code expects the decision as JSON text: { behavior: "allow", updatedInput } or { behavior: "deny", message }.
       const text = JSON.stringify(decision.behavior === "allow" ? { behavior: "allow", updatedInput: args.input } : decision);
       core.send(res, 200, rpcResult(id, { content: [{ type: "text", text }] }));

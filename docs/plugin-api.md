@@ -56,7 +56,7 @@ export function activate(ctx) {
 }
 ```
 
-`ctx` offers (version 0.1): `ctx.plugin` (its manifest and private data folder), `ctx.services.provide(key, value)` and `ctx.services.get(key)`, `ctx.on(event, listener)` and `ctx.emit(event, data)`, `ctx.effect(dispose)` to register anything that must be undone, and `ctx.log(message)`. Everything registered through `ctx` is undone when the plugin deactivates, in reverse order; the function returned by `activate` runs last. An error while activating switches that plugin off and is reported; nothing else is affected.
+`ctx` offers (version 0.1): `ctx.plugin` (its id, title and version), `ctx.services.provide(key, value)` and `ctx.services.get(key)`, `ctx.on(fullName, listener)` to listen to any event by its full name, `ctx.emit(name, data)` to announce an event the manifest declares as `announce`, `ctx.ask(name, data)` to ask with one declared as `ask` (it returns `{ decision: "allow" }` when nobody objected, else the combined deny or ask), `ctx.guards.add(rule)`, `ctx.effect(dispose)` to register anything that must be undone, and `ctx.log(message)`. Listeners get a copy of the data; a listener that throws does not stop the others. Everything registered through `ctx` is undone when the plugin deactivates, in reverse order; the function returned by `activate` runs last. An error while activating switches that plugin off and is reported; nothing else is affected.
 
 ## The interface half (`ui.js`)
 

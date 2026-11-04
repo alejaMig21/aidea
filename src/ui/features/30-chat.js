@@ -114,7 +114,8 @@
     approve.onclick = () => answer("allow");
     reject.onclick = () => answer("deny");
     row.append(approve, reject, reason, status);
-    box.append(title, ...requestBlocks(event.tool, event.input ?? {}), row);
+    const note = event.note ? Object.assign(document.createElement("p"), { className: "said", textContent: event.note }) : null; // a question from a plugin's guard rule
+    box.append(title, ...(note ? [note] : []), ...requestBlocks(event.tool, event.input ?? {}), row);
     log.append(box);
     log.scrollTop = log.scrollHeight;
     cards.set(event.id, { box, buttons: [approve, reject], reason, status });

@@ -69,7 +69,8 @@ export function createBroker() {
     // The builder asks for permission. Resolves when the person answers; undefined if the conversation is not running.
     // `gaveUp` fires when the builder stops waiting (Claude Code drops a request that goes unanswered for too long):
     // the card is withdrawn so the person is not left answering a question nobody is listening to.
-    ask(token: string, tool: string, input: unknown, gaveUp?: AbortSignal): Promise<Decision> | undefined {
+    // `note` is a question or remark from a plugin's guard rule, shown on the card.
+    ask(token: string, tool: string, input: unknown, gaveUp?: AbortSignal, note?: string): Promise<Decision> | undefined {
       const conversation = conversations.get(token);
       if (!conversation) return undefined;
       if (conversation.pending.size >= MAX_PENDING) {
@@ -79,7 +80,7 @@ export function createBroker() {
       return new Promise((resolve) => {
         requests.set(id, { conversation, resolve, onClose: { behavior: "deny", message: "The conversation ended before the person answered" } });
         conversation.pending.add(id);
-        conversation.emit({ type: "permission", id, secret: conversation.secret, tool, input });
+        conversation.emit({ type: "permission", id, secret: conversation.secret, tool, input, ...(note ? { note } : {}) });
         gaveUp?.addEventListener(
           "abort",
           () => {
