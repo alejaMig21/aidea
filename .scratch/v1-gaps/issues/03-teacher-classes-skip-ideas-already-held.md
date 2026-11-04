@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done (every box checked; the real Tutor check is in the note below)
 
 - [x] Through the protocol with scripted roles (`test/held-ideas.test.ts`): a step about a held idea is refused with a reason and a different step is accepted; an idea with weak or old Evidence is still taught; nothing changes for a person with an empty graph. "Held" is the Probe's rule (`heldIdea` in `probe.ts`) plus strong Evidence in this Project: a correct answer, confidence 70 or more, in the last 90 days. The Teacher reads `held_ideas` (name and statement only) and gives `idea` to `begin_step`.
 - [x] Verified with the real Tutor on a short class (see the note below).

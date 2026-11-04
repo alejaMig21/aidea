@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** built and tested at the protocol; the live check with a real Builder (last box) is still open. Note 2026-11-04: `.aidea/run.json` is skipped by this guard on purpose (the consent hash of Play protects it).
 
 - [x] Through the protocol with a fake adapter that changes a `.aidea` file while the turn runs: the change is reported once with the file name, restoring brings back the previous content byte for byte, and a change made by an accepted Proposal is never reported. A file created outside the known set is reported too. The denied-tools list includes NotebookEdit. (`test/authored-guard.test.ts`; the chat line and Restore button checked in headless Chrome at 1920 and 1280.)
 - [ ] Verified live: ask the real builder to edit a `.aidea` file with a shell command and see the report.
