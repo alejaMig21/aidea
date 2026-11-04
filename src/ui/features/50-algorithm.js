@@ -171,6 +171,9 @@ function flowReplay(visits, index, previous) {
   });
 }
 
+// The layers that follow Playback: the flowchart and the values of the same function (58-data.js).
+const playbackLayer = (which = authoredShown) => which === "flow" || which === "data";
+
 let algoNodes = [];
 let algoGraph = null;
 let algoRequest = 0; // numbers the requests so a slow answer cannot replace a newer one

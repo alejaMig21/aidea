@@ -158,7 +158,7 @@ function pbSetSpeed(ms) {
 // They never act while the person types in a field or has a control focused that uses the same key.
 document.addEventListener("keydown", (e) => {
   // Run must be on screen (a hidden Run would play where nobody can see it), and a held key does not repeat.
-  if (!pbRecording?.visits.length || authoredShown !== "flow" || !layoutShown.run || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
+  if (!pbRecording?.visits.length || !playbackLayer() || !layoutShown.run || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
   if (e.target.closest?.("input, select, textarea, [contenteditable], #files") || (e.key === " " && e.target.closest?.("button, a"))) return;
   const keys = {
     " ": pbPlayPause,
@@ -328,7 +328,7 @@ draw = async (nodes) => {
 const showLayerWithoutPlayback = showLayer;
 showLayer = (which) => {
   showLayerWithoutPlayback(which);
-  if (which !== "flow" || !pbNode()) { pbStop(); layoutSetRunAvailable(false); }
+  if (!playbackLayer(which) || !pbNode()) { pbStop(); layoutSetRunAvailable(false); }
   else {
     layoutSetRunAvailable(true); // Run appears unless the person folded it: that choice stays
     if (pbRenderedFor !== pbGraph) pbRender(); // keep what the person typed unless the graph changed

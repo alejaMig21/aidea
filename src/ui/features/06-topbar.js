@@ -151,7 +151,7 @@ async function refreshProject() {
     if (has(module)) await componentsLoad(module);
     else if (testsOpen) await componentsLoad(null, true);
     else await draw(body.nodes);
-    if (layer === "flow") { if (!(has(algo) && await algoOpen(algo, true))) showLayer("components"); }
+    if (layer === "flow" || layer === "data") { if (!(has(algo) && await algoOpen(algo, true))) showLayer("components"); else if (layer === "data") showLayer("data"); }
     await codeRefresh(body.nodes);
     document.dispatchEvent(new CustomEvent("project-refreshed", { detail: { id: project } }));
     if (!has(codeSelected)) codeSelected = null;

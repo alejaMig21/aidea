@@ -1,4 +1,4 @@
-// What each of the five diagram layers is, in plain words: one structure per layer, so the Tutor teaches from it and the interface's
+// What each of the six diagram layers is, in plain words: one structure per layer, so the Tutor teaches from it and the interface's
 // quick tour reads it (GET /layers/help). Per layer: what it is, the guiding question, an example and the order its elements are told in;
 // per element: { name, hint, what, question, example, narration }. The Business entries repeat 46-business-help.js (a test keeps them equal).
 import { LAYER_CONCEPTS } from "./probe.ts";
@@ -203,6 +203,49 @@ const COMPONENTS_ELEMENTS: Record<string, Element> = {
   },
 };
 
+const DATA_ELEMENTS: Record<string, Element> = {
+  variable: {
+    name: "Variable",
+    hint: "What does it hold right now?",
+    what: "A labelled box with the name of a variable and the value it holds at the step being shown. A value that aidea cannot draw is still a box, with its text.",
+    question: "What is in this box, and where did it come from?",
+    example: "total is 30.",
+    narration: "Each box is one variable of the function, with what it holds at this very step.",
+  },
+  list: {
+    name: "List",
+    hint: "What is in it, and in what place?",
+    what: "A row of cells, one for each item, with its position above it. Positions start at 0, so the first item is in place 0.",
+    question: "Which item is in place 1, and what happens to the row when one is added?",
+    example: "items is [10, 20]: 10 in place 0 and 20 in place 1.",
+    narration: "A list is a row of cells. The small number above each cell is its place, counted from zero.",
+  },
+  dictionary: {
+    name: "Dictionary",
+    hint: "Which key points to which value?",
+    what: "Keys, each pointing to the value it stands for. You look a value up by its key, not by a place.",
+    question: "What would you look up here, and what would you get back?",
+    example: "prices maps apple to 3 and pear to 5.",
+    narration: "A dictionary is a set of labels, each pointing to a value. You ask by label.",
+  },
+  change: {
+    name: "What changed",
+    hint: "What did the last step change?",
+    what: "The variable whose value is different from the step before is highlighted, so you see what the step did without comparing by eye.",
+    question: "Which box was highlighted, and which line of the code did that?",
+    example: "After the line that adds a price, items is highlighted and has one more cell.",
+    narration: "Step by step, the box that changed lights up. That is the effect of the line that just ran.",
+  },
+  limit: {
+    name: "Large values",
+    hint: "Why is part of it hidden?",
+    what: "A very large list or dictionary shows its first part and then says how many are not shown, as \"9,900 more hidden\", so the drawing stays quick to read.",
+    question: "Do you need to see every item to understand what the step did?",
+    example: "A list of 10,000 numbers shows the first hundred and says 9,900 more hidden.",
+    narration: "Long lists are cut, and the drawing says so, so you always know that something is not shown.",
+  },
+};
+
 const FLOW_ELEMENTS: Record<string, Element> = {
   "start and end": {
     name: "Start and end",
@@ -294,6 +337,14 @@ export const LAYER_HELP: Record<string, LayerHelp> = {
     example: "Pay: check the cart, charge the card, save the order.",
     order: ["start and end", "step", "decision", "loop", "return or error", "input and output"],
     elements: FLOW_ELEMENTS,
+  },
+  data: {
+    name: "Data",
+    what: "The values of one function while it runs: each variable as a box, a list as a row of cells with their places, a dictionary as keys pointing to values. It is drawn from the code by Playback and follows the step being shown. Nobody writes it.",
+    question: "What does each variable hold right now, and what did the last step change?",
+    example: "total is 30, and items is a row of two cells: 10 in place 0, 20 in place 1.",
+    order: ["variable", "list", "dictionary", "change", "limit"],
+    elements: DATA_ELEMENTS,
   },
 };
 

@@ -13,7 +13,7 @@ test("the layer that draws the flowchart of a function is called Flow, and no la
   const { layers } = (await (await t.get("/layers/help")).json()) as { layers: Record<string, { name: string }> };
   assert.equal(layers.flow?.name, "Flow");
   assert.equal(layers.algorithms, undefined);
-  assert.deepEqual(Object.keys(layers), ["business", "requirements", "architecture", "components", "flow"]);
+  assert.deepEqual(Object.keys(layers), ["business", "requirements", "architecture", "components", "flow", "data"]);
 });
 
 test("the flowchart of a function is served at /flow and the old path is gone", async () => {

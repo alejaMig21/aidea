@@ -33,10 +33,10 @@ async function newCore() {
 }
 after(() => cores.forEach((c) => c.close()));
 
-const LAYERS = ["business", "requirements", "architecture", "components", "flow"];
+const LAYERS = ["business", "requirements", "architecture", "components", "flow", "data"];
 const JARGON = /\b(UML|C4|ISO|DDD|SOLID|hexagonal|polymorphism|cyclomatic|AST|CFG|idempotent)\b/i;
 
-test("each of the five layers has teaching content: a description, a guiding question, an example, and per element a hint, what it is, a question, an example and a narration", async () => {
+test("each of the six layers has teaching content: a description, a guiding question, an example, and per element a hint, what it is, a question, an example and a narration", async () => {
   const { help } = await newCore();
   const all = await help();
   assert.deepEqual(Object.keys(all.layers), LAYERS);
@@ -98,4 +98,26 @@ test("an unknown layer is refused naming the layers", async () => {
   const res = await t.post("/tutor/classes", { project, layer: "code" });
   assert.equal(res.status, 400);
   assert.match((await res.json()).error, /business, requirements, architecture, components, flow/);
+});
+
+test("the Data layer's content says it is drawn from the code by Playback, that nobody writes it and what each part of the drawing is", async () => {
+  const { help } = await newCore();
+  const data = (await help()).layers.data;
+  assert.equal(data.name, "Data");
+  assert.match(data.what, /Playback/);
+  assert.match(data.what, /never written|nobody writes|drawn from the code/i);
+  assert.deepEqual(data.order, ["variable", "list", "dictionary", "change", "limit"]);
+  assert.match(data.elements.change.what, /highlight/i);
+  assert.match(data.elements.limit.what, /more hidden/i);
+});
+
+test("a class on the Data layer is a class on a derived layer: the Tutor makes no proposals", async () => {
+  const t = await newCore();
+  launches.length = 0;
+  const res = await t.post("/tutor/classes", { project, layer: "data" });
+  assert.equal(res.status, 200);
+  await res.text();
+  const tutor = launches.find((l) => l.role === "tutor")!;
+  assert.match(tutor.message, /drawn from the code/);
+  assert.match(tutor.message, /make no proposals/);
 });

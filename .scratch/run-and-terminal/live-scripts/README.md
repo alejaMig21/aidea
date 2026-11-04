@@ -1,4 +1,4 @@
-# Live scripts (real Electron window, second monitor)
+# Live scripts (real Electron window, main monitor)
 
 Each script starts the real app with isolated data (`AIDEA_DISPLAY=secondary`, its own plugin store, its own secret files), drives it with `playwright-core` over the debugging port and prints PASS or FAIL.
 

@@ -14,7 +14,7 @@ const keyFile = join(root, "secret.key"), secretsFile = join(root, "secrets.enc"
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const results = [];
 const check = (name, ok, detail = "") => { results.push(ok); console.log(ok ? "PASS" : "FAIL", name, detail); };
-const env = { ...process.env, AIDEA_RECENTS_FILE: join(root, "recents.json"), AIDEA_PREFERENCES_FILE: join(root, "prefs.json"), AIDEA_LEARNER_DIR: join(root, "learner"), AIDEA_PLUGINS_DIR: store, AIDEA_DISPLAY: "secondary", AIDEA_SECRET_KEY_FILE: keyFile, AIDEA_SECRETS_FILE: secretsFile };
+const env = { ...process.env, AIDEA_RECENTS_FILE: join(root, "recents.json"), AIDEA_PREFERENCES_FILE: join(root, "prefs.json"), AIDEA_LEARNER_DIR: join(root, "learner"), AIDEA_PLUGINS_DIR: store, AIDEA_SECRET_KEY_FILE: keyFile, AIDEA_SECRETS_FILE: secretsFile };
 const SECRET = "live-secret-value-4711";
 async function launch(port) {
   const child = spawn("D:/Projects/aidea/node_modules/electron/dist/electron.exe", ["D:/Projects/aidea", `--remote-debugging-port=${port}`, `--user-data-dir=${join(root, "ud")}`], { env, stdio: "ignore" });

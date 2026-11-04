@@ -7,6 +7,8 @@ import { test } from "node:test";
 // Each exception names the file and a text that must appear on the line, with the reason.
 const allowed = [
   { file: "47-components.js", text: "Python decides the target at run time (getattr", why: "getattr and variable-held functions are Python facts" },
+  { file: "58-data.js", text: "Python functions do.", why: "only Python records the values of a run today: the statement for another language says so plainly" },
+  { file: "58-data.js", text: "only Python does", why: "the legend says which languages Data can draw" },
 ];
 
 const ui = join(import.meta.dirname, "..", "src", "ui");

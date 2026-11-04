@@ -69,6 +69,10 @@ The plugin manager is drawn like the list of extensions of a code editor (the pe
 
 Below the Panels, after a 1px `--line` rule and the label "Layouts" (the label size: 11px uppercase, `--muted`), come the built-in layouts, the person's own, "Save this layout as…", "Your layouts…" (only when there are any) and the choice "A layout for each Project" (a row with a check mark, like a Panel). Rows have the size and padding of the Panels' rows, without an icon; the labels stay aligned with theirs. The dialogs that go with them (a name, the list with Rename and Delete) are the dialog of the list above: a field is 13px on `--bg` with the 1px `--control` border, the reason a name is refused is 12px `--danger` under it, and an item of the list has its name at 13.5px and its two buttons at the right.
 
+## The Data layer
+
+Variables in a column: the name right-aligned at 13px `--label` (sans), then the value in `--mono` 12.5px inside boxes of `--raised` with the 1.4px `--control` border, 30px tall, radius 5px. A list is a row of cells with the place above each at 11px `--muted`; a dictionary is key, an arrow and value on a row; a part not drawn is a dashed cell with "N more hidden" at 12px `--muted`. The variable the last step changed has a 2.4px `--accent` border and the word CHANGED under its name (11px, weight 600, letter-spacing .08em), so it reads without colour.
+
 ## The Node being read
 
 The Node whose code the Code panel shows carries a 3px `--accent` ring and, above its top right corner, the word READING at the label size (11px, uppercase, letter-spacing .08em, `--accent`, weight 600): the word keeps it readable without colour. One Node at a time.
