@@ -140,6 +140,7 @@ export async function startCore({ port, adapter: defaultAdapter = createClaudeAd
     url: `http://127.0.0.1:${actualPort}`,
     adapter,
     plugins: core.plugins, // the kernel's plugin host, for embedding code and tests
+    quarantine: core.quarantine,
     close: () => server.close(),
   };
 }

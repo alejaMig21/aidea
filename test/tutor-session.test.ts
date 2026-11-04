@@ -132,7 +132,7 @@ test("the Tutor's tool set is separate from the builder's", async () => {
   };
   const { stream } = await startClass();
   await drain(stream);
-  assert.deepEqual(tools, ["begin_step", "predict", "explain", "ask", "review", "held_ideas", "finish_class", "propose_node", "propose_change", "get_plan", "set_plan", "read_layers", "read_node", "list_files", "read_file", "read_recording"]);
+  assert.deepEqual(tools, ["begin_step", "predict", "explain", "ask", "review", "held_ideas", "finish_class", "propose_node", "propose_change", "get_plan", "set_plan", "read_layers", "read_node", "list_files", "read_file", "read_recording", "read_quarantined_plugin"]);
 });
 
 test("a multiple-choice question reaches the interface without its correct answer, and the answer goes back to the waiting tool", async () => {

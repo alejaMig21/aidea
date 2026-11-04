@@ -16,7 +16,7 @@ import type { Proposal } from "../proposals.ts";
 import { NODE_HELP } from "../tutor-authoring.ts";
 import { TUTOR_TOOLS } from "../tutor.ts";
 import { runTeachTool } from "../teach.ts";
-import { READ_TOOLS, runReadTool } from "../tutor-reads.ts";
+import { PLUGIN_READ_TOOLS, READ_TOOLS, runReadTool } from "../tutor-reads.ts";
 import { PROBE_TOOLS, runProbeTool } from "../probe.ts";
 import type { Handler } from "../types.ts";
 
@@ -126,7 +126,7 @@ const handler: Handler = async (req, res, core) => {
     core.send(res, 200, rpcResult(id, {}));
   } else if (method === "tools/list") {
     const prober = core.permissions.conversationOf(token)?.role === "prober";
-    core.send(res, 200, rpcResult(id, { tools: tutor ? [...TUTOR_TOOLS, ...READ_TOOLS, ...decisionTools(core.permissions.conversationOf(token)?.classId)] : prober ? [...PROBE_TOOLS, ...READ_TOOLS] : TOOLS }));
+    core.send(res, 200, rpcResult(id, { tools: tutor ? [...TUTOR_TOOLS, ...READ_TOOLS, ...PLUGIN_READ_TOOLS, ...decisionTools(core.permissions.conversationOf(token)?.classId)] : prober ? [...PROBE_TOOLS, ...READ_TOOLS] : TOOLS }));
   } else if (method === "tools/call") {
     const args = isObject(params.arguments) ? params.arguments : {};
     const name = params.name;
@@ -141,7 +141,7 @@ const handler: Handler = async (req, res, core) => {
     }
     if (tutor) {
       // A class has its own tool set. The question is withdrawn if Claude Code drops this request before it is answered.
-      if (READ_TOOLS.some((t) => t.name === name)) {
+      if ([...READ_TOOLS, ...PLUGIN_READ_TOOLS].some((t) => t.name === name)) {
         const conversation = core.permissions.conversationOf(token);
         const project = conversation && core.projects.get(conversation.project);
         const read = project ? runReadTool(name, args, core, project) : { text: "The Project is not open", isError: true as const };

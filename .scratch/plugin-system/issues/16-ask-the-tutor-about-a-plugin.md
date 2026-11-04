@@ -6,7 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] The Tutor gets a read-only means to read a quarantined plugin and its report.
-- [ ] Text inside the plugin that looks like an instruction is treated as data (a fixture proves it).
-- [ ] The Tutor has no tool that installs, enables or removes.
-- [ ] Core API tests with a fake Tutor pass; `npm run verify` is green.
+- [x] The Tutor gets a read-only means to read a quarantined plugin and its report.
+- [x] Text inside the plugin that looks like an instruction is treated as data (a fixture proves it).
+- [x] The Tutor has no tool that installs, enables or removes.
+- [x] Core API tests with a fake Tutor pass; `npm run verify` is green.
+
+Note: the "Ask the Tutor" button in the manager is not built yet (needs a plugin payload in the Tutor class start); the Tutor tool and its tests are.
