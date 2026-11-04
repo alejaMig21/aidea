@@ -30,7 +30,7 @@ export function activate(ui) {
         message.hidden = parts.length > 0;
         tabs.hidden = bar.hidden = text.hidden = !parts.length;
         tabs.replaceChildren(...parts.map((p) => {
-          const tab = button(`${p.name} ${p.alive ? "(running)" : p.exit === null ? "" : `(exited ${p.exit})`}`, `Show the output of ${p.name}`, () => { selected = p.name; lastText = ""; draw(); });
+          const tab = button(`${p.name} ${p.alive ? "(running)" : p.stopped ? "(stopped)" : p.exit === null ? "" : `(exited ${p.exit})`}`, `Show the output of ${p.name}`, () => { selected = p.name; lastText = ""; draw(); });
           tab.role = "tab";
           tab.setAttribute("aria-selected", String(p === part));
           tab.dataset.part = p.name;
@@ -39,7 +39,7 @@ export function activate(ui) {
         if (!part) return;
         selected = part.name;
         bar.replaceChildren(
-          Object.assign(document.createElement("span"), { textContent: part.alive ? "Running" : `Exited with code ${part.exit}` }),
+          Object.assign(document.createElement("span"), { textContent: part.alive ? "Running" : part.stopped ? "Stopped" : `Exited with code ${part.exit}` }),
           ...(part.alive ? [button("Stop", `Stop ${part.name}`, () => act("stop", { part: part.name }))] : []),
           button("Restart", `Restart ${part.name} and what depends on it`, () => act("restart", { part: part.name })),
         );

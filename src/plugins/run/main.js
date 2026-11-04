@@ -243,7 +243,7 @@ export function activate(ctx) {
     const root = rootOf(body);
     const run = runOf(root);
     return {
-      parts: [...run.parts.values()].map((e) => ({ name: e.part.name, alive: e.alive, exit: e.exit, lines: e.lines.slice(), dropped: e.dropped })),
+      parts: [...run.parts.values()].map((e) => ({ name: e.part.name, alive: e.alive, exit: e.exit, stopped: e.stopped, lines: e.lines.slice(), dropped: e.dropped })),
       stoppedOrder: run.stoppedOrder,
     };
   });

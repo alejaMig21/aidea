@@ -19,6 +19,7 @@ pluginSlotDeclare("layout.topbar", {
     if (!entry || typeof entry.id !== "string" || typeof entry.render !== "function") throw new Error('a top bar entry needs an "id" and a "render" function');
     const box = document.createElement("span");
     box.dataset.topbarPlugin = `${owner}.${entry.id}`;
+    box.style.cssText = "display:inline-flex;align-items:center;gap:8px;min-width:0;max-width:460px;white-space:nowrap"; // the controls sit in a row with the bar's own gap, and a long message is cut
     document.getElementById("topbar-plugins").append(box);
     let dispose;
     try { dispose = entry.render(box); } catch (e) { box.remove(); throw e; }

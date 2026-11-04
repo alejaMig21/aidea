@@ -22,12 +22,12 @@
  {
   "name": "Terminal is listed as a plugin that ships with aidea",
   "ok": true,
-  "detail": "Terminal terminal 0.1.0 (ships with aidea) - active\nSwitch off\nRemove\n also delete its data"
+  "detail": "Run run 0.1.0 (ships with aidea) - active\nSwitch off\nRemove\n also delete its data\nTerminal terminal 0.1.0 (ships with ai"
  },
  {
   "name": "both plugins wait in the quarantine with their scan",
   "ok": true,
-  "detail": "[{\"title\":\"Loud one\",\"blocking\":2,\"installDisabled\":true},{\"title\":\"Hello live\",\"blocking\":0,\"installDisabled\":false}]"
+  "detail": "[{\"title\":\"Hello live\",\"blocking\":0,\"installDisabled\":false},{\"title\":\"Loud one\",\"blocking\":2,\"installDisabled\":true}]"
  },
  {
   "name": "the loud one cannot be installed before confirming",
@@ -62,7 +62,7 @@
  {
   "name": "the emergency screen lists the plugins",
   "ok": true,
-  "detail": "terminal, live.hello"
+  "detail": "run, terminal, live.hello"
  },
  {
   "name": "it switches a plugin off",
@@ -77,6 +77,6 @@
  {
   "name": "safe mode says so and the shipped Terminal still runs",
   "ok": true,
-  "detail": "Safe mode is on: the plugins that do not ship with aidea are off. Restart aidea normally to use them. | terminal:active, live.hello:inactive"
+  "detail": "Safe mode is on: the plugins that do not ship with aidea are off. Restart aidea normally to use them. | run:active, terminal:active, live.hello:inactive"
  }
 ]

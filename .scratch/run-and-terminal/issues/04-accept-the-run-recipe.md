@@ -6,12 +6,14 @@
 
 **Status:** ready-for-agent
 
-- [ ] A recipe with a missing or invalid field is refused with a message that names the field.
+- [x] A recipe with a missing or invalid field is refused with a message that names the field.
 - [ ] The authored-area guard accepts the recipe file and still reports files outside the known set.
-- [ ] Play with no recipe says there is none and how to get one.
-- [ ] First acceptance shows the whole recipe; accepting it is remembered across a core restart on another port.
-- [ ] Any change to the file (a pull, a hand edit, the Builder) asks again and shows only the difference.
-- [ ] The accepted-recipe memory is not in the Project folder.
+- [x] Play with no recipe says there is none and how to get one.
+- [x] First acceptance shows the whole recipe; accepting it is remembered across a core restart on another port.
+- [x] Any change to the file (a pull, a hand edit, the Builder) asks again and shows only the difference.
+- [x] The accepted-recipe memory is not in the Project folder.
 - [ ] Core API tests (accept, refuse, changed, restart) and page tests (top bar, confirmation) pass.
-- [ ] GLOSSARY.md has the run recipe, part, ready signal and Play, and the exception to the header rule.
-- [ ] Verified live on the second monitor.
+- [x] GLOSSARY.md has the run recipe, part, ready signal and Play, and the exception to the header rule.
+- [x] Verified live on the second monitor.
+
+Status note: Built as the Run plugin (src/plugins/run) with the Terminal plugin's tabs. Core tests: test/plugin-run.test.ts (13). Verified live on the second monitor (Electron, 11 of 11 checks). Not done: page tests for the top bar and the tabs beyond the live check, the Terminal-hidden-stays-hidden test, and (04) the authored-area guard still treats .aidea/run.json as any other file. Consent is kept in the Run plugin's data folder (not the preferences file), keyed by Project path, and the confirmation is the browser's own dialog for now.

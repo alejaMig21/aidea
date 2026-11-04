@@ -6,9 +6,9 @@ export function activate(ui) {
       const play = Object.assign(document.createElement("button"), { type: "button", textContent: "Play", title: "Start the programs of this project from its run recipe" });
       const stop = Object.assign(document.createElement("button"), { type: "button", textContent: "Stop all", title: "Stop everything Play started", hidden: true });
       const note = Object.assign(document.createElement("span"), { role: "status" });
-      note.style.cssText = "margin:0 8px;color:var(--muted);font-size:13px";
+      note.style.cssText = "color:var(--muted);font-size:12px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap";
       box.append(play, stop, note);
-      const say = (text) => { note.textContent = text; };
+      const say = (text) => { note.textContent = note.title = text; };
       let timer = 0;
       const poll = async () => {
         const project = ui.project();
@@ -38,7 +38,7 @@ export function activate(ui) {
               r = await ui.call("play", { project });
             } else { say("Not started: the recipe was not accepted."); return; }
           }
-          say(r.started ? "Running." : describe(r));
+          say(r.started ? "" : describe(r)); // when it starts, Stop all appearing says it
         } catch (e) { say(e.message); } finally { play.disabled = false; poll(); }
       };
       stop.onclick = async () => { await ui.call("stop", { project: ui.project() }); say("Stopped."); poll(); };

@@ -2,7 +2,7 @@
  {
   "name": "inspection lists API 0.1, the layout.panel slot, capabilities, tokens",
   "ok": true,
-  "detail": "{\"api\":\"0.1\",\"slots\":1,\"tokens\":21}"
+  "detail": "{\"api\":\"0.1\",\"slots\":2,\"tokens\":21}"
  },
  {
   "name": "inspection shows the shipped Terminal plugin",

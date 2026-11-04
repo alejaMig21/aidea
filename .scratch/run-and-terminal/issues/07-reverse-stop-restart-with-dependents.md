@@ -6,8 +6,10 @@
 
 **Status:** ready-for-agent
 
-- [ ] Stop all ends parts in reverse dependency order (checked with parts that record the order in which they receive the stop).
-- [ ] The stop button of a tab ends only that part; the restart button restarts it and its dependents in order, waiting for each ready signal.
-- [ ] A failure while restarting follows the failure rules of ticket 06.
+- [x] Stop all ends parts in reverse dependency order (checked with parts that record the order in which they receive the stop).
+- [x] The stop button of a tab ends only that part; the restart button restarts it and its dependents in order, waiting for each ready signal.
+- [x] A failure while restarting follows the failure rules of ticket 06.
 - [ ] Core API tests and page tests for the buttons pass.
-- [ ] Verified live on the second monitor.
+- [x] Verified live on the second monitor.
+
+Status note: Built as the Run plugin (src/plugins/run) with the Terminal plugin's tabs. Core tests: test/plugin-run.test.ts (13). Verified live on the second monitor (Electron, 11 of 11 checks). Not done: page tests for the top bar and the tabs beyond the live check, the Terminal-hidden-stays-hidden test, and (04) the authored-area guard still treats .aidea/run.json as any other file. Consent is kept in the Run plugin's data folder (not the preferences file), keyed by Project path, and the confirmation is the browser's own dialog for now.

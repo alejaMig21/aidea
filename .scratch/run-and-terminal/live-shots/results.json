@@ -1,0 +1,57 @@
+[
+ {
+  "name": "Play is in the top bar",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "with no recipe Play says so",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "Play asked to accept and showed the whole recipe",
+  "ok": true,
+  "detail": "This project wants to run these commands on your machine:\n\ndb: node db.js\napi: node api.js\n\nAccept and start?"
+ },
+ {
+  "name": "db was listening before Play finished",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "the Terminal has a tab for each part",
+  "ok": true,
+  "detail": "db (running) | api (running)"
+ },
+ {
+  "name": "the api tab shows its output as it arrives",
+  "ok": true,
+  "detail": "api started\napi tick 1\napi tick 2\napi tick 3\napi tick 4\napi tick 5\napi tick 6"
+ },
+ {
+  "name": "Stop all appears while running",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "restarting the api starts it again with a fresh output",
+  "ok": true,
+  "detail": "77 -> 44"
+ },
+ {
+  "name": "Stop all leaves no port busy",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "the tabs keep their text and say stopped",
+  "ok": true,
+  "detail": "db (stopped) | api (stopped)"
+ },
+ {
+  "name": "a changed recipe shows only what changed",
+  "ok": true,
+  "detail": "The run recipe changed since you accepted it:\n\nAdded: none. Removed: none. Changed: api.\n\nAccept and start?"
+ }
+]

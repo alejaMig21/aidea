@@ -225,7 +225,7 @@ The Panel for playing back one function: the form for the data of a test and the
 _Avoid_: Run panel, Algorithm column, Algorithm panel
 
 **Run**:
-Starting every program of the Project, in the right order, from the Project's run recipe. It is different from Playback, which animates one function. Not built yet: see `.scratch/run-and-terminal/spec.md`.
+Starting every program of the Project, in the right order, from the Project's run recipe, with the Play control in the top bar (the Run plugin). It is different from Playback, which animates one function.
 _Avoid_: Playback (that is one function), Start all, Launch
 
 **Files**:
@@ -235,6 +235,18 @@ _Avoid_: Explorer, file browser, sidebar
 **Code**:
 The Panel that shows the whole text of files with line numbers and syntax colours, read-only, one tab per open file. A file is chosen in Files; the code of a Node or of a Flow step is opened from the Details ("View code") or by double-clicking the step, and its lines are highlighted. It is a Panel, not a layer: the Layer bar lists only what the Canvas draws. "Open in my editor" works for the file of the tab shown. It starts hidden and opens by itself when something is chosen.
 _Avoid_: Code layer, code view, editor
+
+**Run recipe**:
+The file `.aidea/run.json` that lists the parts Play starts. aidea runs nothing from a recipe the person has not accepted on this machine: it shows the whole recipe the first time and only what changed afterwards.
+_Avoid_: Run config, launch file
+
+**Part**:
+One program of a run recipe: a name, a command, a folder, the parts it waits for and a ready signal. Each part has its own tab in the Terminal.
+_Avoid_: Service, process
+
+**Ready signal**:
+The real check that a part is up so the next one may start: a port that answers, a line it prints, a file that appears, or a URL that answers.
+_Avoid_: Health check
 
 **Shape**:
 The recorded form of a value during Playback: not only its text but what kind it is (a number, a list, a mapping, an object with fields, a reference to something already described), what it holds up to a limit, how much was left out, a number that tells whether two names are the same object, and whether it changed since the previous step. It is what the Data layer will draw. Today only Python records it.

@@ -6,11 +6,13 @@
 
 **Status:** ready-for-agent
 
-- [ ] A part with dependencies does not start until each dependency is ready by its own signal, for each of the four kinds of signal.
-- [ ] A part that never becomes ready is reported after its limit, naming the part and its last lines.
-- [ ] After a failure no process started by Play is left alive and no port stays busy.
-- [ ] A part that exits with an error before becoming ready is reported at once, not after the limit.
-- [ ] A cycle in the dependencies is refused when the recipe is accepted.
+- [x] A part with dependencies does not start until each dependency is ready by its own signal, for each of the four kinds of signal.
+- [x] A part that never becomes ready is reported after its limit, naming the part and its last lines.
+- [x] After a failure no process started by Play is left alive and no port stays busy.
+- [x] A part that exits with an error before becoming ready is reported at once, not after the limit.
+- [x] A cycle in the dependencies is refused when the recipe is accepted.
 - [ ] Play's failure message offers to open the Terminal and does so on request.
 - [ ] Core API tests (order, each signal, limit, failure teardown) and page tests (the message and the action) pass.
-- [ ] Verified live on the second monitor.
+- [x] Verified live on the second monitor.
+
+Status note: Built as the Run plugin (src/plugins/run) with the Terminal plugin's tabs. Core tests: test/plugin-run.test.ts (13). Verified live on the second monitor (Electron, 11 of 11 checks). Not done: page tests for the top bar and the tabs beyond the live check, the Terminal-hidden-stays-hidden test, and (04) the authored-area guard still treats .aidea/run.json as any other file. Consent is kept in the Run plugin's data folder (not the preferences file), keyed by Project path, and the confirmation is the browser's own dialog for now.

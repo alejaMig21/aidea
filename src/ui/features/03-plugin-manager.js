@@ -8,7 +8,7 @@ pmBox.setAttribute("aria-label", "Plugins");
 {
   const style = document.createElement("style");
   style.textContent = `
-    #plugins-manager { position: fixed; top: 51px; right: 8px; z-index: 30; width: min(560px, calc(100vw - 16px)); max-height: calc(100vh - 67px); overflow: auto; box-sizing: border-box; padding: 14px; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 14px 36px rgba(0, 0, 0, .5); font-family: var(--sans); font-size: 13px; }
+    #plugins-manager { position: fixed; top: 51px; right: 8px; z-index: 120; /* above the dock sashes (dockview gives them 99) */ width: min(560px, calc(100vw - 16px)); max-height: calc(100vh - 67px); overflow: auto; box-sizing: border-box; padding: 14px; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 14px 36px rgba(0, 0, 0, .5); font-family: var(--sans); font-size: 13px; }
     #plugins-manager[hidden] { display: none; }
     #plugins-manager h2 { margin: 0 0 8px; font-size: 13.5px; font-weight: 600; }
     #plugins-manager h3 { margin: 14px 0 6px; font-size: 12px; font-weight: 600; color: var(--label); text-transform: uppercase; letter-spacing: .04em; }
