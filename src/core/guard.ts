@@ -10,20 +10,23 @@ type Files = Map<string, Buffer>; // path relative to the Project folder, "/" se
 export type Change = { file: string; change: "changed" | "created" | "removed" };
 type Revert = { dir: string; before: Files; after: Files; changes: Change[] };
 
+// The run recipe lives in `.aidea/` but is not an authored layer: the person's consent (the hash Play checks) protects it, and a change to it asks again. Watching it here would
+// report the recipe the person just accepted as a change without a Proposal, and "Restore" would delete it.
+const RUN_RECIPE = "run.json";
 function readAll(dir: string): Files {
   const files: Files = new Map();
+  const root = join(dir, ".aidea");
   const walk = (folder: string) => {
     let entries;
     try { entries = readdirSync(folder, { withFileTypes: true }); } catch { return; }
     for (const e of entries) {
       const path = join(folder, e.name);
       if (e.isDirectory()) walk(path);
-      else if (e.isFile()) {
+      else if (e.isFile() && !(folder === root && e.name === RUN_RECIPE)) {
         try { files.set(relative(dir, path).replaceAll("\\", "/"), readFileSync(path)); } catch { /* vanished while reading */ }
       }
     }
   };
-  const root = join(dir, ".aidea");
   try { if (!lstatSync(root).isSymbolicLink()) walk(root); } catch { /* no .aidea folder yet */ }
   return files;
 }

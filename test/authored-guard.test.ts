@@ -160,3 +160,60 @@ test("the builder's denied tools include the notebook editor and shell commands 
   assert.ok(denied.some((d) => d.startsWith("NotebookEdit")));
   assert.ok(denied.some((d) => d.startsWith("Bash(") && d.includes(".aidea")));
 });
+
+// Run-and-terminal: `.aidea/run.json` is not an authored layer. The person's consent (the hash Play checks) is what protects it, so the guard must not
+// report it: accepting a recipe while the Builder's turn still runs would otherwise offer "Restore", which deletes the recipe the person just accepted.
+test("a run recipe the person accepts while the Builder's turn still runs is not reported as a change without a proposal", async () => {
+  const project = await freshProject();
+  const id = ((await (await post("/projects", { path: project })).json()) as any).id;
+  let accepted!: () => void;
+  const gate = new Promise<void>((r) => (accepted = r));
+  during = async () => {
+    const rpc = (method: string, params: unknown) => fetch(mcpUrl, { method: "POST", headers: { "content-type": "application/json", accept: "application/json, text/event-stream" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) });
+    await rpc("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "fake", version: "0" } });
+    await (await rpc("tools/call", { name: "propose_run_recipe", arguments: { parts: [{ name: "job", command: "node job.js" }] } })).text();
+    await gate;
+  };
+  const res = await post("/chat", { project, message: "go" });
+  const events: Record<string, any>[] = [];
+  let buffer = "";
+  const decoder = new TextDecoder();
+  for await (const chunk of res.body as any) {
+    buffer += decoder.decode(chunk, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop()!;
+    for (const line of lines.filter(Boolean)) {
+      const event = JSON.parse(line);
+      events.push(event);
+      if (event.type === "run_recipe_proposal") {
+        const ok = await post("/plugins/run/call/decide", { project: id, id: event.id, secret: event.secret, decision: "accept" });
+        assert.equal(ok.status, 200);
+        accepted();
+      }
+    }
+  }
+  assert.ok(existsSync(join(project, ".aidea", "run.json")), "the accepted recipe is on disk");
+  assert.deepEqual(events.filter((e) => e.type === "authored_changed"), []);
+});
+
+test("a recipe the Builder changes by itself is not an authored change either: Play asks the person again instead", async () => {
+  const store = mkdtempSync(join(tmpdir(), "aidea-guard-store-"));
+  scratch.push(store);
+  const own = await startCore({ port: 0, adapter: builder, pluginsDir: store }); // accepting a recipe needs a plugin store to remember it in
+  try {
+    const send = (path: string, body: unknown) => fetch(own.url + path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    const dir = mkdtempSync(join(tmpdir(), "aidea-guard-"));
+    scratch.push(dir);
+    cpSync(fixture("studio"), dir, { recursive: true });
+    const id = ((await (await send("/projects", { path: dir })).json()) as any).id;
+    mkdirSync(join(dir, ".aidea"), { recursive: true });
+    writeFileSync(join(dir, ".aidea", "run.json"), JSON.stringify({ parts: [{ name: "job", command: "node job.js" }] }));
+    assert.equal((await send("/plugins/run/call/accept", { project: id })).status, 200);
+    during = (cwd) => { writeFileSync(join(cwd, ".aidea", "run.json"), JSON.stringify({ parts: [{ name: "job", command: "node evil.js" }] })); };
+    const events = (await (await send("/chat", { project: dir, message: "go" })).text()).trim().split("\n").map((l) => JSON.parse(l)) as Record<string, any>[];
+    assert.deepEqual(events.filter((e) => e.type === "authored_changed"), []);
+    const play = (await (await send("/plugins/run/call/play", { project: id })).json()) as any;
+    assert.equal(play.reason, "needs-accept");
+    assert.deepEqual(play.changes.changed, ["job"]);
+  } finally { during = () => {}; own.close(); }
+});

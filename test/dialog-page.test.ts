@@ -83,3 +83,11 @@ test("Escape and Cancel both mean no: nothing starts and Play says the recipe wa
   assert.equal(page.afterCancelNothingRuns, true);
 });
 test("Accept and start accepts the recipe and Play starts it", { skip }, () => assert.deepEqual(page.accept, { closed: true, running: true }));
+
+test("Play leaves a hidden Terminal hidden; showing it gives one tab for each part, and a tab shows the output of its part", { skip }, () => {
+  assert.equal(page.terminalHiddenAfterPlay, true);
+  assert.deepEqual(page.tabs.labels, ["db (running)", "api (running)"]);
+  assert.deepEqual(page.tabs.selected, ["db"]);
+  assert.deepEqual(page.tabSwitched, ["api"]);
+  assert.equal(page.shownText, true);
+});

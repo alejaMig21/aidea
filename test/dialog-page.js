@@ -55,6 +55,19 @@ const dgStatus = () => dgPlay().querySelector("[role=status]").textContent;
     await dgUntil(() => !dgDialog());
     await dgUntil(() => !dgPlay().querySelector("button:nth-child(2)").hidden); // Stop all appears when a part is alive
     report.accept = { closed: !dgDialog(), running: !dgPlay().querySelector("button:nth-child(2)").hidden };
+    // Play does not open the Terminal by itself: a hidden Terminal stays hidden. Showing it gives one tab for each part that started.
+    const terminalRow = () => [...document.querySelectorAll("#panels-menu [role=menuitemcheckbox]")].find((b) => b.dataset.title === "Terminal");
+    report.terminalHiddenAfterPlay = terminalRow()?.getAttribute("aria-checked") === "false" && !document.querySelector("pre[data-selection-source=terminal]")?.getClientRects().length;
+    document.getElementById("panels-button").click();
+    terminalRow().click();
+    document.getElementById("panels-button").click();
+    await dgUntil(() => document.querySelectorAll("[role=tab][data-part]").length === 2);
+    const tabs = () => [...document.querySelectorAll("[role=tab][data-part]")];
+    report.tabs = { labels: tabs().map((t) => t.textContent), selected: tabs().filter((t) => t.getAttribute("aria-selected") === "true").map((t) => t.dataset.part) };
+    tabs()[1].click();
+    await dgWait(100);
+    report.tabSwitched = tabs().filter((t) => t.getAttribute("aria-selected") === "true").map((t) => t.dataset.part);
+    report.shownText = await dgUntil(() => document.querySelector("pre[data-selection-source=terminal]").textContent.includes("api up"), 8000); // the output arrives with the next refresh
     // A change to the recipe asks again and shows only what changed.
     await fetch("/plugins/run/call/stopAll", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
     report.nativeConfirmsAtEnd = report.nativeConfirms;
