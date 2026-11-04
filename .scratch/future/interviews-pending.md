@@ -61,7 +61,7 @@ Two journeys: a public repository that is not theirs (understand first), and a n
 - DECISION 5 in `.scratch/overnight/LOG.md`: the shape contract for Playback values (written by an agent). ACCEPTED 2026-11-03 by the person ("supongo que A"; they said they did not fully follow it, so it can be reopened if the Data layer shows a problem).
 - Files lists ignored folders (closed, in italics) instead of omitting them. CONFIRMED 2026-11-03 by the person: keep it as it is (A). Reason: aidea is for learning, and seeing that `node_modules` exists and does not open already teaches something.
 - Merge the Canvas's own title bar with the layer bar (it would remove a double bar). DECIDED 2026-11-03: merge them (A). Not urgent; the area must be redesigned. Needs a ticket.
-- Ticket `layout-and-data/05`: choose the visual effect; the agent shows three options live.
+- Ticket `layout-and-data/05`: choose the visual effect; the agent shows three options live. DECIDED 2026-11-03: postponed to the moment the ticket is implemented (B), when it can be judged working with the rest.
 - `language-adapters/05`: the security decision about running TypeScript and JavaScript.
 
 ## 8. The Class and Direct modes of the Builder
