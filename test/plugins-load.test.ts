@@ -40,7 +40,7 @@ async function open(plugins: Record<string, { manifest?: unknown; raw?: string; 
 test("a core with no plugin store lists no plugins", async () => {
   const core = await startCore({ port: 0, builtinPluginsDir: false });
   try {
-    assert.deepEqual(await (await fetch(core.url + "/plugins")).json(), { plugins: [], services: [] });
+    assert.deepEqual(await (await fetch(core.url + "/plugins")).json(), { plugins: [], services: [], events: [] });
   } finally { core.close(); }
 });
 
