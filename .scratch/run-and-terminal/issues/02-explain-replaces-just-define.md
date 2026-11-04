@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] The control shows "Explain" and "Enter the Tutor" for selected text in every Panel where it appeared before.
-- [ ] No visible text, test, guide part or glossary entry still says "Just define".
-- [ ] Existing behaviour is unchanged: the same limit, the same data-only travel, the same result of each button.
-- [ ] Page tests for the control pass with the new word.
+- [x] The control shows "Explain" and "Enter the Tutor" for selected text in every Panel where it appeared before.
+- [x] No visible text, test, guide part or glossary entry still says "Just define".
+- [x] Existing behaviour is unchanged: the same limit, the same data-only travel, the same result of each button.
+- [x] Page tests for the control pass with the new word.
 - [ ] Verified live on the second monitor.

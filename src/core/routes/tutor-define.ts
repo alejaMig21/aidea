@@ -1,4 +1,4 @@
-// "Just define": POST /tutor/define {project, text} returns {definition}, a brief plain-words explanation of text the person selected.
+// "Explain": POST /tutor/define {project, text} returns {definition}, a brief plain-words explanation of text the person selected.
 // One call to a one-shot role with no tools: no class is opened and nothing is written (no Evidence, no Learner graph).
 // The text is data: it is sent as one quoted string and the instructions say never to obey it.
 import { callRole } from "../learner-pipeline.ts";

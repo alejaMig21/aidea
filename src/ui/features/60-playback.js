@@ -36,7 +36,7 @@ playbackStyle.textContent = `
 `;
 document.head.append(playbackStyle);
 
-// The Run panel: its own card next to the Canvas, shown only while a Flow is open.
+// The Playback panel: its own card next to the Canvas, shown only while a Flow is open.
 // Proposals stay in #panel, outside it, so deciding on them works whatever is open.
 const pbPane = $("pane-run"); // in the page from the start so pbRender can find its fields by id
 layoutSetRunAvailable(false); // until a Flow is open
@@ -324,7 +324,7 @@ draw = async (nodes) => {
   await drawWithoutPlayback(nodes);
 };
 
-// The Run panel belongs to the Flow layer: opening a Flow makes it available (shown unless the person hid it), leaving makes it unavailable and pauses the replay.
+// The Playback panel belongs to the Flow layer: opening a Flow makes it available (shown unless the person hid it), leaving makes it unavailable and pauses the replay.
 const showLayerWithoutPlayback = showLayer;
 showLayer = (which) => {
   showLayerWithoutPlayback(which);

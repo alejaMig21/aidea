@@ -492,7 +492,7 @@ document.addEventListener("click", (e) => { if (!panelsMenu.hidden && !$("panels
 layoutRegister({ id: "chat", title: "Builder", side: "left", min: 268, weight: 380, legacySize: 340, foldRank: 10, icon: '<path d="M6 3v10"/>' });
 layoutRegister({ id: "files", title: "Files", side: "left", min: 240, weight: 300, startsHidden: true, foldRank: 40, pane: "pane-files", icon: '<path d="M4.5 6h3M4.5 8.5h3M4.5 11h3"/>' });
 layoutRegister({ id: "code", title: "Code", side: "left", min: 320, weight: 560, startsHidden: true, foldRank: 50, pane: "pane-code", icon: '<path d="M6.5 6 4.5 8l2 2M9.5 6l2 2-2 2"/>' });
-layoutRegister({ id: "run", title: "Run", side: "right", min: 288, weight: 420, foldRank: 20, pane: "pane-run", icon: '<path d="M7 3v10"/>', available: () => layoutRunAvailable, unavailable: "Open a function's Flow to use Run" });
+layoutRegister({ id: "run", title: "Playback", side: "right", min: 288, weight: 420, foldRank: 20, pane: "pane-run", icon: '<path d="M7 3v10"/>', available: () => layoutRunAvailable, unavailable: "Open a function's Flow to use Playback" });
 layoutRegister({ id: "right", title: "Tutor", side: "right", min: 288, weight: 540, legacySize: 320, foldRank: 30, pane: "pane-tutor", adopt: ["panel"], icon: '<path d="M10 3v10"/>' });
 
 // The Tutor's entry point stays disabled until the Tutor exists. The head of the panel is the topic field

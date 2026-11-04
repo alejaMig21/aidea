@@ -59,11 +59,11 @@ async function wide() {
   await change(() => layoutSetRunAvailable(false));
   report.run.unavailable = runIn();
   await change(() => layoutSetRunAvailable(true));
-  await menu("Run"); // the person hides it
+  await menu("Playback"); // the person hides it
   report.run.hiddenByPerson = !runIn();
   await change(() => layoutSetRunAvailable(false)); await change(() => layoutSetRunAvailable(true));
   report.run.staysHidden = !runIn();
-  await menu("Run");
+  await menu("Playback");
   report.run.shownAgain = runIn();
 
   // A hidden Panel returns where it was: move the Tutor to the left of the Canvas, hide it, show it.
@@ -78,8 +78,8 @@ async function wide() {
   layoutApi.getPanel("run").api.moveTo({ group: layoutApi.getPanel("right").group, position: "center" });
   await until(() => layoutApi.getPanel("run").group === layoutApi.getPanel("right").group);
   const tabs = layoutApi.getPanel("right").group.panels.map((p) => p.id).sort();
-  await menu("Run"); const gone = !inDock().includes("run");
-  await menu("Run");
+  await menu("Playback"); const gone = !inDock().includes("run");
+  await menu("Playback");
   report.tabs = { tabs, gone, back: layoutApi.getPanel("right").group.panels.map((p) => p.id).sort(), tabElements: document.querySelectorAll(".dv-tab").length };
   // ... and the tabs and the sizes survive a trip through a narrow window (the window is made to look narrow and wide again; the dock itself keeps its size).
   layoutApi.getPanel("chat").api.setSize({ width: 300 });

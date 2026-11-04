@@ -35,7 +35,7 @@ async function newCore() {
 }
 after(() => cores.forEach((c) => c.close()));
 
-test("just define returns a brief explanation without opening a class or writing anything", async () => {
+test("explain returns a brief explanation without opening a class or writing anything", async () => {
   const t = await newCore();
   launches.length = 0;
   const res = await t.post("/tutor/define", { project, text: "message queue" });

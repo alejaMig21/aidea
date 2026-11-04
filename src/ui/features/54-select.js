@@ -1,5 +1,5 @@
 // Select any text to learn about it (ticket 13): selecting text anywhere (a builder reply, a Rationale, the Code panel, the Tutor's own words)
-// shows a small control next to it with "Just define" (a brief explanation, no class) and "Enter the Tutor" (a free class on that text).
+// shows a small control next to it with "Explain" (a brief explanation, no class) and "Enter the Tutor" (a free class on that text).
 // Text typed in the person's own input boxes never triggers it. The core does the work (POST /tutor/define, POST /tutor/classes {selection});
 // the selected text only travels as data. Names are prefixed "select" because every feature file shares one global scope.
 {
@@ -20,7 +20,7 @@
 
   const pop = Object.assign(document.createElement("div"), { id: "select-pop", hidden: true, role: "dialog" });
   pop.setAttribute("aria-label", "Learn about the selected text");
-  const define = Object.assign(document.createElement("button"), { type: "button", textContent: "Just define" });
+  const define = Object.assign(document.createElement("button"), { type: "button", textContent: "Explain" });
   const enter = Object.assign(document.createElement("button"), { type: "button", textContent: "Enter the Tutor", className: "primary" });
   const row = Object.assign(document.createElement("div"), { className: "row" });
   const said = Object.assign(document.createElement("p"), { className: "said", hidden: true });

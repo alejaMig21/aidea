@@ -50,7 +50,7 @@
   svg#canvas:focus:not(:focus-visible) { outline: none; }
   svg#canvas:focus-visible { outline-offset: -2px; }
   svg#canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; touch-action: none; }
-  /* A double click opens these: it must not select a word and offer "Just define". The rest of the Canvas stays selectable on purpose. */
+  /* A double click opens these: it must not select a word and offer "Explain". The rest of the Canvas stays selectable on purpose. */
   svg#canvas :is([data-node], [data-id], [data-step], [data-import], .cp-ov-module, .cp-ov-tests, .cp-ov-folder) { user-select: none; }
   svg.dragging { cursor: grabbing; }
   rect { stroke: var(--control); }
@@ -198,7 +198,7 @@
   .node-sub { fill: var(--muted); font: 400 12px var(--mono); }
   .dot-authored { fill: var(--authored); } .dot-derived { fill: var(--derived); }
   /* Right card */
-  /* The bodies of the Tutor and Run panels: each card scrolls on its own. */
+  /* The bodies of the Tutor and Playback panels: each card scrolls on its own. */
   #pane-tutor, #pane-run { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 8px; }
   #pane-tutor p, #pane-run p { margin: 0; color: var(--muted); }
   #pane-tutor :disabled, #pane-run :disabled { cursor: not-allowed; }

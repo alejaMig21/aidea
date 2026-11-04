@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] The title of the Panel and its row in the Panels menu read "Playback".
-- [ ] The test that guards the retired names is updated so that "Run" is no longer retired for the Panel and the old names for it are.
-- [ ] A Layout saved before the rename restores with the Panel in the same place.
-- [ ] GLOSSARY.md and the guide use "Playback" for the Panel and do not use "Run" for it.
-- [ ] Page tests pass for the menu and the restore.
+- [x] The title of the Panel and its row in the Panels menu read "Playback".
+- [x] The test that guards the retired names is updated so that "Run" is no longer retired for the Panel and the old names for it are.
+- [x] A Layout saved before the rename restores with the Panel in the same place.
+- [x] GLOSSARY.md and the guide use "Playback" for the Panel and do not use "Run" for it.
+- [x] Page tests pass for the menu and the restore.
 - [ ] Verified live on the second monitor.
