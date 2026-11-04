@@ -183,7 +183,7 @@ _Avoid_: Quiz, exercise
 ## Window
 
 **Panel**:
-One section of the window with one job that the person can show, hide, resize and move (side by side, stacked, nested or grouped as tabs): the Builder (chat), the Canvas, the Tutor, Run, Files and Code. A Panel is never a layer: a layer is something the Canvas draws. Every Panel is declared once in a registry, and the top bar has a single "Panels" menu that lists all of them with a check mark and shows or hides each one: a new Panel adds a row to that menu, never a button to the top bar. Hidden Panels take no space, and in narrow windows the side Panels open as drawers over the Canvas.
+One section of the window with one job that the person can show, hide, resize and move (side by side, stacked, nested or grouped as tabs): the Builder (chat), the Canvas, the Tutor, Playback, Files and Code. A Panel is never a layer: a layer is something the Canvas draws. Every Panel is declared once in a registry, and the top bar has a single "Panels" menu that lists all of them with a check mark and shows or hides each one: a new Panel adds a row to that menu, never a button to the top bar. Hidden Panels take no space, and in narrow windows the side Panels open as drawers over the Canvas.
 _Avoid_: Column, sidebar, pane, tab (as the name of a Panel)
 
 **Layout**:
@@ -194,9 +194,13 @@ _Avoid_: Workspace, view
 A Layout saved with a name, to return to it in one click. Some come with aidea and cannot be deleted.
 _Avoid_: Profile, theme
 
+**Playback panel**:
+The Panel for playing back one function: the form for the data of a test and the Playback itself. It is a card of its own between the Canvas and the Tutor, never part of the Tutor's: it appears while a Flow is open, and the person can hide it like any other Panel. Its internal id stays `run` so that a saved Layout keeps working.
+_Avoid_: Run panel, Algorithm column, Algorithm panel
+
 **Run**:
-The Panel for running the open function: the form for the data of a test and the Playback. It is a card of its own between the Canvas and the Tutor, never part of the Tutor's: it appears while a Flow is open, and the person can hide it like any other Panel.
-_Avoid_: Algorithm column, Algorithm panel
+Starting every program of the Project, in the right order, from the Project's run recipe. It is different from Playback, which animates one function. Not built yet: see `.scratch/run-and-terminal/spec.md`.
+_Avoid_: Playback (that is one function), Start all, Launch
 
 **Files**:
 The Panel that shows the folders and files of the Project as a tree, read-only, and works on any folder whatever its language. It starts hidden. A file in a language aidea can read says which. Folders that hold dependencies, caches, build output or version-control data are listed as ignored and are not opened; a folder or a Project with too many entries lists the first ones and says how many it left out.
