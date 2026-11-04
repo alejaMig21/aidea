@@ -6,9 +6,9 @@
 
 **Status:** ready-for-agent
 
-- [ ] The core takes a plugin store folder as an option and lists its plugins on a route, with id, title, version and state (active, inactive, failed) and a reason.
-- [ ] A good fixture plugin activates; deactivating it runs every undo it registered and leaves the registries as they were.
-- [ ] A plugin that throws on activation is reported as failed and every other plugin stays active.
-- [ ] A manifest that is missing or invalid is reported with the field, and nothing of that plugin runs.
-- [ ] Core API tests with real fixture folders pass.
-- [ ] `npm run verify` is green.
+- [x] The core takes a plugin store folder as an option and lists its plugins on a route, with id, title, version and state (active, inactive, failed) and a reason.
+- [x] A good fixture plugin activates; deactivating it runs every undo it registered and leaves the registries as they were.
+- [x] A plugin that throws on activation is reported as failed and every other plugin stays active.
+- [x] A manifest that is missing or invalid is reported with the field, and nothing of that plugin runs.
+- [x] Core API tests with real fixture folders pass.
+- [x] `npm run verify` is green.

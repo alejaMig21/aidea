@@ -10,6 +10,7 @@ import { createPreferences } from "./preferences.ts";
 import { createLearner } from "./learner-pipeline.ts";
 import { createProbes } from "./probe.ts";
 import { createPlans } from "./plan.ts";
+import { createPluginHost } from "./plugins/host.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
 const ROLES = ["builder", "tutor", "prober", "extractor", "auditor", "grader", "definer"];
@@ -36,7 +37,8 @@ export function parseRoleAdapters(text: string | undefined): Record<string, stri
   return pairs;
 }
 
-export async function startCore({ port, adapter: defaultAdapter = createClaudeAdapter(), adapters = {}, roleAdapters = {}, recentsFile, preferencesFile, learnerDir, learnerModel }: { port: number; adapter?: Adapter; adapters?: Record<string, Adapter>; roleAdapters?: Record<string, string>; recentsFile?: string; preferencesFile?: string; learnerDir?: string; learnerModel?: string }) {
+// `pluginsDir` is the plugin store: one folder per plugin (docs/plugin-api.md); without it there are no plugins.
+export async function startCore({ port, adapter: defaultAdapter = createClaudeAdapter(), adapters = {}, roleAdapters = {}, recentsFile, preferencesFile, learnerDir, learnerModel, pluginsDir }: { port: number; adapter?: Adapter; adapters?: Record<string, Adapter>; roleAdapters?: Record<string, string>; recentsFile?: string; preferencesFile?: string; learnerDir?: string; learnerModel?: string; pluginsDir?: string }) {
   const named: Record<string, Adapter> = { ...adapters, default: defaultAdapter };
   for (const [role, name] of Object.entries(roleAdapters)) {
     if (!ROLES.includes(role)) throw new Error(`Unknown role "${role}". Roles: ${ROLES.join(", ")}`);
@@ -58,6 +60,7 @@ export async function startCore({ port, adapter: defaultAdapter = createClaudeAd
     probes: createProbes(learnerDir),
     plans: createPlans(learnerDir),
     permissions: createBroker(),
+    plugins: createPluginHost(pluginsDir),
     proposals: new Map(),
     recents: createRecents(recentsFile),
     preferences: createPreferences(preferencesFile),
@@ -95,6 +98,7 @@ export async function startCore({ port, adapter: defaultAdapter = createClaudeAd
     },
   };
 
+  await core.plugins.loadAll();
   const server = createServer(async (req, res) => {
     try {
       const { host, origin } = req.headers;

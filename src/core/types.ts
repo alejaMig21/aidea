@@ -8,6 +8,7 @@ import type { Learner } from "./learner-pipeline.ts";
 import type { Lesson } from "./teach.ts";
 import type { Probes } from "./probe.ts";
 import type { Plans } from "./plan.ts";
+import type { PluginHost } from "./plugins/host.ts";
 
 export type CoreNode = {
   id: string;
@@ -92,6 +93,8 @@ export type Core = {
   permissions: Broker;
   // Changes the builder proposed to the authored layers; nothing is written until the person accepts.
   proposals: ProposalStore;
+  // The plugin host of the kernel: the plugins of the plugin store, their state and what they provide.
+  plugins: PluginHost;
   // The Projects the person opened before, newest first.
   recents: Recents;
   // The person's mode and model choice for each Project.
