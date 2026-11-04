@@ -57,6 +57,7 @@ Original notes: A Panel to run commands and watch processes. Shell in the Projec
 ## 4. Project versions (first plugin we write)
 Plugin first or a normal Panel first and converted later; what is shown (commits, branches, what changed); the Canvas at a past version (`.aidea/` lives in the repository).
 DECIDED 2026-11-04: the plugin system and the versions plugin are built together (A); the versions plugin is the test of the plugin design. Not chosen: a normal Panel first, converted later (it could end up tied to internals). Comes after version 1.
+DECIDED 2026-11-04: first version of the Panel = the list of commits with the files each changed, plus the Canvas at a chosen commit, read-only (the layers read from Git without touching the working folder). The GOAL, recorded on purpose, is to reach comparing two versions (what changed in the Contract between them); it comes later. Not chosen for now: the list only (without the Canvas), because the Canvas at a past version is what a general Git panel does not have.
 
 ## 5. Networking and deployment in the Architecture layer
 Today: C4 boxes, an `external` flag, relations with a label and a `technology`. Missing: where each part runs (hosts, ports, networks, boundaries). Scope of a deployment view; new kinds (database, queue, network boundary); authored or derived.
