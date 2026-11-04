@@ -8,6 +8,9 @@ import type { Core } from "./types.ts";
 
 export type Review = { idea: string; name: string; statement: string };
 
+// Whether a class opens with a review question: on unless the person turned it off for this Project.
+export const reviewQuestionOn = (core: Core, project: string) => core.preferences.get(project).reviewQuestion !== false;
+
 // `aboutToTeach` is what names what the class will teach (the topic written in the box): an idea that overlaps it, under its name or an alias, is not a review,
 // it is the lesson.
 export function pickReview(core: Core, project: string, aboutToTeach: string[]): Review | undefined {

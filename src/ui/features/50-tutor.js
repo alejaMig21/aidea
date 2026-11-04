@@ -186,11 +186,9 @@
     if (event.type === "text") line("tutor-say", event.text);
     else if (event.type === "tutor_step") { log.append(el("h3", { className: "tutor-step", textContent: event.title })); pane.scrollTop = pane.scrollHeight; }
     else if (event.type === "tutor_explain") { if (event.repair) line("tutor-label", "Let's look again"); line("tutor-say", event.text); }
-    else if (event.type === "decision_ready") document.dispatchEvent(new CustomEvent("proposals-changed"));
     else if (event.type === "tutor_finished") line("tutor-meta", `Class finished: ${event.summary}`);
     else if (event.type === "proposal") tutorProposal(event);
     else if (event.type === "proposal_refused") tutorRefused(event);
-    else if (event.type === "decision_hint") decisionHint(event);
     else if (event.type === "tutor_question") questionCard(event);
     else if (event.type === "tutor_question_expired") expire(event.id);
     else if (event.type === "error") { const p = el("p", { className: "tutor-error", textContent: event.message }); p.setAttribute("role", "alert"); log.append(p); }
@@ -212,21 +210,6 @@
   // A Proposal the Tutor tried to make and the core refused: one plain line with why, and the way to the one that is waiting.
   function tutorRefused(event) {
     log.append(el("p", { className: "tutor-meta tutor-proposal" }, ...proposalRefusedParts(event, "The Tutor")));
-    pane.scrollTop = pane.scrollHeight;
-  }
-
-  // The person keeps missing the check of a decision class: one line offers the way out. The class goes on until they take it.
-  function decisionHint(event) {
-    const p = el("p", { className: "tutor-meta tutor-proposal", textContent: "Taking long? You can let the builder decide. " });
-    const decide = el("button", { type: "button", textContent: "Decide for me" });
-    decide.onclick = async () => {
-      decide.disabled = true;
-      const problem = await decideForMe(event.proposal);
-      if (problem) { decide.disabled = false; p.append(` ${problem}`); return; }
-      p.textContent = "The builder's proposal can be accepted now, on the Canvas.";
-    };
-    p.append(decide);
-    log.append(p);
     pane.scrollTop = pane.scrollHeight;
   }
 
@@ -302,7 +285,6 @@
   }
 
   start.onclick = () => startClass();
-  document.addEventListener("decision-class-start", (e) => startClass({ payload: { project: current, decision: e.detail.proposal } }));
   end.onclick = () => (running?.skip ? running.skip() : running?.abort.abort()); // closing the stream ends the class in the core
   window.tutorUi = { startClass, abort: () => running?.abort.abort(), isRunning: () => running !== null };
   document.addEventListener("project-opened", (e) => {

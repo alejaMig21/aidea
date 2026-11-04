@@ -9,7 +9,8 @@ const pick = (n: Fields, keys: string[]) => Object.fromEntries(keys.filter((k) =
 export const BUILDER_INSTRUCTIONS =
   "This Project has a Contract: what the person accepted on the Business, Requirements and Architecture layers. " +
   "Before you build or change anything, call the aidea tool `read_contract` and follow what it returns. " +
-  "If the work needs to depart from the Contract, do not do it silently: make a Proposal with the propose_* tools and let the person decide.";
+  "Do not invent: take no important decision that the Contract does not already hold. If the work needs something the Contract lacks, or needs to depart from it, do not do it silently: " +
+  "make a Proposal with the propose_* tools and let the person decide.";
 
 export function contractOf(projectPath: string) {
   const { layers } = loadAuthored(projectPath);

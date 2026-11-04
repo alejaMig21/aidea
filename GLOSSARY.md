@@ -95,7 +95,7 @@ A change the agent suggests to the canvas or code, shown highlighted and pending
 _Avoid_: Suggestion, draft
 
 **Permission mode**:
-The setting that decides how much the builder may do without asking the person, such as manual, accept edits, plan or auto. It is different from Class mode and Direct mode, which are about the Tutor.
+The setting that decides how much the builder may do without asking the person, such as manual, accept edits, plan or auto.
 _Avoid_: Agent mode, approval level
 
 **Permission card**:
@@ -121,12 +121,8 @@ The record of each answer the person gave in a class: whether it was right, how 
 _Avoid_: Score, grade
 
 **Review question**:
-One question, with no hint, at the start of a free class (one started with "Start a class", not one on a layer, on selected text, on a difference or on a decision) about an idea the person met in an earlier class of the same Project, the one not asked about for the longest time; a Project with no ideas of its own uses any earlier idea. An idea the class topic names is never chosen. The person may say they do not know, and may turn it off; the answer is Evidence and never changes the Learner graph.
+One question, with no hint, at the start of a free class (one started with "Start a class", not one on a layer, on selected text, on a difference or on a plugin) about an idea the person met in an earlier class of the same Project, the one not asked about for the longest time; a Project with no ideas of its own uses any earlier idea. An idea the class topic names is never chosen. The person may say they do not know, and may turn it off; the answer is Evidence and never changes the Learner graph.
 _Avoid_: Quiz, test
-
-**Decision class**:
-A short class in Class mode that stops the builder at one Blocking decision until the person has answered.
-_Avoid_: Quiz
 
 **Layer class**:
 A longer class, started from a layer's "Teach me through it" button, in which the Tutor builds that layer with the person, asking first and turning their answers into Proposals. Until the Tutor is available the button runs a fixed quick tour.
@@ -135,18 +131,6 @@ _Avoid_: Tutorial, wizard
 **Guide class**:
 A class about aidea itself, started from the "How aidea works" button in the top bar. The Tutor teaches the parts of the app in order from one structure in the core (`guide.ts`), asking the person to try each part in the real interface; it is not part of the Project's Plan. Until the Tutor is available the button runs a fixed quick tour of the same content.
 _Avoid_: Onboarding, tutorial
-
-**Class mode**:
-A setting in which the tutor interrupts the agent on decisions so the user must predict first.
-_Avoid_: Learning mode
-
-**Direct mode**:
-A setting in which the agent works without tutor interruptions; the user can still ask to learn on demand.
-_Avoid_: Fast mode
-
-**Blocking decision**:
-A decision on an authored layer that the agent may not commit until the user has answered the tutor.
-_Avoid_: Gate, checkpoint
 
 **Project**:
 A code repository opened in aidea together with the authored layers kept inside it.

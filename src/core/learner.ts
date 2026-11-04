@@ -23,7 +23,7 @@ export type Evidence = {
   idea?: string;
   // Present for answers in a step that was about a Plan concept (normalised name).
   item?: string;
-  // kind "decision-skip": the person chose "Decide for me" for this Proposal instead of a decision class.
+  // kind "decision-skip": no longer made (decision classes are gone); ledgers written by earlier versions may still hold it, so it is still read.
   decision?: string;
   // kind "run-prediction": a guess made before a step of a Playback recording (the class id is `run:<recording>`). Never an idea of the Learner graph.
   run?: { recording: string; step: number; name: string };

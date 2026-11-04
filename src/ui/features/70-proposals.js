@@ -9,7 +9,6 @@ proposalStyle.textContent = `
   .proposal.remove rect { stroke: var(--danger); }
   .proposal .tag { fill: var(--accent); font: 500 12px var(--sans); letter-spacing: .06em; text-anchor: end; }
   .proposal.remove .tag { fill: var(--danger); }
-  #panel .proposal-box .waiting { margin: 8px 0 0; font-size: 12px; color: var(--accent); font-weight: 600; }
   .proposal .node-sub { fill: var(--accent-soft); }
   #panel .proposal-box h2 { margin: 0; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--text); font-weight: 600; }
   #panel .proposal-box .field { font-size: 12px; margin: 4px 0; }
@@ -56,7 +55,7 @@ function drawProposals() {
     } else if (p.kind === "add") {
       const layer = AUTHORED_LAYERS.find((l) => l.key === p.layer);
       g.append(
-        el("text", { x: x + width - 14, y: y + 25, class: "tag" }, p.status === "waiting-for-class" ? "WAITING" : "PROPOSAL"),
+        el("text", { x: x + width - 14, y: y + 25, class: "tag" }, "PROPOSAL"),
         el("text", { x: x + 16, y: y + 29 }, p.node?.title ?? p.nodeId),
         el("text", { x: x + 16, y: y + 49, class: "node-sub" }, authoredShort(layer?.detail(p.node) ?? "")),
       );
@@ -97,17 +96,7 @@ function proposalRefusedParts(event, who) {
   return [`${who} tried to add "${event.nodeId}", but ${why}`, ...(open ? [open] : [])];
 }
 
-// "Decide for me": skips the class of a held Proposal. Returns the problem as text, or null when it worked.
 const proposalNoKey = "This window cannot decide this proposal any more, because the page was reloaded or the proposal was made in another window. Ask the builder for the change again here.";
-async function decideForMe(id) {
-  const secret = proposalSecrets.get(id);
-  if (!secret) return proposalNoKey;
-  const res = await fetch("/proposals/skip-class", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, secret }) });
-  if (!res.ok) return (await res.json().catch(() => ({}))).error ?? "Could not skip the class";
-  await refreshProposals();
-  return null;
-}
-
 // The details of one Proposal in the right-hand panel, with the person's decision.
 function showProposal(p) {
   const old = authoredData?.layers[p.layer]?.nodes.find((n) => n.id === p.nodeId);
@@ -138,26 +127,14 @@ function showProposal(p) {
     if (decision === "accept") await draw(algoNodes);
     else await refreshProposals();
   };
-  // A Blocking decision in Class mode: it cannot be accepted until the person answered the class (or chose "Decide for me").
-  const waiting = p.status === "waiting-for-class";
-  const skip = async () => {
-    const problem = await decideForMe(p.id);
-    if (problem) { message.textContent = problem; return; }
-    const now = pendingProposals.find((q) => q.id === p.id);
-    if (now) showProposal(now);
-  };
   $("panel").replaceChildren(node("div", { className: "proposal-box" },
     node("h2", { textContent: `Proposal: ${p.kind} "${p.node?.title ?? old?.title ?? p.nodeId}"` }),
     node("div", { className: "field", textContent: `${p.layer} layer` }),
     ...(p.source?.role === "tutor" ? [node("div", { className: "from-tutor", textContent: "From the Tutor" })] : []),
     ...(p.fromAnswer ? [node("blockquote", { className: "from-answer", textContent: p.fromAnswer }), node("div", { className: "field", textContent: "Your words, which the Tutor used." })] : []),
     ...rows,
-    ...(waiting ? [node("p", { className: "waiting", textContent: "Waiting for a class: the Tutor asks you about this decision first. You can start the class, or let the builder decide." })] : []),
     node("div", { className: "row" },
-      ...(waiting
-        ? [node("button", { id: "decision-start", textContent: "Start the class", onclick: () => document.dispatchEvent(new CustomEvent("decision-class-start", { detail: { proposal: p.id } })) }),
-          node("button", { id: "decision-skip", textContent: "Decide for me", onclick: skip })]
-        : [node("button", { textContent: "Accept", onclick: () => decide("accept") })]),
+      node("button", { textContent: "Accept", onclick: () => decide("accept") }),
       node("button", { className: "reject", textContent: "Reject", onclick: () => decide("reject") })),
     message));
 }

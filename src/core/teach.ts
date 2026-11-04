@@ -4,7 +4,6 @@
 //                                                    explained -> (check wrong) missed -> (explain again) explained
 import { evidenceOf } from "./learner.ts";
 import type { Evidence } from "./learner.ts";
-import { decisionOf } from "./decision-class.ts";
 import { callRole, normalise } from "./learner-pipeline.ts";
 import { heldStrongly } from "./probe.ts";
 import { runAuthoringTool } from "./tutor-authoring.ts";
@@ -15,7 +14,6 @@ import type { Core } from "./types.ts";
 
 type State = "new" | "predicted" | "explained" | "missed" | "closed";
 type Step = { title: string; item?: string; state: State; predicts: number; checks: number; misses: number };
-const MISSES_BEFORE_HINT = 3; // a decision class that keeps being missed offers "Decide for me" (live-findings/04)
 type Failure = { error: string };
 
 const MAX_PROSE = 4000;
@@ -319,9 +317,7 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
   }
   const { correct, feedback } = verdict;
   const entry = record(q, a, heard.questionId, q.kind === "text" && !a.dontKnow ? correct : undefined);
-  const misses = lesson.checked(stepId, correct);
-  const held = decisionOf(classId);
-  if (!correct && misses === MISSES_BEFORE_HINT && held) conversation.emit({ type: "decision_hint", proposal: held });
+  lesson.checked(stepId, correct);
   const sureAndWrong = entry?.sureAndWrong === true;
   return ok({
     ...(JSON.parse(result.text) as object),

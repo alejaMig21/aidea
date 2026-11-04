@@ -41,15 +41,6 @@ const PARTS: Record<string, Part> = {
     narration: "Nothing reaches your written layers without your say. Every change arrives as a Proposal first.",
     tryIt: `Ask the builder to add a requirement, for example that a shopper can save a cart, and when its Proposal line appears press "Review".`,
   },
-  modes: {
-    name: "Direct and Class",
-    hint: "Do I want to be asked first?",
-    what: `Under the chat box, "Builder works" has two settings. "Direct" lets the builder work freely, and you review its Proposals. "Class" makes the builder wait at a big decision until the Tutor has asked you about it. A Proposal that is waiting for a class shows "Start the class", and also "Decide for me" if you would rather skip it; then the builder's own version can be accepted as it is. If you keep missing the questions of a class on a decision, the Tutor offers "Decide for me" too.`,
-    question: "When would you rather be asked first, and when would you rather just see the result?",
-    example: "Direct while you try ideas quickly, Class while you decide something you want to understand.",
-    narration: "You choose how much the Tutor gets in the way of the builder.",
-    tryIt: `Point at "Direct" and then at "Class" under the chat box, and read the short help each one shows.`,
-  },
   tutor: {
     name: "The Tutor",
     hint: "How do I learn here?",
@@ -102,7 +93,7 @@ export const GUIDE = {
   what: "aidea is a workspace where you build software with an AI builder on a drawing of layers, from the idea down to the code, while a Tutor makes sure you understand each decision.",
   question: "What do you want to be able to do with aidea after this tour?",
   example: "Describe a project, let the builder propose its requirements, accept the ones you agree with and learn the reasons behind them.",
-  order: ["first look", "builder", "canvas", "proposals", "modes", "tutor", "plan", "contract", "differences", "playback"],
+  order: ["first look", "builder", "canvas", "proposals", "tutor", "plan", "contract", "differences", "playback"],
   elements: PARTS,
 };
 

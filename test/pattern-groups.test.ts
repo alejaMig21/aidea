@@ -160,7 +160,7 @@ test("a patterns field that is not a list, or a group without an id, is a proble
   assert.deepEqual(data.problems.map((p: any) => p.field), ["patterns[0].id"]);
 });
 
-test("the builder can propose a Pattern group; it is validated, marked Blocking, and written only on accept", async () => {
+test("the builder can propose a Pattern group; it is validated, pending, and written only on accept", async () => {
   const dir = await open("hexagonal-clean");
   await editArchitecture(dir, (doc) => delete doc.patterns);
   const group = { id: "hex", name: "Hexagonal shop", kind: "hexagonal", roles: [{ node: "core", role: "domain" }, { node: "store", role: "infrastructure" }], rationale: why };
@@ -186,7 +186,7 @@ test("the builder can propose a Pattern group; it is validated, marked Blocking,
 
   const events = await run([{ name: "propose_pattern_group", arguments: { group } }]);
   const proposal = events.find((e) => e.type === "proposal")!;
-  assert.equal(proposal.blocking, true);
+  assert.equal("blocking" in proposal, false);
   assert.equal(proposal.layer, "architecture");
   assert.equal(JSON.parse(readFileSync(archFile(dir), "utf8")).patterns, undefined); // nothing written yet
   const pending = (await json(`/proposals?project=${q(dir)}`)).proposals;

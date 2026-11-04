@@ -8,9 +8,8 @@ import { join } from "node:path";
 import type { Handler } from "../types.ts";
 import { TUTOR_INSTRUCTIONS } from "../tutor.ts";
 import { createLesson } from "../teach.ts";
-import { DECISION_INSTRUCTIONS, bindDecision, decisionMessage, heldDecision, reviewQuestionOn, unbindDecision } from "../decision-class.ts";
 import { currentChoice } from "./agent-options.ts";
-import { pickReview, reviewMessage } from "../review.ts";
+import { pickReview, reviewMessage, reviewQuestionOn } from "../review.ts";
 import { layerClassMessage } from "../layer-help.ts";
 import { guideClassMessage } from "../guide.ts";
 import { driftClassMessage, driftOf } from "../drift.ts";
@@ -62,12 +61,10 @@ const handler: Handler = async (req, res, core) => {
   if (selection !== undefined && !validSelection(selection, body?.source)) return reject(400, `selection must be the selected text, at most ${limitOf(body?.source)} characters`);
   const plugin = body?.plugin;
   if (plugin !== undefined && (typeof plugin !== "string" || !core.quarantine.get(plugin))) return reject(400, "plugin must be the id of a plugin waiting in the quarantine");
-  const held = body?.decision === undefined ? undefined : heldDecision(core, project.id, body.decision);
-  if (held && "error" in held) return reject(400, held.error);
-  const opening = held ? decisionMessage(held.proposal) : guide ? guideClassMessage() : layer ? layerClassMessage(layer) : difference ? driftClassMessage(difference) : selection ? selectionMessage(selection) : plugin ? pluginClassMessage(plugin) : body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
+  const opening = guide ? guideClassMessage() : layer ? layerClassMessage(layer) : difference ? driftClassMessage(difference) : selection ? selectionMessage(selection) : plugin ? pluginClassMessage(plugin) : body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
   // One review question about an earlier idea opens a FREE class (started with "Start a class"), unless the person turned it off. A class on a layer, on selected text,
-  // on a difference, on a decision or on how aidea works is something the person asked for on purpose: a review before it would only be in the way.
-  const free = !held && !layer && !difference && !selection && !guide && !plugin;
+  // on a difference, on a plugin or on how aidea works is something the person asked for on purpose: a review before it would only be in the way.
+  const free = !layer && !difference && !selection && !guide && !plugin;
   const review = !free || !reviewQuestionOn(core, project.id) ? undefined : pickReview(core, project.id, typeof topic === "string" ? [topic] : []);
   const message = review && typeof opening === "string" ? opening + "\n" + reviewMessage(review) : opening;
   if (typeof message !== "string" || !message.trim() || message.length > MAX_MESSAGE_CHARS) {
@@ -86,7 +83,6 @@ const handler: Handler = async (req, res, core) => {
   if (guide) lesson.setAboutAidea(); // a class about the app is not part of the Project's Plan
   core.lessons.set(classId, lesson);
   const conversation = core.permissions.open(send, project.id, "tutor", classId);
-  if (held) bindDecision(classId, held.proposal.id);
   const tools = {
     mcpConfig: JSON.stringify({ mcpServers: { tutor: { type: "http", url: `http://${req.headers.host}/mcp/${conversation.token}` } } }),
     allowedTools: ["mcp__tutor__*"],
@@ -101,7 +97,7 @@ const handler: Handler = async (req, res, core) => {
     const cwd = join(tmpdir(), "aidea-tutor");
     mkdirSync(cwd, { recursive: true });
     const { tutorModel } = currentChoice(core, project.id);
-    for await (const event of core.adapter.run({ role: "tutor", cwd, message, model: tutorModel, signal: abort.signal, instructions: held ? DECISION_INSTRUCTIONS : TUTOR_INSTRUCTIONS, tools })) {
+    for await (const event of core.adapter.run({ role: "tutor", cwd, message, model: tutorModel, signal: abort.signal, instructions: TUTOR_INSTRUCTIONS, tools })) {
       if (event.type === "text" && !event.parent) texts.push(event.text);
       send(event);
     }
@@ -111,7 +107,6 @@ const handler: Handler = async (req, res, core) => {
   } finally {
     conversation.close();
     core.lessons.delete(classId);
-    unbindDecision(classId);
   }
   // What was taught is the explanations (also an open step's); a class that never used the loop falls back to the Teacher's plain text.
   if (lesson.texts.length) texts.splice(0, texts.length, ...lesson.texts);

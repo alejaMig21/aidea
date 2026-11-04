@@ -1,6 +1,6 @@
 import type { Core, Handler } from "../types.ts";
 import type { Choice, Stored } from "../preferences.ts";
-import { classModeOf, reviewQuestionOn } from "../decision-class.ts";
+import { reviewQuestionOn } from "../review.ts";
 
 // The stored choice, with anything the adapter does not offer (any more) replaced by its first entry.
 export function currentChoice(core: Core, project: string): Choice {
@@ -23,7 +23,7 @@ const handler: Handler = async (req, res, core) => {
   if (req.method === "GET") {
     const project = url.searchParams.get("project") ?? "";
     if (!core.projects.has(project)) return reject("project must be a Project that is already open");
-    core.send(res, 200, { modes, models, choice: currentChoice(core, project), classMode: classModeOf(core, project), reviewQuestion: reviewQuestionOn(core, project) });
+    core.send(res, 200, { modes, models, choice: currentChoice(core, project), reviewQuestion: reviewQuestionOn(core, project) });
     return true;
   }
 
@@ -33,10 +33,6 @@ const handler: Handler = async (req, res, core) => {
     const project = typeof body?.project === "string" ? body.project : "";
     if (!core.projects.has(project)) return reject("project must be a Project that is already open");
     const choice: Stored = {};
-    if (body?.classMode !== undefined) {
-      if (body.classMode !== "class" && body.classMode !== "direct") return reject('classMode must be "class" or "direct"');
-      choice.classMode = body.classMode;
-    }
     if (body?.reviewQuestion !== undefined) {
       if (typeof body.reviewQuestion !== "boolean") return reject("reviewQuestion must be true or false");
       choice.reviewQuestion = body.reviewQuestion;
@@ -50,9 +46,9 @@ const handler: Handler = async (req, res, core) => {
       if (mode && !mode.available) return reject(`${mode.label} is not available: ${mode.reason ?? "no reason given"}`);
       choice[field] = entry.id;
     }
-    if (!Object.keys(choice).length) return reject("send at least one of mode, model, tutorModel, classMode, reviewQuestion");
+    if (!Object.keys(choice).length) return reject("send at least one of mode, model, tutorModel, reviewQuestion");
     core.preferences.set(project, choice);
-    core.send(res, 200, { choice: currentChoice(core, project), classMode: classModeOf(core, project), reviewQuestion: reviewQuestionOn(core, project) });
+    core.send(res, 200, { choice: currentChoice(core, project), reviewQuestion: reviewQuestionOn(core, project) });
     return true;
   }
   return false;

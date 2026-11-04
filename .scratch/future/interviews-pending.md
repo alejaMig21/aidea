@@ -98,3 +98,6 @@ CORRECTION 2026-11-03 (after the person asked what happens in auto mode, and aft
 ## REVISED 2026-11-04: everything is a plugin
 
 The person decided that in aidea EVERYTHING must be a plugin (Panels, layers, language adapters, the Tutor, agent adapters, tools, guard rules, Playback, the terminal, the run recipe), following the philosophy of the DeepSeek Harness, so that aidea can keep growing even in a packaged build. This replaces "Panels only first" of topic 2; the trust decisions of topic 2 (quarantine, scan, Tutor opinion, updates through quarantine, full permissions after install, installed once per person) stand. The plugin system moves to right after version 1, BEFORE the animation engine; the versions plugin and the engine come later. Next: a digest of the DeepSeek plugin philosophy (`.scratch/plugins/research/01-deepseek-plugin-philosophy.md`), then an interview, then an ADR and a spec. Tickets 04 and 05 of `run-and-terminal` (recipe and Play) wait for that design so they are not built as a monolith.
+
+
+**Done 2026-11-04 (topic 8):** Class mode, Direct mode and the decision classes are removed from the code, the page, the guide and the glossary.

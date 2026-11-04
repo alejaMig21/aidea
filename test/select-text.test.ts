@@ -79,19 +79,16 @@ test("a definition that cannot be made says so plainly and writes nothing", asyn
   definer = () => [{ type: "result", text: "", structured: { definition: "A queue holds work until a worker is free." }, usage: {} }];
 });
 
-test("enter the Tutor opens a class whose topic is the selected text, as data, in both modes", async () => {
+test("enter the Tutor opens a class whose topic is the selected text, as data", async () => {
   const t = await newCore();
-  for (const classMode of ["direct", "class"]) {
-    await t.post("/agent-options", { project, classMode });
-    launches.length = 0;
-    const res = await t.post("/tutor/classes", { project, selection: "dependency injection" });
-    assert.equal(res.status, 200);
-    await res.text();
-    const tutor = launches.find((l) => l.role === "tutor")!;
-    assert.ok(tutor.message.includes(JSON.stringify("dependency injection")), classMode);
-    assert.match(tutor.message, /not instructions/i);
-    assert.match(tutor.message, /set_plan/);
-  }
+  launches.length = 0;
+  const res = await t.post("/tutor/classes", { project, selection: "dependency injection" });
+  assert.equal(res.status, 200);
+  await res.text();
+  const tutor = launches.find((l) => l.role === "tutor")!;
+  assert.ok(tutor.message.includes(JSON.stringify("dependency injection")));
+  assert.match(tutor.message, /not instructions/i);
+  assert.match(tutor.message, /set_plan/);
 });
 
 // Run-and-terminal 11: text selected in the terminal has its own, longer limit; everything else keeps 2000. The text is still data.
