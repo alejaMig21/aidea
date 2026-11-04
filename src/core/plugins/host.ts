@@ -166,12 +166,33 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
     for (const [key, entry] of [...entries]) if (!key.includes("#")) await activate(entry.id);
   }
 
+  // Adds a plugin folder that was installed after the start, and activates it.
+  async function register(folder: string, builtin = false): Promise<PluginInfo> {
+    const read = readManifest(folder);
+    if ("problems" in read) throw new Error(read.problems.join("; "));
+    const { manifest } = read;
+    if (entries.has(manifest.id)) throw new Error(`the plugin "${manifest.id}" is already installed`);
+    entries.set(manifest.id, { id: manifest.id, folder, builtin, manifest, state: "inactive", undo: [] });
+    await activate(manifest.id);
+    return info(entries.get(manifest.id)!);
+  }
+
+  // Takes a plugin out: deactivates it and forgets it. Its folder is not touched here.
+  async function unregister(id: string) {
+    await deactivate(id);
+    entries.delete(id);
+  }
+
+  const info = (e: Entry): PluginInfo => ({ id: e.id, title: e.manifest?.title ?? e.id, version: e.manifest?.version ?? "", state: e.state, ...(e.reason ? { reason: e.reason } : {}), ui: !!e.manifest?.ui, builtin: e.builtin });
+
   return {
     loadAll,
     activate,
     deactivate,
+    register,
+    unregister,
     has: (id: string) => entries.has(id) && !id.includes("#"),
-    list: (): PluginInfo[] => [...entries.values()].map((e) => ({ id: e.id, title: e.manifest?.title ?? e.id, version: e.manifest?.version ?? "", state: e.state, ...(e.reason ? { reason: e.reason } : {}), ui: !!e.manifest?.ui, builtin: e.builtin })),
+    list: (): PluginInfo[] => [...entries.values()].map(info),
     // The file of the interface half of an ACTIVE plugin, or undefined.
     uiFile: (id: string) => {
       const e = entries.get(id);

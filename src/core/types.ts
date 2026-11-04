@@ -10,6 +10,7 @@ import type { Probes } from "./probe.ts";
 import type { Plans } from "./plan.ts";
 import type { PluginHost } from "./plugins/host.ts";
 import type { Quarantine } from "./plugins/quarantine.ts";
+import type { Manager } from "./plugins/manager.ts";
 
 export type CoreNode = {
   id: string;
@@ -98,6 +99,8 @@ export type Core = {
   plugins: PluginHost;
   // Plugins added from a folder or a Git link, waiting in the quarantine (nothing of them runs).
   quarantine: Quarantine;
+  // The plugin manager: installs from the quarantine (and, in later tickets, enables, removes and updates).
+  manager: Manager;
   // The Projects the person opened before, newest first.
   recents: Recents;
   // The person's mode and model choice for each Project.

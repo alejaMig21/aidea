@@ -5,7 +5,9 @@ import { extname, join, sep } from "node:path";
 import { readManifest } from "./manifest.ts";
 import type { Manifest } from "./manifest.ts";
 
-export type Finding = { id: string; severity: "block" | "warn"; message: string; file?: string };
+// `key` identifies a finding so the person can confirm it by name when installing.
+export type Finding = { id: string; severity: "block" | "warn"; message: string; file?: string; key: string };
+export const keyOf = (f: Omit<Finding, "key">) => `${f.id}|${f.file ?? ""}|${f.message}`;
 export type Report = { manifest: Manifest | null; findings: Finding[]; blocking: number; warnings: number };
 
 const BINARY_EXTENSIONS = new Set([".exe", ".dll", ".so", ".dylib", ".node", ".bin", ".msi", ".jar", ".bat", ".cmd", ".ps1", ".sh", ".com", ".scr", ".wasm"]);
@@ -32,7 +34,7 @@ function isBinary(file: string, head: Buffer) {
 
 export function scanPlugin(dir: string): Report {
   const findings: Finding[] = [];
-  const add = (f: Finding) => { if (findings.length < MAX_FINDINGS) findings.push(f); };
+  const add = (f: Omit<Finding, "key">) => { if (findings.length < MAX_FINDINGS) findings.push({ ...f, key: keyOf(f) }); };
   const read = readManifest(dir);
   const manifest = "manifest" in read ? read.manifest : null;
   if ("problems" in read) add({ id: "invalid-manifest", severity: "block", message: read.problems.join("; "), file: "aidea-plugin.json" });

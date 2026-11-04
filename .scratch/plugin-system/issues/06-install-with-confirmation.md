@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] The manager lists plugins and quarantine entries with their report; the screen says a scan lowers the risk and proves nothing.
-- [ ] A plugin with no blocking finding installs after one confirmation; one with blocking findings needs a confirmation that names each.
-- [ ] An install that fails restores the previous state; a second install waits or is refused while one runs.
-- [ ] A newly installed plugin is live at once (its Panel shows) with no restart.
-- [ ] Core API and page tests pass; `npm run verify` is green.
+- [x] The manager lists plugins and quarantine entries with their report; the screen says a scan lowers the risk and proves nothing.
+- [x] A plugin with no blocking finding installs after one confirmation; one with blocking findings needs a confirmation that names each.
+- [x] An install that fails restores the previous state; a second install waits or is refused while one runs.
+- [x] A newly installed plugin is live at once (its Panel shows) with no restart.
+- [x] Core API and page tests pass; `npm run verify` is green.

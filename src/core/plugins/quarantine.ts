@@ -5,7 +5,7 @@ import { randomBytes } from "node:crypto";
 import { copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, sep } from "node:path";
 import { promisify } from "node:util";
-import { scanPlugin } from "./scan.ts";
+import { keyOf, scanPlugin } from "./scan.ts";
 import type { Finding } from "./scan.ts";
 
 const MAX_FILES = 2000;
@@ -45,8 +45,10 @@ export function createQuarantine(store?: string) {
       if (stat.isSymbolicLink()) {
         let real = "";
         try { real = realpathSync(source); } catch { /* a link to nowhere */ }
-        if (!real || (real !== root && !real.startsWith(root + sep))) links.push({ id: "link-leaves-folder", severity: "block", message: `${name} is a link that points outside the plugin folder (it was not copied)`, file: name });
-        else links.push({ id: "link-skipped", severity: "warn", message: `${name} is a link (it was not copied)`, file: name });
+        const found = !real || (real !== root && !real.startsWith(root + sep))
+          ? { id: "link-leaves-folder", severity: "block" as const, message: `${name} is a link that points outside the plugin folder (it was not copied)`, file: name }
+          : { id: "link-skipped", severity: "warn" as const, message: `${name} is a link (it was not copied)`, file: name };
+        links.push({ ...found, key: keyOf(found) });
       } else if (stat.isDirectory()) copyTree(source, target, root, links, name);
       else copyFileSync(source, target);
     }

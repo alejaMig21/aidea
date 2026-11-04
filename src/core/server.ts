@@ -12,6 +12,7 @@ import { createProbes } from "./probe.ts";
 import { createPlans } from "./plan.ts";
 import { createPluginHost } from "./plugins/host.ts";
 import { createQuarantine } from "./plugins/quarantine.ts";
+import { createManager } from "./plugins/manager.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
 const ROLES = ["builder", "tutor", "prober", "extractor", "auditor", "grader", "definer"];
@@ -53,6 +54,8 @@ export async function startCore({ port, adapter: defaultAdapter = createClaudeAd
   let allowedHosts = new Set<string>();
 
   const learner = createLearner(learnerDir, adapter, learnerModel);
+  const pluginHost = createPluginHost([...(builtinPluginsDir ? [{ dir: builtinPluginsDir, builtin: true }] : []), ...(pluginsDir ? [{ dir: pluginsDir, builtin: false }] : [])]);
+  const quarantine = createQuarantine(pluginsDir);
   const core: Core = {
     adapter,
     learner,
@@ -62,8 +65,9 @@ export async function startCore({ port, adapter: defaultAdapter = createClaudeAd
     probes: createProbes(learnerDir),
     plans: createPlans(learnerDir),
     permissions: createBroker(),
-    plugins: createPluginHost([...(builtinPluginsDir ? [{ dir: builtinPluginsDir, builtin: true }] : []), ...(pluginsDir ? [{ dir: pluginsDir, builtin: false }] : [])]),
-    quarantine: createQuarantine(pluginsDir),
+    plugins: pluginHost,
+    quarantine,
+    manager: createManager(pluginHost, quarantine, pluginsDir),
     proposals: new Map(),
     recents: createRecents(recentsFile),
     preferences: createPreferences(preferencesFile),

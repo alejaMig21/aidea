@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { ManagerError } from "../plugins/manager.ts";
 import { QuarantineError } from "../plugins/quarantine.ts";
 import type { Handler } from "../types.ts";
 
@@ -6,6 +7,22 @@ import type { Handler } from "../types.ts";
 const handler: Handler = async (req, res, core) => {
   if (req.method === "GET" && req.url === "/plugins") {
     core.send(res, 200, { plugins: core.plugins.list(), services: core.plugins.services(), events: core.plugins.eventList() });
+    return true;
+  }
+  // Installs a plugin from the quarantine. `confirm` lists the keys of the blocking findings the person confirms by name.
+  if (req.method === "POST" && req.url === "/plugins/install") {
+    const body = (await core.readJson(req, res)) as { id?: unknown; confirm?: unknown } | null | undefined;
+    if (body === undefined) return true;
+    if (typeof body?.id !== "string" || !/^[0-9a-f]{8}$/.test(body.id) || (body.confirm !== undefined && !(Array.isArray(body.confirm) && body.confirm.every((k) => typeof k === "string")))) {
+      core.send(res, 400, { error: "send the id of a quarantine entry and, optionally, a list of finding keys" });
+      return true;
+    }
+    try {
+      core.send(res, 200, await core.manager.install(body.id, body.confirm as string[] | undefined));
+    } catch (e) {
+      if (!(e instanceof ManagerError)) throw e;
+      core.send(res, e.status, { error: e.message, ...e.extra });
+    }
     return true;
   }
   // The quarantine: plugins that were added and are waiting. Nothing of them runs.
