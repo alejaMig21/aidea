@@ -231,7 +231,7 @@ function codeActivate(tab) {
   codeHeadFor(tab);
   tab.button.scrollIntoView?.({ block: "nearest", inline: "nearest" });
   codeRestore(tab, false);
-  document.dispatchEvent(new CustomEvent("code-tab-changed", { detail: { path: tab.path } }));
+  document.dispatchEvent(new CustomEvent("code-tab-changed", { detail: { path: tab.path, node: tab.focus?.node ?? null } }));
   // A tab that may differ from the disk (Refresh was pressed while another tab was shown) is read again as it comes back.
   if (tab.stale) { tab.stale = false; codeReload(tab); }
 }
@@ -345,8 +345,9 @@ async function codeRefresh(nodes) {
   if (codeActive) await codeReload(codeActive, nodes);
 }
 
-// Selecting a Node does not open code by itself: the Details offer "View code".
-function onSelect(nodeId) {
+// Selecting a Node opens its code at once when the Code panel is on screen (nothing opens the panel by itself); otherwise the Details offer "View code".
+// `fromCode` is a selection made from the code side (57-reading.js): the code is already shown.
+function onSelect(nodeId, fromCode = false) {
   if (!current) return;
   codeSelected = nodeId;
   const n = algoNodes.find((x) => x.id === nodeId);
@@ -358,6 +359,7 @@ function onSelect(nodeId) {
     Object.assign(document.createElement("p"), { className: "code-pick", textContent: n?.name ?? nodeId }),
     view,
   );
+  if (!fromCode && layoutShown.code) codeOpen(nodeId);
 }
 
 // A different Project starts with no tab open.
