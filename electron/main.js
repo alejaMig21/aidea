@@ -33,14 +33,29 @@ let coreUrl = null;
 const callRun = async (name) => {
   try { return await (await fetch(`${coreUrl}/plugins/run/call/${name}`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" })).json(); } catch { return {}; }
 };
+// Before anything that ends the programs Play started (closing, restarting): asks, then stops them. True to go on, false when the person keeps aidea open.
+// If the core cannot say whether anything runs, it asks too, in other words: a dead core must not let the window close without a word, nor trap it either.
+async function mayEnd(win, verb) {
+  const answer = await callRun("running");
+  const known = typeof answer.count === "number";
+  if (known && answer.count === 0) return true;
+  const { response } = await dialog.showMessageBox(win, {
+    type: "question", buttons: [known ? `Stop and ${verb}` : `${verb[0].toUpperCase()}${verb.slice(1)} anyway`, "Keep aidea open"], defaultId: 1, cancelId: 1, title: "aidea",
+    message: known ? `${answer.count === 1 ? "A part of your project is" : `${answer.count} parts of your project are`} still running.` : "aidea could not check whether your project is still running.",
+    detail: known ? "This stops everything Play started." : "Anything Play started may keep running.",
+  });
+  if (response !== 0) return false;
+  await callRun("stopAll");
+  return true;
+}
 // Folder picker for the interface. Resolves to the chosen path, or null when cancelled.
 ipcMain.handle("pick-folder", async (e) => {
   const { canceled, filePaths } = await dialog.showOpenDialog(BrowserWindow.fromWebContents(e.sender), { properties: ["openDirectory"] });
   return canceled ? null : filePaths[0];
 });
 // A change to the plugins that needs a restart (removing code that already ran): the core and the window start again.
-ipcMain.handle("restart-app", async (_e, inSafeMode) => {
-  await callRun("stopAll");
+ipcMain.handle("restart-app", async (e, inSafeMode) => {
+  if (!(await mayEnd(BrowserWindow.fromWebContents(e.sender), "restart"))) return false;
   core?.kill();
   const args = process.argv.slice(1).filter((a) => a !== "--safe");
   app.relaunch({ args: inSafeMode ? [...args, "--safe"] : args });
@@ -69,12 +84,7 @@ function openWindow(url) {
     if (asking) return;
     asking = true;
     try {
-      const { count = 0 } = await callRun("running");
-      if (count) {
-        const { response } = await dialog.showMessageBox(win, { type: "question", buttons: ["Stop and close", "Keep aidea open"], defaultId: 1, cancelId: 1, title: "aidea", message: `${count === 1 ? "A part of your project is" : `${count} parts of your project are`} still running.`, detail: "Closing aidea stops everything Play started." });
-        if (response !== 0) return;
-        await callRun("stopAll");
-      }
+      if (!(await mayEnd(win, "close"))) return;
       closing = true;
       win.close();
     } finally { asking = false; }
@@ -93,7 +103,8 @@ app.whenReady().then(() => {
   core = spawn("node", [coreScript], { stdio: ["ignore", "pipe", "inherit"], windowsHide: true, env: { ...process.env, ...(safe ? { AIDEA_SAFE_MODE: "1" } : {}), ...(key ? { AIDEA_SECRET_KEY: key } : {}) } });
   core.stdout.on("data", (chunk) => {
     const url = /listening on (\S+)/.exec(chunk.toString())?.[1];
-    if (url) coreUrl = url;
-    if (url) openWindow(url);
+    if (!url) return;
+    coreUrl = url;
+    openWindow(url);
   });
 });

@@ -60,6 +60,7 @@ The plugin manager is drawn like the list of extensions of a code editor (the pe
 | Item | two columns: a 42px tile, then the text; no border between items; `--raised` on hover; radius 8px |
 | Tile | 42px, radius 8px, `--raised`, the first letter of the plugin's name at 18px weight 600 in `--accent-soft` (plugins have no pictures of their own) |
 | Item text | name 13.5px weight 600 on one line; description 12px `--muted`, one line cut with an ellipsis; then publisher (`--label`), version and id at 12px; actions under them at 12px |
+| Source line of a waiting plugin | its folder or Git link, at the code size's smaller sibling: 12px `--mono`, `--muted`, one line cut with an ellipsis |
 | Badge on an item | 11px, 1px outline, radius 8px: `--label` for a note ("Ships with aidea"), `--authored` for a warning ("In quarantine", a plugin that is off), `--danger` for a failure. A plugin that is running carries no badge |
 | Dialog | centred on a `rgba(0,0,0,.5)` layer above everything (z-index 200), width up to 520px, `--panel`, 1px `--line`, radius 12px; title 14px weight 600; message 13.5px; what will run (commands) in a `--raised` block at the code size (12.5px, `--mono`); buttons on the right, the primary one `--accent` |
 | Dialog focus | starts on the safe button (Cancel); Tab moves between the two; Escape means no; the focus returns to the control that asked |

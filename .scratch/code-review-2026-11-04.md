@@ -43,3 +43,13 @@ Standards axis
 - Authored-layer guard (`src/core/guard.ts`) not moved onto the plugin guard mechanism.
 - Older v1 tickets: layout-and-data 09, 10, 11, 05, 14, 15, 17; remove Class/Direct (`decision-class.ts`); stale headers of `v1-gaps/01` and `03`.
 - Live check of ticket 10 with a real Builder, and of Explain / Fix / Explain and fix with the real models (not pressed so far).
+
+## Status after the restart (the person delegated both decisions: "haz lo que te parezca que yo haria")
+
+Decisions taken, to be revisited when the person has used the recipe for a while:
+1. Review of an existing recipe: the button "Ask the Builder to review the recipe" appears in the top bar when Play reports a failed part (the moment a recipe is likely stale). Before that, a review is asked in the chat; the tool and the card already show old and new side by side.
+2. The log line for a silent program stays a normal edit with a permission card the person can refuse (ADR 0001: the Builder's code changes go through cards), not a second Proposal object.
+
+Fixed: whole-number port match and no bare-host url (`signalProblem`); consent dialog shows the whole recipe; restart asks like close; a failed `running` answer asks too ("Close anyway"); `.pm-source` 12px + ui-style row; class instead of inline style; state badge map; merged ifs; throwaway script removed. Live: `.scratch/run-and-terminal/live-scripts/lifecycle.mjs` 15 of 15.
+
+Left from the judgement calls (not done on purpose): shared `make` helper, `chatUi.send` seam, a test that the 2000 and 8000 limits match, splitting the secret detector out of `54-select.js`, `chat.ts` allowedTools list.

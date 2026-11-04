@@ -85,8 +85,18 @@ function signalProblem(root, p) {
   if (!r) return null;
   const at = `part "${p.name}"`;
   if (!Array.isArray(p.evidence) || !p.evidence.length) return `${at} has a ready signal but cites no file that shows it (evidence). Look in the code, or ask the person what is seen when it works; never invent a signal`;
-  let needle;
-  try { needle = "port" in r ? String(r.port) : "line" in r ? r.line : "file" in r ? basename(r.file) : (new URL(r.url).port || new URL(r.url).pathname); } catch { return `${at}: ready.url is not an address`; }
+  // What a file must hold to show the signal. A number is matched whole (80 is not shown by 8080); an address is shown by its port, or by its path when it has none.
+  let needle, whole = false;
+  try {
+    if ("port" in r) { needle = String(r.port); whole = true; }
+    else if ("line" in r) needle = r.line;
+    else if ("file" in r) needle = basename(r.file);
+    else {
+      const u = new URL(r.url);
+      if (u.port) { needle = u.port; whole = true; } else if (u.pathname !== "/") needle = u.pathname; else return `${at}: a ready address needs a port or a path to be checked against the code; give one, or ask the person what is seen when it works`;
+    }
+  } catch { return `${at}: ready.url is not an address`; }
+  const found = (text) => (whole ? new RegExp(`(?<![0-9])${needle}(?![0-9])`).test(text) : text.includes(needle));
   const base = realpathSync(root);
   for (const f of p.evidence) {
     let real;
@@ -97,7 +107,7 @@ function signalProblem(root, p) {
       const s = statSync(real);
       if (!s.isFile() || s.size > 2_000_000) return `${at}: evidence "${f}" is not a readable file`;
     } catch { return `${at}: evidence "${f}" is not a file of the Project`; }
-    if (readFileSync(real, "utf8").includes(needle)) return null;
+    if (found(readFileSync(real, "utf8"))) return null;
   }
   return `${at}: none of the files cited (${p.evidence.join(", ")}) shows the ready signal "${needle}". Look again, or ask the person what is seen when it works`;
 }

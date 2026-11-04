@@ -34,7 +34,7 @@ pmBox.setAttribute("aria-label", "Plugins");
     #plugins-manager .pm-badge { flex: none; padding: 0 6px; border-radius: 8px; border: 1px solid var(--line); font-size: 11px; line-height: 16px; color: var(--label); }
     #plugins-manager .pm-badge[data-kind="warn"] { color: var(--authored); border-color: var(--authored); }
     #plugins-manager .pm-badge[data-kind="bad"] { color: var(--danger); border-color: var(--danger); }
-    #plugins-manager .pm-source { font: 11.5px var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #plugins-manager .pm-source { font: 12px var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     #plugins-manager ul { margin: 6px 0; padding-left: 18px; }
     #plugins-manager ul:empty { display: none; }
     #plugins-manager li[data-severity="block"] { color: var(--danger); }
@@ -117,6 +117,8 @@ pmSearch.oninput = pmFilter;
 // The icon of a plugin: the first letter of its name on a tile (plugins have no pictures of their own).
 const pmIcon = (title) => pmEl("div", { className: "pm-icon", textContent: (title || "?").trim().charAt(0).toUpperCase() || "?", ariaHidden: "true" });
 const pmBadge = (text, kind) => { const badge = pmEl("span", { className: "pm-badge", textContent: text }); badge.dataset.kind = kind; return badge; };
+// How a plugin that is not running is marked: failed and incompatible are problems (red), the rest are only off or waiting (amber).
+const pmStateMark = { failed: { text: "failed", kind: "bad" }, incompatible: { text: "incompatible", kind: "bad" }, inactive: { text: "Off", kind: "warn" } };
 const pmSearchText = (...parts) => parts.filter(Boolean).join(" ").toLowerCase();
 
 function pmQuarantineRow(entry) {
@@ -259,7 +261,8 @@ function pmInstalledRow(p) {
     actions.prepend(open);
   }
   // A plugin that is running carries no mark (like an enabled extension); one that is not says why.
-  const state = p.state === "active" ? [] : [pmBadge(p.state === "failed" || p.state === "incompatible" ? p.state : p.state === "inactive" && p.reason ? "Off" : p.state, p.state === "failed" || p.state === "incompatible" ? "bad" : "warn")];
+  const mark = pmStateMark[p.state] ?? { text: p.state, kind: "warn" };
+  const state = p.state === "active" ? [] : [pmBadge(mark.text, mark.kind)];
   row.append(
     pmIcon(p.title),
     pmEl("div", { className: "pm-body" },

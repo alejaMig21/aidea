@@ -68,7 +68,8 @@ test("Play asks in a dialog of aidea's own: modal, titled, every command in mono
   assert.equal(page.dialog.modal, "true");
   assert.equal(page.dialog.labelled, true);
   assert.match(page.dialog.title, /run these commands/i);
-  assert.deepEqual(page.dialog.commands, ["db: node db.js", "api: node api.js"]);
+  // the whole recipe, not only the commands: where each part runs, what it waits for, its ready signal, its variables and its limit
+  assert.deepEqual(page.dialog.commands, ["db: node db.js", "  no ready signal · limit 60 s", "api: node api.js", "  after db · no ready signal · limit 60 s"]);
   assert.deepEqual(page.dialog.buttons, ["Cancel", "Accept and start"]);
   assert.equal(page.dialog.focused, "Cancel");
   assert.equal(page.dialog.zAbovePluginManager, true);

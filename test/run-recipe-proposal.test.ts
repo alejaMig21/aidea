@@ -170,3 +170,31 @@ test("asking for a review of an existing recipe shows the old one beside the pro
     assert.equal(JSON.parse(readFileSync(recipeFile(t.project), "utf8")).parts[0].command, "node db.js");
   } finally { t.core.close(); }
 });
+
+// Review fix: a signal is "shown" only when the cited file holds it whole, not as a piece of a longer number.
+test("a port is shown only as a whole number: 80 is not shown by a file that says 8080", async () => {
+  const t = await start({ "web.js": 'listen(8080); // not the port 80 one', "web80.js": "listen(80);", "web3.js": "const p = 18080;" });
+  try {
+    await t.ask(
+      { parts: [part("web", "node web.js", { ready: { port: 80 }, evidence: ["web3.js"] })] }, // 18080 contains 80 only inside a longer number
+      { parts: [part("web", "node web.js", { ready: { port: 8000 }, evidence: ["web.js"] })] }, // 8080 is not 8000
+      { parts: [part("web", "node web.js", { ready: { port: 80 }, evidence: ["web80.js"] })] }, // listen(80) shows it
+      { parts: [part("web", "node web.js", { ready: { port: 8080 }, evidence: ["web.js"] })] },
+    );
+    assert.deepEqual(seen.results.map((r) => r.isError), [true, true, false, false], seen.results.map((r) => r.text).join(" | "));
+  } finally { t.core.close(); }
+});
+
+test("a ready address is checked by its port, or by its path when it has no port; a bare host proves nothing and is refused", async () => {
+  const t = await start({ "srv.js": 'app.get("/health", ok); listen(3000);' });
+  try {
+    await t.ask(
+      { parts: [part("a", "x", { ready: { url: "http://127.0.0.1:3000/health" }, evidence: ["srv.js"] })] },
+      { parts: [part("a", "x", { ready: { url: "http://127.0.0.1:3001/health" }, evidence: ["srv.js"] })] }, // another port
+      { parts: [part("a", "x", { ready: { url: "http://localhost/health" }, evidence: ["srv.js"] })] }, // no port: the path is what is shown
+      { parts: [part("a", "x", { ready: { url: "http://localhost/" }, evidence: ["srv.js"] })] }, // no port, no path: nothing to check
+    );
+    assert.deepEqual(seen.results.map((r) => r.isError), [false, true, false, true], seen.results.map((r) => r.text).join(" | "));
+    assert.match(seen.results[3].text, /port or a path/i);
+  } finally { t.core.close(); }
+});

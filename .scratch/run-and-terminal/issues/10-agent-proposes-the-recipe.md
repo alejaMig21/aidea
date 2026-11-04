@@ -12,3 +12,9 @@
 - [x] Asking for a review shows what the agent would change as a Proposal and never overwrites the recipe by itself.
 - [x] Tests at the core API with a fake agent and page tests for the Proposal pass (test/run-recipe-proposal.test.ts, test/run-recipe-page.test.ts).
 - [ ] A live check on a real Project with a real Builder, on the second monitor.
+
+## Decisions (2026-11-04, taken for the person, who delegated them)
+
+- A review of an existing recipe is asked with the button "Ask the Builder to review the recipe", offered in the top bar after a part failed; otherwise in the chat. The review never overwrites: the card shows the old recipe's difference and waits for Accept.
+- The log line for a program with nothing observable is a normal edit through the permission card, which the person can refuse; there is no second Proposal object.
+- A ready signal is "shown" only when a cited file holds it whole (port as a whole number; an address by its port, or its path when it has none).

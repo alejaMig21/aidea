@@ -1,0 +1,51 @@
+// Looks at the plugin manager and the Play dialog in the real Electron window (second monitor) and saves captures.
+import { chromium } from "playwright-core";
+import { spawn } from "node:child_process";
+import { cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+const root = join(import.meta.dirname, "data-look");
+rmSync(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 });
+const store = join(root, "store"), project = join(root, "project");
+mkdirSync(store, { recursive: true });
+cpSync("D:/Projects/aidea/test/fixtures/shop", project, { recursive: true });
+writeFileSync(join(project, "db.js"), "setInterval(() => {}, 1000);");
+mkdirSync(join(project, ".aidea"), { recursive: true });
+writeFileSync(join(project, ".aidea", "run.json"), JSON.stringify({ parts: [{ name: "db", command: "node db.js" }, { name: "api", command: "node api.js", waitFor: ["db"], env: ["API_KEY"] }] }));
+// A plugin waiting in the quarantine, to see that section too.
+const q = join(root, "waiting");
+mkdirSync(q, { recursive: true });
+writeFileSync(join(q, "aidea-plugin.json"), JSON.stringify({ id: "demo.metrics", version: "0.3.1", title: "Metrics", description: "Shows how long each part of the project took to start.", publisher: "someone", api: "0.1", main: "main.js" }));
+writeFileSync(join(q, "main.js"), "export function activate() {}");
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const shots = join(import.meta.dirname, "look-shots");
+mkdirSync(shots, { recursive: true });
+const env = { ...process.env, AIDEA_RECENTS_FILE: join(root, "recents.json"), AIDEA_PREFERENCES_FILE: join(root, "prefs.json"), AIDEA_LEARNER_DIR: join(root, "learner"), AIDEA_PLUGINS_DIR: store, AIDEA_DISPLAY: "secondary" };
+const child = spawn("D:/Projects/aidea/node_modules/electron/dist/electron.exe", ["D:/Projects/aidea", "--remote-debugging-port=9381", `--user-data-dir=${join(root, "ud")}`], { env, stdio: "ignore" });
+let browser;
+for (let i = 0; i < 80 && !browser; i++) { try { browser = await chromium.connectOverCDP("http://127.0.0.1:9381"); } catch { await wait(500); } }
+let page;
+for (let i = 0; i < 80 && !page; i++) { page = browser.contexts()[0]?.pages()[0]; if (!page) await wait(500); }
+await page.waitForFunction(() => typeof openProject === "function" && typeof layoutApi !== "undefined", null, { timeout: 40000 });
+await page.evaluate((x) => openProject(x), project);
+await page.waitForFunction(() => document.getElementById("home").hidden && document.getElementById("opening").hidden, null, { timeout: 120000 });
+await wait(1500);
+await page.evaluate(async (dir) => { await fetch("/plugins/quarantine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ source: dir }) }); }, q);
+await page.click("#plugins-button");
+await page.waitForSelector("#pm-quarantine .pm-row", { timeout: 15000 });
+await wait(600);
+await page.screenshot({ path: join(shots, "manager.png") });
+await page.fill("#pm-search", "run");
+await wait(300);
+await page.screenshot({ path: join(shots, "manager-search.png") });
+await page.fill("#pm-search", "");
+await page.keyboard.press("Escape");
+await wait(300);
+await page.click('[data-topbar-plugin="run.play"] button');
+await page.waitForSelector("#dialog-layer .dialog", { timeout: 15000 });
+await wait(400);
+await page.screenshot({ path: join(shots, "dialog.png") });
+await page.keyboard.press("Escape");
+await wait(500);
+console.log("done");
+child.kill();
+process.exit(0);
