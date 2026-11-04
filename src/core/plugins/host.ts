@@ -215,13 +215,13 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
   }
 
   // Adds a plugin folder that was installed after the start, and activates it.
-  async function register(folder: string, builtin = false): Promise<PluginInfo> {
+  async function register(folder: string, builtin = false, start = true): Promise<PluginInfo> {
     const read = readManifest(folder);
     if ("problems" in read) throw new Error(read.problems.join("; "));
     const { manifest } = read;
     if (entries.has(manifest.id)) throw new Error(`the plugin "${manifest.id}" is already installed`);
     entries.set(manifest.id, { id: manifest.id, folder, builtin, manifest, state: "inactive", undo: [] });
-    await activate(manifest.id);
+    if (start) await activate(manifest.id);
     return info(entries.get(manifest.id)!);
   }
 
@@ -238,6 +238,8 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
     safe,
     // The person switched it off: its reason says so.
     switchedOff: (id: string) => { const e = entries.get(id); if (e) e.reason = SWITCHED_OFF; },
+    // An update replaced the files of a plugin whose code already ran: it stays off until aidea restarts.
+    markUpdated: (id: string, why: string) => { const e = entries.get(id); if (e) { e.state = "inactive"; e.waiting = false; e.reason = why; } },
     ran: (id: string) => entries.get(id)?.ran === true,
     entry: (id: string) => { const e = entries.get(id); return e && !id.includes("#") ? info(e) : undefined; },
     folderOf: (id: string) => entries.get(id)?.folder,

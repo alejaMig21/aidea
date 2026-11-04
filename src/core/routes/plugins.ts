@@ -27,7 +27,7 @@ const handler: Handler = async (req, res, core) => {
     return true;
   }
   // Installs a plugin from the quarantine. `confirm` lists the keys of the blocking findings the person confirms by name.
-  if (req.method === "POST" && req.url === "/plugins/install") {
+  if (req.method === "POST" && (req.url === "/plugins/install" || req.url === "/plugins/update")) {
     const body = (await core.readJson(req, res)) as { id?: unknown; confirm?: unknown } | null | undefined;
     if (body === undefined) return true;
     if (typeof body?.id !== "string" || !/^[0-9a-f]{8}$/.test(body.id) || (body.confirm !== undefined && !(Array.isArray(body.confirm) && body.confirm.every((k) => typeof k === "string")))) {
@@ -35,7 +35,7 @@ const handler: Handler = async (req, res, core) => {
       return true;
     }
     try {
-      core.send(res, 200, await core.manager.install(body.id, body.confirm as string[] | undefined));
+      core.send(res, 200, await (req.url === "/plugins/update" ? core.manager.update(body.id, body.confirm as string[] | undefined) : core.manager.install(body.id, body.confirm as string[] | undefined)));
     } catch (e) {
       if (!(e instanceof ManagerError)) throw e;
       core.send(res, e.status, { error: e.message, ...e.extra });
@@ -46,19 +46,19 @@ const handler: Handler = async (req, res, core) => {
   if (req.url === "/plugins/quarantine" || req.url?.startsWith("/plugins/quarantine/")) {
     try {
       if (req.method === "GET" && req.url === "/plugins/quarantine") {
-        core.send(res, 200, { entries: core.quarantine.list() });
+        core.send(res, 200, { entries: core.quarantine.list().map(core.manager.describe) });
         return true;
       }
       const one = req.method === "GET" ? /^\/plugins\/quarantine\/([\w-]+)$/.exec(req.url)?.[1] : undefined;
       if (one) {
         const entry = core.quarantine.get(one);
-        core.send(res, entry ? 200 : 404, entry ?? { error: "No quarantine entry with that id" });
+        core.send(res, entry ? 200 : 404, entry ? core.manager.describe(entry) : { error: "No quarantine entry with that id" });
         return true;
       }
       if (req.method === "POST" && (req.url === "/plugins/quarantine" || req.url === "/plugins/quarantine/discard")) {
         const body = (await core.readJson(req, res)) as { source?: unknown; id?: unknown } | null | undefined;
         if (body === undefined) return true;
-        if (req.url === "/plugins/quarantine") core.send(res, 201, await core.quarantine.add(body?.source));
+        if (req.url === "/plugins/quarantine") core.send(res, 201, core.manager.describe(await core.quarantine.add(body?.source)));
         else { core.quarantine.discard(body?.id); core.send(res, 200, { ok: true }); }
         return true;
       }

@@ -1,9 +1,11 @@
 // The plugin manager of the kernel: installs a plugin from the quarantine. Only the person's confirmation installs; each blocking finding must be named in it.
-import { cpSync, existsSync, rmSync } from "node:fs";
+import { cpSync, existsSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { API_VERSION, compatible } from "./manifest.ts";
 import type { PluginHost, PluginInfo } from "./host.ts";
 import type { PluginState } from "./state.ts";
+import { difference, isNewer } from "./diff.ts";
+import { scanPlugin } from "./scan.ts";
 import type { Quarantine } from "./quarantine.ts";
 
 // The status words every operation of the manager answers with.
@@ -33,7 +35,53 @@ export function createManager(host: PluginHost, quarantine: Quarantine, store: s
     try { return await work(); } finally { busy = false; }
   };
 
+  // A quarantine entry, with what it would change when it is a new version of an installed plugin.
+  const describe = <E extends { id: string; report: ReturnType<typeof scanPlugin> }>(entry: E) => {
+    const id = entry.report.manifest?.id, folder = id ? host.folderOf(id) : undefined, next = quarantine.folder(entry.id);
+    if (!id || !folder || !next || !host.has(id) || host.entry(id)?.builtin) return entry;
+    return { ...entry, update: difference(folder, scanPlugin(folder), entry.report, next) };
+  };
+
   return {
+    describe,
+    // Replaces an installed plugin with a newer version from the quarantine. The old files go back if the copy fails. Code that already ran stays in memory, so that asks for a restart.
+    update: (qid: string, confirm: string[] = []) => exclusive(async (): Promise<{ status: Status; plugin?: PluginInfo }> => {
+      if (!store) throw new ManagerError(400, "This core has no plugin store");
+      refuseInSafeMode();
+      const entry = quarantine.get(qid);
+      if (!entry) throw new ManagerError(404, "No quarantine entry with that id");
+      const manifest = entry.report.manifest;
+      if (!manifest) throw new ManagerError(409, "The manifest of this plugin is invalid, so it cannot be installed");
+      if (!compatible(manifest.api)) throw new ManagerError(409, `This plugin asks for API ${manifest.api}; this aidea offers ${API_VERSION}, so it cannot be installed`);
+      const installed = host.entry(manifest.id);
+      if (!installed) throw new ManagerError(409, `The plugin "${manifest.id}" is not installed: install it instead`);
+      if (installed.builtin) throw new ManagerError(409, "A plugin that ships with aidea is updated with aidea");
+      if (!isNewer(manifest.version, installed.version)) throw new ManagerError(409, `Version ${manifest.version} is not newer than the installed ${installed.version}`);
+      const missing = entry.report.findings.filter((f) => f.severity === "block" && !confirm.includes(f.key)).map((f) => f.key);
+      if (missing.length) throw new ManagerError(409, "Each blocking finding must be confirmed by name; an earlier confirmation does not carry over", { missing });
+      const folder = host.folderOf(manifest.id)!, backup = join(store, `.backup-${manifest.id}`);
+      const ran = host.ran(manifest.id), wasOff = chosen.disabled.has(manifest.id);
+      rmSync(backup, { recursive: true, force: true });
+      renameSync(folder, backup);
+      try {
+        cpSync(quarantine.folder(qid)!, folder, { recursive: true });
+      } catch (e) {
+        rmSync(folder, { recursive: true, force: true });
+        renameSync(backup, folder); // the old version is back
+        throw new ManagerError(409, `The update could not be copied: ${e instanceof Error ? e.message : String(e)}`);
+      }
+      rmSync(backup, { recursive: true, force: true });
+      quarantine.discard(qid);
+      if (ran) {
+        await host.deactivate(manifest.id);
+        host.markUpdated(manifest.id, `updated to ${manifest.version}: restart aidea to run it`);
+        return { status: "restart-required", plugin: host.entry(manifest.id) };
+      }
+      await host.unregister(manifest.id);
+      const plugin = await host.register(folder, false, !wasOff);
+      if (wasOff) host.switchedOff(manifest.id);
+      return { status: "applied", plugin: host.entry(manifest.id) ?? plugin };
+    }),
     // Switches a plugin on; the choice is kept for the next start.
     enable: (id: string) => exclusive(async (): Promise<{ status: Status; plugin?: PluginInfo; reason?: string }> => {
       if (!known(id).builtin) refuseInSafeMode();

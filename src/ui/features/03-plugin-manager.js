@@ -82,10 +82,13 @@ function pmQuarantineRow(entry) {
   }
   function sync() { install.disabled = boxes.some((b) => !b.checked); }
   sync();
+  // A new version of an installed plugin: what it changes, and "Update" in place of "Install". An earlier confirmation does not carry over: each blocking finding is confirmed again.
+  const update = entry.update;
+  if (update) install.textContent = "Update";
   install.onclick = async () => {
     install.disabled = true;
-    const { status, body } = await pmJson("POST", "/plugins/install", { id: entry.id, confirm: boxes.filter((b) => b.checked).map((b) => b.dataset.key) });
-    pmMessage(status === 200 ? (body.status === "applied" ? `${manifest.title} is installed.` : `${manifest.title} could not be installed: ${body.reason}`) : body.error ?? "The install was refused.");
+    const { status, body } = await pmJson("POST", update ? "/plugins/update" : "/plugins/install", { id: entry.id, confirm: boxes.filter((b) => b.checked).map((b) => b.dataset.key) });
+    pmMessage(status === 200 ? (body.status === "failed" ? `${manifest.title} could not be installed: ${body.reason}` : body.status === "restart-required" ? `${manifest.title} is updated. Restart aidea to run the new version.` : `${manifest.title} is ${update ? "updated" : "installed"}.`) : body.error ?? "The install was refused.");
     if (status === 200) await pluginsSync(); // a new plugin is live at once
     await pmRefresh();
   };
@@ -95,6 +98,7 @@ function pmQuarantineRow(entry) {
     pmEl("div", { className: "pm-title" }, manifest?.title ?? "A plugin with an invalid manifest"),
     pmEl("div", { className: "pm-meta" }, manifest ? `${manifest.id} ${manifest.version} by ${manifest.publisher}. ${manifest.description}` : "It cannot be installed."),
     pmEl("div", { className: "pm-meta" }, entry.source),
+    ...(update ? [Object.assign(pmEl("div", { className: "pm-meta", id: `pm-diff-${entry.id}` }, `Update from ${update.version.from} to ${update.version.to}. Files: ${update.files.added.length} added, ${update.files.removed.length} removed, ${update.files.changed.length} changed. New capabilities: ${update.capabilities.added.join(", ") || "none"}.`), { })] : []),
     findings,
     pmEl("div", { className: "pm-actions" }, install, discard),
   );

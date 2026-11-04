@@ -1,0 +1,49 @@
+// The difference between the plugin the person accepted and a new version waiting in the quarantine: what the update changes, and what the scan of the new version found.
+import { createHash } from "node:crypto";
+import { lstatSync, readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import type { Finding, Report } from "./scan.ts";
+
+function hashes(dir: string): Map<string, string> {
+  const files = new Map<string, string>();
+  const walk = (folder: string, rel: string) => {
+    for (const entry of readdirSync(folder, { withFileTypes: true })) {
+      const path = join(folder, entry.name), name = rel ? `${rel}/${entry.name}` : entry.name;
+      const stat = lstatSync(path);
+      if (stat.isDirectory()) walk(path, name);
+      else if (stat.isFile()) files.set(name, createHash("sha256").update(readFileSync(path)).digest("hex"));
+    }
+  };
+  walk(dir, "");
+  return files;
+}
+
+export type Difference = {
+  version: { from: string; to: string };
+  files: { added: string[]; removed: string[]; changed: string[] };
+  capabilities: { added: string[]; removed: string[] };
+  newFindings: Finding[];
+};
+
+export function difference(installedDir: string, installed: Report, next: Report, nextDir: string): Difference {
+  const was = hashes(installedDir), now = hashes(nextDir);
+  const old = new Set(installed.manifest?.capabilities ?? []), fresh = new Set(next.manifest?.capabilities ?? []);
+  const known = new Set(installed.findings.map((f) => f.key));
+  return {
+    version: { from: installed.manifest?.version ?? "", to: next.manifest?.version ?? "" },
+    files: {
+      added: [...now.keys()].filter((f) => !was.has(f)).sort(),
+      removed: [...was.keys()].filter((f) => !now.has(f)).sort(),
+      changed: [...now.keys()].filter((f) => was.has(f) && was.get(f) !== now.get(f)).sort(),
+    },
+    capabilities: { added: [...fresh].filter((c) => !old.has(c)).sort(), removed: [...old].filter((c) => !fresh.has(c)).sort() },
+    newFindings: next.findings.filter((f) => !known.has(f.key)),
+  };
+}
+
+// Whether `next` is a newer version than `current` (MAJOR.MINOR.PATCH).
+export const isNewer = (next: string, current: string) => {
+  const a = next.split(".").map(Number), b = current.split(".").map(Number);
+  for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] > b[i];
+  return false;
+};
