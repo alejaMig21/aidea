@@ -10,3 +10,6 @@
 - [x] The report shows new files, new capabilities and new findings against the accepted version.
 - [x] An update with nothing serious changed is one confirmation; one with a new blocking finding needs the named confirmation again.
 - [x] Core API tests with two versions of a fixture plugin pass; `npm run verify` is green.
+
+## Live check
+Not verified live yet: the behaviour is covered by core API tests; the manager screen shows the update difference but that path was not clicked through in Electron.

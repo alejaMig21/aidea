@@ -11,3 +11,6 @@
 - [x] An install that fails restores the previous state; a second install waits or is refused while one runs.
 - [x] A newly installed plugin is live at once (its Panel shows) with no restart.
 - [x] Core API and page tests pass; `npm run verify` is green.
+
+## Live check (2026-11-04)
+Verified in the real Electron window on the primary screen with isolated data (script of the session, results and screenshots in `.scratch/plugin-system/live-shots/`, results.json: 16 of 16). The live run found one real defect that the tests had missed (a plugin that uses import/export failed when a package.json above the plugin store did not say "type": "module"); it is fixed and covered by tests.

@@ -14,3 +14,6 @@
 ## Notes (2026-11-04)
 - Guard rules run in front of the Builder's permission requests (the `approve` tool): a deny refuses with no card, an ask puts the question on the card (a `note` field shown above the request), an allow is ignored, a rule that throws makes the person ask. Rules are synchronous.
 - The protection of the authored layers (`guard.ts`) stays as it was: it acts AFTER a Builder turn (it reports and offers to revert changes made outside a Proposal), so it is not an action rule. Its tests pass unchanged. Moving it onto the mechanism is left for when the kernel checks actions of that kind.
+
+## Live check
+Not verified live yet: the behaviour is covered by core API tests; the manager screen shows the update difference but that path was not clicked through in Electron.

@@ -41,8 +41,8 @@
  },
  {
   "name": "a plugin with blocking findings installs after confirming each by name",
-  "ok": false,
-  "detail": "{\"message\":\"Loud one could not be installed: Cannot use import statement outside a module\",\"installed\":false}"
+  "ok": true,
+  "detail": "{\"message\":\"Loud one is installed.\",\"installed\":true,\"state\":\"active\"}"
  },
  {
   "name": "switching a plugin off takes its Panel away at once",
@@ -55,9 +55,9 @@
   "detail": ""
  },
  {
-  "name": "plugin 07: switch off and on, remove asks for a restart (error)",
-  "ok": false,
-  "detail": "TimeoutError: page.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#pm-installed [data-plugin-id=\"live.loud\"] .pm-remove')\u001b[22m\n"
+  "name": "removing a plugin that ran asks for a restart, with the button",
+  "ok": true,
+  "detail": ""
  },
  {
   "name": "the emergency screen lists the plugins",

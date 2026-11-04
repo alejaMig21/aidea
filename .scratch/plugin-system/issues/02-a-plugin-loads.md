@@ -12,3 +12,6 @@
 - [x] A manifest that is missing or invalid is reported with the field, and nothing of that plugin runs.
 - [x] Core API tests with real fixture folders pass.
 - [x] `npm run verify` is green.
+
+## Live check (2026-11-04)
+Verified in the real Electron window on the primary screen with isolated data (script of the session, results and screenshots in `.scratch/plugin-system/live-shots/`, results.json: 16 of 16). The live run found one real defect that the tests had missed (a plugin that uses import/export failed when a package.json above the plugin store did not say "type": "module"); it is fixed and covered by tests.

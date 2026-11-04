@@ -11,4 +11,4 @@
 - [x] A Layout saved before the rename restores with the Panel in the same place.
 - [x] GLOSSARY.md and the guide use "Playback" for the Panel and do not use "Run" for it.
 - [x] Page tests pass for the menu and the restore.
-- [ ] Verified live on the second monitor.
+- [x] Verified live on 2026-11-04 in the real Electron window (primary screen, the person has one monitor now): see `.scratch/plugin-system/live-shots/` (02-panels-menu, 03-terminal-bottom, 04-explain).

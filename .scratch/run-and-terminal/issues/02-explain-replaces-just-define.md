@@ -10,4 +10,4 @@
 - [x] No visible text, test, guide part or glossary entry still says "Just define".
 - [x] Existing behaviour is unchanged: the same limit, the same data-only travel, the same result of each button.
 - [x] Page tests for the control pass with the new word.
-- [ ] Verified live on the second monitor.
+- [x] Verified live on 2026-11-04 in the real Electron window (primary screen, the person has one monitor now): see `.scratch/plugin-system/live-shots/` (02-panels-menu, 03-terminal-bottom, 04-explain).

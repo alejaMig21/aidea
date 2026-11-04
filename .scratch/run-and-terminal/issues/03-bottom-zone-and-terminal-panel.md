@@ -13,4 +13,4 @@
 - [x] The default Layout loses as little Canvas height as possible when the Terminal is hidden (none).
 - [x] In a narrow window the bottom strip behaves like the other Panels.
 - [x] Page tests cover show, hide, place, move and restore.
-- [ ] Verified live on the second monitor.
+- [x] Verified live on 2026-11-04 in the real Electron window (primary screen, the person has one monitor now): see `.scratch/plugin-system/live-shots/` (02-panels-menu, 03-terminal-bottom, 04-explain).

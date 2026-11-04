@@ -10,3 +10,6 @@
 - [x] An announce event cannot change anything; an ask event can only deny or ask.
 - [x] Deactivating either plugin removes its listeners and its events cleanly.
 - [x] Core API tests with two fixture plugins pass; `npm run verify` is green.
+
+## Live check
+Not verified live yet: the behaviour is covered by core API tests; the manager screen shows the update difference but that path was not clicked through in Electron.

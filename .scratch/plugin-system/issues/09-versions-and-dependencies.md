@@ -10,3 +10,6 @@
 - [x] Removing a plugin another one needs leaves the other inactive with a stated reason, and enabling it again re-activates it.
 - [x] A required plugin cannot be removed or disabled.
 - [x] Core API tests pass; `npm run verify` is green.
+
+## Live check
+Not verified live yet: the behaviour is covered by core API tests; the manager screen shows the update difference but that path was not clicked through in Electron.
