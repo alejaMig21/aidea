@@ -40,3 +40,6 @@ DECIDED 2026-11-04: step by step, never leaving aidea unusable (option A, as the
 
 ## 13. Creator Mode from the first version
 DECIDED 2026-11-04: the first version of the plugin system includes both the plugin-writing skill (instructions that let an agent write a plugin well: start small, look at the live app, copy a template) and the live inspection (a read-only query of the services, slots, settings and style tokens the running app offers), so the Builder can create plugins from the first day (option A, as the agent recommended). Not chosen: later, and inspection only. The agent writes the plugin into the quarantine folder; installing stays with the person (decision 11).
+
+## 14. Events defined by plugins
+DECIDED 2026-11-04: a plugin may define its own events (option A, as the agent recommended). Each carries the name of the plugin that defines it, declares whether it only announces or can also ask for a decision, and is part of that plugin's public contract, versioned; the live inspection lists them. This is what lets a plugin build on another (the Data layer on Playback, the versions plugin on the animation engine). Not chosen: only the kernel defines events, and free events with no rules.
