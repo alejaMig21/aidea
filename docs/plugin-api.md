@@ -118,3 +118,5 @@ Every operation of the plugin manager answers with one of: `applied`, `failed`, 
 
 - **Channel.** The host half answers named calls with `ctx.api.handle(name, fn)`; `fn(body)` returns any JSON (or a promise). The interface half makes them with `await ui.call(name, body)`, which resolves with the answer or rejects with the handler's message. Handlers are undone when the plugin is deactivated. Over HTTP: `POST /plugins/<id>/call/<name>`.
 - **Slot `layout.topbar`** (interface half): `ui.slots.add("layout.topbar", { id, render(container) -> dispose })` puts a control in the top bar, before the Plugins button.
+
+- **Projects.** `ctx.projects.path(id)` gives the folder of an open Project by the id the window uses (`ui.project()` returns the id of the one open now). `ui.call(name, body, plugin)` may name another plugin's channel.

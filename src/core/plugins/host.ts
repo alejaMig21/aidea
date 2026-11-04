@@ -28,6 +28,7 @@ export type PluginContext = {
   data: { readonly dir: string };
   settings: { get: (key: string) => unknown };
   secrets: { get: (name: string) => string | undefined };
+  projects: { path: (id: string) => string | undefined };
   api: { handle: (name: string, fn: (body: any) => unknown) => void };
   effect: (undo: Undo) => void;
   log: (message: string) => void;
@@ -65,6 +66,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
   const declared = new Map<string, { owner: string; mode: "announce" | "ask"; version: number }>(); // events of active plugins, by full name
   const listeners = new Map<string, { owner: string; fn: (data: any) => unknown }[]>();
   const rules: { owner: string; fn: (action: any) => unknown }[] = [];
+  let projectPath: (id: string) => string | undefined = () => undefined; // set by the core once it holds the open Projects
   const handlers = new Map<string, (body: any) => unknown>(); // "<plugin id>\0<call name>" -> the handler
 
   const reason = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -122,6 +124,8 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
           return access.secrets.get(manifest.id, name);
         },
       },
+      // The folder of an open Project, by the id the window uses (undefined when it is not open).
+      projects: { path: (id) => projectPath(id) },
       // Named calls the interface half (or a test) can make to this plugin: POST /plugins/<id>/call/<name>.
       api: {
         handle: (name, fn) => {
@@ -320,6 +324,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
       const fn = handlers.get(`${id}\0${name}`);
       return fn ? (async () => fn(body))() : undefined;
     },
+    useProjects: (fn: (id: string) => string | undefined) => { projectPath = fn; },
     logs: () => logs.slice(),
     // What the plugins registered, to compare before and after (the test tool for plugin authors).
     registry: () => ({ services: [...services.keys()].sort(), events: [...declared.keys()].sort(), listeners: [...listeners.values()].reduce((n, l) => n + l.length, 0), rules: rules.length }),

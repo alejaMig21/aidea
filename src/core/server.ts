@@ -61,6 +61,7 @@ export async function startCore({ port, adapter: defaultAdapter = createClaudeAd
   const settings = createSettings(pluginsDir, secretStore);
   const pluginHost = createPluginHost([...(builtinPluginsDir ? [{ dir: builtinPluginsDir, builtin: true }] : []), ...(pluginsDir ? [{ dir: pluginsDir, builtin: false }] : [])], chosen, safeMode, settings);
   const quarantine = createQuarantine(pluginsDir);
+  pluginHost.useProjects((id) => core.projects.get(id)?.path);
   const core: Core = {
     adapter,
     learner,

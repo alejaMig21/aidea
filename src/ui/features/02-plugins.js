@@ -39,8 +39,11 @@ async function pluginUiActivate(id) {
   const ui = {
     plugin: { id },
     // A named call to the host half of this plugin; resolves with its answer or rejects with its message.
-    async call(name, body = {}) {
-      const res = await fetch(`/plugins/${encodeURIComponent(id)}/call/${encodeURIComponent(name)}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    // The id of the Project that is open now, or null.
+    project: () => (typeof current === "undefined" ? null : current),
+    // A named call to the host half of this plugin, or of another one (`plugin`); resolves with its answer or rejects with its message.
+    async call(name, body = {}, plugin = id) {
+      const res = await fetch(`/plugins/${encodeURIComponent(plugin)}/call/${encodeURIComponent(name)}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
       const answer = await res.json().catch(() => null);
       if (!res.ok) throw new Error(answer?.error ?? `the call "${name}" failed (${res.status})`);
       return answer;

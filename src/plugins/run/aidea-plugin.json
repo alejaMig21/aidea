@@ -1,0 +1,11 @@
+{
+  "id": "run",
+  "version": "0.1.0",
+  "title": "Run",
+  "description": "Play starts every program of the Project from its accepted run recipe, in order, and Stop ends them; their output goes to the Terminal.",
+  "publisher": "aidea",
+  "api": "0.1",
+  "main": "main.js",
+  "ui": "ui.js",
+  "capabilities": ["processes", "files", "network"]
+}
