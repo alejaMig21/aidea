@@ -1,5 +1,5 @@
 // The plugin host of the kernel: reads the plugin store, activates the host half of each plugin, and undoes everything a plugin added when it is deactivated.
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { API_VERSION, compatible, readManifest } from "./manifest.ts";
@@ -38,6 +38,16 @@ function combine(answers: { owner: string; answer: unknown }[]): Verdict {
   if (denies.length) return { decision: "deny", reason: denies.join("; ") };
   if (asks.length) return { decision: "ask", question: asks.join("; ") };
   return { decision: "allow" };
+}
+
+// A plugin is a folder of ES modules, but Node decides how to read a .js file from the nearest package.json, which may be one above the plugin store. The plugin gets its own:
+// one is written when it has none; one of its own must already say "type": "module".
+function asModule(folder: string) {
+  const file = join(folder, "package.json");
+  if (!existsSync(file)) { writeFileSync(file, JSON.stringify({ type: "module" })); return; }
+  let type: unknown;
+  try { type = JSON.parse(readFileSync(file, "utf8")).type; } catch { /* not JSON: treated as not a module */ }
+  if (type !== "module") throw new Error('the package.json of the plugin must say "type": "module" (plugins are ES modules)');
 }
 
 // `roots` are the folders that hold plugins: the ones that ship with aidea first (builtin), then the person's plugin store.
@@ -138,6 +148,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
       if (main) {
         const file = join(entry.folder, main);
         if (!existsSync(file)) throw new Error(`the host half "${main}" does not exist`);
+        if (!entry.builtin) asModule(entry.folder);
         const mod = await import(pathToFileURL(file).href);
         if (typeof mod.activate !== "function") throw new Error('the host half must export an "activate" function');
         const returned = await mod.activate(contextFor(entry));

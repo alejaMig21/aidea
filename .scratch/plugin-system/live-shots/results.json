@@ -1,0 +1,82 @@
+[
+ {
+  "name": "Panels menu lists Playback and not Run",
+  "ok": true,
+  "detail": "Builder, Files, Code, Canvas, Playback, Tutor, Terminal"
+ },
+ {
+  "name": "Terminal and Hello are in the menu list as expected",
+  "ok": true,
+  "detail": "Builder, Files, Code, Canvas, Playback, Tutor, Terminal"
+ },
+ {
+  "name": "Terminal appears full width below the other Panels",
+  "ok": true,
+  "detail": "{\"fullWidth\":true,\"below\":true,\"height\":236,\"text\":\"TerminalThe output of the programs you start with Play will \"}"
+ },
+ {
+  "name": "the selection control says Explain and Enter the Tutor",
+  "ok": true,
+  "detail": "Explain, Enter the Tutor"
+ },
+ {
+  "name": "Terminal is listed as a plugin that ships with aidea",
+  "ok": true,
+  "detail": "Terminal terminal 0.1.0 (ships with aidea) - active\nSwitch off\nRemove\n also delete its data"
+ },
+ {
+  "name": "both plugins wait in the quarantine with their scan",
+  "ok": true,
+  "detail": "[{\"title\":\"Loud one\",\"blocking\":2,\"installDisabled\":true},{\"title\":\"Hello live\",\"blocking\":0,\"installDisabled\":false}]"
+ },
+ {
+  "name": "the loud one cannot be installed before confirming",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "an installed plugin's Panel appears at once",
+  "ok": true,
+  "detail": "{\"inDock\":true,\"text\":\"Hello from a live plugin\"}"
+ },
+ {
+  "name": "a plugin with blocking findings installs after confirming each by name",
+  "ok": false,
+  "detail": "{\"message\":\"Loud one could not be installed: Cannot use import statement outside a module\",\"installed\":false}"
+ },
+ {
+  "name": "switching a plugin off takes its Panel away at once",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "switching it on brings the Panel back",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "plugin 07: switch off and on, remove asks for a restart (error)",
+  "ok": false,
+  "detail": "TimeoutError: page.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#pm-installed [data-plugin-id=\"live.loud\"] .pm-remove')\u001b[22m\n"
+ },
+ {
+  "name": "the emergency screen lists the plugins",
+  "ok": true,
+  "detail": "terminal, live.hello"
+ },
+ {
+  "name": "it switches a plugin off",
+  "ok": true,
+  "detail": "inactive"
+ },
+ {
+  "name": "after a restart the Terminal is where it was left (bottom) and the switched-off plugin stays off",
+  "ok": true,
+  "detail": "{\"terminal\":true,\"hello\":false}"
+ },
+ {
+  "name": "safe mode says so and the shipped Terminal still runs",
+  "ok": true,
+  "detail": "Safe mode is on: the plugins that do not ship with aidea are off. Restart aidea normally to use them. | terminal:active, live.hello:inactive"
+ }
+]

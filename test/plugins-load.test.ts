@@ -161,6 +161,28 @@ test("two folders with the same plugin id: the second is failed", async () => {
   } finally { t.core.close(); }
 });
 
+test("a plugin loads as an ES module even when a package.json above it says otherwise", async () => {
+  const store = join(scratch, `store${n++}`);
+  mkdirSync(join(store, "mod"), { recursive: true });
+  writeFileSync(join(store, "package.json"), JSON.stringify({ type: "commonjs" })); // what a folder above the store may hold
+  writeFileSync(join(store, "mod", "aidea-plugin.json"), JSON.stringify(base("fixture.mod")));
+  writeFileSync(join(store, "mod", "main.js"), `import { sep } from "node:path"; export function activate(ctx) { ctx.services.provide("fixture.mod", sep); }`);
+  const core = await startCore({ port: 0, pluginsDir: store, builtinPluginsDir: false });
+  try {
+    const { plugins } = (await (await fetch(core.url + "/plugins")).json()) as any;
+    assert.equal(plugins.find((p: any) => p.id === "fixture.mod")?.state, "active", JSON.stringify(plugins));
+  } finally { core.close(); }
+});
+
+test("a plugin that carries a package.json that is not a module is failed with that reason", async () => {
+  const t = await open({ cjs: { manifest: base("fixture.cjs"), files: { "main.js": GOOD, "package.json": JSON.stringify({ type: "commonjs" }) } } });
+  try {
+    const p = await t.byId("fixture.cjs");
+    assert.equal(p?.state, "failed");
+    assert.match(p?.reason ?? "", /type.*module/);
+  } finally { t.core.close(); }
+});
+
 test("folders that start with a dot and loose files in the store are not plugins", async () => {
   const t = await open({ ".quarantine": { manifest: base("fixture.hidden"), files: { "main.js": GOOD } }, good: { manifest: base("fixture.good"), files: { "main.js": GOOD.replace("fixture.hello", "fixture.g2") } } });
   try {

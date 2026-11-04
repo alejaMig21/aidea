@@ -11,7 +11,11 @@ function hashes(dir: string): Map<string, string> {
       const path = join(folder, entry.name), name = rel ? `${rel}/${entry.name}` : entry.name;
       const stat = lstatSync(path);
       if (stat.isDirectory()) walk(path, name);
-      else if (stat.isFile()) files.set(name, createHash("sha256").update(readFileSync(path)).digest("hex"));
+      else if (stat.isFile()) {
+        const bytes = readFileSync(path);
+        if (name === "package.json" && bytes.toString() === '{"type":"module"}') continue; // written by the kernel when the plugin loads (host.ts), not part of the plugin
+        files.set(name, createHash("sha256").update(bytes).digest("hex"));
+      }
     }
   };
   walk(dir, "");
