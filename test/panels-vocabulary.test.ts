@@ -15,8 +15,17 @@ test("the guide to aidea calls the areas of the window Panels, never columns, an
   const text = JSON.stringify(await (await t.get("/guide")).json());
   assert.doesNotMatch(text, /\bcolumns?\b/i);
   assert.doesNotMatch(text, /(Algorithms|Tutor)\\?" tab/, "the right slot has no tabs any more");
-  assert.match(text, /Run/);
+  assert.match(text, /Playback/);
+  assert.doesNotMatch(text, /\\?"Run\\?" panel/);
   assert.match(text, /panels?/i);
+});
+
+test("no text a person reads calls the Panel that runs one function Run: Run means running the whole project", () => {
+  const found: string[] = [];
+  for (const file of [...uiFiles, join(root, "src", "core", "guide.ts"), join(root, "src", "core", "layer-help.ts")]) {
+    for (const l of lines(file)) if (/"Run" panel|\bRun panel\b|\bthe Run (card|Panel)\b|to use Run\b|title: "Run"/.test(l.text)) found.push(`${file.slice(root.length + 1)}:${l.n}: ${l.text.trim().slice(0, 110)}`);
+  }
+  assert.deepEqual(found, [], `the Panel is still called Run:\n${found.join("\n")}`);
 });
 
 test("no text a person reads names an area of the window a column or the Run panel the Algorithm column", () => {
@@ -58,8 +67,10 @@ test("there is no Code layer: no tab, no layer id, no legend, and no layer help 
   assert.equal((await t.post("/tutor/classes", { project: "x", layer: "code" })).status, 400);
 });
 
-test("the glossary defines Panel, Layout, Preset and Run, and no longer defines Column, Algorithm column or Tutor column", () => {
+test("the glossary defines Panel, Layout, Preset and Playback, and no longer defines Column, Algorithm column or Tutor column", () => {
   const glossary = readFileSync(join(root, "GLOSSARY.md"), "utf8");
-  for (const term of ["Panel", "Layout", "Preset", "Run"]) assert.match(glossary, new RegExp(`^\\*\\*${term}\\*\\*:`, "m"), `${term} is defined`);
+  for (const term of ["Panel", "Layout", "Preset", "Playback"]) assert.match(glossary, new RegExp(`^\\*\\*${term}\\*\\*:`, "m"), `${term} is defined`);
+  const run = /^\*\*Run\*\*:\n(.*)/m.exec(glossary)?.[1] ?? "";
+  assert.doesNotMatch(run, /open function/, "Run no longer names the Panel of one function: that is Playback");
   for (const term of ["Column", "Algorithm column", "Tutor column"]) assert.doesNotMatch(glossary, new RegExp(`^\\*\\*${term}\\*\\*:`, "m"), `${term} is retired`);
 });

@@ -111,7 +111,9 @@ test("the Panels menu lists every Panel with a check mark; a Panel that cannot b
     assert.equal(e.disabled, conditional.has(e.title), `${e.title} is unusable only when it depends on something`);
     assert.equal(e.reason !== "", e.disabled, `${e.title}: a reason is shown exactly when it cannot be used`);
   }
-  assert.match(entries.find((e) => e.title === "Run")!.reason, /Flow/);
+  assert.match(entries.find((e) => e.title === "Playback")!.reason, /Flow/);
+  assert.match(entries.find((e) => e.title === "Playback")!.reason, /to use Playback/);
+  assert.ok(!entries.some((e) => e.title === "Run"), "the Panel is not called Run any more: Run means running the whole project");
   // The check mark is drawn only for a Panel that is on screen (it was once drawn on every row).
   assert.ok(entries.every((e) => e.markVisible === (e.checked === "true")), "a check mark appears exactly on the checked rows");
 });
