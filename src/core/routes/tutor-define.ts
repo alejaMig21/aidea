@@ -3,7 +3,7 @@
 // The text is data: it is sent as one quoted string and the instructions say never to obey it.
 import { callRole } from "../learner-pipeline.ts";
 import { currentChoice } from "./agent-options.ts";
-import { MAX_SELECTION, validSelection } from "../select.ts";
+import { limitOf, sourceProblem, validSelection } from "../select.ts";
 import type { Handler } from "../types.ts";
 
 const DEFINE_INSTRUCTIONS =
@@ -23,7 +23,9 @@ const handler: Handler = async (req, res, core) => {
   const project = typeof body?.project === "string" ? core.projects.get(body.project) : undefined;
   if (!project) return reject(400, "project must be a Project that is already open");
   const text = body?.text;
-  if (!validSelection(text)) return reject(400, `text must be the selected text, at most ${MAX_SELECTION} characters`);
+  const bad = sourceProblem(body?.source);
+  if (bad) return reject(400, bad);
+  if (!validSelection(text, body?.source)) return reject(400, `text must be the selected text, at most ${limitOf(body?.source)} characters`);
   try {
     const out = (await callRole(core.adapter, "definer", DEFINE_INSTRUCTIONS, `Selected text: ${JSON.stringify(text.trim())}`, DEFINE_SCHEMA, currentChoice(core, project.id).tutorModel)) as { definition?: unknown };
     if (typeof out?.definition !== "string" || !out.definition.trim()) throw new Error("the definer returned no definition");

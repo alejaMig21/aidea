@@ -4,6 +4,7 @@
 // the selected text only travels as data. Names are prefixed "select" because every feature file shares one global scope.
 {
   const MAX = 2000; // the core's limit on a selection
+  const MAX_TERMINAL = 8000; // the core's limit on text selected in the terminal (the Terminal marks its log with data-selection-source="terminal")
   const style = document.createElement("style");
   style.textContent = `
     #select-pop { position: fixed; z-index: 30; max-width: 320px; padding: 6px; background: var(--panel); border: 1px solid var(--accent); border-radius: 10px; box-shadow: 0 10px 28px #0009; font-size: 13px; color: var(--text); }
@@ -30,7 +31,7 @@
   pop.append(row, said, hint);
   document.body.append(pop);
 
-  let text = "", token = 0;
+  let text = "", source, token = 0; // text is what would be sent; source is "terminal" for text selected there
   const hide = () => { pop.hidden = true; said.hidden = true; said.textContent = ""; text = ""; token++; };
 
   // Is the selection in a box the person types in? Those never offer the control.
@@ -39,19 +40,26 @@
     return !!el?.closest?.("input, textarea, select, [contenteditable]:not([contenteditable='false'])");
   };
 
+  const inTerminal = (node) => !!(node?.nodeType === 1 ? node : node?.parentElement)?.closest?.('[data-selection-source="terminal"]');
+
   function check() {
     const sel = window.getSelection();
     const picked = sel?.toString().trim() ?? "";
     if (!picked || !sel.rangeCount || !current || typing(sel.anchorNode) || typing(sel.focusNode) || typing(document.activeElement)) return;
     if (pop.contains(sel.anchorNode)) return;
-    if (picked !== text) { token++; said.hidden = true; } // a definition still on its way belongs to the old selection
-    text = picked;
-    const tooLong = picked.length > MAX;
+    // A long traceback keeps its END, where the error is: the control says it cut the start.
+    const fromTerminal = inTerminal(sel.anchorNode) && inTerminal(sel.focusNode);
+    const cut = fromTerminal && picked.length > MAX_TERMINAL;
+    const sent = cut ? picked.slice(-MAX_TERMINAL) : picked;
+    if (sent !== text) { token++; said.hidden = true; } // a definition still on its way belongs to the old selection
+    text = sent;
+    source = fromTerminal ? "terminal" : undefined;
+    const tooLong = !fromTerminal && picked.length > MAX;
     const busy = window.tutorUi?.isRunning();
     define.disabled = tooLong;
     enter.disabled = tooLong || busy;
-    hint.textContent = tooLong ? `Select less text: up to ${MAX} characters.` : "A class is running: end it to start another.";
-    hint.hidden = !(tooLong || busy);
+    hint.textContent = tooLong ? `Select less text: up to ${MAX} characters.` : cut ? `Only the last ${MAX_TERMINAL} characters are sent: the start was cut.` : "A class is running: end it to start another.";
+    hint.hidden = !(tooLong || cut || busy);
     pop.hidden = false;
     const r = sel.getRangeAt(0).getBoundingClientRect();
     const w = pop.offsetWidth, h = pop.offsetHeight;
@@ -67,13 +75,13 @@
   pop.addEventListener("mousedown", (e) => e.preventDefault()); // keeps the selection while a button is pressed
 
   define.onclick = async () => {
-    const mine = ++token, project = current, asked = text;
+    const mine = ++token, project = current, asked = text, from = source;
     define.disabled = true; // the answer re-enables it only if the selection has not changed meanwhile
     said.className = "said";
     said.textContent = "Defining…";
     said.hidden = false;
     try {
-      const res = await fetch("/tutor/define", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ project, text: asked }) });
+      const res = await fetch("/tutor/define", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ project, text: asked, source: from }) });
       const body = await res.json().catch(() => ({}));
       if (mine !== token) return;
       said.className = res.ok ? "said" : "said error";
@@ -83,13 +91,13 @@
       said.className = "said error";
       said.textContent = `Could not reach the core: ${err.message}`;
     }
-    define.disabled = text.length > MAX;
+    define.disabled = !source && text.length > MAX;
   };
   enter.onclick = () => {
-    const asked = text, project = current;
+    const asked = text, project = current, from = source;
     hide();
     window.getSelection()?.removeAllRanges();
-    window.tutorUi?.startClass({ payload: { project, selection: asked } });
+    window.tutorUi?.startClass({ payload: { project, selection: asked, source: from } });
   };
   document.addEventListener("project-opened", hide);
 }
