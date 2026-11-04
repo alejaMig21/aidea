@@ -4,11 +4,13 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { readManifest } from "./manifest.ts";
 import type { Manifest } from "./manifest.ts";
+import { createPluginState } from "./state.ts";
+import type { PluginState as Chosen } from "./state.ts";
 
 export type PluginState = "active" | "inactive" | "failed";
-export type PluginInfo = { id: string; title: string; version: string; state: PluginState; reason?: string; ui: boolean; builtin: boolean }; // `ui`: it has an interface half; `builtin`: it ships with aidea
+export type PluginInfo = { id: string; title: string; version: string; state: PluginState; reason?: string; ui: boolean; builtin: boolean; required: boolean }; // `ui`: it has an interface half; `builtin`: it ships with aidea; `required`: it ships with aidea and cannot be removed or switched off
 type Undo = () => unknown;
-type Entry = { id: string; folder: string; builtin: boolean; manifest?: Manifest; state: PluginState; reason?: string; undo: Undo[]; returned?: Undo }; // `returned`: what `activate` returned, run after every other undo
+type Entry = { id: string; folder: string; builtin: boolean; manifest?: Manifest; state: PluginState; reason?: string; undo: Undo[]; returned?: Undo; ran?: boolean }; // `ran`: its code was activated in this session; `returned`: what `activate` returned, run after every other undo
 
 // What an event listener or a guard rule may answer. Only "deny" and "ask" count; anything else, an "allow" included, is ignored (a plugin can only tighten).
 export type Verdict = { decision: "allow" } | { decision: "deny"; reason: string } | { decision: "ask"; question: string };
@@ -39,7 +41,7 @@ function combine(answers: { owner: string; answer: unknown }[]): Verdict {
 }
 
 // `roots` are the folders that hold plugins: the ones that ship with aidea first (builtin), then the person's plugin store.
-export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []) {
+export function createPluginHost(roots: { dir: string; builtin: boolean }[] = [], chosen: Chosen = createPluginState()) {
   const entries = new Map<string, Entry>();
   const services = new Map<string, { owner: string; value: unknown }>();
   const logs: { plugin: string; message: string }[] = [];
@@ -112,6 +114,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
     const entry = entries.get(id);
     if (!entry || !entry.manifest || entry.state === "active") return entry;
     const { main } = entry.manifest;
+    entry.ran = true;
     try {
       for (const [name, d] of Object.entries(entry.manifest.events)) {
         const full = `${entry.id}/${name}`;
@@ -156,6 +159,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
           continue;
         }
         const { manifest } = read;
+        if (chosen.removed.has(manifest.id)) continue; // a plugin that ships with aidea and was removed by the person
         if (entries.has(manifest.id)) {
           entries.set(`${name}#${entries.size}`, { id: name, folder, builtin, state: "failed", reason: `the plugin id "${manifest.id}" is already used by another folder`, undo: [] });
           continue;
@@ -163,7 +167,11 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
         entries.set(manifest.id, { id: manifest.id, folder, builtin, manifest, state: "inactive", undo: [] });
       }
     }
-    for (const [key, entry] of [...entries]) if (!key.includes("#")) await activate(entry.id);
+    for (const [key, entry] of [...entries]) {
+      if (key.includes("#")) continue;
+      if (chosen.disabled.has(entry.id) && !entry.manifest?.required) { entry.reason = SWITCHED_OFF; continue; }
+      await activate(entry.id);
+    }
   }
 
   // Adds a plugin folder that was installed after the start, and activates it.
@@ -183,10 +191,15 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
     entries.delete(id);
   }
 
-  const info = (e: Entry): PluginInfo => ({ id: e.id, title: e.manifest?.title ?? e.id, version: e.manifest?.version ?? "", state: e.state, ...(e.reason ? { reason: e.reason } : {}), ui: !!e.manifest?.ui, builtin: e.builtin });
+  const info = (e: Entry): PluginInfo => ({ required: !!e.manifest?.required && e.builtin, id: e.id, title: e.manifest?.title ?? e.id, version: e.manifest?.version ?? "", state: e.state, ...(e.reason ? { reason: e.reason } : {}), ui: !!e.manifest?.ui, builtin: e.builtin });
 
   return {
     loadAll,
+    // The person switched it off: its reason says so.
+    switchedOff: (id: string) => { const e = entries.get(id); if (e) e.reason = SWITCHED_OFF; },
+    ran: (id: string) => entries.get(id)?.ran === true,
+    entry: (id: string) => { const e = entries.get(id); return e && !id.includes("#") ? info(e) : undefined; },
+    folderOf: (id: string) => entries.get(id)?.folder,
     activate,
     deactivate,
     register,
@@ -223,4 +236,5 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
   };
 }
 
+export const SWITCHED_OFF = "switched off by you";
 export type PluginHost = ReturnType<typeof createPluginHost>;

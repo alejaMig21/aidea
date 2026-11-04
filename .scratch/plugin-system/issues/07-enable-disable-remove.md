@@ -6,8 +6,8 @@
 
 **Status:** ready-for-agent
 
-- [ ] Enable and disable apply live; removing a plugin that never ran in this session applies live.
-- [ ] Removing or updating a plugin whose code already ran reports restart required and shows the button.
-- [ ] Removal asks to delete the data, "keep" being the default; the data stays when kept.
-- [ ] A saved Layout survives the removal of a plugin whose Panel was in it.
-- [ ] Core API and page tests pass; `npm run verify` is green.
+- [x] Enable and disable apply live; removing a plugin that never ran in this session applies live.
+- [x] Removing or updating a plugin whose code already ran reports restart required and shows the button.
+- [x] Removal asks to delete the data, "keep" being the default; the data stays when kept.
+- [x] A saved Layout survives the removal of a plugin whose Panel was in it.
+- [x] Core API and page tests pass; `npm run verify` is green.

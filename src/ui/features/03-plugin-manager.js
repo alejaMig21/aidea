@@ -98,10 +98,39 @@ function pmQuarantineRow(entry) {
   return row;
 }
 
+// What an operation of the manager answered (applied, failed, restart-required) as a sentence; a restart comes with its button.
+function pmReport(what, body) {
+  if (body.status === "restart-required") {
+    pmMessage(`${what}. It needs a restart of aidea to be complete.`);
+    const restart = pmEl("button", { type: "button", className: "pm-restart" }, "Restart aidea");
+    restart.onclick = () => (window.aidea?.restart ? window.aidea.restart() : pmMessage("Close aidea and open it again."));
+    document.getElementById("pm-message").append(" ", restart);
+  } else pmMessage(body.status === "applied" ? `${what}.` : `${what} failed: ${body.reason ?? body.error ?? "unknown reason"}`);
+}
+
 function pmInstalledRow(p) {
   const row = pmEl("div", { className: "pm-row" }, pmEl("span", { className: "pm-title" }, p.title), " ", pmEl("span", { className: "pm-meta" }, `${p.id} ${p.version}${p.builtin ? " (ships with aidea)" : ""} - ${p.state}${p.reason ? `: ${p.reason}` : ""}`));
   row.dataset.pluginId = p.id;
   row.dataset.state = p.state;
+  const act = async (path, body, what) => {
+    const { body: answer } = await pmJson("POST", path, body);
+    await pluginsSync(); // a Panel appears or goes at once
+    await pmRefresh();
+    pmReport(what, answer); // after the refresh, which does not touch the message
+  };
+  const actions = pmEl("div", { className: "pm-actions" });
+  if (!p.required) {
+    const on = p.state === "active";
+    const toggle = pmEl("button", { type: "button", className: on ? "pm-disable" : "pm-enable" }, on ? "Switch off" : "Switch on");
+    toggle.onclick = () => act(on ? "/plugins/disable" : "/plugins/enable", { id: p.id }, on ? `${p.title} is switched off` : `${p.title} is switched on`);
+    const data = pmEl("input", { type: "checkbox" });
+    data.dataset.deleteData = "";
+    data.setAttribute("aria-label", `Also delete the data of ${p.title}`);
+    const remove = pmEl("button", { type: "button", className: "pm-remove" }, "Remove");
+    remove.onclick = () => act("/plugins/remove", { id: p.id, deleteData: data.checked }, `${p.title} is removed`);
+    actions.append(toggle, remove, pmEl("label", { className: "pm-meta" }, data, " also delete its data"));
+  } else actions.append(pmEl("span", { className: "pm-meta" }, "Required: it cannot be switched off or removed."));
+  row.append(actions);
   return row;
 }
 

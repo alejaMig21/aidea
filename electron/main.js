@@ -13,6 +13,12 @@ ipcMain.handle("pick-folder", async (e) => {
   const { canceled, filePaths } = await dialog.showOpenDialog(BrowserWindow.fromWebContents(e.sender), { properties: ["openDirectory"] });
   return canceled ? null : filePaths[0];
 });
+// A change to the plugins that needs a restart (removing code that already ran): the core and the window start again.
+ipcMain.handle("restart-app", () => {
+  core.kill();
+  app.relaunch();
+  app.exit(0);
+});
 Menu.setApplicationMenu(null); // the default File/Edit/View/Window menu has nothing aidea needs
 
 function openWindow(url) {

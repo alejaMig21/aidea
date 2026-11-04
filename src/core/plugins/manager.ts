@@ -2,6 +2,7 @@
 import { cpSync, existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import type { PluginHost, PluginInfo } from "./host.ts";
+import type { PluginState } from "./state.ts";
 import type { Quarantine } from "./quarantine.ts";
 
 // The status words every operation of the manager answers with.
@@ -14,10 +15,54 @@ export class ManagerError extends Error {
   constructor(status: number, message: string, extra: Record<string, unknown> = {}) { super(message); this.status = status; this.extra = extra; }
 }
 
-export function createManager(host: PluginHost, quarantine: Quarantine, store?: string) {
+export function createManager(host: PluginHost, quarantine: Quarantine, store: string | undefined, chosen: PluginState) {
   let busy = false; // one change to the plugin store at a time
 
+  // The plugin must exist; a required one cannot be switched off or removed.
+  function known(id: string, changing = false) {
+    const plugin = host.entry(id);
+    if (!plugin) throw new ManagerError(404, "No plugin with that id");
+    if (changing && plugin.required) throw new ManagerError(409, `"${id}" ships with aidea and is required: it cannot be switched off or removed`);
+    return plugin;
+  }
+  const exclusive = async <T,>(work: () => Promise<T>) => {
+    if (busy) throw new ManagerError(409, "Another change to the plugin store is running; try again in a moment");
+    busy = true;
+    try { return await work(); } finally { busy = false; }
+  };
+
   return {
+    // Switches a plugin on; the choice is kept for the next start.
+    enable: (id: string) => exclusive(async (): Promise<{ status: Status; plugin?: PluginInfo; reason?: string }> => {
+      known(id);
+      chosen.disabled.delete(id);
+      chosen.save();
+      await host.activate(id);
+      const plugin = host.entry(id)!;
+      return plugin.state === "active" ? { status: "applied", plugin } : { status: "failed", plugin, reason: plugin.reason };
+    }),
+    // Switches a plugin off at once (its undo is total); the choice is kept for the next start.
+    disable: (id: string) => exclusive(async (): Promise<{ status: Status; plugin?: PluginInfo }> => {
+      known(id, true);
+      await host.deactivate(id);
+      host.switchedOff(id);
+      chosen.disabled.add(id);
+      chosen.save();
+      return { status: "applied", plugin: host.entry(id) };
+    }),
+    // Takes a plugin out. Code that already ran in this session stays in memory (Node cannot unload it), so that asks for a restart. The data is kept unless asked.
+    remove: (id: string, deleteData = false) => exclusive(async (): Promise<{ status: Status }> => {
+      const plugin = known(id, true);
+      const ran = host.ran(id);
+      const folder = host.folderOf(id);
+      await host.unregister(id);
+      if (plugin.builtin) chosen.removed.add(id); // the files ship with aidea: they stay, the plugin is simply not loaded any more
+      else if (folder) rmSync(folder, { recursive: true, force: true });
+      chosen.disabled.delete(id);
+      chosen.save();
+      if (deleteData && store) rmSync(join(store, ".data", id), { recursive: true, force: true });
+      return { status: ran ? "restart-required" : "applied" };
+    }),
     async install(qid: string, confirm: string[] = []): Promise<{ status: Status; plugin?: PluginInfo; reason?: string }> {
       if (!store) throw new ManagerError(400, "This core has no plugin store");
       const entry = quarantine.get(qid);

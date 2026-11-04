@@ -9,6 +9,23 @@ const handler: Handler = async (req, res, core) => {
     core.send(res, 200, { plugins: core.plugins.list(), services: core.plugins.services(), events: core.plugins.eventList() });
     return true;
   }
+  // Switch a plugin on or off, or take it out. Each answers with a status: applied, failed or restart-required.
+  const change = req.method === "POST" ? /^\/plugins\/(enable|disable|remove)$/.exec(req.url ?? "")?.[1] : undefined;
+  if (change) {
+    const body = (await core.readJson(req, res)) as { id?: unknown; deleteData?: unknown } | null | undefined;
+    if (body === undefined) return true;
+    if (typeof body?.id !== "string" || (body.deleteData !== undefined && typeof body.deleteData !== "boolean")) {
+      core.send(res, 400, { error: "send the id of a plugin (and, to remove, optionally deleteData as true or false)" });
+      return true;
+    }
+    try {
+      core.send(res, 200, await (change === "remove" ? core.manager.remove(body.id, body.deleteData === true) : change === "enable" ? core.manager.enable(body.id) : core.manager.disable(body.id)));
+    } catch (e) {
+      if (!(e instanceof ManagerError)) throw e;
+      core.send(res, e.status, { error: e.message, ...e.extra });
+    }
+    return true;
+  }
   // Installs a plugin from the quarantine. `confirm` lists the keys of the blocking findings the person confirms by name.
   if (req.method === "POST" && req.url === "/plugins/install") {
     const body = (await core.readJson(req, res)) as { id?: unknown; confirm?: unknown } | null | undefined;

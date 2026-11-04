@@ -118,6 +118,16 @@ test("a folder added from the screen lands in the quarantine, and an address tha
   assert.notEqual(page.refused, "");
 });
 
+test("switching a plugin off from its row takes its Panel away at once, and switching it on brings it back", { skip }, () => {
+  assert.deepEqual([page.off.state, page.off.panelGone], ["inactive", true]);
+  assert.deepEqual([page.on.state, page.on.panelBack], ["active", true]);
+});
+
+test("removing a plugin that already ran says a restart is needed and offers the button; its Panel is gone", { skip }, () => {
+  assert.deepEqual([page.removed.gone, page.removed.panelGone, page.removed.restartButton], [true, true, true]);
+  assert.match(page.removed.message, /restart/i);
+});
+
 test("Escape closes the manager and the button opens it again", { skip }, () => {
   assert.deepEqual([page.closed, page.reopened], [true, true]);
 });

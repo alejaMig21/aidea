@@ -45,6 +45,18 @@ const pmPanelRow = (title) => [...document.querySelectorAll("#panels-menu [role=
     document.getElementById("pm-add").click();
     await pmUntil(() => (document.getElementById("pm-message")?.textContent ?? "") !== "");
     report.refused = document.getElementById("pm-message").textContent;
+    // Switching a plugin off and on again from its row takes its Panel away and brings it back at once.
+    const clean = () => document.querySelector('#pm-installed [data-plugin-id="fixture.clean"]');
+    clean().querySelector(".pm-disable").click();
+    await pmUntil(() => clean()?.dataset.state === "inactive" && !pmPanelRow("Installed live"));
+    report.off = { state: clean()?.dataset.state, panelGone: !pmPanelRow("Installed live") };
+    clean().querySelector(".pm-enable").click();
+    await pmUntil(() => clean()?.dataset.state === "active" && pmPanelRow("Installed live"));
+    report.on = { state: clean()?.dataset.state, panelBack: !!pmPanelRow("Installed live") };
+    // Removing code that already ran asks for a restart, with the button.
+    clean().querySelector(".pm-remove").click();
+    await pmUntil(() => !clean() && document.querySelector("#pm-message .pm-restart"));
+    report.removed = { gone: !clean(), panelGone: !pmPanelRow("Installed live"), restartButton: !!document.querySelector("#pm-message .pm-restart"), message: document.getElementById("pm-message").textContent };
     // Escape closes it, the button opens it again.
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     await pmWait(100);
