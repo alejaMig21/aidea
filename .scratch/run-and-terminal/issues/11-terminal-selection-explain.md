@@ -4,7 +4,7 @@
 
 **Blocked by:** 02, 05.
 
-**Status:** built and tested; live check pending
+**Status:** done, checked live in Electron on the second monitor (2026-11-04)
 
 - [x] Selecting text in a tab shows the control with the two buttons; selecting elsewhere keeps the 2000 character limit.
 - [x] A terminal selection of 8000 characters or fewer is sent whole; a longer one is sent as its last 8000 characters and the control says so.
@@ -12,4 +12,4 @@
 - [x] Text that looks like an instruction ("ignore your rules...") is treated as data (a test with such text).
 - [x] Nothing from the terminal reaches the Tutor or the Builder unless a button is pressed.
 - [x] Core API tests and page tests pass (test/select-text.test.ts, test/terminal-select-page.test.ts).
-- [ ] Verified live on the second monitor.
+- [x] Verified live on the second monitor. (live: real mouse selection of 15915 chars says the start was cut (shots/11-12-terminal-selection.png); Explain and Enter the Tutor not pressed (they call the real model))

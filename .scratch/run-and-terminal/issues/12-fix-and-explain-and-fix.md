@@ -4,11 +4,11 @@
 
 **Blocked by:** 11.
 
-**Status:** built and tested; live check pending
+**Status:** done, checked live in Electron on the second monitor (2026-11-04)
 
 - [x] The terminal and the Code panel show four buttons; the other Panels show two.
 - [x] "Fix" sends the selection to the Builder as data together with the Contract it already respects; the Builder's change still goes through the usual permission cards and Proposals.
 - [x] "Explain and fix" produces the Tutor's explanation and the Builder's work from the same selection.
 - [x] The same limit, secret check (ticket 13) and data-only rule apply as for "Explain".
 - [x] Core API tests with a fake Builder and page tests pass (test/fix-selection.test.ts, test/fix-buttons-page.test.ts).
-- [ ] Verified live on the second monitor.
+- [x] Verified live on the second monitor. (live: four buttons in the terminal, two elsewhere; Fix and Explain and fix not pressed (they call the real Builder and Tutor))

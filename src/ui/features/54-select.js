@@ -107,7 +107,9 @@
     hint.textContent = tooLong ? `Select less text: up to ${MAX} characters.` : cut ? `Only the last ${MAX_TERMINAL} characters are sent: the start was cut.` : busy ? "A class is running: end it to start another." : "The Builder is answering: wait for it to finish.";
     hint.hidden = !(tooLong || cut || busy || builderBusy);
     pop.hidden = false;
-    const r = sel.getRangeAt(0).getBoundingClientRect();
+    // Next to where the selection ends (the last line of it), not to the box around all of it: a long selection reaches far above the screen.
+    const range = sel.getRangeAt(0), lines = range.getClientRects();
+    const r = lines.length ? lines[lines.length - 1] : range.getBoundingClientRect();
     const w = pop.offsetWidth, h = pop.offsetHeight;
     pop.style.left = `${Math.max(8, Math.min(r.left, innerWidth - w - 8))}px`;
     pop.style.top = `${r.bottom + 8 + h > innerHeight ? Math.max(8, r.top - h - 8) : r.bottom + 8}px`;

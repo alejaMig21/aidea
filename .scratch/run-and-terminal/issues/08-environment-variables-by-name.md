@@ -4,11 +4,11 @@
 
 **Blocked by:** 05.
 
-**Status:** done in the core (tests green); live check on the second monitor pending
+**Status:** done, checked live in Electron on the second monitor (2026-11-04)
 
 - [x] A part receives the variables it lists, with the values from the Project's environment file, and no others from that file.
 - [x] A recipe that contains a value instead of a name is refused when it is validated.
 - [x] A missing variable fails that part with a message that names it, following the failure rules of the start order once ticket 06 exists.
 - [x] The values appear nowhere in the preferences file, the recipe, the page or the logs of the core.
 - [x] Core API tests with a test environment file pass.
-- [ ] Verified live on the second monitor.
+- [x] Verified live on the second monitor. (live: a missing variable is named in Play (shots/08-missing-variable.png))

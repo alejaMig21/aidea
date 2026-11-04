@@ -4,11 +4,11 @@
 
 **Blocked by:** 11.
 
-**Status:** built and tested; live check pending
+**Status:** done, checked live in Electron on the second monitor (2026-11-04)
 
 - [x] Text with a recognised secret pattern asks for confirmation; cancelling sends nothing.
 - [x] Confirming sends the text exactly as selected.
 - [x] Ordinary error text (a traceback, a stack trace) does not trigger the warning in a set of real examples.
 - [x] The check applies to every Panel's selection, not only the terminal.
 - [x] Page tests cover the warning, the cancel and the confirm (test/secret-warning-page.test.ts).
-- [ ] Verified live on the second monitor.
+- [x] Verified live on the second monitor. (live: Fix on a secret line asks first and Cancel sends nothing (shots/13-secret-warning.png))
