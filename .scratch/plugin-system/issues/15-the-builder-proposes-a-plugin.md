@@ -10,3 +10,5 @@
 - [x] The proposal opens the manager on that plugin with its report.
 - [x] A fixture plugin that tries to call the install operation is refused.
 - [x] Core API tests with a fake Builder pass; `npm run verify` is green.
+
+Live check (2026-11-04, Electron, primary screen): the manager opened on a plugin proposed to the quarantine (the real Builder was not driven: a fake proposal event was used). Script: live-shots2/results.json (17 of 17).

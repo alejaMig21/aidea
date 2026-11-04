@@ -10,3 +10,5 @@
 - [x] The Panel and guard-rule contract tests run against the built-in Terminal plugin and a fixture.
 - [x] It is documented in the skill and in `docs/plugin-api.md`.
 - [x] `npm run verify` is green.
+
+Not verified live: it is a developer tool run from tests; the Terminal plugin passes it in the suite.

@@ -13,3 +13,5 @@
 
 ## Live check
 Not verified live yet: the behaviour is covered by core API tests; the manager screen shows the update difference but that path was not clicked through in Electron.
+
+Live check (2026-11-04, Electron, primary screen): the new version waited in the quarantine as a difference (1 added, 2 changed files) with an Update button; version 1 stayed until confirmed; since it had already run, version 2 waits for a restart and says so. Script: live-shots2/results.json (17 of 17).

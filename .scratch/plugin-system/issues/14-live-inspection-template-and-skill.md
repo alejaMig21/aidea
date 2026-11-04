@@ -10,3 +10,5 @@
 - [x] The template, copied unchanged into the quarantine, passes the scan and installs.
 - [x] The skill says: start small, inspect the live app, copy the template, check, stop.
 - [x] Core API tests pass; `npm run verify` is green.
+
+Live check (2026-11-04, Electron, primary screen): GET /plugins/inspect and /plugins/skill answered in the running app. Script: live-shots2/results.json (17 of 17).

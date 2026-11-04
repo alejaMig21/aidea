@@ -13,3 +13,5 @@
 
 ## Live check
 Not verified live yet: the behaviour is covered by core API tests; the manager screen shows the update difference but that path was not clicked through in Electron.
+
+Live check (2026-11-04, Electron, primary screen): a plugin whose service went away waited with the reason, and started by itself when the service came back. Script: live-shots2/results.json (17 of 17).

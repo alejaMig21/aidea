@@ -17,3 +17,5 @@
 
 ## Live check
 Not verified live yet: the behaviour is covered by core API tests; the manager screen shows the update difference but that path was not clicked through in Electron.
+
+Not verified live: needs a real Builder permission request. Core tests cover it.

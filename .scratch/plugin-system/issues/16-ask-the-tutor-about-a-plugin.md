@@ -12,3 +12,5 @@
 - [x] Core API tests with a fake Tutor pass; `npm run verify` is green.
 
 Note: the "Ask the Tutor" button in the manager is not built yet (needs a plugin payload in the Tutor class start); the Tutor tool and its tests are.
+
+Not verified live: needs a real Tutor conversation. Core tests cover it.

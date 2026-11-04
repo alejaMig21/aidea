@@ -1,0 +1,87 @@
+[
+ {
+  "name": "inspection lists API 0.1, the layout.panel slot, capabilities, tokens",
+  "ok": true,
+  "detail": "{\"api\":\"0.1\",\"slots\":1,\"tokens\":21}"
+ },
+ {
+  "name": "inspection shows the shipped Terminal plugin",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "the skill is served and says to start small",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "the form saved the valid values",
+  "ok": true,
+  "detail": "{\"mood\":\"lively\",\"count\":9,\"token\":{\"set\":true}}"
+ },
+ {
+  "name": "the secret is reported only as set, and the answer does not contain it",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "the secret is not left in the page",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "a bad value names the field and saves nothing",
+  "ok": true,
+  "detail": "must be one of: calm, lively"
+ },
+ {
+  "name": "no file in the plugin store holds the secret",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "the data folder is the plugin's own",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "a plugin whose service is there starts",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "when the service goes away the plugin that needs it waits, with the reason",
+  "ok": true,
+  "detail": "{\"required\":false,\"id\":\"live.needy\",\"title\":\"Needy one\",\"version\":\"1.0.0\",\"state\":\"inactive\",\"reason\":\"needs the service \\\"live.svc\\\"\",\"ui\":false,\"builtin\":false,\"settings\":false}"
+ },
+ {
+  "name": "it starts by itself when the service is back",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "the events it declares are listed",
+  "ok": true,
+  "detail": "[{\"name\":\"live.needy/woke\",\"owner\":\"live.needy\",\"mode\":\"announce\",\"version\":1}]"
+ },
+ {
+  "name": "the new version waits as an update with its difference",
+  "ok": true,
+  "detail": "{\"text\":\"Upd live\\nlive.upd 2.0.0 by live check. Made for the live check.\\nC:\\\\Users\\\\aleja\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Projects-aidea\\\\3af1c459-9050-4064-be0e-71c92620f6e0\\\\scratchpad\\\\live19\\\\data-plugins2\\\\inbox\\\\upd\\nUpdate from 1.0.0 to 2.0.0. Files: 1 added, 0 removed, 2 changed. New capabilities: none.\\nUpdate\\nDiscard\",\"button\":\"Update\"}"
+ },
+ {
+  "name": "until confirmed, version 1 stays",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "after confirming, the plugin had already run, so version 2 waits for a restart and says so",
+  "ok": true,
+  "detail": "{\"required\":false,\"id\":\"live.upd\",\"title\":\"Upd live\",\"version\":\"1.0.0\",\"state\":\"inactive\",\"reason\":\"updated to 2.0.0: restart aidea to run it\",\"ui\":true,\"builtin\":false,\"settings\":false}"
+ },
+ {
+  "name": "the manager opens, says the Builder proposed it and lists it in the quarantine",
+  "ok": true,
+  "detail": "{\"open\":true,\"message\":\"The Builder proposed the plugin \\\"Written by the Builder\\\". Read what the scan found, then install it or discard it.\",\"row\":true}"
+ }
+]

@@ -12,3 +12,5 @@
 - [x] Core API and page tests pass; `npm run verify` is green.
 
 Note: the default secret store keeps secrets in memory (they last until aidea closes). The core runs as a child process of the window and cannot reach Electron safeStorage; a bridge from the window is still to build. startCore takes a `secretStore` for an embedder that can.
+
+Live check (2026-11-04, Electron, primary screen): the settings form was drawn from the schema, saved valid values, named a bad field and saved nothing; the secret was never in the page, the answers or any file of the plugin store. Script: live-shots2/results.json (17 of 17).
