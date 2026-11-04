@@ -1,9 +1,33 @@
+import { readFileSync } from "node:fs";
 import type { Handler } from "../types.ts";
 
 // The plugin host of the kernel (src/core/plugins). Activate and deactivate are the first operations of the plugin manager; ticket 07 adds the rest.
 const handler: Handler = async (req, res, core) => {
   if (req.method === "GET" && req.url === "/plugins") {
     core.send(res, 200, { plugins: core.plugins.list(), services: core.plugins.services() });
+    return true;
+  }
+  // The interface half of an active plugin, to be loaded by the window.
+  const uiId = req.method === "GET" ? /^\/plugins\/([a-z][a-z0-9.-]{2,63})\/ui$/.exec(req.url ?? "")?.[1] : undefined;
+  if (uiId) {
+    const file = core.plugins.uiFile(uiId);
+    if (!file) core.send(res, 404, { error: "That plugin has no active interface half" });
+    else {
+      res.writeHead(200, { "content-type": "text/javascript; charset=utf-8", "cache-control": "no-cache", "x-content-type-options": "nosniff" });
+      res.end(readFileSync(file));
+    }
+    return true;
+  }
+  // The window reports that it could not activate the interface half of a plugin.
+  if (req.method === "POST" && req.url === "/plugins/ui-state") {
+    const body = (await core.readJson(req, res)) as { id?: unknown; reason?: unknown } | null | undefined;
+    if (body === undefined) return true;
+    if (typeof body?.id !== "string" || typeof body?.reason !== "string" || !core.plugins.has(body.id)) {
+      core.send(res, 400, { error: "send the id of a plugin and a reason" });
+      return true;
+    }
+    await core.plugins.markFailed(body.id, body.reason.slice(0, 300));
+    core.send(res, 200, { ok: true });
     return true;
   }
   const action = req.method === "POST" ? /^\/plugins\/(activate|deactivate)$/.exec(req.url ?? "")?.[1] : undefined;

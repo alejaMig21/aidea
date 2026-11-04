@@ -52,7 +52,9 @@ const handler: Handler = async (req, res, core) => {
     .join("\n");
   // The saved state travels in a <meta> as URI-encoded JSON: no character of it can close a tag.
   const saved = `<meta name="aidea-saved" content="${encodeURIComponent(JSON.stringify(core.preferences.get("~ui")))}">`;
-  const html = readFileSync(ui + "index.html", "utf8").replace("<!--features-->", () => saved + scripts);
+  // The plugins whose interface half the page must load before it builds the Layout, so a saved arrangement that holds their Panels can be restored.
+  const plugins = `<meta name="aidea-plugins" content="${encodeURIComponent(JSON.stringify(core.plugins.list().filter((p) => p.state === "active" && p.ui).map((p) => ({ id: p.id }))))}">`;
+  const html = readFileSync(ui + "index.html", "utf8").replace("<!--features-->", () => saved + plugins + scripts);
   res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
   res.end(html);
   return true;

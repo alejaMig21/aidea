@@ -141,6 +141,26 @@ function layoutBuild(d) {
   layoutParking.append(card);
 }
 
+// Takes a Panel out of the registry (its plugin went): out of the Layout, the menu and the page. What the person saved about the others is untouched.
+function layoutUnregister(id) {
+  const d = layoutDef[id];
+  if (!d) return;
+  if (layoutDrawer === id) layoutDrawer = null;
+  if (layoutApi.getPanel(id)) {
+    layoutBusy = true;
+    try { layoutApi.removePanel(layoutApi.getPanel(id)); } finally { layoutBusy = false; }
+  }
+  layoutPanes[id]?.el.remove();
+  delete layoutPanes[id]; delete layoutDef[id]; delete layoutState[id]; delete layoutState[`${id}Folded`]; delete layoutShown[id]; delete layoutHome[id];
+  layoutRegistry.splice(layoutRegistry.indexOf(d), 1);
+  const left = layoutRegistry.filter((x) => x.side === "left"), right = layoutRegistry.filter((x) => x.side !== "left");
+  layoutNames.splice(0, layoutNames.length, ...[...left, ...right].map((x) => x.id));
+  layoutLeft.splice(0, layoutLeft.length, ...left.map((x) => x.id));
+  layoutFoldOrder = [...layoutRegistry].sort((a, b) => a.foldRank - b.foldRank).map((x) => x.id);
+  if (layoutLastOpened === id) layoutLastOpened = "chat";
+  if (layoutReady) { panelsBuild(); layoutApply(); }
+}
+
 {
   const style = document.createElement("style");
   style.textContent = `
@@ -514,11 +534,28 @@ $("pane-terminal").append(Object.assign(document.createElement("p"), { className
   pane.append(head);
 }
 
-layoutReady = true;
-panelsBuild();
-layoutApply();
-if (layoutSaved.dock) layoutRestore(layoutSaved.dock); else layoutLegacySizes();
-layoutRestored = true;
-layoutSave();
+// The slot `layout.panel` of the plugin API (docs/plugin-api.md): a plugin adds a Panel, which is one more declaration of the registry and goes when the plugin goes.
+pluginSlotDeclare("layout.panel", {
+  kind: "list",
+  add(entry, owner) {
+    if (!entry || typeof entry.id !== "string" || typeof entry.title !== "string" || typeof entry.render !== "function") throw new Error('a Panel needs an "id", a "title" and a "render" function');
+    const id = `${owner}.${entry.id}`;
+    if (layoutDef[id]) throw new Error(`the Panel "${id}" already exists`);
+    layoutRegister({ id, title: entry.title, side: entry.side === "left" || entry.side === "bottom" ? entry.side : "right", min: Number(entry.min) > 0 ? Number(entry.min) : 288, weight: 420, startsHidden: entry.startsHidden === true, foldRank: 60, pane: `pane-${id}`, icon: '<path d="M5 8h6"/>' });
+    let dispose;
+    try { dispose = entry.render(document.getElementById(`pane-${id}`)); } catch (e) { layoutUnregister(id); throw e; }
+    return () => { try { if (typeof dispose === "function") dispose(); } finally { layoutUnregister(id); } };
+  },
+});
+
+// The Layout is built after the interface halves of the plugins that are active at the start have added their Panels, so a saved arrangement that holds them can be restored.
+pluginsBeforeStart(() => {
+  layoutReady = true;
+  panelsBuild();
+  layoutApply();
+  if (layoutSaved.dock) layoutRestore(layoutSaved.dock); else layoutLegacySizes();
+  layoutRestored = true;
+  layoutSave();
+});
 let layoutFrame = 0; // a resize event comes many times a frame: the Layout is put in step once per frame
 window.addEventListener("resize", () => { layoutFrame ||= requestAnimationFrame(() => { layoutFrame = 0; layoutApply(); }); });

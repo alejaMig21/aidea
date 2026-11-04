@@ -6,7 +6,7 @@ import { readManifest } from "./manifest.ts";
 import type { Manifest } from "./manifest.ts";
 
 export type PluginState = "active" | "inactive" | "failed";
-export type PluginInfo = { id: string; title: string; version: string; state: PluginState; reason?: string };
+export type PluginInfo = { id: string; title: string; version: string; state: PluginState; reason?: string; ui: boolean }; // `ui`: it has an interface half
 type Undo = () => unknown;
 type Entry = { id: string; folder: string; manifest?: Manifest; state: PluginState; reason?: string; undo: Undo[]; returned?: Undo }; // `returned`: what `activate` returned, run after every other undo
 
@@ -105,7 +105,21 @@ export function createPluginHost(dir?: string) {
     activate,
     deactivate,
     has: (id: string) => entries.has(id) && !id.includes("#"),
-    list: (): PluginInfo[] => [...entries.values()].map((e) => ({ id: e.id, title: e.manifest?.title ?? e.id, version: e.manifest?.version ?? "", state: e.state, ...(e.reason ? { reason: e.reason } : {}) })),
+    list: (): PluginInfo[] => [...entries.values()].map((e) => ({ id: e.id, title: e.manifest?.title ?? e.id, version: e.manifest?.version ?? "", state: e.state, ...(e.reason ? { reason: e.reason } : {}), ui: !!e.manifest?.ui })),
+    // The file of the interface half of an ACTIVE plugin, or undefined.
+    uiFile: (id: string) => {
+      const e = entries.get(id);
+      const file = e?.state === "active" && e.manifest?.ui ? join(e.folder, e.manifest.ui) : undefined;
+      return file && existsSync(file) ? file : undefined;
+    },
+    // The window could not activate the interface half: the plugin is switched off and reported.
+    markFailed: async (id: string, why: string) => {
+      const e = entries.get(id);
+      if (!e) return;
+      await deactivate(id);
+      e.state = "failed";
+      e.reason = why;
+    },
     services: () => [...services].map(([key, s]) => ({ key, owner: s.owner })),
     logs: () => logs.slice(),
   };
