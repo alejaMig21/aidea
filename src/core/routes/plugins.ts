@@ -13,6 +13,17 @@ const handler: Handler = async (req, res, core) => {
     core.send(res, 200, { plugins: core.plugins.list(), services: core.plugins.services(), events: core.plugins.eventList(), safeMode: core.plugins.safe });
     return true;
   }
+  // A named call to a plugin's host half.
+  const callRoute = /^\/plugins\/([^/?]+)\/call\/([^/?]+)$/.exec(req.url ?? "");
+  if (callRoute) {
+    if (req.method !== "POST") { core.send(res, 405, { error: "Use POST" }, { allow: "POST" }); return true; }
+    const body = await core.readJson(req, res);
+    if (body === undefined) return true;
+    const answer = core.plugins.callApi(decodeURIComponent(callRoute[1]), decodeURIComponent(callRoute[2]), body);
+    if (!answer) { core.send(res, 404, { error: "That plugin has no such call" }); return true; }
+    try { core.send(res, 200, (await answer) ?? null); } catch (e) { core.send(res, 500, { error: e instanceof Error ? e.message : String(e) }); }
+    return true;
+  }
   // The settings of one plugin: the schema, the values (a secret only as set or not), and saving valid values.
   const settingsRoute = /^\/plugins\/([^/?]+)\/settings$/.exec(req.url ?? "");
   if (settingsRoute && (req.method === "GET" || req.method === "POST")) {

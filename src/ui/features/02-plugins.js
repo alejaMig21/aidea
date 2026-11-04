@@ -12,6 +12,20 @@ const pluginStartWaiters = [];
 function pluginsBeforeStart(fn) { if (pluginPending) pluginStartWaiters.push(fn); else fn(); }
 function pluginSlotDeclare(name, slot) { pluginSlots[name] = slot; }
 
+// The top bar: a plugin adds a control (a button, a status) next to the fixed ones. The entry is { id, render(container) -> dispose }.
+pluginSlotDeclare("layout.topbar", {
+  kind: "list",
+  add(entry, owner) {
+    if (!entry || typeof entry.id !== "string" || typeof entry.render !== "function") throw new Error('a top bar entry needs an "id" and a "render" function');
+    const box = document.createElement("span");
+    box.dataset.topbarPlugin = `${owner}.${entry.id}`;
+    document.getElementById("topbar-plugins").append(box);
+    let dispose;
+    try { dispose = entry.render(box); } catch (e) { box.remove(); throw e; }
+    return () => { try { if (typeof dispose === "function") dispose(); } finally { box.remove(); } };
+  },
+});
+
 function pluginReportFailure(id, reason) {
   fetch("/plugins/ui-state", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, reason }) }).catch(() => {});
 }
@@ -24,6 +38,13 @@ async function pluginUiActivate(id) {
   };
   const ui = {
     plugin: { id },
+    // A named call to the host half of this plugin; resolves with its answer or rejects with its message.
+    async call(name, body = {}) {
+      const res = await fetch(`/plugins/${encodeURIComponent(id)}/call/${encodeURIComponent(name)}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      const answer = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(answer?.error ?? `the call "${name}" failed (${res.status})`);
+      return answer;
+    },
     slots: {
       add(slot, entry) {
         const declared = pluginSlots[slot];

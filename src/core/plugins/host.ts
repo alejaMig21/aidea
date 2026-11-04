@@ -28,6 +28,7 @@ export type PluginContext = {
   data: { readonly dir: string };
   settings: { get: (key: string) => unknown };
   secrets: { get: (name: string) => string | undefined };
+  api: { handle: (name: string, fn: (body: any) => unknown) => void };
   effect: (undo: Undo) => void;
   log: (message: string) => void;
 };
@@ -64,6 +65,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
   const declared = new Map<string, { owner: string; mode: "announce" | "ask"; version: number }>(); // events of active plugins, by full name
   const listeners = new Map<string, { owner: string; fn: (data: any) => unknown }[]>();
   const rules: { owner: string; fn: (action: any) => unknown }[] = [];
+  const handlers = new Map<string, (body: any) => unknown>(); // "<plugin id>\0<call name>" -> the handler
 
   const reason = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -118,6 +120,15 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
         get: (name) => {
           if (!manifest.capabilities.includes("secrets")) throw new Error('declare the "secrets" capability in the manifest to read secrets');
           return access.secrets.get(manifest.id, name);
+        },
+      },
+      // Named calls the interface half (or a test) can make to this plugin: POST /plugins/<id>/call/<name>.
+      api: {
+        handle: (name, fn) => {
+          const key = `${entry.id}\0${name}`;
+          if (handlers.has(key)) throw new Error(`the call "${name}" is already handled`);
+          handlers.set(key, fn);
+          entry.undo.push(() => handlers.delete(key));
         },
       },
       effect: (undo) => void entry.undo.push(undo),
@@ -304,6 +315,11 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
     guardCheck: (action: unknown): Verdict => combine(rules.map((r) => {
       try { return { owner: r.owner, answer: r.fn(structuredClone(action)) }; } catch (e) { return { owner: r.owner, answer: { decision: "ask", question: `The rule of the plugin ${r.owner} failed (${reason(e)}); allow this action?` } }; }
     })),
+    // Answers a named call to a plugin; undefined when it has no such handler.
+    callApi: (id: string, name: string, body: unknown): Promise<unknown> | undefined => {
+      const fn = handlers.get(`${id}\0${name}`);
+      return fn ? (async () => fn(body))() : undefined;
+    },
     logs: () => logs.slice(),
     // What the plugins registered, to compare before and after (the test tool for plugin authors).
     registry: () => ({ services: [...services.keys()].sort(), events: [...declared.keys()].sort(), listeners: [...listeners.values()].reduce((n, l) => n + l.length, 0), rules: rules.length }),

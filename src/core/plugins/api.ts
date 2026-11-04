@@ -16,6 +16,7 @@ export const SLOTS = [
       icon: "inner shapes of a 16 by 16 SVG for the menu row",
     },
   },
+  { name: "layout.topbar", kind: "list", entry: { id: "text, required", render: "function(container) -> dispose, required: draws the control in the top bar" } },
 ];
 export const STYLE_TOKENS = ["--bg", "--bar", "--canvas", "--panel", "--raised", "--selected", "--line", "--control", "--text", "--muted", "--label", "--accent", "--accent-soft", "--on-accent", "--proposal", "--authored", "--derived", "--danger", "--unresolved", "--sans", "--mono"];
 export const EVENT_MODES = ["announce", "ask"];
