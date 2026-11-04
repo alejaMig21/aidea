@@ -58,6 +58,54 @@ def build(n):
     items = list(range(n))
     total = len(items)
     return total
+
+
+class Cell:
+    def __init__(self, value, next=None):
+        self.value = value
+        self.next = next
+
+
+class Tree:
+    def __init__(self, key, left=None, right=None):
+        self.key = key
+        self.left = left
+        self.right = right
+
+
+def chain():
+    c = Cell(3)
+    b = Cell(2, c)
+    head = Cell(1, b)
+    spare = Cell(9)
+    b.next = spare
+    return head.value
+
+
+def ring():
+    a = Cell(1)
+    b = Cell(2, a)
+    a.next = b
+    return a.value
+
+
+def alias():
+    shared = Cell(7)
+    first = Cell(1, shared)
+    second = Cell(2, shared)
+    return first.value
+
+
+def tree():
+    root = Tree(4, Tree(2, Tree(1), Tree(3)), Tree(6))
+    return root.key
+
+
+def longchain(n):
+    head = None
+    for i in range(n):
+        head = Cell(i, head)
+    return head.value
 `);
   core = await startCore({ port: 0, recentsFile: join(scratch, "recents.json"), preferencesFile: join(scratch, "preferences.json"), learnerDir: join(scratch, "learner"), pluginsDir: join(scratch, "store") });
   const proxy = await startProxy(core.url, project);
@@ -100,6 +148,29 @@ test("Flow and Data follow one Playback position, and the variable that changed 
 test("the legend of Data has a row for what is drawn, and every row matches something on screen", { skip }, () => {
   assert.ok(page.legend.length >= 4, JSON.stringify(page.legend));
   assert.deepEqual(page.legend.filter((r: any) => r.matches === 0).map((r: any) => r.text), []);
+});
+test("a linked list is nodes and arrows: each object once, a name and a field each with an arrow, and the step that rewires a pointer shows the new arrow and the old one", { skip }, () => {
+  assert.equal(page.chain.nodesMax, 4, JSON.stringify(page.chain));
+  assert.equal(page.chain.edgesMax, 6, "four names and two pointers between objects");
+  assert.ok(page.chain.rewiredMax >= 1, "NEW arrow");
+  assert.ok(page.chain.oldMax >= 1, "WAS arrow");
+  assert.ok(page.chain.tagWords.includes("NEW") && page.chain.tagWords.includes("WAS"), "the arrows say so in words too");
+});
+test("a cycle is drawn without looping: two objects, a pointer back", { skip }, () => {
+  assert.equal(page.ring.nodesMax, 2, JSON.stringify(page.ring));
+  assert.equal(page.ring.edgesMax, 4, "two names and two pointers, one of them back");
+});
+test("an object reachable from three places is drawn once with three arrows into it", { skip }, () => {
+  assert.equal(page.alias.nodesMax, 3, JSON.stringify(page.alias));
+  assert.equal(page.alias.intoMax, 3);
+});
+test("a binary tree is drawn as a tree: children one column right, the parent between them", { skip }, () => {
+  assert.equal(page.tree.nodesMax, 5, JSON.stringify(page.tree));
+  assert.ok(page.tree.rootX < page.tree.leftX && page.tree.rootX < page.tree.rightX);
+  assert.ok(page.tree.leftY < page.tree.rootY && page.tree.rootY < page.tree.rightY);
+});
+test("a chain deeper than the limit is cut, and the cut says which limit", { skip }, () => {
+  assert.match(page.longchain.cuts, /depth limit/i, JSON.stringify(page.longchain));
 });
 test("a list of 10,000 items is cut at the limit with 'N more hidden', and drawing it stays quick", { skip }, () => {
   assert.equal(page.big.cells, 100);

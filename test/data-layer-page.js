@@ -64,7 +64,54 @@ const dlRecord = async (words) => {
     pbGo(changedAt); await dlWait(200); legendLook();
     pbGo(last); await dlWait(200); legendLook();
 
-    legendLook();
+    // Objects that point to objects: nodes and arrows. Each fixture is played to its end; every step is visited so the legend rows are seen (a rewiring step, a cut).
+    const dlOpenRecord = async (fn, params = {}) => {
+      showLayer("components");
+      await dlWait(200);
+      $("world").querySelector(`rect[data-id="tally.${fn}"]`).dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+      await dlUntil(() => algoGraph && algoGraph.node === `tally.${fn}` && $("pb-record"));
+      for (const [k, v] of Object.entries(params)) $(`pb-v-${k}`).value = v;
+      const before = pbRecording;
+      $("pb-record").click();
+      await dlUntil(() => pbRecording && pbRecording !== before);
+      dlTab().click();
+      await dlWait(300);
+    };
+    const dlSnap = () => {
+      const edges = [...document.querySelectorAll("#data .data-edge")], into = {};
+      for (const e of edges) into[e.dataset.to] = (into[e.dataset.to] ?? 0) + 1;
+      return { nodes: document.querySelectorAll("#data .data-node").length, edges: edges.length, maxInto: Math.max(0, ...Object.values(into)), cuts: [...document.querySelectorAll("#data .data-cut")].map((t) => t.textContent).join("|") };
+    };
+    const dlSweep = async () => {
+      let rewiredMax = 0, oldMax = 0, tagWords = [], nodesMax = 0, edgesMax = 0, intoMax = 0;
+      for (let i = 0; i < pbRecording.visits.length; i++) {
+        pbGo(i);
+        await dlWait(120);
+        legendLook();
+        const snap = dlSnap();
+        nodesMax = Math.max(nodesMax, snap.nodes); edgesMax = Math.max(edgesMax, snap.edges); intoMax = Math.max(intoMax, snap.maxInto);
+        rewiredMax = Math.max(rewiredMax, document.querySelectorAll("#data .data-edge.rewired").length);
+        oldMax = Math.max(oldMax, document.querySelectorAll("#data .data-edge-old").length);
+        tagWords.push(...[...document.querySelectorAll("#data .data-edge-tag")].map((t) => t.textContent));
+      }
+      pbGo(pbRecording.visits.length - 1);
+      await dlWait(300);
+      legendLook();
+      return { ...dlSnap(), nodesMax, edgesMax, intoMax, rewiredMax, oldMax, tagWords };
+    };
+    const dlCentre = (id) => { const r = document.querySelector(`#data .data-node[data-id="${id}"]`).getBoundingClientRect(); return { x: r.left, y: r.top + r.height / 2 }; };
+    await dlOpenRecord("chain");
+    report.chain = await dlSweep();
+    await dlOpenRecord("ring");
+    report.ring = await dlSweep();
+    await dlOpenRecord("alias");
+    report.alias = await dlSweep();
+    await dlOpenRecord("tree");
+    report.tree = await dlSweep();
+    const rootShape = pbRecording.visits.at(-1).shapes.root, rc = dlCentre(rootShape.id), lc = dlCentre(rootShape.fields.left.id), rr = dlCentre(rootShape.fields.right.id);
+    report.tree = { ...report.tree, rootX: rc.x, rootY: rc.y, leftX: lc.x, leftY: lc.y, rightX: rr.x, rightY: rr.y };
+    await dlOpenRecord("longchain", { n: "20" });
+    report.longchain = await dlSweep();
     report.legend = rows.map((r, i) => ({ text: r[1], matches: counts[i] }));
 
     // A very large list is cut at the limit and says how many more are hidden; drawing it stays quick. (A parameter text is limited to 10,000 characters, so the list is built by the function.)

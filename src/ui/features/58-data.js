@@ -1,6 +1,7 @@
 // The Data layer (layout-and-data 14), next to Flow in the layer bar. While a function is played it draws the variables the recording holds at the step being shown (the core records their
 // shape: Python today): a scalar as a labelled box, a list as a row of cells with their places, a dictionary as keys pointing to values, an object as a box with its fields. What the last step
-// changed is marked in words (CHANGED) as well as by its look. Data follows the one Playback position with Flow, the Playback panel and the trace table. Nobody writes it. Names are prefixed
+// changed is marked in words (CHANGED) as well as by its look. Objects that point to objects (linked lists, trees, graphs, aliases, cycles; layout-and-data 15) are drawn as framed nodes with an arrow
+// for every pointer, laid out as a tree from the variables; a pointer the last step set is a heavy arrow tagged NEW, the one it replaced a dashed arrow tagged WAS. Data follows the one Playback position with Flow, the Playback panel and the trace table. Nobody writes it. Names are prefixed
 // "data" because every feature file shares one global scope.
 {
   const dataGroup = el("g", { id: "data" });
@@ -25,10 +26,20 @@
     #data .data-var.changed .data-box { stroke: var(--accent); stroke-width: 2.4; }
     #data .data-changed { fill: var(--accent); font: 600 11px var(--sans); letter-spacing: .08em; text-anchor: end; }
     #data .data-note { fill: var(--muted); font: 13px var(--sans); }
+    #data .data-frame { fill: var(--bg); stroke: var(--line); stroke-width: 1; }
+    #data .data-port { fill: var(--muted); }
+    #data .data-cut { fill: var(--muted); font: 12px var(--sans); text-anchor: middle; }
+    #data .data-edge, #data .data-edge-old { fill: none; stroke: var(--muted); stroke-width: 1.4; }
+    #data .data-edge.rewired { stroke: var(--accent); stroke-width: 2.6; }
+    #data .data-edge-old { stroke: var(--accent); stroke-width: 1.6; stroke-dasharray: 5 4; }
+    #data .data-edge-tag { fill: var(--accent); font: 600 11px var(--sans); letter-spacing: .08em; text-anchor: middle; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; }
+    #data .data-head { fill: var(--muted); }
+    #data .data-head-hot { fill: var(--accent); }
   `;
   document.head.append(style);
 
-  const LABEL = 120, CELL = 30, PAD = 8, ROW = 22, EXTRA = 16;
+  const LABEL = 120, CELL = 30, PAD = 8, ROW = 22, EXTRA = 16, FRAME = 8, GAP = 16, COLGAP = 90, PORT = 26;
+  const CUT_DEPTH = 6, CUT_NODES = 500; // the core's limits (src/core/playback.py), stated on every cut
   const widthOf = (text) => Math.max(40, Math.round(text.length * 7.6) + 18);
   const plain = (n) => n.toLocaleString("en-US");
 
@@ -49,8 +60,48 @@
     if (s.kind === "map") return `${s.type}{${plain(s.len ?? s.entries?.length ?? 0)}}`;
     if (s.kind === "object") return s.type ?? "object";
     if (s.kind === "ref") return `→ #${s.id}`;
+    if (s.kind === "cut") return cutText(s);
     return "…";
   }
+  const cutText = (s) => (s.reason === "depth" ? `cut: depth limit (${CUT_DEPTH} levels)` : `cut: node limit (${CUT_NODES} values per step)`);
+
+  // What can be drawn as a node: a list, set, dictionary or object that has an identity (tuples and numbers have none).
+  const isNode = (s) => !!s && s.id !== undefined && (s.kind === "seq" || s.kind === "map" || s.kind === "object");
+  // The places in a node that can hold a value: [slot, value]. A dictionary's slot is its entry number.
+  const slotsOf = (n) => (n.kind === "seq" ? (n.items ?? []).map((v, i) => [String(i), v]) : n.kind === "map" ? (n.entries ?? []).map(([, v], i) => [String(i), v]) : Object.entries(n.fields ?? {}));
+  // A value is a pointer when it names an object elsewhere (a ref, or a cut that is described somewhere in this step), or is an object, or a container held by an object. A list or dictionary
+  // inside another list or dictionary stays one line of text, as before.
+  const linkId = (parent, v, nodes) => {
+    const id = !v ? null : v.kind === "ref" || v.kind === "cut" ? v.id : isNode(v) && (v.kind === "object" || parent === "object") ? v.id : null;
+    return id !== undefined && id !== null && nodes.has(id) ? id : null;
+  };
+  // Reads one step's shapes: the nodes, the pointers between them, and the variables that are drawn as nodes. Used for the step shown and for the one before it.
+  function dataScan(shapes) {
+    const nodes = new Map(), edges = new Map(), adj = new Map(), targeted = new Set(), sources = new Set(), vars = new Map();
+    const walk = (s) => {
+      if (!isNode(s) || nodes.has(s.id)) return;
+      nodes.set(s.id, s);
+      for (const [, v] of slotsOf(s)) if (isNode(v) && (v.kind === "object" || s.kind === "object")) walk(v);
+    };
+    for (const v of Object.values(shapes ?? {})) walk(v);
+    for (const n of nodes.values()) {
+      const to = [];
+      for (const [slot, v] of slotsOf(n)) {
+        const id = linkId(n.kind, v, nodes);
+        if (id === null) continue;
+        edges.set(`${n.id}:${slot}`, id); to.push(id); targeted.add(id); sources.add(n.id);
+      }
+      adj.set(n.id, to);
+    }
+    for (const v of Object.values(shapes ?? {})) if (v.kind === "ref" && nodes.has(v.id)) targeted.add(v.id);
+    // An object variable is always a node; a list or dictionary only when it is part of a pointer.
+    for (const [name, v] of Object.entries(shapes ?? {})) {
+      const id = v.kind === "ref" && nodes.has(v.id) ? v.id : isNode(v) && (v.kind === "object" || targeted.has(v.id) || sources.has(v.id)) ? v.id : null;
+      if (id !== null) { vars.set(name, id); edges.set(`var:${name}`, id); }
+    }
+    return { nodes, edges, adj, vars };
+  }
+  let dataCtx = { nodes: new Map(), ports: null }; // the step being drawn; ports is where the pointers of the node being drawn start
 
   // One box with its text, at (x, y); returns where it ends.
   function cell(group, x, y, text, cls = "data-value", box = "data-box") {
@@ -59,15 +110,30 @@
     return w;
   }
 
+  // The cell for one value held by a node: its text, a dot when it is a pointer (the arrow starts there), a dashed cell when the drawing was cut. Returns the cell's width.
+  function slotCell(group, x, y, v, slot, parent, box = "data-box") {
+    const to = dataCtx.ports ? linkId(parent, v, dataCtx.nodes) : null;
+    if (to !== null) {
+      group.append(el("rect", { x, y, width: PORT, height: CELL, rx: 5, class: `${box} data-port-cell` }), el("circle", { cx: x + PORT / 2, cy: y + CELL / 2, r: 4.5, class: "data-port" }));
+      dataCtx.ports.set(slot, { x: x + PORT / 2, y: y + CELL / 2, to });
+      return PORT;
+    }
+    if (v?.kind === "cut") {
+      const text = cutText(v), w = widthOf(text) + 8;
+      group.append(el("rect", { x, y, width: w, height: CELL, rx: 5, class: "data-hidden-cell" }), el("text", { x: x + w / 2, y: y + CELL / 2 + 4.5, class: "data-cut" }, text));
+      return w;
+    }
+    return cell(group, x, y, summary(v), "data-value", box);
+  }
+
   // Draws one value at (x, y) into `group` and returns its size.
   function drawValue(group, shape, x, y) {
     if (shape.kind === "seq") {
       const sc = el("g", { class: "data-seq" });
       let dx = 0;
       (shape.items ?? []).forEach((item, i) => {
-        const text = summary(item), w = widthOf(text);
+        const w = slotCell(sc, x + dx, y + EXTRA - 2, item, String(i), shape.kind, "data-box data-cell");
         sc.append(el("text", { x: x + dx + w / 2, y: y + 11, class: "data-pos" }, String(i)));
-        sc.append(el("rect", { x: x + dx, y: y + EXTRA - 2, width: w, height: CELL, rx: 5, class: "data-box data-cell" }), el("text", { x: x + dx + w / 2, y: y + EXTRA - 2 + CELL / 2 + 4.5, class: "data-value" }, text));
         dx += w + 4;
       });
       if (shape.hidden > 0) {
@@ -82,11 +148,12 @@
     if (shape.kind === "map") {
       const mc = el("g", { class: "data-map" });
       let dy = 0, maxW = 0;
+      let entry = 0;
       for (const [k, v] of shape.entries ?? []) {
         const pair = el("g", { class: "data-pair" });
         const kw = cell(pair, x, y + dy, summary(k), "data-key");
         pair.append(el("text", { x: x + kw + 14, y: y + dy + CELL / 2 + 4.5, class: "data-arrow" }, "→"));
-        const vw = cell(pair, x + kw + 28, y + dy, summary(v));
+        const vw = slotCell(pair, x + kw + 28, y + dy, v, String(entry++), shape.kind);
         mc.append(pair);
         maxW = Math.max(maxW, kw + 28 + vw);
         dy += CELL + 6;
@@ -108,7 +175,7 @@
       for (const [name, v] of Object.entries(shape.fields ?? {})) {
         const kw = cell(oc, x, y + dy, name, "data-key");
         oc.append(el("text", { x: x + kw + 14, y: y + dy + CELL / 2 + 4.5, class: "data-arrow" }, "→"));
-        const vw = cell(oc, x + kw + 28, y + dy, summary(v));
+        const vw = slotCell(oc, x + kw + 28, y + dy, v, name, shape.kind);
         maxW = Math.max(maxW, kw + 28 + vw);
         dy += CELL + 6;
       }
@@ -125,7 +192,92 @@
   // The plain statement in place of a drawing.
   const note = (text) => dataGroup.replaceChildren(el("text", { x: 0, y: 20, class: "data-note" }, text));
 
-  let dataFitted = false; // the view is framed once when the layer opens, not at every step
+  // The variables that point to objects, and the objects, from `top` down: names in a column on the left, the objects laid out as a tree (a column per level, a parent between its children),
+  // an arrow for every pointer. `before` is the step before this one: a pointer that is different from there is NEW, and the arrow it replaced is drawn dashed as WAS.
+  function dataGraph(scan, before, linked, top) {
+    // Roots first that no object points to (the head of a list, the root of a tree), so the structure reads left to right; the stable sort keeps the order of the variables.
+    const pointed = new Set([...scan.edges].filter(([key]) => !key.startsWith("var:")).map(([, to]) => to));
+    const roots = [...new Set(linked.map(([name]) => scan.vars.get(name)))].sort((a, b) => pointed.has(a) - pointed.has(b));
+    const order = [], seen = new Set();
+    const reach = (id) => { if (seen.has(id)) return; seen.add(id); order.push(id); for (const t of scan.adj.get(id) ?? []) reach(t); };
+    roots.forEach(reach);
+    // Each node is drawn once, at the origin, to learn its size and where its pointers start; it is moved when the layout is known.
+    const boxes = new Map();
+    for (const id of order) {
+      dataCtx.ports = new Map();
+      const g = el("g", { class: "data-node", "data-id": id }), frame = el("rect", { class: "data-frame", rx: 8 });
+      g.append(frame);
+      const size = drawValue(g, scan.nodes.get(id), FRAME, FRAME), w = size.width + 2 * FRAME, h = size.height + 2 * FRAME;
+      frame.setAttribute("width", w); frame.setAttribute("height", h);
+      boxes.set(id, { g, w, h, ports: dataCtx.ports });
+    }
+    dataCtx.ports = null;
+
+    const level = new Map(), bottom = [];
+    let next = 0;
+    const place = (id, depth) => {
+      const at = { depth, y: 0 }, kids = [];
+      level.set(id, at);
+      for (const t of scan.adj.get(id) ?? []) if (!level.has(t)) { place(t, depth + 1); kids.push(t); }
+      const h = boxes.get(id).h, mid = (k) => level.get(k).y + boxes.get(k).h / 2;
+      let yy = kids.length ? (mid(kids[0]) + mid(kids.at(-1))) / 2 - h / 2 : next;
+      yy = Math.max(yy, bottom[depth] ?? 0);
+      at.y = yy; bottom[depth] = yy + h + GAP; next = Math.max(next, yy + h + GAP);
+    };
+    roots.forEach((id) => { if (!level.has(id)) place(id, 0); });
+    const widest = [];
+    for (const [id, at] of level) widest[at.depth] = Math.max(widest[at.depth] ?? 0, boxes.get(id).w);
+    const colX = [LABEL + 90];
+    for (let d = 1; d < widest.length; d++) colX[d] = colX[d - 1] + widest[d - 1] + COLGAP;
+    const spot = new Map();
+    for (const [id, at] of level) spot.set(id, { x: colX[at.depth], y: top + at.y });
+
+    // The arrows: from a name or a pointer's dot to the left edge of its object.
+    const edges = el("g", { class: "data-edges" }), defs = el("defs", {});
+    for (const cls of ["data-head", "data-head-hot"]) {
+      const m = el("marker", { id: cls, viewBox: "0 0 12 12", refX: 11, refY: 6, markerWidth: 10, markerHeight: 10, markerUnits: "userSpaceOnUse", orient: "auto" });
+      m.append(el("path", { d: "M1 1.5L11 6L1 10.5z", class: cls }));
+      defs.append(m);
+    }
+    // A pointer that goes forward is an S; one that goes back (a cycle, a node that points to an earlier one) dips below both ends so it does not run over the forward arrows.
+    const curve = (from, to) => {
+      if (to.x <= from.x + 4) { const d = 70; return `M${from.x} ${from.y} C${from.x + 60} ${from.y + d} ${to.x - 60} ${to.y + d} ${to.x} ${to.y}`; }
+      const dx = Math.max(40, Math.abs(to.x - from.x) / 2);
+      return `M${from.x} ${from.y} C${from.x + dx} ${from.y} ${to.x - dx} ${to.y} ${to.x} ${to.y}`;
+    };
+    const landing = (id) => ({ x: spot.get(id).x, y: spot.get(id).y + boxes.get(id).h / 2 });
+    const arrow = (key, from, to, label) => {
+      const target = landing(to), was = before?.edges.get(key);
+      const hot = !!before && (was !== undefined ? was !== to : !key.startsWith("var:") && before.nodes.has(Number(key.split(":")[0])));
+      const path = el("path", { class: `data-edge${hot ? " rewired" : ""}`, d: curve(from, target), "data-from": key, "data-to": to, "marker-end": `url(#${hot ? "data-head-hot" : "data-head"})` });
+      path.append(el("title", {}, `${label} points to #${to}${hot ? " (set by this step)" : ""}`));
+      edges.append(path);
+      const tag = (word, a, b) => edges.append(el("text", { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 - 6, class: "data-edge-tag" }, word));
+      if (hot) tag("NEW", from, target);
+      if (hot && was !== undefined && spot.has(was)) {
+        const old = landing(was);
+        edges.append(el("path", { class: "data-edge-old", d: curve(from, old), "data-from": key, "data-to": was, "marker-end": "url(#data-head-hot)" }));
+        tag("WAS", from, old);
+      }
+    };
+    for (const [id, b] of boxes) {
+      const at = spot.get(id);
+      b.g.setAttribute("transform", `translate(${at.x} ${at.y})`);
+      for (const [slot, p] of b.ports) arrow(`${id}:${slot}`, { x: at.x + p.x, y: at.y + p.y }, p.to, slot);
+    }
+    const labels = el("g", { class: "data-names" });
+    linked.forEach(([name, shape], i) => {
+      const ly = top + i * (CELL + 24), row = el("g", { class: `data-var${shape.changed ? " changed" : ""}`, "data-var": name });
+      row.append(el("text", { x: LABEL, y: ly + CELL / 2 + 4.5, class: "data-label" }, name));
+      if (shape.changed) row.append(el("text", { x: LABEL, y: ly + CELL / 2 + 19, class: "data-changed" }, "CHANGED"));
+      labels.append(row);
+      arrow(`var:${name}`, { x: LABEL + 8, y: ly + CELL / 2 }, scan.vars.get(name), name);
+    });
+    dataGroup.append(defs, edges, labels, ...[...boxes.values()].map((b) => b.g));
+    return Math.max(top + linked.length * (CELL + 24), ...[...spot].map(([id, p]) => p.y + boxes.get(id).h)) + ROW;
+  }
+
+  let dataFitted = false, dataFramed = { w: 0, h: 0 }; // the view is framed when the layer opens or the drawing outgrows the frame, not at every step
   function dataDraw() {
     if (authoredShown !== "data") return;
     const rec = pbRecording, entry = rec?.visits?.[pbIndex];
@@ -137,8 +289,12 @@
         : "This language does not record the values of a run for Data yet. Python functions do.");
     }
     dataGroup.replaceChildren();
+    const scan = dataScan(entry.shapes), before = pbIndex > 0 && rec.visits[pbIndex - 1]?.shapes ? dataScan(rec.visits[pbIndex - 1].shapes) : null;
+    dataCtx = { nodes: scan.nodes, ports: null };
     let y = 0, widest = 0;
+    const linked = [];
     for (const [name, shape] of Object.entries(entry.shapes)) {
+      if (scan.vars.has(name)) { linked.push([name, shape]); continue; }
       const row = el("g", { class: `data-var${shape.changed ? " changed" : ""}`, "data-var": name });
       row.append(el("text", { x: LABEL, y: y + (shape.kind === "seq" ? EXTRA - 2 : 0) + CELL / 2 + 4.5, class: "data-label" }, name));
       if (shape.changed) row.append(el("text", { x: LABEL, y: y + (shape.kind === "seq" ? EXTRA - 2 : 0) + CELL / 2 + 19, class: "data-changed" }, "CHANGED"));
@@ -147,12 +303,15 @@
       widest = Math.max(widest, LABEL + 14 + size.width);
       y += Math.max(size.height, CELL + 14) + ROW;
     }
+    if (linked.length) y = dataGraph(scan, before, linked, y);
     if (!y) note("This step has no variables yet.");
-    // The view is framed when the layer opens, and again whenever the trace table of a replay would cover the drawing (Fit leaves room for it).
+    // The view is framed when the layer opens, again whenever the drawing grows past what was framed (a structure gets bigger as the run goes on), and whenever the trace table of a replay
+    // would cover it (Fit leaves room for it).
     setTimeout(() => {
-      const trace = $("trace-table"), g = dataGroup.getBoundingClientRect();
+      const trace = $("trace-table"), g = dataGroup.getBoundingClientRect(), box = dataGroup.getBBox();
       const covered = trace && !trace.hidden && g.height > 0 && g.bottom > trace.getBoundingClientRect().top;
-      if (!dataFitted || covered) { dataFitted = true; $("zoom-fit").click(); }
+      const grew = box.width > dataFramed.w + 1 || box.height > dataFramed.h + 1;
+      if (!dataFitted || covered || grew) { dataFitted = true; dataFramed = { w: box.width, h: box.height }; $("zoom-fit").click(); }
     }, 80);
   }
 
@@ -167,7 +326,7 @@
     dataShowLayer(which);
     if (dataGroup.parentNode !== $("world")) $("world").append(dataGroup);
     dataGroup.style.display = which === "data" ? "" : "none";
-    if (which === "data") { dataFitted = false; dataDraw(); }
+    if (which === "data") { dataFitted = false; dataFramed = { w: 0, h: 0 }; dataDraw(); }
   };
 
   // The legend opened from the "?" button.
@@ -179,9 +338,16 @@
       [sw(`<rect x="2" y="5" width="14" height="14" rx="2"/><path d="M19 12H25" style="fill:none"/><rect x="28" y="5" width="14" height="14" rx="2"/>`), "A key pointing to its value: a dictionary", ".data-map"],
       [sw(`<rect x="3" y="5" width="38" height="14" rx="3" style="fill:none;stroke-dasharray:4 3"/>`), "Dashed: a part that is not drawn, with how many items are hidden", ".data-hidden-cell"],
       [sw(`<rect x="3" y="5" width="38" height="14" rx="3" style="stroke:var(--accent);stroke-width:2.4"/>`), "Heavier line and the word CHANGED: the variable the last step changed", ".data-var.changed"],
+      [sw(`<rect x="2" y="2" width="40" height="20" rx="5" style="fill:var(--bg);stroke:var(--line)"/><rect x="7" y="6" width="30" height="12" rx="3"/>`), "A framed object, list or dictionary that is pointed to", ".data-frame"],
+      [sw(`<rect x="3" y="5" width="38" height="14" rx="3"/><circle cx="22" cy="12" r="3.5" style="fill:var(--muted);stroke:none"/>`), "A dot in a cell: a pointer. Its arrow ends at the object it points to", ".data-port"],
+      [sw(`<rect x="3" y="5" width="38" height="14" rx="3" style="fill:none;stroke-dasharray:4 3"/>`), `Dashed, tagged cut: the drawing stops here, more than ${CUT_DEPTH} levels below the variable or more than ${CUT_NODES} values in one step`, ".data-cut"],
     ],
-    arrows: [],
-    colours: [["accent", "Blue: the variable that the last step changed"]],
-    notShown: ["Values of a language that cannot record them yet (only Python does)", "Objects that point to other objects are drawn as a reference, not as nodes and arrows (not yet)", "Anything beyond the limit of 100 items in a list or dictionary"],
+    arrows: [
+      [notationSwatch(`<path d="M2 12H36" style="stroke:var(--muted);stroke-width:1.6"/><path d="M34 7L42 12L34 17" style="fill:none;stroke:var(--muted);stroke-width:1.5"/>`), "Arrow: a name or a field that points to an object. Several arrows into one frame: several names for one object", ".data-edge:not(.rewired)"],
+      [notationSwatch(`<path d="M2 12H36" style="stroke:var(--accent);stroke-width:2.6"/><path d="M34 7L42 12L34 17" style="fill:none;stroke:var(--accent);stroke-width:1.5"/>`), "Heavy blue arrow tagged NEW: a pointer the last step set", ".data-edge.rewired"],
+      [notationSwatch(`<path d="M2 12H36" style="stroke:var(--accent);stroke-width:1.6;stroke-dasharray:5 4"/><path d="M34 7L42 12L34 17" style="fill:none;stroke:var(--accent);stroke-width:1.5"/>`), "Dashed blue arrow tagged WAS: where that pointer pointed before the last step", ".data-edge-old"],
+    ],
+    colours: [["accent", "Blue: the variable that the last step changed, and the pointer it set"]],
+    notShown: ["Values of a language that cannot record them yet (only Python does)", "An object inside a tuple, or inside a list that sits in another list or dictionary (drawn as a count or a type name)", "Anything beyond the limit of 100 items in a list or dictionary"],
   });
 }
