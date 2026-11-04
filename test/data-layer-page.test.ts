@@ -101,6 +101,15 @@ def tree():
     return root.key
 
 
+def bubble(arr):
+    n = len(arr)
+    for i in range(n):
+        for j in range(n - 1 - i):
+            if arr[j] > arr[j + 1]:
+                arr[j], arr[j + 1] = arr[j + 1], arr[j]
+    return arr
+
+
 def longchain(n):
     head = None
     for i in range(n):
@@ -171,6 +180,34 @@ test("a binary tree is drawn as a tree: children one column right, the parent be
 });
 test("a chain deeper than the limit is cut, and the cut says which limit", { skip }, () => {
   assert.match(page.longchain.cuts, /depth limit/i, JSON.stringify(page.longchain));
+});
+test("the text form sits beside the drawing and matches the same step; the drawing can be exported as a standalone SVG; both buttons belong to Data only", { skip }, () => {
+  const e = page.exportText;
+  assert.deepEqual(e.buttonsOnData, { text: true, save: true });
+  assert.equal(e.lines, e.vars, JSON.stringify(e));
+  assert.equal(e.textMatches, true);
+  assert.equal(e.isSvg, true);
+  assert.equal(e.noVars, true, "colours are written out: the page's variables do not exist in a saved file");
+  assert.equal(e.nodes, 5, "the tree's five objects");
+  assert.equal(e.hasText, true);
+  assert.equal(e.textOff, 0);
+  assert.equal(e.hiddenElsewhere, true);
+});
+test("the wheel zooms the drawing and Fit frames it again as it was", { skip }, () => {
+  assert.equal(page.zoom.zoomed, true, JSON.stringify(page.zoom));
+  assert.equal(page.zoom.reset, true, JSON.stringify(page.zoom));
+});
+test("a function that takes a list of numbers offers named lists that fill the form; one that does not, does not; the run of one is drawn", { skip }, () => {
+  const l = page.lists;
+  assert.equal(l.offeredBubble, true);
+  assert.equal(l.offeredBuild, false);
+  assert.equal(l.sorted, true, "Sorted: ten numbers, ascending");
+  assert.equal(l.nearly, true, "Nearly sorted: the sorted numbers with two pairs swapped");
+  assert.ok(l.dupLen === 10 && l.dupDistinct <= 3, "Many duplicates: ten numbers, at most three different");
+  assert.equal(l.randLen, 10);
+  assert.equal(l.emptyT, "[]");
+  assert.equal(l.bubbleCells, 10, JSON.stringify(l));
+  assert.ok(l.bubbleSteps > 20);
 });
 test("a list of 10,000 items is cut at the limit with 'N more hidden', and drawing it stays quick", { skip }, () => {
   assert.equal(page.big.cells, 100);

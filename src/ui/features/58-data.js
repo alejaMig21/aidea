@@ -8,7 +8,19 @@
   const dataTab = Object.assign(document.createElement("button"), { textContent: "Data", disabled: true, title: "Open a function's Flow first: Data draws its variables while it is played" });
   dataTab.dataset.layer = "data";
   dataTab.onclick = () => showLayer("data");
+  // Two buttons that belong to this layer only (layout-and-data 17): the text form of each value beside the drawing, and the drawing saved as an image.
+  let dataText = false;
+  const dataTextButton = Object.assign(document.createElement("button"), { id: "data-text-toggle", textContent: "Text", hidden: true, title: "Write each variable's value as text beside the drawing" });
+  dataTextButton.setAttribute("aria-pressed", "false");
+  dataTextButton.onclick = () => { dataText = !dataText; dataTextButton.setAttribute("aria-pressed", String(dataText)); dataDraw(); };
+  const dataSaveButton = Object.assign(document.createElement("button"), { id: "data-save-image", textContent: "Save image", hidden: true, title: "Save the drawing of this step as an SVG image" });
+  dataSaveButton.onclick = () => {
+    const url = URL.createObjectURL(new Blob([dataSvgText()], { type: "image/svg+xml" }));
+    Object.assign(document.createElement("a"), { href: url, download: `aidea-data-step-${pbIndex + 1}.svg` }).click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
   layerBar.append(dataTab);
+  $("zoom").prepend(dataTextButton, dataSaveButton); // with the zoom controls: the layer bar has no room left
 
   const style = document.createElement("style");
   style.textContent = `
@@ -26,6 +38,9 @@
     #data .data-var.changed .data-box { stroke: var(--accent); stroke-width: 2.4; }
     #data .data-changed { fill: var(--accent); font: 600 11px var(--sans); letter-spacing: .08em; text-anchor: end; }
     #data .data-note { fill: var(--muted); font: 13px var(--sans); }
+    #data .data-textline { fill: var(--label); font: 12.5px var(--mono); }
+    #zoom #data-text-toggle[hidden], #zoom #data-save-image[hidden] { display: none; }
+    #zoom #data-text-toggle[aria-pressed="true"] { color: var(--accent); font-weight: 600; }
     #data .data-frame { fill: var(--bg); stroke: var(--line); stroke-width: 1; }
     #data .data-port { fill: var(--muted); }
     #data .data-cut { fill: var(--muted); font: 12px var(--sans); text-anchor: middle; }
@@ -277,6 +292,17 @@
     return Math.max(top + linked.length * (CELL + 24), ...[...spot].map(([id, p]) => p.y + boxes.get(id).h)) + ROW;
   }
 
+  // The drawing as a standalone SVG: its own styles with the colours written out (the page's variables do not exist outside it), on the page's background.
+  function dataSvgText() {
+    const box = dataGroup.getBBox(), pad = 24, root = getComputedStyle(document.documentElement);
+    const css = style.textContent.replace(/var\((--[\w-]+)\)/g, (_, name) => root.getPropertyValue(name).trim() || "currentColor");
+    const svgEl = el("svg", { xmlns: NS, viewBox: `${box.x - pad} ${box.y - pad} ${box.width + 2 * pad} ${box.height + 2 * pad}`, width: Math.ceil(box.width + 2 * pad), height: Math.ceil(box.height + 2 * pad) });
+    const copy = dataGroup.cloneNode(true);
+    copy.removeAttribute("style");
+    svgEl.append(el("style", {}, css), el("rect", { x: box.x - pad, y: box.y - pad, width: box.width + 2 * pad, height: box.height + 2 * pad, fill: root.getPropertyValue("--bg").trim() }), copy);
+    return `<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(svgEl)}`;
+  }
+
   let dataFitted = false, dataFramed = { w: 0, h: 0 }; // the view is framed when the layer opens or the drawing outgrows the frame, not at every step
   function dataDraw() {
     if (authoredShown !== "data") return;
@@ -305,6 +331,16 @@
     }
     if (linked.length) y = dataGraph(scan, before, linked, y);
     if (!y) note("This step has no variables yet.");
+    else if (dataText) {
+      // The same values as text, from the same step of the recording (its own text form, cut at 100 characters), in a column to the right of the drawing.
+      const box = dataGroup.getBBox(), col = el("g", { class: "data-text" }), x = box.x + box.width + 60;
+      col.append(el("text", { x, y: 10, class: "data-title" }, "AS TEXT"));
+      Object.keys(entry.shapes).forEach((name, i) => {
+        const text = String(entry.locals?.[name] ?? "");
+        col.append(el("text", { x, y: 36 + i * 22, class: "data-textline", "data-name": name }, `${name} = ${text.length > 100 ? `${text.slice(0, 100)}…` : text}`));
+      });
+      dataGroup.append(col);
+    }
     // The view is framed when the layer opens, again whenever the drawing grows past what was framed (a structure gets bigger as the run goes on), and whenever the trace table of a replay
     // would cover it (Fit leaves room for it).
     setTimeout(() => {
@@ -326,6 +362,7 @@
     dataShowLayer(which);
     if (dataGroup.parentNode !== $("world")) $("world").append(dataGroup);
     dataGroup.style.display = which === "data" ? "" : "none";
+    dataTextButton.hidden = dataSaveButton.hidden = which !== "data";
     if (which === "data") { dataFitted = false; dataFramed = { w: 0, h: 0 }; dataDraw(); }
   };
 

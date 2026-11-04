@@ -4,11 +4,11 @@
 
 **Blocked by:** 14 (Data layer v1), 16 (Playback controls).
 
-**Status:** ready-for-agent
+**Status:** first part built (zoom, text, export, named lists); the Tutor part is open
 
-- [ ] Zoom and pan work on a large drawing and the frame can be reset.
-- [ ] The text form shown matches the drawing for the same step.
-- [ ] Export produces an image of the current drawing.
-- [ ] The named examples fill the form correctly and run.
+- [x] Zoom and pan work on a large drawing and the frame can be reset. (The canvas already had wheel, drag, buttons and Fit; Fit also repeats by itself when a drawing grows. Page test: wheel zooms, Fit returns the same frame.)
+- [x] The text form shown matches the drawing for the same step. ("Text" button: `name = value` from the step's own `locals`, cut at 100 characters.)
+- [x] Export produces an image of the current drawing. ("Save image": standalone SVG with colours written out. Tested as a string; the download itself and the save dialog in Electron were not clicked through.)
+- [x] The named examples fill the form correctly and run. (Empty, Random, Sorted, Nearly sorted, Many duplicates: ten numbers, offered for the first parameter that looks like a list of numbers: annotated `list[...]`, or unannotated with a list default or a name like arr, nums, items.)
 - [ ] The Tutor can reference a Data element in a prediction question (protocol test on the element tags) and the layer class for Data teaches with its own help.
 - [ ] Verified live.

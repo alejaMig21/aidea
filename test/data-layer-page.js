@@ -65,12 +65,13 @@ const dlRecord = async (words) => {
     pbGo(last); await dlWait(200); legendLook();
 
     // Objects that point to objects: nodes and arrows. Each fixture is played to its end; every step is visited so the legend rows are seen (a rewiring step, a cut).
-    const dlOpenRecord = async (fn, params = {}) => {
+    const dlOpenRecord = async (fn, params = {}, record = true) => {
       showLayer("components");
       await dlWait(200);
       $("world").querySelector(`rect[data-id="tally.${fn}"]`).dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
       await dlUntil(() => algoGraph && algoGraph.node === `tally.${fn}` && $("pb-record"));
       for (const [k, v] of Object.entries(params)) $(`pb-v-${k}`).value = v;
+      if (!record) return;
       const before = pbRecording;
       $("pb-record").click();
       await dlUntil(() => pbRecording && pbRecording !== before);
@@ -110,8 +111,55 @@ const dlRecord = async (words) => {
     report.tree = await dlSweep();
     const rootShape = pbRecording.visits.at(-1).shapes.root, rc = dlCentre(rootShape.id), lc = dlCentre(rootShape.fields.left.id), rr = dlCentre(rootShape.fields.right.id);
     report.tree = { ...report.tree, rootX: rc.x, rootY: rc.y, leftX: lc.x, leftY: lc.y, rightX: rr.x, rightY: rr.y };
+    // The text form beside the drawing, and the drawing as an image (17).
+    const toggle = $("data-text-toggle"), saveBtn = $("data-save-image");
+    const buttonsOnData = { text: !toggle.hidden, save: !saveBtn.hidden };
+    toggle.click();
+    await dlWait(300);
+    const lastEntry = pbRecording.visits[pbIndex], textLines = [...document.querySelectorAll("#data .data-textline")];
+    const textMatches = Object.keys(lastEntry.shapes).every((n) => textLines.some((t) => t.dataset.name === n && t.textContent.startsWith(`${n} = `) && t.textContent.includes(String(lastEntry.locals[n]).slice(0, 20))));
+    const svgText = dataSvgText();
+    report.exportText = { buttonsOnData, lines: textLines.length, vars: Object.keys(lastEntry.shapes).length, textMatches, isSvg: svgText.includes("<svg") && svgText.includes("viewBox"), noVars: !svgText.includes("var("), nodes: (svgText.match(/class="data-node"/g) ?? []).length, hasText: svgText.includes("AS TEXT"), size: svgText.length };
+    toggle.click();
+    await dlWait(200);
+    report.exportText.textOff = document.querySelectorAll("#data .data-textline").length;
+    showLayer("components");
+    report.exportText.hiddenElsewhere = toggle.hidden && saveBtn.hidden;
+    dlTab().click();
+    await dlWait(300);
+    // Zoom and the reset (17): the wheel zooms the drawing, Fit frames it again exactly as it was framed.
+    $("zoom-fit").click();
+    const nums = (t) => t.match(/-?[0-9.]+/g).map(Number);
+    const frameA = $("world").getAttribute("transform");
+    $("canvas").dispatchEvent(new WheelEvent("wheel", { deltaY: -300, clientX: 600, clientY: 400, bubbles: true, cancelable: true }));
+    const frameB = $("world").getAttribute("transform");
+    $("zoom-fit").click();
+    report.zoom = { zoomed: frameB !== frameA, reset: nums($("world").getAttribute("transform")).every((v, i) => Math.abs(v - nums(frameA)[i]) < 0.05) }; // the drawing breathes by a hair (animated strokes), so a tolerance
     await dlOpenRecord("longchain", { n: "20" });
     report.longchain = await dlSweep();
+    // Named lists (17): a function that takes a list of numbers offers them; one that does not, does not. Picking one fills the form, and the run is drawn.
+    await dlOpenRecord("bubble", {}, false);
+    const pick = $("pb-list-examples"), choose = (k) => { pick.value = k; pick.dispatchEvent(new Event("change")); return $("pb-v-arr").value; };
+    const asList = (t) => JSON.parse(t);
+    const sortedL = asList(choose("Sorted")), nearlyL = asList(choose("Nearly sorted")), dupL = asList(choose("Many duplicates")), randL = asList(choose("Random")), emptyT = choose("Empty");
+    const ascending = (l) => l.every((v, i) => i === 0 || l[i - 1] <= v);
+    choose("Nearly sorted");
+    const bubbleBefore = pbRecording;
+    $("pb-record").click();
+    await dlUntil(() => pbRecording && pbRecording !== bubbleBefore);
+    dlTab().click();
+    await dlWait(300);
+    pbGo(pbRecording.visits.length - 1);
+    await dlWait(300);
+    const offeredBubble = !!pick, bubbleCells = dlVar("arr")?.querySelectorAll(".data-cell").length, bubbleSteps = pbRecording.visits.length;
+    await dlOpenRecord("build", {}, false);
+    report.lists = {
+      offeredBubble, bubbleCells, bubbleSteps, offeredBuild: !!$("pb-list-examples"),
+      sorted: sortedL.length === 10 && ascending(sortedL), nearly: nearlyL.length === 10 && !ascending(nearlyL) && JSON.stringify([...nearlyL].sort((a, b) => a - b)) === JSON.stringify(sortedL),
+      dupDistinct: new Set(dupL).size, dupLen: dupL.length, randLen: randL.length, emptyT,
+    };
+    showLayer("components");
+    await dlWait(200);
     report.legend = rows.map((r, i) => ({ text: r[1], matches: counts[i] }));
 
     // A very large list is cut at the limit and says how many more are hidden; drawing it stays quick. (A parameter text is limited to 10,000 characters, so the list is built by the function.)

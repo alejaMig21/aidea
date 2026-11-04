@@ -75,6 +75,8 @@ Variables in a column: the name right-aligned at 13px `--label` (sans), then the
 
 Objects that point to objects (linked lists, trees, cycles, aliases): each object, and each list or dictionary that is pointed to, is a node inside a 1px `--line` frame (radius 8, `--bg` fill, 8px padding); a cell holding a pointer is 26px wide with a 4.5px `--muted` dot, and its arrow starts at the dot. Nodes sit in a column per level, a parent centred between its children, 90px between columns. Arrows are 1.4px `--muted` curves with a triangle head; one that goes back dips 70px below both ends. A pointer the last step set is 2.6px `--accent` with the word NEW; the one it replaced is dashed 1.6px `--accent` with WAS (11px, weight 600, letter-spacing .08em, a `--bg` halo so the line does not cross the word). A part cut at the core's limit is a dashed cell that states the limit ("cut: depth limit (6 levels)").
 
+Two buttons belong to Data only and sit at the left of the zoom control, in its own style (14px, `--muted`): "Text" (shows each variable as `name = value` in `--mono` 12.5px `--label` in a column 60px right of the drawing, headed AS TEXT; pressed it is `--accent` and weight 600) and "Save image" (an SVG with its colours written out and the page background).
+
 ## The Node being read
 
 The Node whose code the Code panel shows carries a 3px `--accent` ring and, above its top right corner, the word READING at the label size (11px, uppercase, letter-spacing .08em, `--accent`, weight 600): the word keeps it readable without colour. One Node at a time.

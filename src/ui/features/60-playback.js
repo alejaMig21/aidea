@@ -244,6 +244,30 @@ async function pbOfferTestInputs(box, node) {
   box.hidden = false;
 }
 
+// Named lists for a parameter that takes a list of numbers (layout-and-data 17): the shapes where sorting and searching show their differences. Ten numbers: enough to see, few enough to draw.
+const PB_LISTS = {
+  Empty: () => [],
+  Random: () => Array.from({ length: 10 }, () => Math.floor(Math.random() * 100)),
+  Sorted: () => Array.from({ length: 10 }, (_, i) => i * 3 + 1),
+  "Nearly sorted": () => { const a = PB_LISTS.Sorted(); [a[2], a[3]] = [a[3], a[2]]; [a[7], a[8]] = [a[8], a[7]]; return a; },
+  "Many duplicates": () => Array.from({ length: 10 }, () => 1 + Math.floor(Math.random() * 3)),
+};
+// The first parameter that looks like a list of numbers: annotated as a list (not of text, lists or dictionaries), or, with no annotation, written like one in its default or named like one.
+const PB_LIST_NAMES = /^(arr|array|nums|numbers|items|values|data|lst|xs|seq)$/i;
+const pbListParam = (node) => (node.parameters ?? []).find((p) => p.annotation
+  ? /^(list|sequence|iterable)\b/i.test(p.annotation) && !/\b(str|bool|dict|tuple)\b|\[\s*list/i.test(p.annotation)
+  : /^\[[-\d., ]*\]$/.test(p.default ?? "") || PB_LIST_NAMES.test(p.name));
+function pbListPicker(node) {
+  const param = pbListParam(node);
+  if (!param) return null;
+  const select = pbEl("select", { id: "pb-list-examples", onchange: (e) => {
+    const make = PB_LISTS[e.target.value];
+    if (make) $(`pb-v-${param.name}`).value = `[${make().join(", ")}]`;
+    e.target.value = "";
+  } }, pbEl("option", { value: "", textContent: "Choose one…" }), ...Object.keys(PB_LISTS).map((k) => pbEl("option", { value: k, textContent: k })));
+  return pbEl("label", {}, `A list of numbers for ${param.name}`, select);
+}
+
 // Builds the panel: the inputs always, the controls once there is a recording.
 function pbRender() {
   if (!pbNode()) { layoutSetRunAvailable(false); return; } // the function is gone (another Project): nothing to show
@@ -258,6 +282,7 @@ function pbRender() {
   const parts = [
     pbEl("h3", { textContent: "Test data" }),
     fromTests,
+    ...[pbListPicker(node)].filter(Boolean),
     ...pbFields(node),
     pbEl("p", { className: "pb-hint", textContent: "Numbers, text in quotes like \"hi\", or lists like [1, 2, 3]." }),
     pbEl("div", { className: "pb-row" }, pbEl("button", { textContent: "Use example", onclick: useExample }), pbEl("button", { id: "pb-record", className: "primary", textContent: "Record a run", onclick: pbRecord })),
