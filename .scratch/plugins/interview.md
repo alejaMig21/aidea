@@ -22,3 +22,6 @@ DECIDED 2026-11-04: some findings block and others only warn (option A, as the a
 
 ## 7. Updates
 DECIDED 2026-11-04: every update, even a small one, goes through the quarantine, but it is compared with the version the person accepted, and the scanner shows only what changed (new files, new capabilities, new findings). If nothing serious changed it is one click (option A, as the agent recommended). Not chosen: skipping the review for small updates, and a full scan from zero for every update.
+
+## 8. Settings and data of a plugin
+DECIDED 2026-11-04: each plugin has a private folder by its name, outside any Project; its settings are declared with a schema in the manifest and drawn as a form; secrets go to the operating system's secure store, never to a settings file. When the person removes a plugin, aidea asks, with "keep" as the default, whether to delete its data too (option A, as the agent recommended). Not chosen: always delete, and always keep.
