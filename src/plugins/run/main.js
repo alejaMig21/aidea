@@ -257,6 +257,14 @@ export function activate(ctx) {
     for (const n of names) run.parts.delete(n);
     return startSet(root, r.recipe, run, names);
   });
+  // For the window that is closing: what is alive across every Project, and a stop of all of it (the shell kills the core right after, which would leave the parts behind).
+  const aliveNames = () => [...runs.values()].flatMap((run) => run.order.filter((n) => run.parts.get(n)?.alive));
+  ctx.api.handle("running", () => { const parts = aliveNames(); return { count: parts.length, parts }; });
+  ctx.api.handle("stopAll", async () => {
+    const stopped = [];
+    for (const run of runs.values()) stopped.push(...await stopNames(run, [...run.order]));
+    return { stopped };
+  });
   ctx.api.handle("output", (body) => {
     const root = rootOf(body);
     const run = runOf(root);

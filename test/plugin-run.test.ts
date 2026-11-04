@@ -287,3 +287,38 @@ test("the values are written nowhere by aidea: not in the answers, not in what t
   for (const f of walk(s.store)) assert.ok(!readFileSync(f).includes(secretValue), f);
   assert.ok(!readFileSync(join(s.project, ".aidea", "run.json"), "utf8").includes(secretValue));
 });
+
+// Ticket 09: closing aidea while parts run. The window asks the core what runs, and on a yes asks it to stop everything before the core itself is killed.
+const longLived = (port: number) => `require("net").createServer().listen(${port}, "127.0.0.1"); setInterval(() => {}, 1000);`;
+
+test("running says how many parts are alive: none before Play, so closing does not ask", async () => {
+  const t = await (await setup({ parts: [part("db", "node db.js")] }, { "db.js": "setInterval(() => {}, 1000)" })).boot();
+  assert.deepEqual((await t.call("running")).body, { count: 0, parts: [] });
+});
+
+test("with parts running, running names them, and stopAll ends every part with its children: no process and no busy port remain", async () => {
+  const p1 = await freePort(), p2 = await freePort();
+  const s = await setup({ parts: [part("db", "node db.js", { ready: { port: p1 } }), part("api", "node api.js", { ready: { port: p2 }, waitFor: ["db"] })] }, { "db.js": longLived(p1), "api.js": longLived(p2) });
+  const t = await s.boot();
+  await t.call("accept");
+  assert.equal((await t.call("play")).body.started, true);
+  assert.deepEqual((await t.call("running")).body, { count: 2, parts: ["db", "api"] });
+  assert.equal((await t.call("stopAll")).body.stopped.length, 2);
+  assert.ok(await until(async () => !(await answers(p1)) && !(await answers(p2))));
+  assert.deepEqual((await t.call("running")).body, { count: 0, parts: [] });
+});
+
+test("after a relaunch no part shows as running and none starts by itself", async () => {
+  const port = await freePort();
+  const s = await setup({ parts: [part("db", "node db.js", { ready: { port } })] }, { "db.js": longLived(port) });
+  const first = await s.boot();
+  await first.call("accept");
+  await first.call("play");
+  await first.call("stopAll");
+  first.core.close();
+  const second = await s.boot();
+  await wait(500);
+  assert.deepEqual((await second.call("running")).body, { count: 0, parts: [] });
+  assert.equal((await second.call("output")).body.parts.length, 0);
+  assert.equal(await answers(port), false);
+});
