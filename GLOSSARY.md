@@ -87,8 +87,8 @@ _Avoid_: Constraint, quality attribute
 ## Working with agents
 
 **Agent adapter**:
-The piece that lets aidea drive one specific external coding agent.
-_Avoid_: Plugin, driver, connector
+The plugin that lets aidea drive one specific external coding agent. It fills the role of Provider.
+_Avoid_: driver, connector
 
 **Proposal**:
 A change the agent suggests to the canvas or code, shown highlighted and pending until the user accepts or rejects it.
@@ -179,6 +179,32 @@ _Avoid_: Argument, path
 **Practice session**:
 A separate session of generated problems, based on the user's own project, that checks recall of propositions without naming them. Planned for a later version; the Learner graph is designed so that it can be added.
 _Avoid_: Quiz, exercise
+
+## Plugins
+
+**Kernel**:
+The small part of aidea that is not a plugin and works with every plugin off: the plugin loader and registry, the plugin manager, the window with the Layout and its named slots, the point that decides on guard rules, configuration, credentials and the core server, and the emergency screen. Everything else is a plugin.
+_Avoid_: Core (the core server is only one part of it), Engine, Platform
+
+**Plugin**:
+A folder of finished JavaScript and a manifest that adds something to aidea through the public API: a Panel, a layer, a language, an agent connection, a tool, a guard rule, the Tutor. The features that ship with aidea are plugins too, removable except the few marked required. See `docs/plugin-api.md`.
+_Avoid_: Extension, add-on, module, mod
+
+**Quarantine**:
+The folder where a plugin that was just added waits. Nothing of it runs there. It is scanned without a model, the Tutor may give an opinion, and only the person installs it from there; every update returns to it.
+_Avoid_: Sandbox, staging
+
+**Role**:
+A job that plugins fill for the rest of aidea, such as being the Tutor or being a Builder. A role needs at least one Instance.
+_Avoid_: Service type, persona
+
+**Instance**:
+One running copy of a role, such as one Tutor or one Builder, with its own session. A goal for later: the person can have several of a role at once, each connected to its own Provider.
+_Avoid_: Agent (it names the Provider), Session (an Instance owns one)
+
+**Provider**:
+The plugin that connects an Instance to a concrete agent or model, such as one for Claude Code. It is what an Agent adapter is.
+_Avoid_: Backend, vendor
 
 ## Window
 
