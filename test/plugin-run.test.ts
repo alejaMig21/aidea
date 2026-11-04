@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer, connect } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -231,4 +231,59 @@ test("closing the core stops what Play started", async () => {
   t.core.close();
   await t.core.plugins.deactivate("run");
   assert.ok(await until(async () => !(await answers(port))));
+});
+
+// Ticket 08: environment variables are listed by name; the values come from the Project's own .env and nowhere else.
+const secretValue = "s3cr3t-value-xyz";
+const listed = (names: string[]) => ({ parts: [part("app", "node show.js", { env: names })] });
+const show = 'require("fs").writeFileSync("seen.json", JSON.stringify([process.env.AIDEA_T_A, process.env.AIDEA_T_C]));';
+
+test("a recipe that holds a value in place of a variable name is refused, and the message does not repeat the value", async () => {
+  const t = await (await setup({ parts: [part("app", "x", { env: [`AIDEA_T_A=${secretValue}`] })] })).boot();
+  const r = (await t.call("status")).body.recipe;
+  assert.equal(r.state, "invalid");
+  assert.match(r.errors.join(" | "), /parts\[0\]\.env/);
+  assert.ok(!JSON.stringify(r).includes(secretValue));
+});
+
+test("a part receives the variables it lists, with the values from the .env of the Project, and no others from that file", async () => {
+  const s = await setup(listed(["AIDEA_T_A"]), { "show.js": show, ".env": `# comment\nAIDEA_T_A=alpha\nexport AIDEA_T_B="quoted"\nAIDEA_T_C=${secretValue}\n` });
+  const t = await s.boot();
+  await t.call("accept");
+  assert.equal((await t.call("play")).body.started, true);
+  assert.ok(await until(() => { try { return readFileSync(join(s.project, "seen.json"), "utf8").length > 0; } catch { return false; } }));
+  assert.deepEqual(JSON.parse(readFileSync(join(s.project, "seen.json"), "utf8")), ["alpha", null]);
+});
+
+test("a missing variable fails the part before it starts, names the variable, and shows no values", async () => {
+  const s = await setup(listed(["AIDEA_T_A", "AIDEA_T_MISSING"]), { "show.js": show, ".env": `AIDEA_T_A=${secretValue}\n` });
+  const t = await s.boot();
+  await t.call("accept");
+  const r = (await t.call("play")).body;
+  assert.equal(r.started, false);
+  assert.equal(r.failed.part, "app");
+  assert.match(r.failed.why, /AIDEA_T_MISSING/);
+  assert.ok(!JSON.stringify(r).includes(secretValue));
+  await wait(300);
+  assert.throws(() => readFileSync(join(s.project, "seen.json")));
+});
+
+test("with no .env file every listed variable is missing", async () => {
+  const s = await setup(listed(["AIDEA_T_A"]), { "show.js": show });
+  const t = await s.boot();
+  await t.call("accept");
+  const r = (await t.call("play")).body;
+  assert.match(r.failed.why, /AIDEA_T_A/);
+});
+
+test("the values are written nowhere by aidea: not in the answers, not in what the plugin keeps", async () => {
+  const s = await setup(listed(["AIDEA_T_A"]), { "show.js": show, ".env": `AIDEA_T_A=${secretValue}\n` });
+  const t = await s.boot();
+  await t.call("accept");
+  const answers = [JSON.stringify((await t.call("status")).body), JSON.stringify((await t.call("play")).body), JSON.stringify((await t.call("output")).body)];
+  await wait(300);
+  for (const a of answers) assert.ok(!a.includes(secretValue));
+  const walk = (d: string): string[] => readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(d, e.name)) : [join(d, e.name)]));
+  for (const f of walk(s.store)) assert.ok(!readFileSync(f).includes(secretValue), f);
+  assert.ok(!readFileSync(join(s.project, ".aidea", "run.json"), "utf8").includes(secretValue));
 });

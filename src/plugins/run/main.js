@@ -9,6 +9,7 @@ import { isAbsolute, join, normalize, resolve, sep } from "node:path";
 const MAX_LINES = 2000; // lines kept for each part; older ones are dropped and counted
 const DEFAULT_LIMIT = 60; // seconds to become ready
 const NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+const ENV_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ---- the recipe -------------------------------------------------------------------------------------------------
@@ -31,7 +32,8 @@ function problems(json) {
       if (!ok) errors.push(`${at}.ready must be exactly one of { "port": number }, { "line": text }, { "file": path } or { "url": address }`);
     }
     if (p.timeoutSeconds !== undefined && !(typeof p.timeoutSeconds === "number" && p.timeoutSeconds > 0)) errors.push(`${at}.timeoutSeconds must be a number above zero`);
-    if (p.env !== undefined && (!Array.isArray(p.env) || p.env.some((e) => typeof e !== "string"))) errors.push(`${at}.env must be a list of variable names`);
+    // Names only: a string that is not a plain name (a "NAME=value" pair, say) is refused, and the message never repeats it, so a pasted value does not travel.
+    if (p.env !== undefined && (!Array.isArray(p.env) || p.env.some((e) => typeof e !== "string" || !ENV_NAME.test(e)))) errors.push(`${at}.env must be a list of variable names (letters, digits and "_"), never values: the values come from the .env file of the Project`);
   });
   if (errors.length) return errors;
   json.parts.forEach((p, i) => { for (const w of p.waitFor ?? []) if (!names.has(w)) errors.push(`parts[${i}].waitFor names "${w}", which is not a part`); });
@@ -61,6 +63,18 @@ function readRecipe(root) {
   if (errors.length) return { state: "invalid", errors };
   const parts = json.parts.map((p) => ({ name: p.name, command: p.command, folder: p.folder ?? ".", waitFor: p.waitFor ?? [], ready: p.ready ?? null, timeoutSeconds: p.timeoutSeconds ?? DEFAULT_LIMIT, env: p.env ?? [] }));
   return { state: "ok", recipe: { parts }, hash: createHash("sha256").update(JSON.stringify(parts)).digest("hex") };
+}
+
+// The variables of the Project's own .env (NAME=value, "export" and quotes allowed, "#" comments). Read at each start and never kept.
+function readEnvFile(root) {
+  const file = join(root, ".env");
+  const found = {};
+  if (!existsSync(file)) return found;
+  for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
+    const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(line);
+    if (m) found[m[1]] = /^(["']).*\1$/.test(m[2]) ? m[2].slice(1, -1) : m[2];
+  }
+  return found;
 }
 
 // What changed between the accepted recipe and the one on disk, by part name.
@@ -105,6 +119,10 @@ export function activate(ctx) {
   const runOf = (root) => { if (!runs.has(root)) runs.set(root, { parts: new Map(), order: [], stoppedOrder: [] }); return runs.get(root); };
 
   function spawnPart(root, run, part) {
+    // Only the listed variables come from .env; a missing one stops the part before it starts, by name.
+    const fromFile = part.env.length ? readEnvFile(root) : {};
+    const missing = part.env.filter((n) => !(n in fromFile));
+    if (missing.length) throw { part: part.name, why: `needs ${missing.length > 1 ? "these variables" : "the variable"} ${missing.join(", ")}, which ${missing.length > 1 ? "are" : "is"} not in the .env file of the Project` };
     const entry = { part, lines: [], dropped: 0, alive: true, exit: null, sawLine: !(part.ready && "line" in part.ready), partial: "", stopped: false };
     const push = (text) => {
       const lines = (entry.partial + text).split(/\r?\n/);
@@ -115,7 +133,7 @@ export function activate(ctx) {
       }
       if (entry.lines.length > MAX_LINES) { entry.dropped += entry.lines.length - MAX_LINES; entry.lines.splice(0, entry.lines.length - MAX_LINES); }
     };
-    const env = { ...process.env };
+    const env = { ...process.env, ...Object.fromEntries(part.env.map((n) => [n, fromFile[n]])) };
     entry.proc = spawn(part.command, { cwd: resolve(root, part.folder), shell: true, windowsHide: true, detached: !win, stdio: ["ignore", "pipe", "pipe"], env });
     entry.proc.stdout.on("data", (d) => push(String(d)));
     entry.proc.stderr.on("data", (d) => push(String(d)));
