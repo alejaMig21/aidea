@@ -46,3 +46,9 @@ DECIDED 2026-11-04: a plugin may define its own events (option A, as the agent r
 
 ## 15. A marketplace later
 DECIDED 2026-11-04: a marketplace is wanted later, under today's rules (option A, as the agent recommended). A plugin from it goes through the same quarantine and scan as any other; the marketplace helps find plugins, it does not make them trusted, and nothing installs by itself. Not chosen: never, and marketplace plugins trusted without quarantine.
+
+## 16. Live or restart
+DECIDED 2026-11-04: installing a new plugin, enabling it, disabling it and removing one that never ran in this session apply live. Updating or removing a plugin whose code already ran in this session asks for a restart (Node cannot unload a loaded module), with a "Restart aidea" button; the same status words everywhere: applied, failed, restart required.
+
+## Interview closed on 2026-11-04
+Sixteen decisions. Next: ADR 0008, then a spec and tickets. Still open for the spec: which services stay single-instance; how parallel Builders coordinate; the exact manifest fields; the list of named slots; the list of required plugins.
