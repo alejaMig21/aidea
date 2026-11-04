@@ -43,3 +43,6 @@ DECIDED 2026-11-04: the first version of the plugin system includes both the plu
 
 ## 14. Events defined by plugins
 DECIDED 2026-11-04: a plugin may define its own events (option A, as the agent recommended). Each carries the name of the plugin that defines it, declares whether it only announces or can also ask for a decision, and is part of that plugin's public contract, versioned; the live inspection lists them. This is what lets a plugin build on another (the Data layer on Playback, the versions plugin on the animation engine). Not chosen: only the kernel defines events, and free events with no rules.
+
+## 15. A marketplace later
+DECIDED 2026-11-04: a marketplace is wanted later, under today's rules (option A, as the agent recommended). A plugin from it goes through the same quarantine and scan as any other; the marketplace helps find plugins, it does not make them trusted, and nothing installs by itself. Not chosen: never, and marketplace plugins trusted without quarantine.
