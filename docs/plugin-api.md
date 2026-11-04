@@ -21,6 +21,8 @@ my-plugin/
 
 Finished plain JavaScript (ES modules). Libraries are bundled into the folder beforehand. No install step, no install scripts, no native binaries (unless declared, and then the scan flags them). A plugin has at least one half.
 
+Where plugins live: the ones that ship with aidea are in the application's own `src/plugins` folder (listed as built-in); the person's plugin store is the folder named by `AIDEA_PLUGINS_DIR`, by default `.aidea/plugins` in the home folder.
+
 ## The manifest, `aidea-plugin.json`
 
 Static metadata, read without running any code. A text file of at most 64 KiB.
@@ -71,7 +73,7 @@ export function activate(ui) {
 A slot has an owner, a kind and an entry shape. The owner declares it; the kernel refuses entries for slots nobody declared.
 
 - Kinds: `list` (many entries, in order), `single` (one occupant), `keyed` (one entry per key).
-- Version 0.1 declares one slot: **`layout.panel`** (`list`). Entry: `{ id, title, render(container) -> dispose, side?: "left" | "right" | "bottom", startsHidden?: boolean, min?: number }`. It becomes a row in the Panels menu and a Panel in the Layout.
+- Version 0.1 declares one slot: **`layout.panel`** (`list`). Entry: `{ id, title, render(container) -> dispose, side?: "left" | "right" | "bottom", startsHidden?: boolean, min?: number, icon?: string }` (`icon` is the inner shapes of a 16 by 16 SVG, as the menu draws them). It becomes a row in the Panels menu and a Panel in the Layout. The Panel's id is `<plugin id>.<entry id>`, except that an entry whose id equals the plugin's id (the usual plugin with one Panel) takes the plugin's id as its Panel id.
 - Later candidates (not in 0.1): a status item, a toolbar of a Panel, a renderer of a chat message, buttons of the selection control.
 
 ## Events

@@ -31,14 +31,14 @@ async function open(plugins: Record<string, { manifest?: unknown; raw?: string; 
     if (p.raw !== undefined) writeFileSync(join(dir, "aidea-plugin.json"), p.raw);
     for (const [name, text] of Object.entries(p.files ?? {})) writeFileSync(join(dir, name), text);
   }
-  const core = await startCore({ port: 0, pluginsDir: store });
+  const core = await startCore({ port: 0, pluginsDir: store, builtinPluginsDir: false });
   const list = async () => (await (await fetch(core.url + "/plugins")).json()) as { plugins: { id: string; title: string; version: string; state: string; reason?: string }[]; services: { key: string; owner: string }[] };
   const act = (what: "activate" | "deactivate", id: string) => fetch(core.url + `/plugins/${what}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) });
   return { core, list, act, byId: async (id: string) => (await list()).plugins.find((p) => p.id === id) };
 }
 
 test("a core with no plugin store lists no plugins", async () => {
-  const core = await startCore({ port: 0 });
+  const core = await startCore({ port: 0, builtinPluginsDir: false });
   try {
     assert.deepEqual(await (await fetch(core.url + "/plugins")).json(), { plugins: [], services: [] });
   } finally { core.close(); }

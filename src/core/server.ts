@@ -15,6 +15,7 @@ import { createPluginHost } from "./plugins/host.ts";
 const MAX_BODY_BYTES = 64 * 1024;
 const ROLES = ["builder", "tutor", "prober", "extractor", "auditor", "grader", "definer"];
 const routesDir = fileURLToPath(new URL("./routes/", import.meta.url));
+const shippedPlugins = fileURLToPath(new URL("../plugins/", import.meta.url));
 
 // Every file in routes/ is a route module; adding a feature means adding a file there.
 async function loadRoutes(): Promise<Handler[]> {
@@ -37,8 +38,8 @@ export function parseRoleAdapters(text: string | undefined): Record<string, stri
   return pairs;
 }
 
-// `pluginsDir` is the plugin store: one folder per plugin (docs/plugin-api.md); without it there are no plugins.
-export async function startCore({ port, adapter: defaultAdapter = createClaudeAdapter(), adapters = {}, roleAdapters = {}, recentsFile, preferencesFile, learnerDir, learnerModel, pluginsDir }: { port: number; adapter?: Adapter; adapters?: Record<string, Adapter>; roleAdapters?: Record<string, string>; recentsFile?: string; preferencesFile?: string; learnerDir?: string; learnerModel?: string; pluginsDir?: string }) {
+// `pluginsDir` is the plugin store: one folder per plugin (docs/plugin-api.md). `builtinPluginsDir` holds the plugins that ship with aidea (src/plugins by default; false loads none).
+export async function startCore({ port, adapter: defaultAdapter = createClaudeAdapter(), adapters = {}, roleAdapters = {}, recentsFile, preferencesFile, learnerDir, learnerModel, pluginsDir, builtinPluginsDir = shippedPlugins }: { port: number; adapter?: Adapter; adapters?: Record<string, Adapter>; roleAdapters?: Record<string, string>; recentsFile?: string; preferencesFile?: string; learnerDir?: string; learnerModel?: string; pluginsDir?: string; builtinPluginsDir?: string | false }) {
   const named: Record<string, Adapter> = { ...adapters, default: defaultAdapter };
   for (const [role, name] of Object.entries(roleAdapters)) {
     if (!ROLES.includes(role)) throw new Error(`Unknown role "${role}". Roles: ${ROLES.join(", ")}`);
@@ -60,7 +61,7 @@ export async function startCore({ port, adapter: defaultAdapter = createClaudeAd
     probes: createProbes(learnerDir),
     plans: createPlans(learnerDir),
     permissions: createBroker(),
-    plugins: createPluginHost(pluginsDir),
+    plugins: createPluginHost([...(builtinPluginsDir ? [{ dir: builtinPluginsDir, builtin: true }] : []), ...(pluginsDir ? [{ dir: pluginsDir, builtin: false }] : [])]),
     proposals: new Map(),
     recents: createRecents(recentsFile),
     preferences: createPreferences(preferencesFile),

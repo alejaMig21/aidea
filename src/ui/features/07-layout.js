@@ -520,8 +520,6 @@ layoutRegister({ id: "files", title: "Files", side: "left", min: 240, weight: 30
 layoutRegister({ id: "code", title: "Code", side: "left", min: 320, weight: 560, startsHidden: true, foldRank: 50, pane: "pane-code", icon: '<path d="M6.5 6 4.5 8l2 2M9.5 6l2 2-2 2"/>' });
 layoutRegister({ id: "run", title: "Playback", side: "right", min: 288, weight: 420, foldRank: 20, pane: "pane-run", icon: '<path d="M7 3v10"/>', available: () => layoutRunAvailable, unavailable: "Open a function's Flow to use Playback" });
 layoutRegister({ id: "right", title: "Tutor", side: "right", min: 288, weight: 540, legacySize: 320, foldRank: 30, pane: "pane-tutor", adopt: ["panel"], icon: '<path d="M10 3v10"/>' });
-layoutRegister({ id: "terminal", title: "Terminal", side: "bottom", min: 240, weight: 0, startsHidden: true, foldRank: 60, pane: "pane-terminal", icon: '<path d="M4.5 6.5 6.5 8l-2 1.5M8 10h3"/>' });
-$("pane-terminal").append(Object.assign(document.createElement("p"), { className: "said", textContent: "The output of the programs you start with Play will appear here, one tab for each program.", style: "margin:0;padding:12px 14px;color:var(--muted)" }));
 
 // The Tutor's entry point stays disabled until the Tutor exists. The head of the panel is the topic field
 // (50-tutor.js), the "Start a class" button and one line of help; the other files add the rest below it.
@@ -539,9 +537,9 @@ pluginSlotDeclare("layout.panel", {
   kind: "list",
   add(entry, owner) {
     if (!entry || typeof entry.id !== "string" || typeof entry.title !== "string" || typeof entry.render !== "function") throw new Error('a Panel needs an "id", a "title" and a "render" function');
-    const id = `${owner}.${entry.id}`;
+    const id = entry.id === owner ? owner : `${owner}.${entry.id}`; // the usual plugin has one Panel, which takes the plugin's own id
     if (layoutDef[id]) throw new Error(`the Panel "${id}" already exists`);
-    layoutRegister({ id, title: entry.title, side: entry.side === "left" || entry.side === "bottom" ? entry.side : "right", min: Number(entry.min) > 0 ? Number(entry.min) : 288, weight: 420, startsHidden: entry.startsHidden === true, foldRank: 60, pane: `pane-${id}`, icon: '<path d="M5 8h6"/>' });
+    layoutRegister({ id, title: entry.title, side: entry.side === "left" || entry.side === "bottom" ? entry.side : "right", min: Number(entry.min) > 0 ? Number(entry.min) : 288, weight: entry.side === "bottom" ? 0 : 420, startsHidden: entry.startsHidden === true, foldRank: 60, pane: `pane-${id}`, icon: typeof entry.icon === "string" ? entry.icon : '<path d="M5 8h6"/>' });
     let dispose;
     try { dispose = entry.render(document.getElementById(`pane-${id}`)); } catch (e) { layoutUnregister(id); throw e; }
     return () => { try { if (typeof dispose === "function") dispose(); } finally { layoutUnregister(id); } };

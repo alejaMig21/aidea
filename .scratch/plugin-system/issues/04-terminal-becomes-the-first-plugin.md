@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] The Terminal is declared by a built-in plugin, not by the Layout code.
-- [ ] Every test of `terminal-panel.test.ts` passes unchanged.
-- [ ] Disabling or removing the plugin removes the Terminal and a saved Layout that held it still restores.
-- [ ] `npm run verify` is green.
+- [x] The Terminal is declared by a built-in plugin, not by the Layout code.
+- [x] Every test of `terminal-panel.test.ts` passes unchanged.
+- [x] Disabling or removing the plugin removes the Terminal and a saved Layout that held it still restores.
+- [x] `npm run verify` is green.

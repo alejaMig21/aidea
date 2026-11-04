@@ -6,9 +6,9 @@ import { readManifest } from "./manifest.ts";
 import type { Manifest } from "./manifest.ts";
 
 export type PluginState = "active" | "inactive" | "failed";
-export type PluginInfo = { id: string; title: string; version: string; state: PluginState; reason?: string; ui: boolean }; // `ui`: it has an interface half
+export type PluginInfo = { id: string; title: string; version: string; state: PluginState; reason?: string; ui: boolean; builtin: boolean }; // `ui`: it has an interface half; `builtin`: it ships with aidea
 type Undo = () => unknown;
-type Entry = { id: string; folder: string; manifest?: Manifest; state: PluginState; reason?: string; undo: Undo[]; returned?: Undo }; // `returned`: what `activate` returned, run after every other undo
+type Entry = { id: string; folder: string; builtin: boolean; manifest?: Manifest; state: PluginState; reason?: string; undo: Undo[]; returned?: Undo }; // `returned`: what `activate` returned, run after every other undo
 
 export type PluginContext = {
   plugin: { id: string; title: string; version: string };
@@ -17,7 +17,8 @@ export type PluginContext = {
   log: (message: string) => void;
 };
 
-export function createPluginHost(dir?: string) {
+// `roots` are the folders that hold plugins: the ones that ship with aidea first (builtin), then the person's plugin store.
+export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []) {
   const entries = new Map<string, Entry>();
   const services = new Map<string, { owner: string; value: unknown }>();
   const logs: { plugin: string; message: string }[] = [];
@@ -81,23 +82,25 @@ export function createPluginHost(dir?: string) {
   }
 
   async function loadAll() {
-    if (!dir || !existsSync(dir)) return;
-    const folders = readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory() && !d.name.startsWith(".")).map((d) => d.name).sort();
-    for (const name of folders) {
-      const folder = join(dir, name);
-      const read = readManifest(folder);
-      if ("problems" in read) {
-        entries.set(name, { id: name, folder, state: "failed", reason: read.problems.join("; "), undo: [] });
-        continue;
+    for (const { dir, builtin } of roots) {
+      if (!existsSync(dir)) continue;
+      const folders = readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory() && !d.name.startsWith(".")).map((d) => d.name).sort();
+      for (const name of folders) {
+        const folder = join(dir, name);
+        const read = readManifest(folder);
+        if ("problems" in read) {
+          entries.set(`${name}#${entries.size}`, { id: name, folder, builtin, state: "failed", reason: read.problems.join("; "), undo: [] });
+          continue;
+        }
+        const { manifest } = read;
+        if (entries.has(manifest.id)) {
+          entries.set(`${name}#${entries.size}`, { id: name, folder, builtin, state: "failed", reason: `the plugin id "${manifest.id}" is already used by another folder`, undo: [] });
+          continue;
+        }
+        entries.set(manifest.id, { id: manifest.id, folder, builtin, manifest, state: "inactive", undo: [] });
       }
-      const { manifest } = read;
-      if (entries.has(manifest.id)) {
-        entries.set(`${name}#duplicate`, { id: name, folder, state: "failed", reason: `the plugin id "${manifest.id}" is already used by another folder`, undo: [] });
-        continue;
-      }
-      entries.set(manifest.id, { id: manifest.id, folder, manifest, state: "inactive", undo: [] });
     }
-    for (const id of [...entries.keys()]) await activate(id);
+    for (const [key, entry] of [...entries]) if (!key.includes("#")) await activate(entry.id);
   }
 
   return {
@@ -105,7 +108,7 @@ export function createPluginHost(dir?: string) {
     activate,
     deactivate,
     has: (id: string) => entries.has(id) && !id.includes("#"),
-    list: (): PluginInfo[] => [...entries.values()].map((e) => ({ id: e.id, title: e.manifest?.title ?? e.id, version: e.manifest?.version ?? "", state: e.state, ...(e.reason ? { reason: e.reason } : {}), ui: !!e.manifest?.ui })),
+    list: (): PluginInfo[] => [...entries.values()].map((e) => ({ id: e.id, title: e.manifest?.title ?? e.id, version: e.manifest?.version ?? "", state: e.state, ...(e.reason ? { reason: e.reason } : {}), ui: !!e.manifest?.ui, builtin: e.builtin })),
     // The file of the interface half of an ACTIVE plugin, or undefined.
     uiFile: (id: string) => {
       const e = entries.get(id);
