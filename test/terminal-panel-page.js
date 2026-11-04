@@ -31,7 +31,7 @@ function geometry() {
   };
 }
 
-async function show() {
+async function termShow() {
   const row = menuRow("Terminal");
   report.menu = { present: !!row, checked: row ? row.getAttribute("aria-checked") : null };
   report.start = { ids: inDock(), canvas: Math.round(box("canvas").height) };
@@ -47,20 +47,20 @@ async function show() {
   report.saved = stored();
 }
 
-async function reopen() {
+async function termReopen() {
   report.opened = { inDock: inDock().includes("terminal"), withChat: inDock().includes("terminal") && withChat(), groups: groups() };
 }
 
-async function strip() {
+async function termStrip() {
   await menu("Terminal");
   report.strip = geometry();
 }
 
-async function stripReopen() {
+async function termStripReopen() {
   report.opened = geometry();
 }
 
-async function before() {
+async function termBefore() {
   const row = menuRow("Terminal");
   report.before = { present: !!row, checked: row ? row.getAttribute("aria-checked") : null, inDock: inDock().includes("terminal") };
 }
@@ -70,7 +70,7 @@ async function before() {
     await openProject(window.PANELS_PROJECT);
     await until(() => $("home").hidden && $("opening").hidden, 10000);
     await wait(300);
-    await ({ show, reopen, strip, stripReopen, before }[window.TERM_MODE])();
+    await ({ show: termShow, reopen: termReopen, strip: termStrip, stripReopen: termStripReopen, before: termBefore }[window.TERM_MODE])();
   } catch (e) {
     report.errors.push(String(e && e.stack || e));
   }

@@ -9,6 +9,7 @@ const layoutCanvasFr = 800; // the Canvas weight; the Panels' weights (380, 300,
 const layoutNarrowBelow = 760; // narrower windows show the Panels as drawers
 const layoutGap = 8; // the gap between two cards, and the margin between a card and the window's edge
 const layoutMinHeight = 120; // the least height of a Panel stacked above or below another
+const layoutBottomHeight = 240; // the height a Panel of the bottom strip starts with
 const layoutSvg = (inner) => `<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/>${inner}</svg>`;
 
 // ---- The registry. Order is the order on screen by default: the Panels of the left, then the Canvas, then the Panels of the right.
@@ -185,7 +186,7 @@ const layoutWanted = (name) => layoutAvailable(name) && !layoutState[`${name}Fol
 // Every minimum is padded by the library's gap. The window leaves the Layout a margin of 8px at each side.
 // (the library counts the gap into the size of a group, so a group is never narrower than its declared minimum.)
 const layoutMin = (name) => (name === "canvas" ? layoutCanvasMin : layoutDef[name].min) + layoutGap;
-const layoutNeed = (shown) => 2 * layoutGap + (layoutCanvasHidden ? 0 : layoutMin("canvas")) + layoutNames.reduce((n, p) => n + (shown[p] ? layoutMin(p) : 0), 0);
+const layoutNeed = (shown) => 2 * layoutGap + (layoutCanvasHidden ? 0 : layoutMin("canvas")) + layoutNames.reduce((n, p) => n + (shown[p] && layoutDef[p].side !== "bottom" ? layoutMin(p) : 0), 0); // a Panel of the bottom strip is not a column
 const layoutOrder = () => [...layoutLeft, "canvas", ...layoutNames.filter((n) => !layoutLeft.includes(n))];
 const layoutInDock = (id) => !!layoutApi.getPanel(id);
 
@@ -196,13 +197,15 @@ function layoutResolve() {
   layoutDrawer = null;
   layoutShown = Object.fromEntries(layoutNames.map((n) => [n, layoutWanted(n)]));
   // For lack of room the Panels fold in the order of their fold rank (the Builder first); the one opened last is the last to go.
-  for (const n of [...layoutFoldOrder.filter((x) => x !== layoutLastOpened), layoutLastOpened]) if (layoutNeed(layoutShown) > layoutWidth()) layoutShown[n] = false;
+  const folds = [...layoutFoldOrder.filter((x) => x !== layoutLastOpened), layoutLastOpened].filter((n) => layoutDef[n].side !== "bottom"); // folding the bottom strip would give no width back
+  for (const n of folds) if (layoutNeed(layoutShown) > layoutWidth()) layoutShown[n] = false;
 }
 
 // Where a Panel was when it left, so that showing it again puts it back: in the tabs of a neighbour, or at its side.
 function layoutRemember(id) {
   const group = layoutApi.getPanel(id).group, mate = group.panels.find((x) => x.id !== id);
   if (mate) { layoutHome[id] = { ref: mate.id, direction: "within" }; return; }
+  if (layoutDef[id]?.side === "bottom") { delete layoutHome[id]; return; } // alone, it goes back to the bottom strip, not beside one neighbour
   const r = group.element.getBoundingClientRect(), near = (a, b) => Math.abs(a - b) <= layoutGap + 4;
   for (const other of layoutApi.groups) {
     if (other === group || !other.panels.length) continue;
@@ -217,6 +220,7 @@ function layoutRemember(id) {
 function layoutPlace(id) {
   const home = layoutHome[id];
   if (home && layoutInDock(home.ref)) return { referencePanel: home.ref, direction: home.direction };
+  if (layoutDef[id]?.side === "bottom") return { direction: "below" }; // no reference: below the whole grid, as wide as the Layout
   const order = layoutOrder(), at = order.indexOf(id);
   const before = order.slice(0, at).reverse().find(layoutInDock);
   if (before) return { referencePanel: before, direction: "right" };
@@ -256,7 +260,9 @@ function layoutSync(wanted) {
   } finally { layoutBusy = false; }
   // Sizes. While the person has not dragged a border and every group holds one Panel in one row, the weights decide every width (as the fixed grid did),
   // so showing or hiding a Panel shares the room by weight. Afterwards only a Panel that comes back is sized, and the others keep what the person made.
-  const groups = layoutApi.groups.filter((g) => g.panels.length).sort((a, b) => a.element.getBoundingClientRect().left - b.element.getBoundingClientRect().left);
+  for (const id of added) if (layoutDef[id]?.side === "bottom") layoutApi.getPanel(id).api.setSize({ height: layoutBottomHeight });
+  const strip = (g) => layoutDef[g.panels[0]?.id]?.side === "bottom"; // the bottom strip takes no part in the widths of the row
+  const groups = layoutApi.groups.filter((g) => g.panels.length && !strip(g)).sort((a, b) => a.element.getBoundingClientRect().left - b.element.getBoundingClientRect().left);
   const row = groups.map((g) => g.panels[0].id);
   const plain = !layoutTouched && groups.every((g) => g.panels.length === 1 && Math.abs(g.element.getBoundingClientRect().top - groups[0].element.getBoundingClientRect().top) < 2);
   if ((!had || added.length || gone.length) && row.length > 1) {
@@ -494,6 +500,8 @@ layoutRegister({ id: "files", title: "Files", side: "left", min: 240, weight: 30
 layoutRegister({ id: "code", title: "Code", side: "left", min: 320, weight: 560, startsHidden: true, foldRank: 50, pane: "pane-code", icon: '<path d="M6.5 6 4.5 8l2 2M9.5 6l2 2-2 2"/>' });
 layoutRegister({ id: "run", title: "Playback", side: "right", min: 288, weight: 420, foldRank: 20, pane: "pane-run", icon: '<path d="M7 3v10"/>', available: () => layoutRunAvailable, unavailable: "Open a function's Flow to use Playback" });
 layoutRegister({ id: "right", title: "Tutor", side: "right", min: 288, weight: 540, legacySize: 320, foldRank: 30, pane: "pane-tutor", adopt: ["panel"], icon: '<path d="M10 3v10"/>' });
+layoutRegister({ id: "terminal", title: "Terminal", side: "bottom", min: 240, weight: 0, startsHidden: true, foldRank: 60, pane: "pane-terminal", icon: '<path d="M4.5 6.5 6.5 8l-2 1.5M8 10h3"/>' });
+$("pane-terminal").append(Object.assign(document.createElement("p"), { className: "said", textContent: "The output of the programs you start with Play will appear here, one tab for each program.", style: "margin:0;padding:12px 14px;color:var(--muted)" }));
 
 // The Tutor's entry point stays disabled until the Tutor exists. The head of the panel is the topic field
 // (50-tutor.js), the "Start a class" button and one line of help; the other files add the rest below it.
