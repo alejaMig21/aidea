@@ -47,3 +47,8 @@ Order: teamwork storage any time; language adapters, then the engine, then the l
 ## Added by the person on 2026-10-31 (run the whole project)
 
 - **Run the whole project, not one function.** The Run panel plays one function; it cannot start a project, and its name suggests it can. The executor should bring up everything (backend, frontend, ...) by itself. An orchestrating agent is one option and may be too much; see `.scratch/future/interviews-pending.md`, topic 1.
+
+## DeepSeek Harness and Creator Mode (noted 2026-11-04)
+
+- DeepSeek announced Creator Mode for its open-source Harness agent platform on 2026-11-02: plugins built from plain English (sidebar 3D viewers, a paper reader, a statistics page over conversation data, a video editor, a theme). Sources are news pages only; the plugin API, the security model and the licence were not found. Not read: the Harness repository or docs.
+- Why it matters to aidea: (1) a possible further agent adapter, as Codex or OpenCode (ADR 0001 keeps aidea from owning an agent loop); (2) the idea to copy for topic 2 (plugins): the Builder writes a plugin from a description into the quarantine folder, aidea scans it, the person installs it. Open: could aidea own pieces (layers, Contract, Tutor) as plugins of such a harness? Needs the plugin API first.
