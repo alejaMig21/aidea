@@ -7,3 +7,6 @@ DECIDED 2026-11-04: aidea has a small real kernel that is NOT a plugin (option A
 
 ## 2. Built-in plugins
 DECIDED 2026-11-04: the plugins that ship with aidea can be removed like any installed one, except a few marked required (for example the agent adapter and the emergency screen). Removing one that another plugin needs leaves that other plugin inactive and aidea says why instead of breaking (option A, as the agent recommended). Not chosen: removable without exception, and shipped plugins that can only be switched off.
+
+## 3. The API version and the promise
+DECIDED 2026-11-04: one version of the public API for the core and the interface together. While the major number does not change, a plugin keeps working; when a new major version appears the previous one is kept for a fixed time (for example 12 months). A plugin that asks for a version aidea does not offer is shown as "incompatible" and does not activate, without breaking anything. Before aidea version 1 the API may change with notice (option A, as the agent recommended). Not chosen: two separate versions, and no promise as DeepSeek has.
