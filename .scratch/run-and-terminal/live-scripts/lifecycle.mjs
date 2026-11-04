@@ -45,8 +45,8 @@ async function launch(withPlay, debugPort) {
   if (withPlay) {
     const PLAY = '[data-topbar-plugin="run.play"] button';
     await page.click(PLAY);
-    await page.waitForSelector("#dialog-layer button.primary", { timeout: 15000 }); // aidea's own consent dialog
-    await page.click("#dialog-layer button.primary");
+    await page.waitForSelector(".dialog-layer button.primary", { timeout: 15000 }); // aidea's own consent dialog
+    await page.click(".dialog-layer button.primary");
     await page.waitForFunction((sel) => !document.querySelector(sel).parentElement.querySelector("button:nth-child(2)").hidden, PLAY, { timeout: 30000 });
   }
   return { child, page };

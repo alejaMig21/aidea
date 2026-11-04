@@ -41,7 +41,7 @@ await page.fill("#pm-search", "");
 await page.keyboard.press("Escape");
 await wait(300);
 await page.click('[data-topbar-plugin="run.play"] button');
-await page.waitForSelector("#dialog-layer .dialog", { timeout: 15000 });
+await page.waitForSelector(".dialog-layer .dialog", { timeout: 15000 });
 await wait(400);
 await page.screenshot({ path: join(shots, "dialog.png") });
 await page.keyboard.press("Escape");

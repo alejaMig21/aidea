@@ -40,15 +40,21 @@ try { layoutSaved = savedServed.layout ?? JSON.parse(localStorage.getItem(layout
 if (!layoutSaved || typeof layoutSaved !== "object") layoutSaved = {};
 layoutState.canvasFolded = layoutSaved.canvasFolded === true;
 let layoutRestored = false; // false until the saved arrangement has been read: the first default arrangement must not overwrite it
+// The state as it is now, in the form that is saved (and that a preset keeps under a name).
+function layoutCapture() {
+  if (layoutRestored && !layoutNarrow && layoutApi.panels.length) layoutSaved.dock = layoutApi.toJSON(); // a narrow window shows the Canvas only: the arrangement saved before it stays
+  const old = Object.fromEntries(layoutNames.filter((n) => layoutSaved[n] > 0).map((n) => [n, layoutSaved[n]]));
+  return { ...(layoutSaved.sized ? { sized: layoutSaved.sized } : {}), ...old, canvasFolded: layoutState.canvasFolded, ...Object.fromEntries(layoutNames.map((n) => [`${n}Folded`, layoutState[`${n}Folded`]])), ...(layoutSaved.dock ? { dock: layoutSaved.dock } : {}) };
+}
+// Where a saved Layout goes: the core's single Layout, unless the person chose one for each Project (08-layout-presets.js changes this).
+let layoutPersist = (state) => savedPut("layout", state);
 const layoutSave = () => {
   try {
-    if (layoutRestored && !layoutNarrow && layoutApi.panels.length) layoutSaved.dock = layoutApi.toJSON(); // a narrow window shows the Canvas only: the arrangement saved before it stays
-    const old = Object.fromEntries(layoutNames.filter((n) => layoutSaved[n] > 0).map((n) => [n, layoutSaved[n]]));
-    const state = { ...(layoutSaved.sized ? { sized: layoutSaved.sized } : {}), ...old, canvasFolded: layoutState.canvasFolded, ...Object.fromEntries(layoutNames.map((n) => [`${n}Folded`, layoutState[`${n}Folded`]])), ...(layoutSaved.dock ? { dock: layoutSaved.dock } : {}) };
+    const state = layoutCapture();
     const text = JSON.stringify(state);
     if (text === localStorage.getItem(layoutKey)) return;
     localStorage.setItem(layoutKey, text);
-    savedPut("layout", state);
+    layoutPersist(state);
   } catch {}
 };
 
@@ -369,6 +375,25 @@ function layoutRestore(dock) {
   layoutApply();
 }
 
+// Empties the dock: the next sync builds the default arrangement of the Panels that are wanted.
+function layoutResetDock() {
+  layoutBusy = true;
+  try { layoutApi.clear(); } catch { for (const p of [...layoutApi.panels]) try { layoutApi.removePanel(p); } catch {} }
+  layoutBusy = false;
+  for (const id of Object.keys(layoutHome)) delete layoutHome[id];
+}
+
+// Puts the window as a state describes it (a preset, a Project's own Layout): which Panels are wanted and, when it has one, the arrangement; without one the default arrangement is built.
+function layoutUse(state) {
+  for (const n of layoutNames) { const v = state[`${n}Folded`]; layoutState[`${n}Folded`] = typeof v === "boolean" ? v : !!layoutDef[n].startsHidden; }
+  layoutState.canvasFolded = state.canvasFolded === true;
+  if (state.dock) { layoutSaved.dock = state.dock; layoutRestore(state.dock); return; }
+  delete layoutSaved.dock;
+  layoutResetDock();
+  layoutTouched = false;
+  layoutApply();
+}
+
 // A save of the fixed grid has no arrangement, only the width the person gave a card.
 function layoutLegacySizes() {
   for (const id of layoutNames) {
@@ -444,7 +469,8 @@ function layoutShowCanvas() {
 // toggle and leave the menu open, Escape closes it and gives the focus back.
 const panelsButton = $("panels-button");
 const panelsMenu = $("panels-menu");
-const panelsItems = () => [...panelsMenu.querySelectorAll("[role=menuitemcheckbox]")];
+const panelsItems = () => [...panelsMenu.querySelectorAll("[role=menuitemcheckbox][data-panel]")]; // the Panels (the rows of layouts below them are not Panels)
+const panelsNav = () => [...panelsMenu.querySelectorAll("[role=menuitemcheckbox],[role=menuitem]")]; // every row the keyboard walks through
 
 function panelsBuild() {
   const hadFocus = document.activeElement?.closest?.("#panels-menu") ? document.activeElement.dataset.panel : null;
@@ -461,7 +487,7 @@ function panelsBuild() {
     return b;
   };
   const side = (left) => layoutRegistry.filter((d) => (d.side === "left") === left).map((d) => row(d.id, d.title, d.icon, () => layoutToggle(d.id)));
-  panelsMenu.replaceChildren(...side(true), row("canvas", "Canvas", '<path d="M5 3v10M11 3v10"/>', layoutToggleCanvas), ...side(false));
+  panelsMenu.replaceChildren(...side(true), row("canvas", "Canvas", '<path d="M5 3v10M11 3v10"/>', layoutToggleCanvas), ...side(false), ...(typeof layoutPresetRows === "function" ? layoutPresetRows() : []));
   panelsSync();
   if (hadFocus) panelsItems().find((b) => b.dataset.panel === hadFocus)?.focus(); // a Panel declared while the menu is open does not take the focus away
 }
@@ -492,7 +518,7 @@ function panelsOpen() {
   panelsMenu.hidden = false;
   panelsButton.setAttribute("aria-expanded", "true");
   panelsSync();
-  (panelsItems().find((b) => b.getAttribute("aria-disabled") !== "true") ?? panelsItems()[0])?.focus();
+  (panelsNav().find((b) => b.getAttribute("aria-disabled") !== "true") ?? panelsNav()[0])?.focus();
 }
 function panelsClose(focusButton) {
   panelsMenu.hidden = true;
@@ -501,7 +527,7 @@ function panelsClose(focusButton) {
 }
 panelsButton.onclick = () => (panelsMenu.hidden ? panelsOpen() : panelsClose(true));
 panelsMenu.onkeydown = (e) => {
-  const items = panelsItems(), at = items.indexOf(document.activeElement);
+  const items = panelsNav(), at = items.indexOf(document.activeElement);
   const go = (b) => { b?.focus(); e.preventDefault(); };
   if (e.key === "ArrowDown") go(items[(at + 1) % items.length]);
   else if (e.key === "ArrowUp") go(items[(at - 1 + items.length) % items.length]);

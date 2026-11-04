@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { BUILT_IN_PRESETS, DEFAULT_PRESET, validLayoutScope, validPresets, validProjectLayouts } from "../presets.ts";
 import type { Handler } from "../types.ts";
 
 const ui = fileURLToPath(new URL("../../ui/", import.meta.url));
@@ -10,6 +11,9 @@ const object = (v: unknown) => !!v && typeof v === "object" && !Array.isArray(v)
 // What each name takes. Anything else is refused: the page reads these back as they are.
 const valid: Record<string, (v: unknown) => boolean> = {
   layout: object,
+  presets: validPresets, // the person's own Layout presets, the whole set at each change
+  layoutScope: validLayoutScope, // "shared" or "project": whether a Layout is remembered for each Project
+  projectLayouts: validProjectLayouts,
   sections: object,
   notation: (v) => v === "on" || v === "off",
   speed: (v) => typeof v === "number" && v > 0 && v <= 60000, // milliseconds per step
@@ -54,7 +58,9 @@ const handler: Handler = async (req, res, core) => {
   const saved = `<meta name="aidea-saved" content="${encodeURIComponent(JSON.stringify(core.preferences.get("~ui")))}">`;
   // The plugins whose interface half the page must load before it builds the Layout, so a saved arrangement that holds their Panels can be restored.
   const plugins = `<meta name="aidea-plugins" content="${encodeURIComponent(JSON.stringify(core.plugins.list().filter((p) => p.state === "active" && p.ui).map((p) => ({ id: p.id }))))}">`;
-  const html = readFileSync(ui + "index.html", "utf8").replace("<!--features-->", () => saved + plugins + scripts);
+  // The names of the built-in presets, which the page builds itself and the core never lets be overwritten.
+  const presets = `<meta name="aidea-presets" content="${encodeURIComponent(JSON.stringify({ names: BUILT_IN_PRESETS, default: DEFAULT_PRESET }))}">`;
+  const html = readFileSync(ui + "index.html", "utf8").replace("<!--features-->", () => saved + presets + plugins + scripts);
   res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
   res.end(html);
   return true;

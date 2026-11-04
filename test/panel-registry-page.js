@@ -4,7 +4,7 @@ const report = { errors: [] };
 window.addEventListener("error", (e) => report.errors.push(String(e.message)));
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const key = (target, k) => target.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }));
-const rows = () => [...document.querySelectorAll("#panels-menu [role=menuitemcheckbox]")];
+const rows = () => [...document.querySelectorAll("#panels-menu [role=menuitemcheckbox][data-panel]")];
 const entries = () => rows().map((b) => ({ title: b.dataset.title, id: b.dataset.panel, checked: b.getAttribute("aria-checked"), disabled: b.getAttribute("aria-disabled") === "true", reason: b.querySelector(".reason")?.textContent ?? "", markVisible: getComputedStyle(b.querySelector(".check")).visibility !== "hidden", focusable: b.tabIndex === -1 }));
 // With a docking Layout the DOM order of the cards is not the screen order: the cards on screen are listed by their position, left to right.
 const onScreen = (e) => !!e && e.getClientRects().length > 0;

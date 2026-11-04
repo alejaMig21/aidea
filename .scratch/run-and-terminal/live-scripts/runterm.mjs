@@ -33,7 +33,7 @@ await page.waitForFunction(() => document.getElementById("home").hidden && docum
 await wait(1500);
 const PLAY = '[data-topbar-plugin="run.play"]';
 const note = () => page.locator(PLAY + " [role=status]").textContent();
-const accept = async () => { await page.waitForSelector("#dialog-layer .dialog", { timeout: 15000 }); await page.click("#dialog-layer button.primary"); await page.waitForSelector("#dialog-layer", { state: "detached", timeout: 5000 }); };
+const accept = async () => { await page.waitForSelector(".dialog-layer .dialog", { timeout: 15000 }); await page.click(".dialog-layer button.primary"); await page.waitForSelector(".dialog-layer", { state: "detached", timeout: 5000 }); };
 const visibleButtons = () => page.evaluate(() => [...document.querySelectorAll("#select-pop button")].filter((b) => !b.closest("[hidden]") && !b.hidden).map((b) => b.textContent));
 const pressButton = (label) => page.evaluate((l) => [...document.querySelectorAll("#select-pop button")].find((b) => b.textContent === l)?.click(), label);
 

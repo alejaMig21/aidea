@@ -65,6 +65,10 @@ The plugin manager is drawn like the list of extensions of a code editor (the pe
 | Dialog | centred on a `rgba(0,0,0,.5)` layer above everything (z-index 200), width up to 520px, `--panel`, 1px `--line`, radius 12px; title 14px weight 600; message 13.5px; what will run (commands) in a `--raised` block at the code size (12.5px, `--mono`); buttons on the right, the primary one `--accent` |
 | Dialog focus | starts on the safe button (Cancel); Tab moves between the two; Escape means no; the focus returns to the control that asked |
 
+## The Layouts part of the Panels menu
+
+Below the Panels, after a 1px `--line` rule and the label "Layouts" (the label size: 11px uppercase, `--muted`), come the built-in layouts, the person's own, "Save this layout as…", "Your layouts…" (only when there are any) and the choice "A layout for each Project" (a row with a check mark, like a Panel). Rows have the size and padding of the Panels' rows, without an icon; the labels stay aligned with theirs. The dialogs that go with them (a name, the list with Rename and Delete) are the dialog of the list above: a field is 13px on `--bg` with the 1px `--control` border, the reason a name is refused is 12px `--danger` under it, and an item of the list has its name at 13.5px and its two buttons at the right.
+
 ## Focus
 
 The ring that shows where the keyboard is: 2px `--accent`, offset 2px (`:focus-visible` in `src/ui/index.html`). A control that fills its card (the Canvas, whose `svg` has no margin and sits inside a card that clips) draws it inside, with offset -2px, so the card does not cut it. The ring shows for the keyboard only: a click on the Canvas gives it focus without a ring (the browser's own white ring is turned off with `:focus:not(:focus-visible)`).
