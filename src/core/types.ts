@@ -9,6 +9,7 @@ import type { Lesson } from "./teach.ts";
 import type { Probes } from "./probe.ts";
 import type { Plans } from "./plan.ts";
 import type { PluginHost } from "./plugins/host.ts";
+import type { Quarantine } from "./plugins/quarantine.ts";
 
 export type CoreNode = {
   id: string;
@@ -95,6 +96,8 @@ export type Core = {
   proposals: ProposalStore;
   // The plugin host of the kernel: the plugins of the plugin store, their state and what they provide.
   plugins: PluginHost;
+  // Plugins added from a folder or a Git link, waiting in the quarantine (nothing of them runs).
+  quarantine: Quarantine;
   // The Projects the person opened before, newest first.
   recents: Recents;
   // The person's mode and model choice for each Project.
