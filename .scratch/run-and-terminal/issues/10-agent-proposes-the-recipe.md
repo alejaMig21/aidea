@@ -4,10 +4,11 @@
 
 **Blocked by:** 06.
 
-**Status:** ready-for-agent
+**Status:** built and tested; live check with a real Builder pending
 
-- [ ] Asking for a recipe produces a Proposal drawn like any other, with every part's ready signal named and the files it rests on.
-- [ ] A Project with a part that has nothing observable leads to the question to the person, and to a log-line Proposal only when the answer is "nothing".
-- [ ] Rejecting the Proposal leaves no recipe; accepting it writes the recipe and Play then asks for the usual acceptance of ticket 04.
-- [ ] Asking for a review shows what the agent would change as a Proposal and never overwrites the recipe by itself.
-- [ ] Tests at the core API with a fake agent and page tests for the Proposal pass; a live check on a real Project on the second monitor.
+- [x] Asking for a recipe produces a Proposal drawn like any other, with every part's ready signal named and the files it rests on.
+- [x] A Project with a part that has nothing observable leads to the question to the person, and to a log-line Proposal only when the answer is "nothing".
+- [x] Rejecting the Proposal leaves no recipe; accepting it writes the recipe and Play then asks for the usual acceptance of ticket 04.
+- [x] Asking for a review shows what the agent would change as a Proposal and never overwrites the recipe by itself.
+- [x] Tests at the core API with a fake agent and page tests for the Proposal pass (test/run-recipe-proposal.test.ts, test/run-recipe-page.test.ts).
+- [ ] A live check on a real Project with a real Builder, on the second monitor.

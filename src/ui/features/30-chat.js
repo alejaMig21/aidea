@@ -145,6 +145,7 @@
       line.append(review);
       document.dispatchEvent(new CustomEvent("proposal-created", { detail: event }));
     }
+    else if (event.type === "run_recipe_proposal") document.dispatchEvent(new CustomEvent("run-recipe-proposed", { detail: event })); // the Run plugin draws the card
     else if (event.type === "proposal_refused") {
       const [text, open] = proposalRefusedParts(event, "Claude");
       add("proposal-line", text).append(...(open ? [open] : []));

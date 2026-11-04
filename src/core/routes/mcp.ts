@@ -23,6 +23,12 @@ import type { Handler } from "../types.ts";
 const pluginGuide = fileURLToPath(new URL("../../../docs/plugin-skill.md", import.meta.url));
 const MAX_MCP_BODY_BYTES = 4 * 1024 * 1024; // a request to write a file carries the whole content
 
+const RECIPE_HELP =
+  "Proposes the run recipe of this Project: the programs Play starts, in order. parts = [{ name, command, folder?, waitFor?: [names], ready?: { port } | { line } | { file } | { url }, timeoutSeconds?, env?: [variable NAMES only, never values], evidence: [files] }]. " +
+  "Read the Project once first. For every ready signal, cite in evidence the file(s) of the Project that show it (the port a server listens on, the line it prints, the file it writes, the address it answers); the core refuses a signal that none of those files shows. " +
+  "Never invent a signal. If you find nothing observable for a part, ask the person what they see when that part works and build the signal from the answer; leave ready out until you have one. " +
+  "If the answer is that nothing is seen, ask whether the person wants a log line added to that program, and make that as a separate change through the usual permission card, which they can refuse. " +
+  "Nothing is written until the person accepts. With a recipe already in place, this is a review: the person sees both.";
 const LAYERS = ["business", "requirements", "architecture"];
 const TOOLS = [
   {
@@ -78,6 +84,11 @@ const TOOLS = [
     description: "Returns the guide for writing an aidea plugin and what the running app offers to plugins (API version, slots, capabilities, style tokens, services). Read it before you write a plugin.",
     inputSchema: { type: "object", properties: {} },
     annotations: { readOnlyHint: true },
+  },
+  {
+    name: "propose_run_recipe",
+    description: RECIPE_HELP,
+    inputSchema: { type: "object", properties: { parts: { type: "array", items: { type: "object" } } }, required: ["parts"] },
   },
   {
     name: "propose_plugin",
@@ -227,6 +238,16 @@ const handler: Handler = async (req, res, core) => {
           core.send(res, 200, toolText(id, `The plugin is in the quarantine (id ${entry.id}) and the person was told. Nothing of it runs. The person will read the scan (${entry.report.blocking} blocking, ${entry.report.warnings} warnings) and decide in the plugin manager; wait for their answer.`));
         } catch (e) {
           core.send(res, 200, toolText(id, e instanceof QuarantineError ? e.message : "The plugin could not be proposed.", true));
+        }
+        return true;
+      }
+      if (name === "propose_run_recipe") {
+        try {
+          const made = (await core.plugins.callService("run.propose", { project: project.id, parts: args.parts, secret: conversation.secret })) as { id: string };
+          conversation.emit({ type: "run_recipe_proposal", ...made, secret: conversation.secret });
+          core.send(res, 200, toolText(id, JSON.stringify({ proposal: made.id, status: "pending", message: "The person will review it. Nothing is written until they accept." })));
+        } catch (e) {
+          core.send(res, 200, toolText(id, e instanceof Error && /service/.test(e.message) ? "The Run plugin is not active, so a recipe cannot be proposed." : e instanceof Error ? e.message : "The recipe could not be proposed.", true));
         }
         return true;
       }

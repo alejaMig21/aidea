@@ -1,10 +1,10 @@
 // The Run plugin, host half: reads the run recipe (.aidea/run.json), keeps the person's consent to it, starts the parts in dependency order waiting for their ready signals,
 // keeps their output and stops them (the whole process tree). The interface half calls the handlers below through the channel.
 import { execFile, spawn } from "node:child_process";
-import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { connect } from "node:net";
-import { isAbsolute, join, normalize, resolve, sep } from "node:path";
+import { basename, isAbsolute, join, normalize, resolve, sep } from "node:path";
 
 const MAX_LINES = 2000; // lines kept for each part; older ones are dropped and counted
 const DEFAULT_LIMIT = 60; // seconds to become ready
@@ -33,6 +33,7 @@ function problems(json) {
     }
     if (p.timeoutSeconds !== undefined && !(typeof p.timeoutSeconds === "number" && p.timeoutSeconds > 0)) errors.push(`${at}.timeoutSeconds must be a number above zero`);
     // Names only: a string that is not a plain name (a "NAME=value" pair, say) is refused, and the message never repeats it, so a pasted value does not travel.
+    if (p.evidence !== undefined && (!Array.isArray(p.evidence) || p.evidence.some((e) => typeof e !== "string"))) errors.push(`${at}.evidence must be a list of file paths`);
     if (p.env !== undefined && (!Array.isArray(p.env) || p.env.some((e) => typeof e !== "string" || !ENV_NAME.test(e)))) errors.push(`${at}.env must be a list of variable names (letters, digits and "_"), never values: the values come from the .env file of the Project`);
   });
   if (errors.length) return errors;
@@ -77,6 +78,30 @@ function readEnvFile(root) {
   return found;
 }
 
+// A ready signal proposed by an agent is kept only when a file of the Project that it cites shows it: the port, the line, the file name or the address.
+// This is the check that stops an invented signal; a part with no signal at all is allowed (it counts as ready when it starts).
+function signalProblem(root, p) {
+  const r = p.ready;
+  if (!r) return null;
+  const at = `part "${p.name}"`;
+  if (!Array.isArray(p.evidence) || !p.evidence.length) return `${at} has a ready signal but cites no file that shows it (evidence). Look in the code, or ask the person what is seen when it works; never invent a signal`;
+  let needle;
+  try { needle = "port" in r ? String(r.port) : "line" in r ? r.line : "file" in r ? basename(r.file) : (new URL(r.url).port || new URL(r.url).pathname); } catch { return `${at}: ready.url is not an address`; }
+  const base = realpathSync(root);
+  for (const f of p.evidence) {
+    let real;
+    try {
+      if (isAbsolute(f)) return `${at}: evidence "${f}" must be written relative to the Project`;
+      real = realpathSync(resolve(root, f));
+      if (real !== base && !real.startsWith(base + sep)) return `${at}: evidence "${f}" is outside the Project`;
+      const s = statSync(real);
+      if (!s.isFile() || s.size > 2_000_000) return `${at}: evidence "${f}" is not a readable file`;
+    } catch { return `${at}: evidence "${f}" is not a file of the Project`; }
+    if (readFileSync(real, "utf8").includes(needle)) return null;
+  }
+  return `${at}: none of the files cited (${p.evidence.join(", ")}) shows the ready signal "${needle}". Look again, or ask the person what is seen when it works`;
+}
+
 // What changed between the accepted recipe and the one on disk, by part name.
 function difference(old, now) {
   const before = Object.fromEntries(old.parts.map((p) => [p.name, JSON.stringify(p)])), after = Object.fromEntries(now.parts.map((p) => [p.name, JSON.stringify(p)]));
@@ -109,6 +134,14 @@ async function isReady(entry, root) {
 export function activate(ctx) {
   const dataFile = () => join(ctx.data.dir, "accepted.json"); // the memory of what the person accepted: outside the Project, so a pull cannot change it
   const accepted = () => { try { return JSON.parse(readFileSync(dataFile(), "utf8")); } catch { return {}; } };
+  const proposals = new Map(); // id -> { root, parts (as proposed, with their evidence), secret }: the Builder's proposals of a recipe, waiting for the person
+  const same = (a, b) => { const x = createHash("sha256").update(String(a)).digest(), y = createHash("sha256").update(String(b)).digest(); return timingSafeEqual(x, y); };
+  // A proposal as the person reads it: its parts, the recipe in place (null when there is none) and, then, what the proposal changes in it.
+  const view = (root, parts) => {
+    const before = readRecipe(root);
+    const now = { parts: parts.map(({ evidence: _evidence, ...rest }) => rest) };
+    return { parts, before: before.state === "ok" ? before.recipe : null, changes: before.state === "ok" ? difference(before.recipe, now) : null };
+  };
   const runs = new Map(); // Project folder -> { parts: Map name -> entry, order: [names in start order], stoppedOrder: [] }
 
   const rootOf = (body) => {
@@ -215,6 +248,37 @@ export function activate(ctx) {
     return recipe.parts.map((p) => p.name).filter((n) => set.has(n));
   };
 
+  // The Builder's tool reaches this as a service, never as an HTTP call: the secret of its proposal comes from the core, which the Builder does not see.
+  // One proposal waits per Project; a new one replaces it.
+  ctx.services.provide("run.propose", ({ project, parts, secret }) => {
+    const root = rootOf({ project });
+    const errors = problems({ parts });
+    if (errors.length) throw new Error(`The recipe is not valid: ${errors.join("; ")}`);
+    for (const p of parts) { const why = signalProblem(root, p); if (why) throw new Error(why); }
+    for (const [id, q] of proposals) if (q.root === root) proposals.delete(id);
+    const id = `recipe-${randomBytes(6).toString("hex")}`;
+    const shown = parts.map((p) => ({ name: p.name, command: p.command, folder: p.folder ?? ".", waitFor: p.waitFor ?? [], ready: p.ready ?? null, timeoutSeconds: p.timeoutSeconds ?? DEFAULT_LIMIT, env: p.env ?? [], evidence: p.evidence ?? [] }));
+    proposals.set(id, { root, parts: shown, secret });
+    return { id, ...view(root, shown) };
+  });
+  ctx.api.handle("proposals", (body) => {
+    const root = rootOf(body);
+    return { proposals: [...proposals].filter(([, q]) => q.root === root).map(([id, q]) => ({ id, ...view(root, q.parts) })) };
+  });
+  // Accepting writes the recipe (without the evidence, which only the person needed to read); rejecting forgets the proposal. Either needs the secret the window was given.
+  ctx.api.handle("decide", (body) => {
+    const root = rootOf(body);
+    const q = proposals.get(body?.id);
+    if (!q || q.root !== root) throw new Error("Unknown proposal, or it was already decided");
+    if (!same(body.secret, q.secret)) throw new Error("That secret does not belong to this proposal");
+    if (body.decision !== "accept" && body.decision !== "reject") throw new Error('The decision must be "accept" or "reject"');
+    proposals.delete(body.id);
+    if (body.decision === "accept") {
+      mkdirSync(join(root, ".aidea"), { recursive: true });
+      writeFileSync(join(root, ".aidea", "run.json"), JSON.stringify({ parts: q.parts.map(({ name, command, folder, waitFor, ready, timeoutSeconds, env }) => ({ name, command, folder, waitFor, ...(ready ? { ready } : {}), timeoutSeconds, env })) }, null, 2) + "\n");
+    }
+    return { decided: body.decision };
+  });
   ctx.api.handle("status", (body) => {
     const root = rootOf(body);
     const { r, refusal } = check(root);
