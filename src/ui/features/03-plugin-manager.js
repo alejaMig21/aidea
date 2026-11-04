@@ -116,6 +116,49 @@ function pmReport(what, body) {
   } else pmMessage(body.status === "applied" ? `${what}.` : `${what} failed: ${body.reason ?? body.error ?? "unknown reason"}`);
 }
 
+// The settings form of a plugin, drawn from the schema in its manifest. Only valid values are saved: the core answers each bad field by name. A secret is never shown; leave it empty to keep it.
+async function pmSettingsForm(p, holder) {
+  const { body } = await pmJson("GET", `/plugins/${encodeURIComponent(p.id)}/settings`);
+  const form = pmEl("form", { className: "pm-settings" });
+  form.dataset.settingsFor = p.id;
+  const inputs = {}, errors = {};
+  for (const [key, field] of Object.entries(body.schema ?? {})) {
+    const value = body.values[key];
+    let input;
+    if (field.type === "choice") {
+      input = pmEl("select", {}, ...field.options.map((o) => pmEl("option", { value: o, textContent: o })));
+      input.value = value;
+    } else if (field.type === "boolean") input = Object.assign(pmEl("input", { type: "checkbox" }), { checked: value === true });
+    else if (field.type === "number") input = pmEl("input", { type: "number", value: value ?? "" });
+    else if (field.type === "secret") input = pmEl("input", { type: "password", autocomplete: "off", placeholder: value?.set ? "set (leave empty to keep it)" : "not set" });
+    else input = pmEl("input", { type: "text", value: value ?? "" });
+    input.name = key;
+    input.id = `pm-set-${p.id}-${key}`;
+    inputs[key] = input;
+    errors[key] = pmEl("div", { className: "pm-meta" });
+    errors[key].dataset.error = key;
+    form.append(pmEl("label", { htmlFor: input.id, className: "pm-meta" }, field.label), input, errors[key]);
+  }
+  const save = pmEl("button", { type: "submit", className: "pm-save" }, "Save settings");
+  form.append(pmEl("div", { className: "pm-actions" }, save));
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const values = {};
+    for (const [key, field] of Object.entries(body.schema)) {
+      const input = inputs[key];
+      if (field.type === "boolean") values[key] = input.checked;
+      else if (field.type === "number") { if (input.value !== "") values[key] = Number(input.value); }
+      else if (field.type === "secret") { if (input.value !== "") values[key] = input.value; }
+      else values[key] = input.value;
+    }
+    const answer = await pmJson("POST", `/plugins/${encodeURIComponent(p.id)}/settings`, { values });
+    for (const key of Object.keys(errors)) errors[key].textContent = answer.body.errors?.[key] ?? "";
+    pmMessage(answer.status === 200 ? `The settings of ${p.title} are saved.` : "Nothing was saved: fix the fields marked below.");
+    if (answer.status === 200) for (const [key, field] of Object.entries(body.schema)) if (field.type === "secret") { inputs[key].value = ""; inputs[key].placeholder = "set (leave empty to keep it)"; }
+  };
+  holder.replaceChildren(form);
+}
+
 function pmInstalledRow(p) {
   const row = pmEl("div", { className: "pm-row" }, pmEl("span", { className: "pm-title" }, p.title), " ", pmEl("span", { className: "pm-meta" }, `${p.id} ${p.version}${p.builtin ? " (ships with aidea)" : ""} - ${p.state}${p.reason ? `: ${p.reason}` : ""}`));
   row.dataset.pluginId = p.id;
@@ -138,6 +181,14 @@ function pmInstalledRow(p) {
     remove.onclick = () => act("/plugins/remove", { id: p.id, deleteData: data.checked }, `${p.title} is removed`);
     actions.append(toggle, remove, pmEl("label", { className: "pm-meta" }, data, " also delete its data"));
   } else actions.append(pmEl("span", { className: "pm-meta" }, "Required: it cannot be switched off or removed."));
+  if (p.settings) {
+    const holder = pmEl("div", { className: "pm-settings-holder" });
+    const open = pmEl("button", { type: "button", className: "pm-settings-button" }, "Settings");
+    open.onclick = () => (holder.firstChild ? holder.replaceChildren() : pmSettingsForm(p, holder));
+    actions.prepend(open);
+    row.append(actions, holder);
+    return row;
+  }
   row.append(actions);
   return row;
 }

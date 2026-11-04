@@ -12,6 +12,8 @@ import { createProbes } from "./probe.ts";
 import { createPlans } from "./plan.ts";
 import { createPluginHost } from "./plugins/host.ts";
 import { createQuarantine } from "./plugins/quarantine.ts";
+import { createMemorySecretStore, createSettings } from "./plugins/settings.ts";
+import type { SecretStore } from "./plugins/settings.ts";
 import { createManager } from "./plugins/manager.ts";
 import { createPluginState } from "./plugins/state.ts";
 
@@ -42,7 +44,7 @@ export function parseRoleAdapters(text: string | undefined): Record<string, stri
 }
 
 // `safeMode` starts with every plugin that does not ship with aidea off. `pluginsDir` is the plugin store: one folder per plugin (docs/plugin-api.md). `builtinPluginsDir` holds the plugins that ship with aidea (src/plugins by default; false loads none).
-export async function startCore({ port, adapter: defaultAdapter = createClaudeAdapter(), adapters = {}, roleAdapters = {}, recentsFile, preferencesFile, learnerDir, learnerModel, pluginsDir, builtinPluginsDir = shippedPlugins, safeMode = false }: { port: number; adapter?: Adapter; adapters?: Record<string, Adapter>; roleAdapters?: Record<string, string>; recentsFile?: string; preferencesFile?: string; learnerDir?: string; learnerModel?: string; pluginsDir?: string; builtinPluginsDir?: string | false; safeMode?: boolean }) {
+export async function startCore({ port, adapter: defaultAdapter = createClaudeAdapter(), adapters = {}, roleAdapters = {}, recentsFile, preferencesFile, learnerDir, learnerModel, pluginsDir, builtinPluginsDir = shippedPlugins, safeMode = false, secretStore = createMemorySecretStore() }: { port: number; adapter?: Adapter; adapters?: Record<string, Adapter>; roleAdapters?: Record<string, string>; recentsFile?: string; preferencesFile?: string; learnerDir?: string; learnerModel?: string; pluginsDir?: string; builtinPluginsDir?: string | false; safeMode?: boolean; secretStore?: SecretStore }) {
   const named: Record<string, Adapter> = { ...adapters, default: defaultAdapter };
   for (const [role, name] of Object.entries(roleAdapters)) {
     if (!ROLES.includes(role)) throw new Error(`Unknown role "${role}". Roles: ${ROLES.join(", ")}`);
@@ -56,7 +58,8 @@ export async function startCore({ port, adapter: defaultAdapter = createClaudeAd
 
   const learner = createLearner(learnerDir, adapter, learnerModel);
   const chosen = createPluginState(pluginsDir);
-  const pluginHost = createPluginHost([...(builtinPluginsDir ? [{ dir: builtinPluginsDir, builtin: true }] : []), ...(pluginsDir ? [{ dir: pluginsDir, builtin: false }] : [])], chosen, safeMode);
+  const settings = createSettings(pluginsDir, secretStore);
+  const pluginHost = createPluginHost([...(builtinPluginsDir ? [{ dir: builtinPluginsDir, builtin: true }] : []), ...(pluginsDir ? [{ dir: pluginsDir, builtin: false }] : [])], chosen, safeMode, settings);
   const quarantine = createQuarantine(pluginsDir);
   const core: Core = {
     adapter,
@@ -69,6 +72,7 @@ export async function startCore({ port, adapter: defaultAdapter = createClaudeAd
     permissions: createBroker(),
     plugins: pluginHost,
     quarantine,
+    settings,
     manager: createManager(pluginHost, quarantine, pluginsDir, chosen),
     proposals: new Map(),
     recents: createRecents(recentsFile),

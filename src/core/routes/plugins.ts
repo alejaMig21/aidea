@@ -13,6 +13,20 @@ const handler: Handler = async (req, res, core) => {
     core.send(res, 200, { plugins: core.plugins.list(), services: core.plugins.services(), events: core.plugins.eventList(), safeMode: core.plugins.safe });
     return true;
   }
+  // The settings of one plugin: the schema, the values (a secret only as set or not), and saving valid values.
+  const settingsRoute = /^\/plugins\/([^/?]+)\/settings$/.exec(req.url ?? "");
+  if (settingsRoute && (req.method === "GET" || req.method === "POST")) {
+    const id = decodeURIComponent(settingsRoute[1]);
+    const schema = core.plugins.schemaOf(id);
+    if (!schema) { core.send(res, 404, { error: "There is no such plugin" }); return true; }
+    if (req.method === "GET") { core.send(res, 200, { schema, values: core.settings.values(id, schema) }); return true; }
+    const body = (await core.readJson(req, res)) as { values?: unknown } | null | undefined;
+    if (body === undefined) return true;
+    if (!body || typeof body.values !== "object" || body.values === null || Array.isArray(body.values)) { core.send(res, 400, { error: "send { values: { name: value } }", errors: {} }); return true; }
+    const result = core.settings.save(id, schema, body.values as Record<string, unknown>);
+    core.send(res, "errors" in result ? 400 : 200, result);
+    return true;
+  }
   // The live inspection (read-only) and the skill an agent reads before it writes a plugin.
   if (req.method === "GET" && req.url === "/plugins/inspect") {
     core.send(res, 200, inspect(core.plugins));

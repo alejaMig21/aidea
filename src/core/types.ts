@@ -97,6 +97,8 @@ export type Core = {
   proposals: ProposalStore;
   // The plugin host of the kernel: the plugins of the plugin store, their state and what they provide.
   plugins: PluginHost;
+  // Settings, data folders and secrets of the plugins.
+  settings: import("./plugins/settings.ts").Settings;
   // Plugins added from a folder or a Git link, waiting in the quarantine (nothing of them runs).
   quarantine: Quarantine;
   // The plugin manager: installs from the quarantine (and, in later tickets, enables, removes and updates).

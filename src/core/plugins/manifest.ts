@@ -1,6 +1,8 @@
 // The manifest of a plugin, `aidea-plugin.json`: static metadata read without running any code. The rules are those of docs/plugin-api.md.
 import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import { isAbsolute, join, resolve, sep } from "node:path";
+import { schemaProblems } from "./settings.ts";
+import type { SettingField } from "./settings.ts";
 
 export const API_VERSION = "0.1";
 // Whether this aidea can run a plugin that asks for `api` (docs/plugin-api.md): before 1.0 only the exact version; from 1.0 the same major and a minor that is not newer.
@@ -18,7 +20,7 @@ export type Manifest = {
   main?: string; ui?: string; icon?: string;
   capabilities: string[]; requires: string[]; provides: string[];
   events: Record<string, EventDeclaration>;
-  settings: Record<string, unknown>;
+  settings: Record<string, SettingField>;
   required: boolean;
 };
 
@@ -65,6 +67,7 @@ export function readManifest(dir: string): { manifest: Manifest } | { problems: 
     if (!e || typeof e !== "object" || Array.isArray(e) || Object.values(e).some((d) => !d || (d.mode !== "announce" && d.mode !== "ask") || !Number.isInteger(d.version))) problems.push('"events" must map each event name to { "mode": "announce" or "ask", "version": a whole number }');
   }
   if (m.settings !== undefined && (!m.settings || typeof m.settings !== "object" || Array.isArray(m.settings))) problems.push('"settings" must be an object');
+  else if (m.settings !== undefined) problems.push(...schemaProblems(m.settings as Record<string, unknown>));
   if (m.required !== undefined && typeof m.required !== "boolean") problems.push('"required" must be true or false');
   if (m.icon !== undefined && !problems.some((p) => p.startsWith('"icon"'))) {
     try { if (lstatSync(join(dir, m.icon as string)).size > MAX_ICON_BYTES) problems.push('"icon" is larger than 256 KiB'); } catch { /* a missing icon is only a missing picture */ }
@@ -75,7 +78,7 @@ export function readManifest(dir: string): { manifest: Manifest } | { problems: 
       id: m.id as string, version: m.version as string, title: m.title as string, description: m.description as string, publisher: m.publisher as string, api: m.api as string,
       main: m.main as string | undefined, ui: m.ui as string | undefined, icon: m.icon as string | undefined,
       capabilities: (m.capabilities as string[]) ?? [], requires: (m.requires as string[]) ?? [], provides: (m.provides as string[]) ?? [],
-      events: (m.events as Record<string, EventDeclaration>) ?? {}, settings: (m.settings as Record<string, unknown>) ?? {}, required: m.required === true,
+      events: (m.events as Record<string, EventDeclaration>) ?? {}, settings: (m.settings as Record<string, SettingField>) ?? {}, required: m.required === true,
     },
   };
 }

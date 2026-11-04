@@ -6,9 +6,11 @@ import { API_VERSION, compatible, readManifest } from "./manifest.ts";
 import type { Manifest } from "./manifest.ts";
 import { createPluginState } from "./state.ts";
 import type { PluginState as Chosen } from "./state.ts";
+import { createMemorySecretStore, createSettings } from "./settings.ts";
+import type { Settings } from "./settings.ts";
 
 export type PluginState = "active" | "inactive" | "failed" | "incompatible";
-export type PluginInfo = { id: string; title: string; version: string; state: PluginState; reason?: string; ui: boolean; builtin: boolean; required: boolean }; // `ui`: it has an interface half; `builtin`: it ships with aidea; `required`: it ships with aidea and cannot be removed or switched off
+export type PluginInfo = { id: string; title: string; version: string; state: PluginState; reason?: string; ui: boolean; builtin: boolean; required: boolean; settings: boolean }; // `ui`: it has an interface half; `builtin`: it ships with aidea; `required`: it ships with aidea and cannot be removed or switched off
 type Undo = () => unknown;
 type Entry = { id: string; folder: string; builtin: boolean; manifest?: Manifest; state: PluginState; reason?: string; undo: Undo[]; returned?: Undo; ran?: boolean; waiting?: boolean }; // `ran`: its code was activated in this session; `returned`: what `activate` returned, run after every other undo
 
@@ -23,6 +25,9 @@ export type PluginContext = {
   ask: (name: string, data?: unknown) => Verdict;
   on: (fullName: string, listener: (data: any) => unknown) => void;
   guards: { add: (rule: (action: any) => unknown) => void };
+  data: { readonly dir: string };
+  settings: { get: (key: string) => unknown };
+  secrets: { get: (name: string) => string | undefined };
   effect: (undo: Undo) => void;
   log: (message: string) => void;
 };
@@ -52,7 +57,7 @@ function asModule(folder: string) {
 
 // `roots` are the folders that hold plugins: the ones that ship with aidea first (builtin), then the person's plugin store.
 // `safe`: safe mode, in which no plugin that does not ship with aidea is activated (the person's way back from a plugin that breaks the start).
-export function createPluginHost(roots: { dir: string; builtin: boolean }[] = [], chosen: Chosen = createPluginState(), safe = false) {
+export function createPluginHost(roots: { dir: string; builtin: boolean }[] = [], chosen: Chosen = createPluginState(), safe = false, access: Settings = createSettings(undefined, createMemorySecretStore())) {
   const entries = new Map<string, Entry>();
   const services = new Map<string, { owner: string; value: unknown }>();
   const logs: { plugin: string; message: string }[] = [];
@@ -104,6 +109,15 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
           const rule = { owner: entry.id, fn };
           rules.push(rule);
           entry.undo.push(() => void rules.splice(rules.indexOf(rule), 1));
+        },
+      },
+      // Its own folder for data, its settings (the schema is in its manifest) and, when it declared the "secrets" capability, its secrets. Nothing here leads to another plugin.
+      data: { get dir() { return access.dataDir(manifest.id); } },
+      settings: { get: (key) => access.get(manifest.id, manifest.settings, key) },
+      secrets: {
+        get: (name) => {
+          if (!manifest.capabilities.includes("secrets")) throw new Error('declare the "secrets" capability in the manifest to read secrets');
+          return access.secrets.get(manifest.id, name);
         },
       },
       effect: (undo) => void entry.undo.push(undo),
@@ -242,7 +256,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
     entries.delete(id);
   }
 
-  const info = (e: Entry): PluginInfo => ({ required: !!e.manifest?.required && e.builtin, id: e.id, title: e.manifest?.title ?? e.id, version: e.manifest?.version ?? "", state: e.state, ...(e.reason ? { reason: e.reason } : {}), ui: !!e.manifest?.ui, builtin: e.builtin });
+  const info = (e: Entry): PluginInfo => ({ required: !!e.manifest?.required && e.builtin, id: e.id, title: e.manifest?.title ?? e.id, version: e.manifest?.version ?? "", state: e.state, ...(e.reason ? { reason: e.reason } : {}), ui: !!e.manifest?.ui, builtin: e.builtin, settings: Object.keys(e.manifest?.settings ?? {}).length > 0 });
 
   return {
     loadAll,
@@ -258,6 +272,8 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
     deactivate,
     register,
     unregister,
+    // The settings schema of an installed plugin (for the settings routes).
+    schemaOf: (id: string) => (id.includes("#") ? undefined : entries.get(id)?.manifest?.settings),
     has: (id: string) => entries.has(id) && !id.includes("#"),
     list: (): PluginInfo[] => [...entries.values()].map(info),
     // The file of the interface half of an ACTIVE plugin, or undefined.

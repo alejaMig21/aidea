@@ -45,8 +45,30 @@ const pmPanelRow = (title) => [...document.querySelectorAll("#panels-menu [role=
     document.getElementById("pm-add").click();
     await pmUntil(() => (document.getElementById("pm-message")?.textContent ?? "") !== "");
     report.refused = document.getElementById("pm-message").textContent;
-    // Switching a plugin off and on again from its row takes its Panel away and brings it back at once.
+    // The settings form: drawn from the schema, valid values saved, a bad one named and nothing saved.
     const clean = () => document.querySelector('#pm-installed [data-plugin-id="fixture.clean"]');
+    await pmWait(600); // a refresh started by the step before would replace the rows and wipe the form
+    clean().querySelector(".pm-settings-button").click();
+    await pmUntil(() => clean().querySelector("form.pm-settings"));
+    const form = () => clean().querySelector("form.pm-settings");
+    const field = (name) => form().elements[name];
+    report.settings = { fields: [...form().elements].filter((e) => e.name).map((e) => `${e.name}:${e.tagName}`), mood: field("mood").value, count: field("count").value, tokenType: field("token").type, tokenPlaceholder: field("token").placeholder };
+    field("mood").value = "lively";
+    field("count").value = "7";
+    field("token").value = "page-secret-value";
+    form().querySelector(".pm-save").click();
+    await pmUntil(() => /are saved/.test(document.getElementById("pm-message").textContent));
+    report.settings.savedMessage = document.getElementById("pm-message").textContent;
+    const stored = (await pmJson("GET", "/plugins/fixture.clean/settings")).body.values;
+    report.settings.afterSave = { mood: stored.mood, count: stored.count, tokenPlaceholder: field("token").placeholder, secretInPage: clean().innerHTML.includes("page-secret-value") || field("token").value !== "" };
+    field("mood").append(new Option("green", "green"));
+    field("mood").value = "green";
+    form().querySelector(".pm-save").click();
+    await pmUntil(() => /Nothing was saved/.test(document.getElementById("pm-message").textContent));
+    report.settings.badMessage = document.getElementById("pm-message").textContent;
+    report.settings.badError = form().querySelector('[data-error="mood"]').textContent;
+    report.settings.afterBad = (await pmJson("GET", "/plugins/fixture.clean/settings")).body.values.mood;
+    // Switching a plugin off and on again from its row takes its Panel away and brings it back at once.
     clean().querySelector(".pm-disable").click();
     await pmUntil(() => clean()?.dataset.state === "inactive" && !pmPanelRow("Installed live"));
     report.off = { state: clean()?.dataset.state, panelGone: !pmPanelRow("Installed live") };

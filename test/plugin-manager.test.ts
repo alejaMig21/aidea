@@ -56,7 +56,7 @@ before(async () => {
   core = await startCore({ port: 0, recentsFile: join(scratch, "recents.json"), preferencesFile: join(scratch, "preferences.json"), learnerDir: join(scratch, "learner"), pluginsDir: store, builtinPluginsDir: false });
   const quarantine = (dir: string) => fetch(core.url + "/plugins/quarantine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ source: dir }) });
   await quarantine(source("clean", {
-    "aidea-plugin.json": JSON.stringify(manifest("fixture.clean", { ui: "ui.js" })),
+    "aidea-plugin.json": JSON.stringify(manifest("fixture.clean", { ui: "ui.js", capabilities: ["secrets"], settings: { mood: { type: "choice", label: "Mood", options: ["calm", "lively"], default: "calm" }, count: { type: "number", label: "Count", default: 2 }, token: { type: "secret", label: "Token" } } })),
     "ui.js": `export function activate(ui) { return ui.slots.add("layout.panel", { id: "p", title: "Installed live", render(c) { c.textContent = "hi"; } }); }`,
   }));
   await quarantine(source("loud", {
@@ -116,6 +116,17 @@ test("a plugin with blocking findings cannot be installed until every one is con
 test("a folder added from the screen lands in the quarantine, and an address that is not valid is refused with a message", { skip }, () => {
   assert.equal(page.added, true);
   assert.notEqual(page.refused, "");
+});
+
+test("the settings form is drawn from the schema, saves valid values, names a bad field and saves nothing then", { skip }, () => {
+  assert.deepEqual(page.settings.fields, ["mood:SELECT", "count:INPUT", "token:INPUT"]);
+  assert.deepEqual([page.settings.mood, page.settings.count, page.settings.tokenType, page.settings.tokenPlaceholder], ["calm", "2", "password", "not set"]);
+  assert.match(page.settings.savedMessage, /are saved/);
+  assert.deepEqual([page.settings.afterSave.mood, page.settings.afterSave.count, page.settings.afterSave.tokenPlaceholder], ["lively", 7, "set (leave empty to keep it)"]);
+  assert.equal(page.settings.afterSave.secretInPage, false, "the secret is not in the page after saving");
+  assert.match(page.settings.badError, /one of: calm, lively/);
+  assert.match(page.settings.badMessage, /Nothing was saved/);
+  assert.equal(page.settings.afterBad, "lively", "the bad save changed nothing");
 });
 
 test("switching a plugin off from its row takes its Panel away at once, and switching it on brings it back", { skip }, () => {
