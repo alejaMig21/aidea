@@ -16,3 +16,6 @@ DECIDED 2026-11-04 (by the agent; the person had no preference and said they did
 
 ## 5. Where the interface of a plugin is drawn
 DECIDED 2026-11-04: in the same window as aidea, with aidea's look (the shared scale of sizes and colours), not in an isolated frame (option A, as the agent recommended). Reason: an installed plugin already runs with the person's permissions in the core, so isolating only its drawing would protect nothing real; the protection is the quarantine before installing. Not chosen: an isolated frame.
+
+## 6. What the scanner does with a finding
+DECIDED 2026-11-04: some findings block and others only warn (option A, as the agent recommended). Blocking findings: obfuscated code, install scripts, hidden binaries, and doing something the manifest does not declare (for example using the network without saying so). The person can install anyway, only after a confirmation that names each blocking finding. Warnings: capabilities the plugin declared and uses (network, files). The screen must say that a scan lowers the risk and does not prove a plugin is safe. Not chosen: nothing blocks, and every finding blocks with no way past it.
