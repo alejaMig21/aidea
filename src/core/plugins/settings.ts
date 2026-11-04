@@ -1,9 +1,11 @@
 // Settings, data folder and secrets of plugins (ticket plugin-system/13).
 // - A plugin's settings follow a schema in its manifest; non-secret values live in `<store>/.data/<id>/settings.json`.
-// - A secret goes to the secret store, never to a file, a log or an answer. The default store lives in memory (the core runs as a child process of the window and cannot reach the operating
-//   system's store); an embedder passes a `secretStore` that does (docs/plugin-api.md). A secret then lasts until aidea closes.
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+// - A secret goes to the secret store, never to a file, a log or an answer. The default store lives in memory and lasts until aidea closes. The desktop app does better: it keeps a
+//   key sealed with the operating system (Electron's safeStorage) and hands it to the core, which then keeps the secrets in a file encrypted with it (createFileSecretStore).
+//   An embedder may pass any `secretStore` of its own (docs/plugin-api.md).
+import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 export type SettingField = { type: "string" | "number" | "boolean" | "choice" | "secret"; label: string; options?: string[]; default?: string | number | boolean };
 export type SecretStore = { get(plugin: string, name: string): string | undefined; set(plugin: string, name: string, value: string): void; delete(plugin: string, name: string): void };
@@ -15,6 +17,37 @@ export function createMemorySecretStore(): SecretStore {
     get: (plugin, name) => secrets.get(`${plugin}\0${name}`),
     set: (plugin, name, value) => void secrets.set(`${plugin}\0${name}`, value),
     delete: (plugin, name) => void secrets.delete(`${plugin}\0${name}`),
+  };
+}
+
+// Secrets kept in one file, encrypted with AES-256-GCM under `keyHex` (32 bytes as hex). The names are encrypted with the values and every write uses a new nonce.
+// A file that cannot be read with this key (another machine, a damaged file) reads as empty; it is moved aside, never overwritten, so nothing is lost silently.
+export function createFileSecretStore(file: string, keyHex: string): SecretStore {
+  if (!/^[0-9a-f]{64}$/i.test(keyHex)) throw new Error("the secret key must be 32 bytes written as 64 hex characters");
+  const key = Buffer.from(keyHex, "hex");
+  let secrets = new Map<string, string>();
+  const unreadable = () => { try { renameSync(file, `${file}.unreadable-${Date.now()}`); } catch { /* it is gone already */ } };
+  if (existsSync(file)) {
+    try {
+      const { iv, tag, data } = JSON.parse(readFileSync(file, "utf8")) as { iv: string; tag: string; data: string };
+      const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(iv, "base64"));
+      decipher.setAuthTag(Buffer.from(tag, "base64"));
+      secrets = new Map(JSON.parse(Buffer.concat([decipher.update(Buffer.from(data, "base64")), decipher.final()]).toString("utf8")) as [string, string][]);
+    } catch { unreadable(); }
+  }
+  const save = () => {
+    const iv = randomBytes(12);
+    const cipher = createCipheriv("aes-256-gcm", key, iv);
+    const data = Buffer.concat([cipher.update(JSON.stringify([...secrets]), "utf8"), cipher.final()]);
+    mkdirSync(dirname(file), { recursive: true });
+    const temporary = `${file}.${randomBytes(4).toString("hex")}.tmp`;
+    writeFileSync(temporary, JSON.stringify({ iv: iv.toString("base64"), tag: cipher.getAuthTag().toString("base64"), data: data.toString("base64") }), { mode: 0o600 });
+    try { renameSync(temporary, file); } catch (e) { rmSync(temporary, { force: true }); throw e; }
+  };
+  return {
+    get: (plugin, name) => secrets.get(`${plugin}\0${name}`),
+    set: (plugin, name, value) => { secrets.set(`${plugin}\0${name}`, value); save(); },
+    delete: (plugin, name) => { if (secrets.delete(`${plugin}\0${name}`)) save(); },
   };
 }
 

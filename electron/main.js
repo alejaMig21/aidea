@@ -1,15 +1,33 @@
 // Desktop shell: runs the core as a separate Node process and shows its interface.
 // AIDEA_DISPLAY=secondary opens the window on the second monitor, for live testing.
-import { app, BrowserWindow, dialog, ipcMain, Menu, screen, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu, safeStorage, screen, shell } from "electron";
 import { spawn } from "node:child_process";
+import { randomBytes } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const coreScript = fileURLToPath(new URL("../src/core/main.ts", import.meta.url));
 // windowsHide: without it Windows opens a console window for the core, which looks untrustworthy in a desktop app.
 // --safe starts with every plugin that does not ship with aidea off (the way back from a plugin that breaks the start).
 const safe = process.argv.includes("--safe");
-const core = spawn("node", [coreScript], { stdio: ["ignore", "pipe", "inherit"], windowsHide: true, env: { ...process.env, ...(safe ? { AIDEA_SAFE_MODE: "1" } : {}) } });
-app.on("quit", () => core.kill());
+// The key that encrypts the secrets of plugins: made once and kept in a file sealed with the operating system (safeStorage: DPAPI on Windows, the Keychain on macOS), so only this account
+// can open it. The core gets it through its environment and keeps the secrets in a file encrypted with it. If the system cannot seal it, the secrets last until aidea closes.
+function secretKey() {
+  try {
+    if (!safeStorage.isEncryptionAvailable()) return undefined;
+    const file = process.env.AIDEA_SECRET_KEY_FILE ?? join(homedir(), ".aidea", "secret.key");
+    // A sealed key that this account can no longer open (the system's own key was lost, say after a crash) is replaced: the old secrets cannot be read either way, and the core sets that file aside.
+    try { if (existsSync(file)) return safeStorage.decryptString(readFileSync(file)); } catch { /* made again below */ }
+    const key = randomBytes(32).toString("hex");
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, safeStorage.encryptString(key), { mode: 0o600 });
+    return key;
+  } catch { return undefined; }
+}
+let core = null;
+app.on("quit", () => core?.kill());
 // What Play started lives under the core, and killing the core does not end it: before the core goes, ask it to stop the parts.
 let coreUrl = null;
 const callRun = async (name) => {
@@ -23,7 +41,7 @@ ipcMain.handle("pick-folder", async (e) => {
 // A change to the plugins that needs a restart (removing code that already ran): the core and the window start again.
 ipcMain.handle("restart-app", async (_e, inSafeMode) => {
   await callRun("stopAll");
-  core.kill();
+  core?.kill();
   const args = process.argv.slice(1).filter((a) => a !== "--safe");
   app.relaunch({ args: inSafeMode ? [...args, "--safe"] : args });
   app.exit(0);
@@ -69,8 +87,13 @@ function openWindow(url) {
   win.loadURL(url);
 }
 
-core.stdout.on("data", (chunk) => {
-  const url = /listening on (\S+)/.exec(chunk.toString())?.[1];
-  if (url) coreUrl = url;
-  if (url) app.whenReady().then(() => openWindow(url));
+// The core starts once the app is ready (safeStorage needs that), and the window opens when the core says where it listens.
+app.whenReady().then(() => {
+  const key = secretKey();
+  core = spawn("node", [coreScript], { stdio: ["ignore", "pipe", "inherit"], windowsHide: true, env: { ...process.env, ...(safe ? { AIDEA_SAFE_MODE: "1" } : {}), ...(key ? { AIDEA_SECRET_KEY: key } : {}) } });
+  core.stdout.on("data", (chunk) => {
+    const url = /listening on (\S+)/.exec(chunk.toString())?.[1];
+    if (url) coreUrl = url;
+    if (url) openWindow(url);
+  });
 });
