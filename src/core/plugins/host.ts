@@ -41,7 +41,8 @@ function combine(answers: { owner: string; answer: unknown }[]): Verdict {
 }
 
 // `roots` are the folders that hold plugins: the ones that ship with aidea first (builtin), then the person's plugin store.
-export function createPluginHost(roots: { dir: string; builtin: boolean }[] = [], chosen: Chosen = createPluginState()) {
+// `safe`: safe mode, in which no plugin that does not ship with aidea is activated (the person's way back from a plugin that breaks the start).
+export function createPluginHost(roots: { dir: string; builtin: boolean }[] = [], chosen: Chosen = createPluginState(), safe = false) {
   const entries = new Map<string, Entry>();
   const services = new Map<string, { owner: string; value: unknown }>();
   const logs: { plugin: string; message: string }[] = [];
@@ -206,6 +207,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
     }
     for (const [key, entry] of [...entries]) {
       if (key.includes("#")) continue;
+      if (safe && !entry.builtin) { entry.reason = SAFE_MODE; continue; }
       if (chosen.disabled.has(entry.id) && !entry.manifest?.required) { entry.reason = SWITCHED_OFF; continue; }
       await activateOne(entry.id);
     }
@@ -233,6 +235,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
 
   return {
     loadAll,
+    safe,
     // The person switched it off: its reason says so.
     switchedOff: (id: string) => { const e = entries.get(id); if (e) e.reason = SWITCHED_OFF; },
     ran: (id: string) => entries.get(id)?.ran === true,
@@ -275,4 +278,5 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
 }
 
 export const SWITCHED_OFF = "switched off by you";
+export const SAFE_MODE = "safe mode: third-party plugins are off";
 export type PluginHost = ReturnType<typeof createPluginHost>;

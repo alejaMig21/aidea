@@ -26,6 +26,7 @@ export function createManager(host: PluginHost, quarantine: Quarantine, store: s
     if (changing && plugin.required) throw new ManagerError(409, `"${id}" ships with aidea and is required: it cannot be switched off or removed`);
     return plugin;
   }
+  const refuseInSafeMode = () => { if (host.safe) throw new ManagerError(409, "Safe mode: third-party plugins stay off. Restart aidea without safe mode to use them."); };
   const exclusive = async <T,>(work: () => Promise<T>) => {
     if (busy) throw new ManagerError(409, "Another change to the plugin store is running; try again in a moment");
     busy = true;
@@ -35,7 +36,7 @@ export function createManager(host: PluginHost, quarantine: Quarantine, store: s
   return {
     // Switches a plugin on; the choice is kept for the next start.
     enable: (id: string) => exclusive(async (): Promise<{ status: Status; plugin?: PluginInfo; reason?: string }> => {
-      known(id);
+      if (!known(id).builtin) refuseInSafeMode();
       chosen.disabled.delete(id);
       chosen.save();
       await host.activate(id);
@@ -66,6 +67,7 @@ export function createManager(host: PluginHost, quarantine: Quarantine, store: s
     }),
     async install(qid: string, confirm: string[] = []): Promise<{ status: Status; plugin?: PluginInfo; reason?: string }> {
       if (!store) throw new ManagerError(400, "This core has no plugin store");
+      refuseInSafeMode();
       const entry = quarantine.get(qid);
       if (!entry) throw new ManagerError(404, "No quarantine entry with that id");
       const manifest = entry.report.manifest;

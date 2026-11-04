@@ -9,5 +9,5 @@ const learnerDir = process.env.AIDEA_LEARNER_DIR ?? join(homedir(), ".aidea", "l
 const pluginsDir = process.env.AIDEA_PLUGINS_DIR ?? join(homedir(), ".aidea", "plugins"); // the plugin store (docs/plugin-api.md); the plugins that ship with aidea are in src/plugins
 // AIDEA_ROLE_ADAPTERS="tutor=default,grader=default": which agent serves which role (only "default", Claude Code, exists today).
 const roleAdapters = parseRoleAdapters(process.env.AIDEA_ROLE_ADAPTERS);
-const core = await startCore({ port: Number(process.env.AIDEA_PORT ?? 0), roleAdapters, recentsFile, preferencesFile, learnerDir, pluginsDir });
+const core = await startCore({ port: Number(process.env.AIDEA_PORT ?? 0), roleAdapters, recentsFile, preferencesFile, learnerDir, pluginsDir, safeMode: process.env.AIDEA_SAFE_MODE === "1" });
 console.log(`aidea core listening on ${core.url}`);

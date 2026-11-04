@@ -41,8 +41,12 @@ const pmJson = async (method, url, body) => {
 pmBox.append(
   pmEl("h2", {}, "Plugins"),
   pmEl("p", { id: "pm-message", role: "status" }),
+  pmEl("p", { id: "pm-mode", className: "pm-meta" }),
   pmEl("h3", {}, "Installed"),
   pmEl("div", { id: "pm-installed" }),
+  pmEl("div", { className: "pm-actions" },
+    Object.assign(pmEl("button", { type: "button", id: "pm-safe" }, "Restart in safe mode"), { title: "Start again with every plugin that does not ship with aidea switched off", onclick: () => (window.aidea?.restart ? window.aidea.restart(true) : pmMessage("Close aidea and open it with the --safe option.")) }),
+    Object.assign(pmEl("a", { id: "pm-emergency", href: "/emergency" }, "Emergency screen"), { className: "pm-meta" })),
   pmEl("h3", {}, "Waiting in the quarantine"),
   pmEl("div", { id: "pm-quarantine" }),
   pmEl("h3", {}, "Add a plugin"),
@@ -136,6 +140,7 @@ function pmInstalledRow(p) {
 
 async function pmRefresh() {
   const [{ body: list }, { body: waiting }] = await Promise.all([pmJson("GET", "/plugins"), pmJson("GET", "/plugins/quarantine")]);
+  document.getElementById("pm-mode").textContent = list.safeMode ? "Safe mode is on: the plugins that do not ship with aidea are off. Restart aidea normally to use them." : "";
   document.getElementById("pm-installed").replaceChildren(...(list.plugins ?? []).map(pmInstalledRow));
   document.getElementById("pm-quarantine").replaceChildren(...(waiting.entries ?? []).map(pmQuarantineRow));
 }

@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] A start option (and a control in the window) starts aidea in safe mode: no third-party plugin activates.
-- [ ] The emergency screen works when every plugin is broken or missing.
-- [ ] Switching a plugin off from it saves the choice for the next start.
-- [ ] Core API and page tests pass; `npm run verify` is green.
+- [x] A start option (and a control in the window) starts aidea in safe mode: no third-party plugin activates.
+- [x] The emergency screen works when every plugin is broken or missing.
+- [x] Switching a plugin off from it saves the choice for the next start.
+- [x] Core API and page tests pass; `npm run verify` is green.

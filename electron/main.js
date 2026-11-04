@@ -6,7 +6,9 @@ import { fileURLToPath } from "node:url";
 
 const coreScript = fileURLToPath(new URL("../src/core/main.ts", import.meta.url));
 // windowsHide: without it Windows opens a console window for the core, which looks untrustworthy in a desktop app.
-const core = spawn("node", [coreScript], { stdio: ["ignore", "pipe", "inherit"], windowsHide: true });
+// --safe starts with every plugin that does not ship with aidea off (the way back from a plugin that breaks the start).
+const safe = process.argv.includes("--safe");
+const core = spawn("node", [coreScript], { stdio: ["ignore", "pipe", "inherit"], windowsHide: true, env: { ...process.env, ...(safe ? { AIDEA_SAFE_MODE: "1" } : {}) } });
 app.on("quit", () => core.kill());
 // Folder picker for the interface. Resolves to the chosen path, or null when cancelled.
 ipcMain.handle("pick-folder", async (e) => {
@@ -14,9 +16,10 @@ ipcMain.handle("pick-folder", async (e) => {
   return canceled ? null : filePaths[0];
 });
 // A change to the plugins that needs a restart (removing code that already ran): the core and the window start again.
-ipcMain.handle("restart-app", () => {
+ipcMain.handle("restart-app", (_e, inSafeMode) => {
   core.kill();
-  app.relaunch();
+  const args = process.argv.slice(1).filter((a) => a !== "--safe");
+  app.relaunch({ args: inSafeMode ? [...args, "--safe"] : args });
   app.exit(0);
 });
 Menu.setApplicationMenu(null); // the default File/Edit/View/Window menu has nothing aidea needs

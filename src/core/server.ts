@@ -41,8 +41,8 @@ export function parseRoleAdapters(text: string | undefined): Record<string, stri
   return pairs;
 }
 
-// `pluginsDir` is the plugin store: one folder per plugin (docs/plugin-api.md). `builtinPluginsDir` holds the plugins that ship with aidea (src/plugins by default; false loads none).
-export async function startCore({ port, adapter: defaultAdapter = createClaudeAdapter(), adapters = {}, roleAdapters = {}, recentsFile, preferencesFile, learnerDir, learnerModel, pluginsDir, builtinPluginsDir = shippedPlugins }: { port: number; adapter?: Adapter; adapters?: Record<string, Adapter>; roleAdapters?: Record<string, string>; recentsFile?: string; preferencesFile?: string; learnerDir?: string; learnerModel?: string; pluginsDir?: string; builtinPluginsDir?: string | false }) {
+// `safeMode` starts with every plugin that does not ship with aidea off. `pluginsDir` is the plugin store: one folder per plugin (docs/plugin-api.md). `builtinPluginsDir` holds the plugins that ship with aidea (src/plugins by default; false loads none).
+export async function startCore({ port, adapter: defaultAdapter = createClaudeAdapter(), adapters = {}, roleAdapters = {}, recentsFile, preferencesFile, learnerDir, learnerModel, pluginsDir, builtinPluginsDir = shippedPlugins, safeMode = false }: { port: number; adapter?: Adapter; adapters?: Record<string, Adapter>; roleAdapters?: Record<string, string>; recentsFile?: string; preferencesFile?: string; learnerDir?: string; learnerModel?: string; pluginsDir?: string; builtinPluginsDir?: string | false; safeMode?: boolean }) {
   const named: Record<string, Adapter> = { ...adapters, default: defaultAdapter };
   for (const [role, name] of Object.entries(roleAdapters)) {
     if (!ROLES.includes(role)) throw new Error(`Unknown role "${role}". Roles: ${ROLES.join(", ")}`);
@@ -56,7 +56,7 @@ export async function startCore({ port, adapter: defaultAdapter = createClaudeAd
 
   const learner = createLearner(learnerDir, adapter, learnerModel);
   const chosen = createPluginState(pluginsDir);
-  const pluginHost = createPluginHost([...(builtinPluginsDir ? [{ dir: builtinPluginsDir, builtin: true }] : []), ...(pluginsDir ? [{ dir: pluginsDir, builtin: false }] : [])], chosen);
+  const pluginHost = createPluginHost([...(builtinPluginsDir ? [{ dir: builtinPluginsDir, builtin: true }] : []), ...(pluginsDir ? [{ dir: pluginsDir, builtin: false }] : [])], chosen, safeMode);
   const quarantine = createQuarantine(pluginsDir);
   const core: Core = {
     adapter,
