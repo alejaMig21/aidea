@@ -33,6 +33,7 @@ Open, to settle before a spec:
 
 ## 2. Plugins
 Kinds of plugin (a Panel, a language adapter, a layer or drawing, Tutor content, a Preset pack); the extension points and API; install, enable, remove; what a plugin may do and how it is trusted.
+DECIDED 2026-11-04: the first plugin system supports Panels only, and the first plugin is the versions one (topic 4), which tests it end to end. The person's GOAL, recorded on purpose, is to reach all the kinds (Panel, language adapter, layer or drawing, Tutor content, Preset pack); each is added when its time comes, learning from the versions plugin. The design must not close the door on the other kinds. The agent had recommended the same first step.
 
 ## 3. A terminal section
 DECIDED 2026-11-03 (during topic 1): the first version only SHOWS. One tab per process that Play started, with its output, its state (alive or exited) and stop and restart buttons; nothing can be typed. It is built so that a second kind of tab, an interactive console, can be added later without redoing the first. The interactive console (and its native pseudo-terminal dependency and its security rule) stays open for a later interview.
