@@ -134,6 +134,7 @@
   function render(event, project) {
     if (event.type === "session") sessions.set(project, event.sessionId);
     else if (event.type === "permission") permissionCard(event);
+    else if (event.type === "plugin_proposed") pmProposed(event); // the Builder wrote a plugin: the manager opens on it
     else if (event.type === "permission_expired") expireCard(event.id);
     else if (event.type === "proposal") {
       // The Canvas shows it highlighted on its layer; the chat says it happened and offers to take the person there.

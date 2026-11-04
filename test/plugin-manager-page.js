@@ -64,6 +64,12 @@ const pmPanelRow = (title) => [...document.querySelectorAll("#panels-menu [role=
     button.click();
     await pmWait(100);
     report.reopened = pmVisible(document.getElementById("plugins-manager"));
+    // The Builder proposes a plugin: the manager opens on it even when it was closed.
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    await pmWait(100);
+    pmProposed({ id: "x", title: "Made by the Builder" });
+    await pmWait(100);
+    report.proposed = { visible: pmVisible(document.getElementById("plugins-manager")), message: document.getElementById("pm-message").textContent };
   } catch (e) {
     report.errors.push(String(e && e.stack || e));
   }

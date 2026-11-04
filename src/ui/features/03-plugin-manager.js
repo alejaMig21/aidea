@@ -168,5 +168,10 @@ function pmClose() {
   pmBox.hidden = true;
   pmButton.focus();
 }
+// The Builder proposed a plugin (it is in the quarantine already): the manager opens so the person reads the scan and decides.
+function pmProposed(event) {
+  pmOpen();
+  pmMessage(`The Builder proposed the plugin "${event.title}". Read what the scan found, then install it or discard it.`);
+}
 pmButton.onclick = () => (pmBox.hidden ? pmOpen() : pmClose());
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !pmBox.hidden) pmClose(); });

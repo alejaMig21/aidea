@@ -128,6 +128,11 @@ test("removing a plugin that already ran says a restart is needed and offers the
   assert.match(page.removed.message, /restart/i);
 });
 
+test("a plugin the Builder proposes opens the manager with a message that names it", { skip }, () => {
+  assert.equal(page.proposed.visible, true);
+  assert.match(page.proposed.message, /Builder proposed the plugin "Made by the Builder"/);
+});
+
 test("Escape closes the manager and the button opens it again", { skip }, () => {
   assert.deepEqual([page.closed, page.reopened], [true, true]);
 });

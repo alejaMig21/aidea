@@ -4,7 +4,12 @@
 //    writes those files itself: its tools only create pending Proposals, and the person decides.
 // Plain JSON over HTTP, one message per request. The address contains the token of a running conversation, so only
 // the Claude Code process we started can use it.
+import { readFileSync, realpathSync, statSync } from "node:fs";
+import { isAbsolute, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 import { contractOf } from "../contract.ts";
+import { inspect } from "../plugins/api.ts";
+import { QuarantineError } from "../plugins/quarantine.ts";
 import { decisionTools, finishGate, holdIfBlocking, runDecisionTool } from "../decision-class.ts";
 import { publicView, propose, proposePattern, refusedEvent } from "../proposals.ts";
 import type { Proposal } from "../proposals.ts";
@@ -15,6 +20,7 @@ import { READ_TOOLS, runReadTool } from "../tutor-reads.ts";
 import { PROBE_TOOLS, runProbeTool } from "../probe.ts";
 import type { Handler } from "../types.ts";
 
+const pluginGuide = fileURLToPath(new URL("../../../docs/plugin-skill.md", import.meta.url));
 const MAX_MCP_BODY_BYTES = 4 * 1024 * 1024; // a request to write a file carries the whole content
 
 const LAYERS = ["business", "requirements", "architecture"];
@@ -66,6 +72,17 @@ const TOOLS = [
     description: "Lists the proposals made for this Project and whether the person has accepted, rejected or not yet decided each one.",
     inputSchema: { type: "object", properties: {} },
     annotations: { readOnlyHint: true },
+  },
+  {
+    name: "read_plugin_guide",
+    description: "Returns the guide for writing an aidea plugin and what the running app offers to plugins (API version, slots, capabilities, style tokens, services). Read it before you write a plugin.",
+    inputSchema: { type: "object", properties: {} },
+    annotations: { readOnlyHint: true },
+  },
+  {
+    name: "propose_plugin",
+    description: "Proposes a plugin you wrote in a folder of this Project: aidea puts a copy in the quarantine, where nothing runs, scans it, and opens the plugin manager so the person can decide. You cannot install, enable or remove a plugin; only the person can.",
+    inputSchema: { type: "object", properties: { path: { type: "string", description: "The folder of the plugin, relative to the Project" } }, required: ["path"] },
   },
 ];
 
@@ -186,6 +203,31 @@ const handler: Handler = async (req, res, core) => {
       }
       if (name === "read_contract") {
         core.send(res, 200, toolText(id, JSON.stringify(contractOf(project.path).layers)));
+        return true;
+      }
+      if (name === "read_plugin_guide") {
+        core.send(res, 200, toolText(id, `${readFileSync(pluginGuide, "utf8")}\n\nWhat the running app offers (GET /plugins/inspect):\n${JSON.stringify(inspect(core.plugins), null, 1)}`));
+        return true;
+      }
+      if (name === "propose_plugin") {
+        // The folder must be inside the Project: a copy is made, never a link followed out.
+        const rel = typeof args.path === "string" ? args.path : "";
+        let folder = "";
+        try {
+          const root = realpathSync(project.path), real = realpathSync(resolve(project.path, rel));
+          if (!rel || isAbsolute(rel) || (real !== root && !real.startsWith(root + sep)) || real === root || !statSync(real).isDirectory()) throw new Error("not a folder inside the Project");
+          folder = real;
+        } catch {
+          core.send(res, 200, toolText(id, "Give the path of a folder of this Project, relative to it (not the Project itself, not outside it).", true));
+          return true;
+        }
+        try {
+          const entry = core.manager.describe(await core.quarantine.add(folder));
+          conversation.emit({ type: "plugin_proposed", id: entry.id, title: entry.report.manifest?.title ?? "A plugin", blocking: entry.report.blocking });
+          core.send(res, 200, toolText(id, `The plugin is in the quarantine (id ${entry.id}) and the person was told. Nothing of it runs. The person will read the scan (${entry.report.blocking} blocking, ${entry.report.warnings} warnings) and decide in the plugin manager; wait for their answer.`));
+        } catch (e) {
+          core.send(res, 200, toolText(id, e instanceof QuarantineError ? e.message : "The plugin could not be proposed.", true));
+        }
         return true;
       }
       if (name === "list_proposals") {

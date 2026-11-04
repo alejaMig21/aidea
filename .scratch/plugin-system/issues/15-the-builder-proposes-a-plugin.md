@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] The Builder has a tool that adds a folder to the quarantine and proposes the install; it has no tool that installs.
-- [ ] The proposal opens the manager on that plugin with its report.
-- [ ] A fixture plugin that tries to call the install operation is refused.
-- [ ] Core API tests with a fake Builder pass; `npm run verify` is green.
+- [x] The Builder has a tool that adds a folder to the quarantine and proposes the install; it has no tool that installs.
+- [x] The proposal opens the manager on that plugin with its report.
+- [x] A fixture plugin that tries to call the install operation is refused.
+- [x] Core API tests with a fake Builder pass; `npm run verify` is green.

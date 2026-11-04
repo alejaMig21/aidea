@@ -37,7 +37,7 @@ const handler: Handler = async (req, res, core) => {
   const permission = {
     mcpConfig: JSON.stringify({ mcpServers: { aidea: { type: "http", url: `http://${req.headers.host}/mcp/${conversation.token}` } } }),
     tool: "mcp__aidea__approve",
-    allowedTools: ["propose_add_node", "propose_update_node", "propose_remove_node", "propose_pattern_group", "list_proposals", "read_contract"].map((t) => `mcp__aidea__${t}`),
+    allowedTools: ["propose_add_node", "propose_update_node", "propose_remove_node", "propose_pattern_group", "list_proposals", "read_contract", "read_plugin_guide", "propose_plugin"].map((t) => `mcp__aidea__${t}`),
     // The authored files change only through Proposals. A shell pattern is not a wall: the check after the turn (guard.ts) is.
     deniedTools: [...["Write", "Edit", "MultiEdit", "NotebookEdit"].map((t) => `${t}(.aidea/**)`), "Bash(*.aidea*)"],
   };
