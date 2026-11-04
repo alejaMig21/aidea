@@ -58,7 +58,7 @@ Today: C4 boxes, an `external` flag, relations with a label and a `technology`. 
 Two journeys: a public repository that is not theirs (understand first), and a new project from zero. Decisions: how to be "game-like" when the Tutor spec says no score or level is kept (story 31); is "someone else's repository" understand-only or also contribute (fork, branch, pull request); the default language for a beginner. Gaps found: no `git clone`, no reconstruction of Business and Requirements from code, no environment setup, and the guide predates the Panels, Files, Code, Run and the saved Layout.
 
 ## 7. Decisions of the first version that wait for the person (short, not interviews)
-- DECISION 5 in `.scratch/overnight/LOG.md`: the shape contract for Playback values (written by an agent).
+- DECISION 5 in `.scratch/overnight/LOG.md`: the shape contract for Playback values (written by an agent). ACCEPTED 2026-11-03 by the person ("supongo que A"; they said they did not fully follow it, so it can be reopened if the Data layer shows a problem).
 - Files lists ignored folders (closed, in italics) instead of omitting them.
 - Merge the Canvas's own title bar with the layer bar (it would remove a double bar).
 - Ticket `layout-and-data/05`: choose the visual effect; the agent shows three options live.
