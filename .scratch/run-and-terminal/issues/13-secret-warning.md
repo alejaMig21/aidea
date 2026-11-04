@@ -4,10 +4,11 @@
 
 **Blocked by:** 11.
 
-**Status:** ready-for-agent
+**Status:** built and tested; live check pending
 
-- [ ] Text with a recognised secret pattern asks for confirmation; cancelling sends nothing.
-- [ ] Confirming sends the text exactly as selected.
-- [ ] Ordinary error text (a traceback, a stack trace) does not trigger the warning in a set of real examples.
-- [ ] The check applies to every Panel's selection, not only the terminal.
-- [ ] Page tests cover the warning, the cancel and the confirm; verified live on the second monitor.
+- [x] Text with a recognised secret pattern asks for confirmation; cancelling sends nothing.
+- [x] Confirming sends the text exactly as selected.
+- [x] Ordinary error text (a traceback, a stack trace) does not trigger the warning in a set of real examples.
+- [x] The check applies to every Panel's selection, not only the terminal.
+- [x] Page tests cover the warning, the cancel and the confirm (test/secret-warning-page.test.ts).
+- [ ] Verified live on the second monitor.

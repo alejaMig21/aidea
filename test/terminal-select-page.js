@@ -21,7 +21,7 @@ const tsSelect = (node, from, to) => {
   node.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
 };
 const tsPop = () => document.getElementById("select-pop");
-const tsButtons = () => Object.fromEntries([...tsPop().querySelectorAll("button")].map((b) => [b.textContent, !b.disabled]));
+const tsButtons = () => Object.fromEntries([...tsPop().querySelectorAll("button")].filter((b) => !b.closest("[hidden]")).map((b) => [b.textContent, !b.disabled]));
 (async () => {
   try {
     await openProject(window.PANELS_PROJECT);
