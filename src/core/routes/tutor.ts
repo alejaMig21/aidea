@@ -1,6 +1,7 @@
-// The Tutor's class: POST /tutor/classes starts one and streams its events (newline-delimited JSON, like /chat);
+// The Tutor's session: POST /tutor/classes starts one and streams its events (newline-delimited JSON, like /chat);
 // POST /tutor/answer is the person's answer to a question the Tutor is waiting on.
-// A class is one Tutor process for as long as the stream stays open: closing the stream ends the class.
+// A session is one Tutor process for as long as the stream stays open: closing the stream ends it. It needs an Open Project and the person may ask anything (`message`).
+// Where it was started from (a layer, a difference, selected text, a plugin in the quarantine, "How aidea works") only attaches context to the question, and contexts combine.
 import { randomBytes } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -46,7 +47,8 @@ const handler: Handler = async (req, res, core) => {
   }
 
   const project = typeof body?.project === "string" ? core.projects.get(body.project) : undefined;
-  if (!project) return reject(400, "project must be a Project that is already open");
+  if (!project) return reject(400, "Open a project first: the Tutor teaches with a project open, and then you can ask it anything.");
+  if (body?.message !== undefined && typeof body.message !== "string") return reject(400, "message must be text");
   const topic = body?.topic;
   if (topic !== undefined && (typeof topic !== "string" || topic.length > MAX_TOPIC_CHARS)) return reject(400, `topic must be text of at most ${MAX_TOPIC_CHARS} characters`);
   const layer = body?.layer;
@@ -61,7 +63,10 @@ const handler: Handler = async (req, res, core) => {
   if (selection !== undefined && !validSelection(selection, body?.source)) return reject(400, `selection must be the selected text, at most ${limitOf(body?.source)} characters`);
   const plugin = body?.plugin;
   if (plugin !== undefined && (typeof plugin !== "string" || !core.quarantine.get(plugin))) return reject(400, "plugin must be the id of a plugin waiting in the quarantine");
-  const opening = guide ? guideClassMessage(core.plugins.lessons()) : layer ? layerClassMessage(layer) : difference ? driftClassMessage(difference) : selection ? selectionMessage(selection) : plugin ? pluginClassMessage(plugin) : body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
+  // The context the interface attached, all of it; the person's own question (if any) comes first.
+  const contexts = [guide && guideClassMessage(core.plugins.lessons()), layer && layerClassMessage(layer), difference && driftClassMessage(difference), selection && selectionMessage(selection), plugin && pluginClassMessage(plugin)].filter((c): c is string => typeof c === "string");
+  const question = typeof body?.message === "string" && body.message.trim() ? body.message : undefined;
+  const opening = contexts.length ? (question ? `The person asks: ${question}\n\n` : "") + contexts.join("\n\n") : question ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
   // One review question about an earlier idea opens a FREE class (started with "Start a class"), unless the person turned it off. A class on a layer, on selected text,
   // on a difference, on a plugin or on how aidea works is something the person asked for on purpose: a review before it would only be in the way.
   const free = !layer && !difference && !selection && !guide && !plugin;

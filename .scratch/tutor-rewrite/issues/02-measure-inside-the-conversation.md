@@ -2,7 +2,7 @@
 
 **What to build:** Replace the Probe (a separate run per layer with a fixed list of concepts) by a measurement inside the conversation, as LearnHarness does: the Tutor asks the goal if it is not clear, and asks questions per prerequisite topic that it chooses, starting near the hardest thing the goal needs, to find the floor and the ceiling. It stops when every topic is bracketed and the goal is concrete, and records the result once. The person can say they know something and skip it. What was measured feeds the Learner graph.
 
-**Blocked by:** tutor-rewrite 01.
+**Blocked by:** None (can start immediately).
 
 **Status:** ready-for-agent
 

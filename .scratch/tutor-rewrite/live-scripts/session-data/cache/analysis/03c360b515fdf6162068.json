@@ -1,0 +1,1 @@
+{"signature":"53bb060b93e8a55733c2bd4d62e3a84aba296585","analysis":{"nodes":[{"id":"app","kind":"module","name":"app","parent":null,"file":"app.py","line":1,"endLine":2},{"id":"app.go","kind":"function","name":"go","parent":"app","file":"app.py","line":1,"endLine":2,"parameters":[],"markers":{"visibility":"public"}}],"errors":[],"relationships":[],"unresolved":0}}
