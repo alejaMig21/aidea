@@ -1,0 +1,1 @@
+{"parts":[{"name":"broken","command":"node -e \"console.log('boom'); process.exit(3)\"","ready":{"line":"never printed"}}]}

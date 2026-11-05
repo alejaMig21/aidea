@@ -51,6 +51,8 @@ async function pluginUiActivate(id) {
       if (!res.ok) throw new Error(answer?.error ?? `the call "${name}" failed (${res.status})`);
       return answer;
     },
+    // Shows a Panel by its id (any plugin's) when it is hidden: for an offer such as "Open the Terminal". It changes nothing when the Panel is already shown or does not exist.
+    panels: { show: (panel) => { if (typeof layoutDef !== "undefined" && layoutDef[panel] && !layoutShown[panel]) layoutToggle(panel); } },
     slots: {
       add(slot, entry) {
         const declared = pluginSlots[slot];

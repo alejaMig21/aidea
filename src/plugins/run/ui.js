@@ -70,9 +70,12 @@ export function activate(ui) {
         input.form.requestSubmit();
         ask.hidden = true;
       };
+      // After a failure the message says the Terminal shows the errors in depth: one action opens it (run-and-terminal 06).
+      const terminal = Object.assign(document.createElement("button"), { type: "button", textContent: "Open the Terminal", title: "Show the output of the programs, one tab each", hidden: true });
+      terminal.onclick = () => { ui.panels.show("terminal"); terminal.hidden = true; };
       const note = Object.assign(document.createElement("span"), { role: "status" });
       note.style.cssText = "color:var(--muted);font-size:12px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap";
-      box.append(play, stop, ask, note);
+      box.append(play, stop, ask, terminal, note);
       const say = (text) => { note.textContent = note.title = text; };
       let timer = 0;
       const poll = async () => {
@@ -109,6 +112,7 @@ export function activate(ui) {
             } else { say("Not started: the recipe was not accepted."); return; }
           }
           say(r.started ? "" : describe(r)); // when it starts, Stop all appearing says it
+          terminal.hidden = r.reason !== "failed";
           asking = askAbout(r.reason);
           ask.hidden = !asking;
           if (asking) { ask.textContent = asking.label; ask.title = asking.title; }

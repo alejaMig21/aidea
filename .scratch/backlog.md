@@ -9,7 +9,7 @@ Rules:
 4. The status of a ticket says whether it can start: `ready-for-agent`, or `needs-info` and what it waits for (shown in the Wait column).
 5. Every new built-in plugin ships a lesson and a teaching surface (plugin-lessons, plugin-teaching): items that create one depend on those.
 
-Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (75 items, 4 levels).
+Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (73 items, 4 levels).
 ## Level 0: no dependencies
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
@@ -43,8 +43,6 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | pw | T | M | Detect warnings (not only failures) when Play starts parts; restart only one part quickly | housekeeping 04 | - | - | how a warning is detected (a pattern the recipe declares, the stderr, an exit code) and shown |
 | rc09 | T | S | Optional: rename the Tutor's Plan to "Learning plan" (the Plan of the rewritten Tutor is the one LearnHarness shows) | roles-and-contract 09 | - | - | the person confirms the name |
 | rl | T | S | Review leftovers: shared `make` helper, `chatUi.send` seam, test that the 2000 and 8000 limits match, split the secret detector out of `54-select.js`, `chat.ts` allowedTools list | housekeeping 03 | - | - | - |
-| rt06 | T | S | Test: Play's failure message offers to open the Terminal | run-and-terminal 06 | - | - | - |
-| rt07 | T | S | Page test of the Stop and Restart buttons | run-and-terminal 07 | - | - | - |
 | rt10 | T | S | Live check: the Builder proposes a run recipe | run-and-terminal 10 | - | - | real Builder (quota) |
 | sv | T | M | A release-numbers plugin (semver, `v1.0.0`): reads the commits since the last version tag and proposes the next number (`fix` raises the last digit, `feat` the middle one, a breaking change the first), says why, the person accepts. Not the git history plugin. Ships a lesson and a teaching surface | versions 01 | - | - | - |
 | tb | T | S | Merge the Canvas's own title bar with the layer bar (needs a ticket) | housekeeping 01 | - | - | - |

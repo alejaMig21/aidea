@@ -69,7 +69,7 @@ export function activate(ui) {
 }
 ```
 
-`ui.slots.add(slot, entry)` adds to a slot that the owner declared; adding to a slot that does not exist throws and the plugin fails to activate. It returns the function that removes the entry. Content is plain DOM or web components; there is no framework and no iframe. Colours, sizes and fonts come only from the style tokens below, so a plugin looks like the rest of aidea.
+`ui.panels.show(id)` shows a Panel by its id (any plugin's) when it is hidden, for an offer such as "Open the Terminal"; it does nothing when the Panel is shown or does not exist. `ui.slots.add(slot, entry)` adds to a slot that the owner declared; adding to a slot that does not exist throws and the plugin fails to activate. It returns the function that removes the entry. Content is plain DOM or web components; there is no framework and no iframe. Colours, sizes and fonts come only from the style tokens below, so a plugin looks like the rest of aidea.
 
 ## Slots
 

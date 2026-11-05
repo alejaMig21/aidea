@@ -1,0 +1,1 @@
+{"parts":[{"name":"waiter","command":"node -e \"console.log('up'); setInterval(() => {}, 1000)\""}]}
