@@ -1,1 +1,1 @@
-{"parts":[{"name":"hello","command":"node -e \"console.log('hello from the part')\""}]}
+{"parts":[{"name":"hello","command":"node -e \"console.log('hello from the part'); setInterval(() => {}, 1000)\""}]}

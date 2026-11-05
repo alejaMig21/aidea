@@ -289,11 +289,12 @@ export function activate(ctx) {
     }
     return { decided: body.decision };
   });
-  ctx.api.handle("status", (body) => {
+  const statusOf = (body) => {
     const root = rootOf(body);
     const { r, refusal } = check(root);
     return { recipe: r.state === "ok" ? { state: refusal ? "needs-accept" : "accepted", parts: r.recipe.parts.map((p) => p.name) } : { state: r.state, errors: r.errors } };
-  });
+  };
+  ctx.api.handle("status", statusOf);
   ctx.api.handle("accept", (body) => {
     const root = rootOf(body);
     const r = readRecipe(root);
@@ -348,7 +349,13 @@ export function activate(ctx) {
     };
   };
   ctx.api.handle("output", outputOf);
-  ctx.services.provide("run.output", outputOf); // the Terminal's teaching surface reads it (plugin-teaching 07)
+  ctx.services.provide("run.output", outputOf);
+  // The teaching surface (plugin-teaching 05): the recipe's state and the programs Play started, for the Tutor's view and checks (teach.mjs).
+  ctx.teach.state(({ project } = {}) => {
+    if (!project) return { recipe: "none", errors: [], parts: [] };
+    const { recipe } = statusOf({ project });
+    return { recipe: recipe.state, errors: recipe.errors ?? [], parts: outputOf({ project }).parts.map((p) => ({ name: p.name, alive: p.alive, exit: p.exit ?? null })) };
+  }); // the Terminal's teaching surface reads it (plugin-teaching 07)
 
   // Deactivating the plugin (or closing aidea) stops everything Play started.
   return async () => { for (const run of runs.values()) await stopNames(run, [...run.order]); };

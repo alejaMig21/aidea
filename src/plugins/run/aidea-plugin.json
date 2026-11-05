@@ -8,5 +8,14 @@
   "main": "main.js",
   "provides": ["run.propose", "run.output"],
   "ui": "ui.js",
-  "capabilities": ["processes", "files", "network"]
+  "capabilities": ["processes", "files", "network"],
+  "teach": {
+    "view": "state",
+    "module": "teach.mjs",
+    "checks": [
+      { "name": "recipe-accepted", "says": "The run recipe of the Project is accepted." },
+      { "name": "part-running", "says": "One program started by Play is running.", "args": { "program": "string" } },
+      { "name": "all-running", "says": "Every program started by Play is running." }
+    ]
+  }
 }

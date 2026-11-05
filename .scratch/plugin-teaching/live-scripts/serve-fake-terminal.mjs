@@ -8,13 +8,16 @@ rmSync(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 });
 const project = join(root, "shop");
 mkdirSync(join(project, ".aidea"), { recursive: true });
 writeFileSync(join(project, "app.py"), "def go():\n    return 1\n");
-writeFileSync(join(project, ".aidea", "run.json"), JSON.stringify({ parts: [{ name: "hello", command: "node -e \"console.log('hello from the part')\"" }] }));
+writeFileSync(join(project, ".aidea", "run.json"), JSON.stringify({ parts: [{ name: "hello", command: "node -e \"console.log('hello from the part'); setInterval(() => {}, 1000)\"" }] }));
 const adapter = { options: { modes: [], models: [] }, run: async function* ({ role, tools }) {
   if (role !== "tutor") return;
   const url = JSON.parse(tools.mcpConfig).mcpServers.tutor.url;
   const call = async (name, args) => JSON.parse((await (await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name, arguments: args } }) })).json()).result.content[0].text);
   const view = await call("read_plugin_view", { id: "terminal" });
   const check = await call("check_plugin", { id: "terminal", name: "program-wrote", args: { program: "hello" } });
+  const runView = await call("read_plugin_view", { id: "run" });
+  const running = await call("check_plugin", { id: "run", name: "all-running" });
+  yield { type: "text", text: `Run: recipe ${runView.view.recipe}, programs ${runView.view.programs.map((p) => p.name + (p.running ? " running" : " stopped")).join(", ") || "none"}. All running: ${running.result.ok}.` };
   yield { type: "text", text: `Tabs: ${view.view.tabs.map((t) => `${t.name} [${t.lastLines.join(" / ")}]`).join(", ") || "none"}. Check: ${check.result.ok ? "the program wrote something" : check.result.reason}` };
 } };
 const core = await startCore({ port: 4823, adapter, pluginsDir: join(root, "store"), recentsFile: join(root, "r.json"), preferencesFile: join(root, "p.json"), learnerDir: join(root, "learner") });
