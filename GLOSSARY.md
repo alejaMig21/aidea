@@ -106,14 +106,17 @@ _Avoid_: Prompt, confirmation, dialog
 
 **Tutor**:
 The part of aidea that makes sure the person understands what they build. It measures what they know, plans what they must understand for this project, teaches the reasons behind decisions by asking them to predict before revealing, and helps them write each authored layer in their own words. It can read the project and propose changes to the authored layers as Proposals, never edits code, and keeps the Learner graph of what the person has demonstrated.
+It has no autonomy over the Project: everything it does it communicates or turns into a lesson, and the person acts. Nothing it makes (a Proposal, a request to a Builder) takes effect until the person accepts or sends it.
 _Avoid_: Assistant, coach, explainer
 
 **Contract**:
 What the person has accepted on the Business, Requirements and Architecture layers. The builder reads it before building and may not depart from it except through a Proposal the person accepts; aidea compares what was built with it and shows the differences.
+It is the plan of the build, the Plan Mode of aidea for a whole project: the person approves it, Builders work inside it, and with the Contract plugin on the condition is hard (what is not in the Contract is not developed); with the plugin off there is no Contract. Later it gains tasks with a status and an owner.
 _Avoid_: Spec, brief
 
 **Plan**:
 The Tutor's map for one project: the concepts the person must understand, in the order they depend on each other, and the decisions still open on each layer. The person sees it and asks for changes; the Tutor asks questions only about what is in it.
+It is a plan of what to learn, not of what to build (that is the Contract); it may be renamed Learning plan.
 _Avoid_: Curriculum, roadmap
 
 **Evidence**:
@@ -189,6 +192,30 @@ _Avoid_: Agent (it names the Provider), Session (an Instance owns one)
 **Provider**:
 The plugin that connects an Instance to a concrete agent or model, such as one for Claude Code. It is what an Agent adapter is.
 _Avoid_: Backend, vendor
+
+**Assignment**:
+A request to a Builder to do a task, written by the person and sent by the person: goal in plain words, the context it rests on (Nodes, Contract items, plugins, lessons), constraints, acceptance checks and the Builder it is for. The Tutor teaches how to write one and checks it; it never sends one. The Builder keeps its own permission mode and any Policy in force.
+_Avoid_: Brief (reserved: the Contract is not a brief), Prompt, Order
+
+**Policy**:
+A condition that a plugin imposes, while it is on, on the actions of other plugins, matched by the class and scope of the action (for example, writes inside this Project) and never by the type of plugin. It is a guard rule with a precise target. Where aidea mediates the action it prevents it; where it does not, aidea detects and reverts or flags it, and says which.
+_Avoid_: Permission, restriction
+
+**Teaching surface**:
+What a plugin declares so the Tutor can teach it and test the person on it: a lesson, a read-only view of its state and named checks that answer yes or no with a plain reason. The Tutor never acts inside a plugin. Required for plugins the Builder writes.
+_Avoid_: Tutor API, hooks
+
+**Fingerprint**:
+A fast, language-neutral summary of a Project made without parsing code: file tree, manifests, entry points, documents that exist and a summary of git history. A class starts from it instead of reading many files.
+_Avoid_: Index, scan
+
+**Index provider**:
+A replaceable plugin that builds, in the background and cached outside the Project, a map of modules, symbols, imports and calls for languages aidea has no plugin for. It chooses what the Tutor reads; it is never the source of intent and is never drawn on the Canvas.
+_Avoid_: Indexer, language server
+
+**Project-kind plugin**:
+A plugin that understands a kind of project and not a language, such as Unity (scenes, prefabs, ScriptableObjects). It gives the Tutor the real components of that kind of project.
+_Avoid_: Lens (a Lens is an overlay of information on a layer), framework adapter
 
 ## Window
 

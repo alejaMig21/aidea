@@ -1,6 +1,6 @@
 # 01: A language slot in the plugin API
 
-**What to build:** The plugin API gets a slot kind `language`: the file extensions it claims, `analyze` (required), `flow` and `run` (optional), and the capabilities it declares (start a process, read Project files). It is an addition, not a change to what plugins already do; the version rule of plugin-system 09 applies. `docs/plugin-api.md` says so. The registry behind `adapterFor` reads language plugins, and the core's own calls go through it. A fixture language plugin that only analyzes proves it: the Components layer draws what it returns.
+**What to build:** The plugin API gets a slot kind `language`: the file extensions it claims, `analyze` (required), `flow` and `run` (optional), and the capabilities it declares (start a process, read Project files). It is an addition, not a change to what plugins already do; the version rule of plugin-system 09 applies. `docs/plugin-api.md` says so. The registry behind `adapterFor` reads language plugins, and the core's own calls go through it. The slot is designed as the first of a family: project-kind plugins (layer-inference 08) and index providers (layer-inference 10) are slots of the same kind and must fit the same registry without a second mechanism. A fixture language plugin that only analyzes proves it: the Components layer draws what it returns.
 
 **Blocked by:** None (can start immediately).
 

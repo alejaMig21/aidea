@@ -19,12 +19,12 @@ aidea will open projects of three kinds: a blank project, a project of the perso
 
 1. **The three layers always exist**, whatever the kind of project. What changes is who fills them and how each item is marked.
 2. **Blank or own project:** the person is the source of intent. The Tutor asks and co-authors, as today.
-3. **Project of someone else:** nobody present knows the intent, so the Tutor does not ask about requirements or business. It builds the three layers itself from the code and the project's own documents, marks every item observed, inferred or unknown, and asks only for the person's learning goal ("I want to build my own harness"), which decides what to build in detail. These layers are study notes, not a Contract for the Builder.
+3. **Project of someone else:** nobody present knows the intent, so the Tutor does not ask about requirements or business. It prepares the three layers from the code, the git history and the project's own documents, teaches them as Proposals the person accepts, marks every item observed, inferred or unknown, and asks only for the person's learning goal ("I want to build my own harness"), which decides what to build in detail. These layers are study notes, not a Contract for the Builder.
 4. **Every claim cites evidence** (files and lines). The core refuses a Proposal whose citations do not exist or do not say what is claimed.
 5. **Business is never stated as a hypothesis about purpose that could read as an accusation.** Where the code does not say, the item says "unknown" and why.
 6. **The Tutor reads a chosen few files**, not all: entry points, most-called modules, most-changed files, tests.
 7. **Several passes**: Architecture first, then Requirements per surface, then Business, then a pass that looks for evidence against each claim.
-8. **The person accepts each Proposal**; the Tutor never writes a layer directly.
+8. **The person accepts each Proposal**; the Tutor never writes a layer directly. This is the principle of the Tutor as a whole (the person, 2026-11-05): it teaches, it has no autonomy over the Project, and everything it does is communicated or turned into a lesson.
 9. **Opening never waits.** A Project opens at once with its fingerprint and an overview by folder; the analysis and any index run in the background, are cached outside the Project, and fill the layers in as they finish. A huge Project must not block the window. (The speed of the analysis itself is big-projects 01; the drawing speed, big-projects 02.)
 
 ## Architecture: facts from tools, patterns from judgement, checked by the core
@@ -40,9 +40,13 @@ The Architecture layer is drawn as a whiteboard of boxes, relations and architec
 1. **Fingerprint** (any project, seconds): file tree, manifests, entry points, git history, documents that exist.
 2. **Structural index** (any language the provider knows, in the background, cached outside the Project): modules, symbols, imports, calls, approximate.
 3. **Precision plugins** (a language plugin, where it exists): resolved calls, flow, Playback.
-4. **Domain lenses** (a plugin that understands a kind of project, not a language): for Unity, scenes, prefabs and ScriptableObjects.
+4. **Project-kind plugins** (a plugin that understands a kind of project, not a language): for Unity, scenes, prefabs and ScriptableObjects. (Not a Lens in the sense of GLOSSARY.md, an overlay on a layer.)
 
 The index provider is replaceable (Codebase Memory first; an own tree-sitter on WebAssembly later). The index chooses what the Tutor reads; it is not the source of intent.
+
+## Depends on
+
+The order of work is in `.scratch/backlog.md`. In short: the fingerprint, evidence and ownership come first; studying a project of someone else needs them and git history; patterns need evidence; the index needs the language slot, variants per system and the comparison spike.
 
 ## Not here
 

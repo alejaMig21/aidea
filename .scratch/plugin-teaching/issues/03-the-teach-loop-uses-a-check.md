@@ -2,7 +2,7 @@
 
 **What to build:** A part of a lesson can name one of the plugin's checks to judge its `tryIt`. After the Tutor asks the person to do the thing, it runs the check; if it passes the step closes, if not the Tutor teaches the step again, as it does after a missed question. Whether the result is recorded as Evidence for the Learner graph (as "did it", marked as coming from a check) is decided here with the person.
 
-**Blocked by:** 02, plugin-lessons 01
+**Blocked by:** plugin-teaching 02, plugin-lessons 01.
 
 **Status:** ready-for-agent
 

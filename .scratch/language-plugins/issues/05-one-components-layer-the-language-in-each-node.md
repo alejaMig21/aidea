@@ -2,7 +2,7 @@
 
 **What to build:** A Project with several languages shows one Components layer, as today. Each Node's info says its language. When the Project has more than one language, each box also carries a small language tag; with one language the boxes stay as they are. The legend explains the tag.
 
-**Blocked by:** 01
+**Blocked by:** language-plugins 01.
 
 **Status:** ready-for-agent
 

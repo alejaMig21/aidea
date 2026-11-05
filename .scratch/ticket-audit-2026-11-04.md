@@ -1,5 +1,7 @@
 # Ticket audit, 2026-11-04
 
+> Superseded for ordering by `.scratch/backlog.md` (2026-11-05), which lists everything by dependency. This file stays as the record of the audit; its section "Order of work that follows" no longer applies.
+
 149 tickets in 15 folders under `.scratch/*/issues/`, read against what was decided up to today: ADR 0008 (small kernel, everything else a plugin), the removal of Class mode, Direct mode and the decision classes (58d676d), Flow and Code renames (layout-and-data 01 and 04), dockview, the plugin lessons draft (`.scratch/plugin-lessons/spec.md`), and the person now working on one screen and testing in Vivaldi. This is a reading of headers, boxes, dates and the code that exists, not a re-test of every ticket.
 
 ## 1. Up to date (about 107): nothing to do

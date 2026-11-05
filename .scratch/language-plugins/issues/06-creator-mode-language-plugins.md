@@ -2,7 +2,7 @@
 
 **What to build:** The plugin template gets a language variant and the Creator Mode skill a section for language plugins: write `analyze` first and stop there if that is all that is needed; add `flow`, then `run`, only when asked. A fixture proves it: the Builder, driven by a fake agent, writes a tiny analyze-only plugin for a made-up language, and it passes the scan and installs.
 
-**Blocked by:** 01
+**Blocked by:** language-plugins 01, roles-and-contract 03, plugin-teaching 04.
 
 **Status:** ready-for-agent
 

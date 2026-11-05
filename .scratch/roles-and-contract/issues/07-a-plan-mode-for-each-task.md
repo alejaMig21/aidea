@@ -1,8 +1,8 @@
 # 07: A Builder works in a plan mode for each task
 
-**What to build:** When a Builder takes a task or a Brief it first works in the plan mode of its own agent (read, think, propose a plan) and edits only after the person approves the plan. Where the agent has a plan mode (Claude Code has one) it is used; where it does not, aidea holds the Builder back with a guard rule until the plan is approved.
+**What to build:** When a Builder takes a task or an Assignment it first works in the plan mode of its own agent (read, think, propose a plan) and edits only after the person approves the plan. Where the agent has a plan mode (Claude Code has one) it is used; where it does not, aidea holds the Builder back with a guard rule until the plan is approved.
 
-**Blocked by:** 01, 06
+**Blocked by:** roles-and-contract 01, roles-and-contract 06.
 
 **Status:** ready-for-agent
 

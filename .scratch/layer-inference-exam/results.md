@@ -36,4 +36,4 @@ Contamination: `openspec/config.yaml` stayed in the blind copy and describes the
 - The third project, the DeepSeek harness repository (TypeScript, not Python, documented by others): the download failed twice (it hung, then `early EOF` at about 40% on a slow link). Not retried. It needs a better connection or a zip download.
 - A repeated run to see how much the result varies.
 - The same exam with the aidea Tutor and its tools instead of this agent.
-- A Unity project (the person's `ShipsProject`): the scenes and prefabs are not understood by any index tested, so it needs its own lens before an exam means anything.
+- A Unity project (the person's `ShipsProject`): the scenes and prefabs are not understood by any index tested, so it needs its own project-kind plugin before an exam means anything.

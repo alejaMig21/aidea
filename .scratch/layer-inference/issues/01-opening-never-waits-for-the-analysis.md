@@ -2,7 +2,7 @@
 
 **What to build:** Opening a Project answers in well under a second with the fingerprint (ticket 02) and an overview by folder; the analysis (modules, relationships) and later any index run in the background and fill the layers in as they finish, with a plain line that says it is still working. This is the rule that keeps a huge Project from blocking the window; the speed of the analysis itself is big-projects 01.
 
-**Blocked by:** 02
+**Blocked by:** layer-inference 02.
 
 **Status:** ready-for-agent
 

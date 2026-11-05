@@ -2,7 +2,7 @@
 
 **What to build:** Where aidea does not mediate an action (a plugin that writes straight to disk with its own code, an agent whose protocol has no permission step) it cannot prevent it, so it detects it: a watcher on the Project's files, as the one that guards `.aidea/`, compares what changed with what the active policies allow, and reverts the change or flags it as a Difference, as the policy says. The Project's own git state is respected: a revert never discards what the person wrote by hand.
 
-**Blocked by:** 02
+**Blocked by:** plugin-policies 02.
 
 **Status:** ready-for-agent
 

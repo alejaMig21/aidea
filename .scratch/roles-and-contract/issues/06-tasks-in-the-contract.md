@@ -2,7 +2,7 @@
 
 **What to build:** Each requirement of an approved Contract becomes one or more tasks with a status (not started, in progress, done), an owner (a Builder instance) and, when Builders work in parallel, a branch. The Differences become the progress of the plan and the drift from it. A Builder takes a task, not the whole Contract.
 
-**Blocked by:** 05
+**Blocked by:** roles-and-contract 05.
 
 **Status:** ready-for-agent
 

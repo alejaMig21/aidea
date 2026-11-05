@@ -2,7 +2,7 @@
 
 **What to build:** A view of the policies in force: which plugin imposes each, what it conditions, and for each plugin affected whether the condition is PREVENTED (aidea sees the permission) or DETECTED AND REVERTED (it does not). When something is stopped, the message says which policy stopped it and why, in plain words, so "why was my Builder stopped" has an answer. It never claims a guarantee it cannot give.
 
-**Blocked by:** 02
+**Blocked by:** plugin-policies 02.
 
 **Status:** ready-for-agent
 

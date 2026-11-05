@@ -2,7 +2,7 @@
 
 **What to build:** A policy can be lifted by hand for one task or one time window: a visible exception that is logged, shown wherever the policy is shown, and ends by itself. It is the person's decision only; no plugin or role can lift a policy.
 
-**Blocked by:** 02
+**Blocked by:** plugin-policies 02.
 
 **Status:** ready-for-agent
 

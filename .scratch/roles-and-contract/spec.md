@@ -15,14 +15,14 @@ Checked in the code on 2026-11-05:
 
 ## Shape
 
-### 1. Briefs: how the person asks a Builder for work, taught by the Tutor
+### 1. Assignments: how the person asks a Builder for work, taught by the Tutor
 
-A **Brief** is a short structured request to a Builder: the goal in plain words, the context it rests on (references to Nodes, Contract items, plugins and lessons), constraints, acceptance checks (items of the Contract or named checks of a plugin's teaching surface), and the target (which Builder instance).
+A **Assignment** is a short structured request to a Builder: the goal in plain words, the context it rests on (references to Nodes, Contract items, plugins and lessons), constraints, acceptance checks (items of the Contract or named checks of a plugin's teaching surface), and the target (which Builder instance).
 
-**The principle (the person, 2026-11-05): the Tutor is there to teach, it has no autonomy over the Project, the person has it.** So the Tutor never sends anything to a Builder. When a Brief is needed it does what LearnHarness does with any skill: it turns it into a lesson. It explains what a good request has and why, and the person writes the Brief in their own words first (the co-authoring pattern of tutor 08); the Tutor checks it against the parts above, says what is missing, and may offer a better version as a Proposal the person accepts or not. The only thing that sends a Brief to a Builder is the person's own button. There is no auto-send, not even optional.
+**The principle (the person, 2026-11-05): the Tutor is there to teach, it has no autonomy over the Project, the person has it.** So the Tutor never sends anything to a Builder. When an Assignment is needed it does what LearnHarness does with any skill: it turns it into a lesson. It explains what a good request has and why, and the person writes the Assignment in their own words first (the co-authoring pattern of tutor 08); the Tutor checks it against the parts above, says what is missing, and may offer a better version as a Proposal the person accepts or not. The only thing that sends an Assignment to a Builder is the person's own button. There is no auto-send, not even optional.
 
-- The kernel delivers the Brief the person sent to the chosen Builder instance as its task. The Builder keeps its own permission mode and the Contract's conditions: a Brief never widens what a Builder may do.
-- **Creator Mode is the first case:** the lesson is "how to ask for a plugin": the plugin API, the template, the lesson and the teaching surface a plugin needs. The person ends with a Brief that a Builder can build from, and has learnt why.
+- The kernel delivers the Assignment the person sent to the chosen Builder instance as its task. The Builder keeps its own permission mode and the Contract's conditions: an Assignment never widens what a Builder may do.
+- **Creator Mode is the first case:** the lesson is "how to ask for a plugin": the plugin API, the template, the lesson and the teaching surface a plugin needs. The person ends with an Assignment that a Builder can build from, and has learnt why.
 - The same channel can later run the other way: a Builder that needs a decision explains it, and the Tutor turns it into a lesson for the person; the person answers the Builder.
 
 ### 2. The Contract is the Plan Mode of aidea, for a whole project
@@ -32,7 +32,7 @@ In an agent such as Claude Code, Plan Mode means the agent may read and think bu
 How it differs from the Plan Mode of one task: the Contract lasts, is shared by every Builder, and afterwards checks the code against itself (the Differences). Two levels follow:
 
 - **The Contract (project):** the approved plan of the whole project. Each requirement becomes one or more **tasks** with a status and an owner (a Builder instance, and a branch when they work in parallel). The Differences become the progress of the plan and the drift from it.
-- **The plan of one task:** when a Builder takes a task or a Brief it first works in its own plan mode (read, think, propose a plan) and only after the person approves does it edit.
+- **The plan of one task:** when a Builder takes a task or an Assignment it first works in its own plan mode (read, think, propose a plan) and only after the person approves does it edit.
 
 Decided by the person (2026-11-05): with the Contract plugin off there is no Contract and Builders are free; with it on the condition is hard: what is not in the Contract is not developed (to be tuned after use). How a plugin conditions others is in `.scratch/plugin-policies/spec.md`.
 
@@ -42,19 +42,19 @@ The Contract moves out of the core and the Tutor's panel into a plugin that ship
 
 ## Depends on
 
-The plugin system (built), plugin-teaching (the Tutor learns plugins through their surface), and Instances (several Builders and Tutors; briefs and tasks name an instance).
+The plugin system (built), plugin-teaching (the Tutor learns plugins through their surface), and Instances (several Builders and Tutors; assignments and tasks name an instance).
 
 ## Suggested slices
 
-1. A Brief from the Tutor to one Builder: the format, a Tutor tool to draft it, a card to review and send, the Builder receiving it.
-2. The Creator Mode Brief.
+1. An Assignment from the Tutor to one Builder: the format, a Tutor tool to draft it, a card to review and send, the Builder receiving it.
+2. The Creator Mode Assignment.
 3. Extract the Contract and the Differences into a plugin, behaviour unchanged, the Tutor reading them through its service.
 4. Tasks in the Contract, with status and owner; the Differences as progress.
-5. Briefs and tasks with several Builders and Tutors (after Instances).
+5. Assignments and tasks with several Builders and Tutors (after Instances).
 6. Rename the Tutor's Plan to "Learning plan".
 
 ## Open
 
-- (Answered 2026-11-05: the Tutor never sends a Brief; the person does.)
+- (Answered 2026-11-05: the Tutor never sends an Assignment; the person does.)
 - Whether a Builder may ask the Tutor for help (proposal: later, same channel).
 - The final name of the Contract-as-plan if "Contract" is thought to clash with the Contract of a software (proposal: keep Contract).
