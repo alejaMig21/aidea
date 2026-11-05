@@ -45,6 +45,7 @@ Static metadata, read without running any code. A text file of at most 64 KiB.
 | `settings` | no | A schema of its settings: an object of field name to `{ "type": "string" \| "number" \| "boolean" \| "choice", "label", "default", "choices"? }`. |
 | `lesson` | no | Relative path of a lesson file: `{ "parts": [...] }`, each part with `name`, `hint`, `what`, `question`, `example`, `narration`, `tryIt` and optional `refs`. The Tutor teaches from it; its text is untrusted data. |
 | `teach` | no | The teaching surface: `{ "view": "state", "checks": [{ "name": "has-container", "says": "One plain sentence of what it verifies.", "args": { "node": "string" } }] }`. `view` is the name of a read-only view of the plugin's state; each check has a name (unique), a sentence of up to 160 characters and optional arguments (up to 5, each `string`, `number` or `boolean`). Up to 20 checks. The scan shows it among what the plugin declares. |
+| `language` | no | The language the plugin reads: `{ "id": "r", "label": "R", "extensions": [".r"] }`. `id` is a short name; `extensions` are 1 to 10 file extensions that start with a dot. See the language slot below. |
 | `required` | no | Honoured only for plugins that ship with aidea: the plugin cannot be removed or disabled. |
 
 A manifest with a missing required field, an unknown `api`, a bad `id` or a `main` or `ui` path that leaves the folder is invalid: the problem names the field, and nothing of that plugin runs.
@@ -77,6 +78,19 @@ A slot has an owner, a kind and an entry shape. The owner declares it; the kerne
 - Kinds: `list` (many entries, in order), `single` (one occupant), `keyed` (one entry per key).
 - Version 0.1 declares one slot: **`layout.panel`** (`list`). Entry: `{ id, title, render(container) -> dispose, side?: "left" | "right" | "bottom", startsHidden?: boolean, min?: number, icon?: string }` (`icon` is the inner shapes of a 16 by 16 SVG, as the menu draws them). It becomes a row in the Panels menu and a Panel in the Layout. The Panel's id is `<plugin id>.<entry id>`, except that an entry whose id equals the plugin's id (the usual plugin with one Panel) takes the plugin's id as its Panel id.
 - Later candidates (not in 0.1): a status item, a toolbar of a Panel, a renderer of a chat message, buttons of the selection control.
+
+### The language slot
+
+A plugin that reads a language declares `language` in its manifest and, in its host half, gives its adapter once: `ctx.languages.provide({ analyze, flow?, run?, examples?, signature? })`.
+
+- `analyze(projectPath)` (required) returns `{ nodes, errors, relationships, unresolved }`: the Nodes and relationships the Components layer draws. A plugin with only `analyze` is complete and useful.
+- `flow(file, qualifiedName)` (optional) returns the steps and edges of one function. Without it, asking for a Flow in that language answers a plain-words 422.
+- `run(request)` (optional) runs one function with test data for Playback. Without it, Playback answers a plain-words 422.
+- `signature(projectPath)` (optional) returns text that changes whenever the analysis could; with it aidea keeps the analysis between openings.
+- The language and its adapter come and go with the plugin: when it is deactivated the language is no longer read.
+- An extension or an id that another language already reads (the ones that ship with aidea included) makes the plugin fail to activate, with the reason naming who holds it. Extensions are compared without regard to case.
+- Running code is the plugin's own responsibility: it declares the `processes` and `files` capabilities it needs, and the scan shows them.
+- This is the first of a family of slots filled the same way (project kinds and index providers come later); the registry behind it is `registerLanguage` in `src/core/adapters.ts`.
 
 ## Events
 

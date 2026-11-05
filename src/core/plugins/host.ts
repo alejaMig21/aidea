@@ -2,6 +2,8 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { registerLanguage } from "../adapters.ts";
+import type { LanguageAdapter } from "../adapters.ts";
 import { readLesson } from "./lesson.ts";
 import type { Lesson } from "./lesson.ts";
 import { API_VERSION, compatible, readManifest } from "./manifest.ts";
@@ -27,6 +29,8 @@ export type PluginContext = {
   ask: (name: string, data?: unknown) => Verdict;
   on: (fullName: string, listener: (data: any) => unknown) => void;
   guards: { add: (rule: (action: any) => unknown) => void };
+  // The language slot: a plugin whose manifest declares `language` provides its adapter once (`analyze`, and `flow`, `run` if it has them).
+  languages: { provide: (adapter: LanguageAdapter) => void };
   data: { readonly dir: string };
   settings: { get: (key: string) => unknown };
   secrets: { get: (name: string) => string | undefined };
@@ -83,6 +87,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
 
   function contextFor(entry: Entry): PluginContext {
     const manifest = entry.manifest!;
+    let provided = false;
     return {
       plugin: { id: manifest.id, title: manifest.title, version: manifest.version },
       services: {
@@ -115,6 +120,14 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
           const rule = { owner: entry.id, fn };
           rules.push(rule);
           entry.undo.push(() => void rules.splice(rules.indexOf(rule), 1));
+        },
+      },
+      languages: {
+        provide: (adapter) => {
+          if (!manifest.language) throw new Error('declare "language" in the manifest to provide a language');
+          if (provided) throw new Error("the language was already provided");
+          provided = true;
+          entry.undo.push(registerLanguage(manifest.language, entry.id, adapter));
         },
       },
       // Its own folder for data, its settings (the schema is in its manifest) and, when it declared the "secrets" capability, its secrets. Nothing here leads to another plugin.

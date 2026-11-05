@@ -19,9 +19,10 @@ export type EventDeclaration = { mode: "announce" | "ask"; version: number };
 // The teaching surface (plugin-teaching 01): the name of a read-only view of the plugin's state and named checks the Tutor can run, each with one plain sentence and optional arguments.
 export type TeachCheck = { name: string; says: string; args?: Record<string, "string" | "number" | "boolean"> };
 export type Teach = { view: string; checks: TeachCheck[] };
+export type LanguageDeclaration = { id: string; label: string; extensions: string[] };
 export type Manifest = {
   id: string; version: string; title: string; description: string; publisher: string; api: string;
-  main?: string; ui?: string; icon?: string; lesson?: string; teach?: Teach;
+  main?: string; ui?: string; icon?: string; lesson?: string; teach?: Teach; language?: LanguageDeclaration;
   capabilities: string[]; requires: string[]; provides: string[];
   events: Record<string, EventDeclaration>;
   settings: Record<string, SettingField>;
@@ -68,6 +69,17 @@ function teachProblems(t: unknown): string[] {
   return out;
 }
 
+// The problems of a `language` field: the language a plugin reads, with the extensions it claims.
+function languageProblems(l: unknown): string[] {
+  if (!l || typeof l !== "object" || Array.isArray(l)) return ['"language" must be an object with an "id", a "label" and "extensions"'];
+  const { id, label, extensions } = l as Record<string, unknown>;
+  const out: string[] = [];
+  if (typeof id !== "string" || !NAME.test(id)) out.push('"language" "id" must be a short name of lowercase letters, digits and "-"');
+  if (!isText(label, 40)) out.push('"language" "label" must be text of up to 40 characters');
+  if (!Array.isArray(extensions) || extensions.length < 1 || extensions.length > 10 || extensions.some((e) => typeof e !== "string" || !/^\.[A-Za-z0-9]{1,10}$/.test(e))) out.push('"language" "extensions" must be 1 to 10 file extensions that start with a dot, such as ".r"');
+  return out;
+}
+
 export function readManifest(dir: string): { manifest: Manifest } | { problems: string[] } {
   const file = join(dir, "aidea-plugin.json");
   let raw: unknown;
@@ -101,6 +113,7 @@ export function readManifest(dir: string): { manifest: Manifest } | { problems: 
   if (m.settings !== undefined && (!m.settings || typeof m.settings !== "object" || Array.isArray(m.settings))) problems.push('"settings" must be an object');
   else if (m.settings !== undefined) problems.push(...schemaProblems(m.settings as Record<string, unknown>));
   if (m.teach !== undefined) problems.push(...teachProblems(m.teach));
+  if (m.language !== undefined) problems.push(...languageProblems(m.language));
   if (m.required !== undefined && typeof m.required !== "boolean") problems.push('"required" must be true or false');
   if (m.icon !== undefined && !problems.some((p) => p.startsWith('"icon"'))) {
     try { if (lstatSync(join(dir, m.icon as string)).size > MAX_ICON_BYTES) problems.push('"icon" is larger than 256 KiB'); } catch { /* a missing icon is only a missing picture */ }
@@ -109,7 +122,7 @@ export function readManifest(dir: string): { manifest: Manifest } | { problems: 
   return {
     manifest: {
       id: m.id as string, version: m.version as string, title: m.title as string, description: m.description as string, publisher: m.publisher as string, api: m.api as string,
-      main: m.main as string | undefined, ui: m.ui as string | undefined, icon: m.icon as string | undefined, lesson: m.lesson as string | undefined, teach: m.teach as Teach | undefined,
+      main: m.main as string | undefined, ui: m.ui as string | undefined, icon: m.icon as string | undefined, lesson: m.lesson as string | undefined, teach: m.teach as Teach | undefined, language: m.language as LanguageDeclaration | undefined,
       capabilities: (m.capabilities as string[]) ?? [], requires: (m.requires as string[]) ?? [], provides: (m.provides as string[]) ?? [],
       events: (m.events as Record<string, EventDeclaration>) ?? {}, settings: (m.settings as Record<string, SettingField>) ?? {}, required: m.required === true,
     },

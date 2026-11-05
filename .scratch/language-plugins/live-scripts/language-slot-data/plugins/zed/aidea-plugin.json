@@ -1,0 +1,1 @@
+{"id":"zed","version":"1.0.0","title":"Zed language","description":"Reads the made-up language Zed.","publisher":"tests","api":"0.1","main":"main.js","language":{"id":"zed","label":"Zed","extensions":[".zz"]}}

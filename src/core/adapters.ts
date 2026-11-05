@@ -25,7 +25,7 @@
 import type { Project } from "./types.ts";
 import { pythonAdapter } from "./python-adapter.ts";
 import { typescriptAdapter } from "./typescript-adapter.ts";
-import { detectLanguages, languageOfFile } from "./languages.ts";
+import { addLanguage, detectLanguages, languageOfFile } from "./languages.ts";
 
 export class AdapterError extends Error {
   status: number;
@@ -65,6 +65,15 @@ export type LanguageAdapter = {
 const adapters = new Map<string, LanguageAdapter>([["python", pythonAdapter], ["typescript", typescriptAdapter], ["javascript", typescriptAdapter]]);
 
 export const registerAdapter = (language: string, adapter: LanguageAdapter) => void adapters.set(language, adapter);
+
+// The language slot of a plugin (docs/plugin-api.md): the language and its adapter come and go together. Returns what takes both away.
+export function registerLanguage(language: { id: string; label: string; extensions: string[] }, owner: string, adapter: LanguageAdapter): () => void {
+  if (typeof adapter?.analyze !== "function") throw new Error('the language adapter needs an "analyze" function');
+  for (const op of ["flow", "run", "examples", "signature"] as const) if (adapter[op] !== undefined && typeof adapter[op] !== "function") throw new Error(`"${op}" of the language adapter must be a function`);
+  const remove = addLanguage(language.id, language.label, language.extensions, owner);
+  adapters.set(language.id, adapter);
+  return () => { adapters.delete(language.id); remove(); };
+}
 
 export const hasAdapter = (language: string) => adapters.has(language);
 

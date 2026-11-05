@@ -2,7 +2,7 @@
 
 **What to build:** `python-adapter.ts`, `python.ts` and the Python-side scripts (`analyze.py`, `playback.py`) move into a plugin that ships with aidea and is on by default. It can be turned off or removed like any shipped plugin. Behaviour does not change: every existing test passes untouched. Python is the default language, not a required one.
 
-**Blocked by:** language-plugins 01.
+**Blocked by:** None (can start immediately).
 
 **Status:** ready-for-agent
 

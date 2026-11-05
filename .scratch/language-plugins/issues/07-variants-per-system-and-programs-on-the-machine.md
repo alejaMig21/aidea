@@ -2,7 +2,7 @@
 
 **What to build:** The way VS Code gets a language's program to the person, in aidea's plugin system. (1) The manifest can list variants of a plugin, each for some operating systems and processors; aidea picks the one that matches the machine, and when none does, the plugin manager says in plain words that the plugin is not available for this system; nothing breaks. (2) A plugin can declare that it needs a program already on the machine (a name, how to find it, the version it wants); aidea checks and, if it is missing, says what is missing and how to get it. (3) A plugin can declare a download it wants to make on first use (what, from where, how big, a hash); aidea asks the person, shows the details and downloads only after a confirmation, and checks the hash. All three are capabilities the scan shows. Nothing of this runs during quarantine.
 
-**Blocked by:** language-plugins 01.
+**Blocked by:** None (can start immediately).
 
 **Status:** ready-for-agent
 

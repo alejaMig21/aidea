@@ -16,6 +16,16 @@ export const SLOTS = [
       icon: "inner shapes of a 16 by 16 SVG for the menu row",
     },
   },
+  {
+    name: "language",
+    kind: "declared in the manifest (\"language\": { id, label, extensions }), filled from the host half with ctx.languages.provide(adapter)",
+    entry: {
+      analyze: "async function(projectPath) -> { nodes, errors, relationships, unresolved }, required",
+      flow: "async function(file, qualifiedName) -> { steps, edges }, optional: without it the Flow of that language answers a plain-words 422",
+      run: "async function(request) -> { outcome, interpreter }, optional: without it Playback answers a plain-words 422",
+      signature: "function(projectPath) -> text that changes whenever the analysis could, optional: lets aidea keep the analysis between openings",
+    },
+  },
   { name: "layout.topbar", kind: "list", entry: { id: "text, required", render: "function(container) -> dispose, required: draws the control in the top bar" } },
 ];
 export const STYLE_TOKENS = ["--bg", "--bar", "--canvas", "--panel", "--raised", "--selected", "--line", "--control", "--text", "--muted", "--label", "--accent", "--accent-soft", "--on-accent", "--proposal", "--authored", "--derived", "--danger", "--unresolved", "--sans", "--mono"];
@@ -23,7 +33,7 @@ export const EVENT_MODES = ["announce", "ask"];
 export const MANIFEST_FIELDS = [
   { name: "id", required: true }, { name: "version", required: true }, { name: "title", required: true }, { name: "description", required: true }, { name: "publisher", required: true }, { name: "api", required: true },
   { name: "main", required: false }, { name: "ui", required: false }, { name: "icon", required: false }, { name: "capabilities", required: false }, { name: "requires", required: false },
-  { name: "provides", required: false }, { name: "events", required: false }, { name: "settings", required: false }, { name: "required", required: false },
+  { name: "provides", required: false }, { name: "events", required: false }, { name: "settings", required: false }, { name: "lesson", required: false }, { name: "teach", required: false }, { name: "language", required: false }, { name: "required", required: false },
 ];
 
 // What an agent needs to know before it writes a plugin: the fixed facts plus what the active plugins registered now. It changes nothing.
