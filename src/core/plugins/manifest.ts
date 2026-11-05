@@ -16,9 +16,12 @@ const MAX_MANIFEST_BYTES = 64 * 1024;
 const MAX_ICON_BYTES = 256 * 1024;
 
 export type EventDeclaration = { mode: "announce" | "ask"; version: number };
+// The teaching surface (plugin-teaching 01): the name of a read-only view of the plugin's state and named checks the Tutor can run, each with one plain sentence and optional arguments.
+export type TeachCheck = { name: string; says: string; args?: Record<string, "string" | "number" | "boolean"> };
+export type Teach = { view: string; checks: TeachCheck[] };
 export type Manifest = {
   id: string; version: string; title: string; description: string; publisher: string; api: string;
-  main?: string; ui?: string; icon?: string; lesson?: string;
+  main?: string; ui?: string; icon?: string; lesson?: string; teach?: Teach;
   capabilities: string[]; requires: string[]; provides: string[];
   events: Record<string, EventDeclaration>;
   settings: Record<string, SettingField>;
@@ -39,6 +42,30 @@ function inside(dir: string, rel: unknown): string | null {
     if (real !== root && !real.startsWith(root + sep)) return null;
   } catch { /* a file that does not exist is reported where it is used */ }
   return rel;
+}
+
+const NAME = /^[a-z][a-z0-9-]{0,39}$/;
+// The problems of a `teach` field, each naming the field.
+function teachProblems(t: unknown): string[] {
+  if (!t || typeof t !== "object" || Array.isArray(t)) return ['"teach" must be an object with a "view" and a list of "checks"'];
+  const { view, checks } = t as Record<string, unknown>;
+  const out: string[] = [];
+  if (typeof view !== "string" || !NAME.test(view)) out.push('"teach" "view" must be a short name of lowercase letters, digits and "-"');
+  if (!Array.isArray(checks) || checks.length > 20) return [...out, '"teach" "checks" must be a list of at most 20 checks'];
+  const seen = new Set<string>();
+  for (const c of checks as Record<string, unknown>[]) {
+    const name = c && typeof c.name === "string" ? c.name : "";
+    if (!NAME.test(name)) { out.push('"teach" "checks": every check needs a "name" of lowercase letters, digits and "-"'); continue; }
+    if (seen.has(name)) out.push(`"teach" check "${name}" is listed twice`);
+    seen.add(name);
+    if (!isText(c.says, 160)) out.push(`"teach" check "${name}": "says" must be one plain sentence of up to 160 characters`);
+    const args = c.args;
+    if (args === undefined) continue;
+    const entries = args && typeof args === "object" && !Array.isArray(args) ? Object.entries(args) : null;
+    if (!entries || entries.length > 5) out.push(`"teach" check "${name}": "args" must be an object of up to 5 arguments`);
+    else for (const [a, shape] of entries) if (!NAME.test(a) || !["string", "number", "boolean"].includes(shape as string)) out.push(`"teach" check "${name}": "args" "${a}" must be "string", "number" or "boolean"`);
+  }
+  return out;
 }
 
 export function readManifest(dir: string): { manifest: Manifest } | { problems: string[] } {
@@ -73,6 +100,7 @@ export function readManifest(dir: string): { manifest: Manifest } | { problems: 
   }
   if (m.settings !== undefined && (!m.settings || typeof m.settings !== "object" || Array.isArray(m.settings))) problems.push('"settings" must be an object');
   else if (m.settings !== undefined) problems.push(...schemaProblems(m.settings as Record<string, unknown>));
+  if (m.teach !== undefined) problems.push(...teachProblems(m.teach));
   if (m.required !== undefined && typeof m.required !== "boolean") problems.push('"required" must be true or false');
   if (m.icon !== undefined && !problems.some((p) => p.startsWith('"icon"'))) {
     try { if (lstatSync(join(dir, m.icon as string)).size > MAX_ICON_BYTES) problems.push('"icon" is larger than 256 KiB'); } catch { /* a missing icon is only a missing picture */ }
@@ -81,7 +109,7 @@ export function readManifest(dir: string): { manifest: Manifest } | { problems: 
   return {
     manifest: {
       id: m.id as string, version: m.version as string, title: m.title as string, description: m.description as string, publisher: m.publisher as string, api: m.api as string,
-      main: m.main as string | undefined, ui: m.ui as string | undefined, icon: m.icon as string | undefined, lesson: m.lesson as string | undefined,
+      main: m.main as string | undefined, ui: m.ui as string | undefined, icon: m.icon as string | undefined, lesson: m.lesson as string | undefined, teach: m.teach as Teach | undefined,
       capabilities: (m.capabilities as string[]) ?? [], requires: (m.requires as string[]) ?? [], provides: (m.provides as string[]) ?? [],
       events: (m.events as Record<string, EventDeclaration>) ?? {}, settings: (m.settings as Record<string, SettingField>) ?? {}, required: m.required === true,
     },

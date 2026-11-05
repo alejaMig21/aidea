@@ -1,0 +1,1 @@
+{"id":"fixture.good","version":"1.0.0","title":"good","description":"A fixture.","publisher":"tests","api":"0.1","ui":"ui.js","teach":{"view":"state","checks":[{"name":"has-container","says":"A container with a relation to a database exists.","args":{"node":"string"}}]}}

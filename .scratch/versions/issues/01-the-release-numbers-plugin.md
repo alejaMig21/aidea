@@ -2,7 +2,7 @@
 
 **What to build:** A plugin that keeps the version number of a Project so the person does not have to understand it. It reads the git tags and the commits since the last one, counts fixes, features and breaking changes (conventional commits), proposes the next number (a fix raises the last digit, a feature the middle one, a breaking change the first), and says why in plain words. The person accepts or not; on acceptance it creates the git tag, which is a write to the Project and goes through the policies. It is not the git history plugin. It ships a lesson on what v1.2.3 means (the person never understood it) and a teaching surface.
 
-**Blocked by:** plugin-teaching 01.
+**Blocked by:** None (can start immediately).
 
 **Status:** ready-for-agent
 

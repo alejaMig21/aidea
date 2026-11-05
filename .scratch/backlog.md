@@ -9,13 +9,13 @@ Rules:
 4. The status of a ticket says whether it can start: `ready-for-agent`, or `needs-info` and what it waits for (shown in the Wait column).
 5. Every new built-in plugin ships a lesson and a teaching surface (plugin-lessons, plugin-teaching): items that create one depend on those.
 
-Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (85 items, 6 levels).
+Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (84 items, 5 levels).
 ## Level 0: no dependencies
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
-| pt01 | T | M | The manifest can declare a teaching surface (a read-only view and named checks) | plugin-teaching 01 | - | 19 | - |
 | lp01 | T | M | The `language` slot in the plugin API, designed so that project-kind plugins and index providers fit the same family of slots | language-plugins 01 | - | 14 | - |
+| pt02 | T | M | The Tutor can read a plugin's view and run its checks, read-only and with limits | plugin-teaching 02 | - | 11 | - |
 | li03 | T | M | Every claim in a Proposal carries evidence (files and lines; observed, inferred or unknown) and the core refuses citations that do not hold | layer-inference 03 | - | 7 | - |
 | anim | T | XL | The animation engine: a language-neutral recording drawn with pieces (list, tree, graph, grid); part of it exists in Data | animation-and-data 01 | - | 6 | a spec first (what exists in Data and what the engine adds) |
 | li02 | T | M | The fingerprint of a project (tree, manifests, entry points, documents, git summary) and a Tutor tool to read it | layer-inference 02 | - | 6 | - |
@@ -44,14 +44,15 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | rt06 | T | S | Test: Play's failure message offers to open the Terminal | run-and-terminal 06 | - | - | - |
 | rt07 | T | S | Page test of the Stop and Restart buttons | run-and-terminal 07 | - | - | - |
 | rt10 | T | S | Live check: the Builder proposes a run recipe | run-and-terminal 10 | - | - | real Builder (quota) |
+| sv | T | M | A release-numbers plugin (semver, `v1.0.0`): reads the commits since the last version tag and proposes the next number (`fix` raises the last digit, `feat` the middle one, a breaking change the first), says why, the person accepts. Not the git history plugin. Ships a lesson and a teaching surface | versions 01 | - | - | - |
 | tb | T | S | Merge the Canvas's own title bar with the layer bar (needs a ticket) | housekeeping 01 | - | - | - |
 | v1g01 | T | S | Live check: the Builder cannot write aidea files except by Proposals | v1-gaps 01 | - | - | real Builder (quota) |
 
-## Level 1: depends only on levels below (24 items)
+## Level 1: depends only on levels below (26 items)
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
-| pt02 | T | M | The Tutor can read a plugin's view and run its checks, read-only and with limits | plugin-teaching 02 | pt01 | 11 | - |
+| rc04 | T | L | The Contract and the Differences become a plugin; the Tutor stops knowing them by name | roles-and-contract 04 | pt02 | 7 | - |
 | lp02 | T | L | Python becomes a built-in plugin, on by default; every test unchanged | language-plugins 02 | lp01 | 6 | - |
 | lp07 | T | L | A plugin can ship a variant per system, use a program on the machine, or download one with permission | language-plugins 07 | lp01 | 6 | - |
 | pp02 | T | M | Guard rules match by class and scope, whoever acts | plugin-policies 02 | pp01 | 5 | - |
@@ -68,59 +69,52 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | hints | T | M | Short contextual hints the first time a part is used | plugin-lessons 06 | pl02 | - | an idea |
 | li01 | T | M | Opening shows the fingerprint at once and never waits for the analysis; the layers fill in as it finishes | layer-inference 01 | li02 | - | - |
 | li06 | T | L | Architecture patterns judged by the Tutor and checked by the core (layered, hexagonal, event-driven, plugin-based) | layer-inference 06 | li03 | - | - |
-| li08 | T | L | A project-kind plugin for Unity (scenes, prefabs, ScriptableObjects) | layer-inference 08 | lp01, pt01 | - | the person: what a project-kind plugin may return |
+| li08 | T | L | A project-kind plugin for Unity (scenes, prefabs, ScriptableObjects) | layer-inference 08 | lp01 | - | the person: what a project-kind plugin may return |
 | lp05 | T | M | One Components layer for several languages, the language in each Node's info | language-plugins 05 | lp01 | - | - |
 | perf | T | XL | A performance lens: how time and memory grow with the size of the data | animation-and-data 06 | anim | - | an idea |
 | pieces | T | M | More drawing pieces for Data: hash table, call stack and recursion tree, state machine, grid, weighted graph | animation-and-data 03 | anim | - | an idea |
-| sv | T | M | A release-numbers plugin (semver, `v1.0.0`): reads the commits since the last version tag and proposes the next number (`fix` raises the last digit, `feat` the middle one, a breaking change the first), says why, the person accepts. Not the git history plugin. Ships a lesson and a teaching surface | versions 01 | pt01 | - | - |
-| tl | T | L | A timeline view for concurrency | animation-and-data 04 | anim | - | an idea |
-| vg | T | XL | The git versions plugin: commits and files changed, the Canvas at a chosen commit, all branches as an animated graph, the state of the working folder (shown only). Ships a lesson and a teaching surface | versions 02 | anim, pt01 | - | a spec first |
-
-## Level 2: depends only on levels below (13 items)
-
-| ID | | Size | Work | Where | Depends on | Unblocks | Wait |
-|---|---|---|---|---|---|---|---|
-| rc04 | T | L | The Contract and the Differences become a plugin; the Tutor stops knowing them by name | roles-and-contract 04 | pt01, pt02 | 7 | - |
-| lp03 | T | L | TypeScript and JavaScript become a built-in plugin with a variant per system | language-plugins 03 | lp01, lp02, lp07 | 3 | - |
-| pt04 | T | M | The surface is required for plugins the Builder writes, a warning for the rest | plugin-teaching 04 | pt01, pl03, pl04 | 3 | - |
-| li05 | T | L | The Tutor teaches the three layers of a project the person studies: Proposals the person accepts, each explained with evidence; asks only the learning goal; study notes, not a Contract | layer-inference 05 | li02, li03, li04, li07 | 2 | - |
-| li10 | T | L | A structural index of any language from a replaceable provider (Codebase Memory first) | layer-inference 10 | lp01, lp07, cbs | 1 | the comparison spike |
-| net | T | L | Logical network level of Deployment (subnets, VLANs) | deployment 02 | dep | - | waits for a real network engineer's diagram |
-| pp03 | T | L | Detect and revert a write to the Project that nobody mediated | plugin-policies 03 | pp02 | - | - |
-| pp04 | T | M | The screen says, per rule and plugin, prevented or detected, and why something was stopped | plugin-policies 04 | pp02 | - | - |
-| pp05 | T | S | The person can lift a policy for one task, visibly and logged | plugin-policies 05 | pp02 | - | - |
-| pp07 | T | S | The authored-layer guard becomes the first policy (same behaviour, on the policy mechanism) | plugin-policies 07 | pp02 | - | - |
 | pt03 | T | M | A lesson part can name a check; the teach loop closes the step when it passes | plugin-teaching 03 | pt02 | - | - |
 | pt05 | T | M | The Run plugin declares a real surface; live check with the real Tutor | plugin-teaching 05 | pt02 | - | - |
 | pt06 | T | L | A change inside a plugin reaches the person as a lesson and a Proposal they accept (the Tutor never acts) | plugin-teaching 06 | pt02 | - | the person: how a plugin applies an accepted Proposal |
+| tl | T | L | A timeline view for concurrency | animation-and-data 04 | anim | - | an idea |
+| vg | T | XL | The git versions plugin: commits and files changed, the Canvas at a chosen commit, all branches as an animated graph, the state of the working folder (shown only). Ships a lesson and a teaching surface | versions 02 | anim | - | a spec first |
 
-## Level 3: depends only on levels below (9 items)
+## Level 2: depends only on levels below (12 items)
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
 | rc05 | T | M | The person approves the Contract (the Plan Mode of the whole project) and it is versioned | roles-and-contract 05 | rc04 | 4 | - |
+| lp03 | T | L | TypeScript and JavaScript become a built-in plugin with a variant per system | language-plugins 03 | lp01, lp02, lp07 | 3 | - |
+| pt04 | T | M | The surface is required for plugins the Builder writes, a warning for the rest | plugin-teaching 04 | pl03, pl04 | 3 | - |
+| li05 | T | L | The Tutor teaches the three layers of a project the person studies: Proposals the person accepts, each explained with evidence; asks only the learning goal; study notes, not a Contract | layer-inference 05 | li02, li03, li04, li07 | 2 | - |
+| li10 | T | L | A structural index of any language from a replaceable provider (Codebase Memory first) | layer-inference 10 | lp01, lp07, cbs | 1 | the comparison spike |
+| net | T | L | Logical network level of Deployment (subnets, VLANs) | deployment 02 | dep | - | waits for a real network engineer's diagram |
+| pl05 | T | M | Split the old guide into the kernel trunk and one lesson per plugin (and the live check of aidea-guide 01) | plugin-lessons 05 | pl02, rc04, lp02 | - | the person: which parts are the kernel's |
+| pm | T | M | Measure aidea with a very high number of heavy plugins (after the built-in features are plugins, so the measure is the real one) | housekeeping 05 | lp02, rc04 | - | - |
+| pp03 | T | L | Detect and revert a write to the Project that nobody mediated | plugin-policies 03 | pp02 | - | - |
+| pp04 | T | M | The screen says, per rule and plugin, prevented or detected, and why something was stopped | plugin-policies 04 | pp02 | - | - |
+| pp05 | T | S | The person can lift a policy for one task, visibly and logged | plugin-policies 05 | pp02 | - | - |
+| pp07 | T | S | The authored-layer guard becomes the first policy (same behaviour, on the policy mechanism) | plugin-policies 07 | pp02 | - | - |
+
+## Level 3: depends only on levels below (7 items)
+
+| ID | | Size | Work | Where | Depends on | Unblocks | Wait |
+|---|---|---|---|---|---|---|---|
+| rc06 | T | L | The Contract has tasks with status and owner; the Differences become progress | roles-and-contract 06 | rc05 | 3 | - |
 | rc03 | T | M | A lesson: how to ask for a plugin in Creator Mode | roles-and-contract 03 | rc02, pt04 | 2 | - |
 | la05 | T | L | Run a TypeScript or JavaScript function for Playback: separate Node process with `--permission` plus a fake-network guard (decided 2026-11-03) | language-adapters 05 | lp03 | 1 | - |
 | li09 | T | M | The blind exam moves into the repository and runs with the Tutor (three or more projects, one not in Python, repeat runs) | layer-inference 09 | li05 | - | - |
 | lsp | T | XL | Reuse existing language servers for `analyze`, or a light parser instead of the TypeScript compiler | language-plugins 08 | li10 | - | - |
 | pkg | T | XL | Packaging: one installer per system and processor (Windows, macOS, Linux; x64 and arm64), signing and notarization on macOS, the variants of the built-in plugins (today aidea runs with `electron .`) | packaging 01 | lp03, lp07 | - | a spec first (signing accounts, the CI, how updates arrive) |
-| pl05 | T | M | Split the old guide into the kernel trunk and one lesson per plugin (and the live check of aidea-guide 01) | plugin-lessons 05 | pl02, rc04, lp02 | - | the person: which parts are the kernel's |
-| pm | T | M | Measure aidea with a very high number of heavy plugins (after the built-in features are plugins, so the measure is the real one) | housekeeping 05 | lp02, rc04 | - | - |
 | pr | T | L | Contribute to a public repository (fork, branch, pull request); `git clone` does not exist | layer-inference 13 | li05 | - | an idea |
 
-## Level 4: depends only on levels below (4 items)
+## Level 4: depends only on levels below (6 items)
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
-| rc06 | T | L | The Contract has tasks with status and owner; the Differences become progress | roles-and-contract 06 | rc05 | 3 | - |
 | la13 | T | L | The record of values for TypeScript and JavaScript (nothing is recorded today) | layout-and-data 13 note | la05 | - | - |
 | lp04 | T | S | When no plugin reads a Project's language: a plain message, the structural index if there is one, and the lesson on how to ask for a plugin (nothing is sent for the person) | language-plugins 04 | lp01, rc03 | - | - |
 | lp06 | T | M | Creator Mode can write a language plugin | language-plugins 06 | lp01, rc03, pt04 | - | - |
-
-## Level 5: depends only on levels below (3 items)
-
-| ID | | Size | Work | Where | Depends on | Unblocks | Wait |
-|---|---|---|---|---|---|---|---|
 | pp06 | T | M | The Contract plugin offers its rule: what is not in the Contract is not developed | plugin-policies 06 | pp02, rc04, rc06 | - | - |
 | rc07 | T | M | A Builder works in a plan mode for each task | roles-and-contract 07 | rc01, rc06 | - | - |
 | rc08 | T | L | Assignments and tasks name an instance (several Builders and Tutors) | roles-and-contract 08 | rc01, rc06, inst | - | - |

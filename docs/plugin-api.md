@@ -43,6 +43,8 @@ Static metadata, read without running any code. A text file of at most 64 KiB.
 | `provides` | no | Service keys it offers to others. |
 | `events` | no | An object: event name (without the plugin id, which is its namespace) to `{ "mode": "announce" \| "ask", "version": 1 }`. |
 | `settings` | no | A schema of its settings: an object of field name to `{ "type": "string" \| "number" \| "boolean" \| "choice", "label", "default", "choices"? }`. |
+| `lesson` | no | Relative path of a lesson file: `{ "parts": [...] }`, each part with `name`, `hint`, `what`, `question`, `example`, `narration`, `tryIt` and optional `refs`. The Tutor teaches from it; its text is untrusted data. |
+| `teach` | no | The teaching surface: `{ "view": "state", "checks": [{ "name": "has-container", "says": "One plain sentence of what it verifies.", "args": { "node": "string" } }] }`. `view` is the name of a read-only view of the plugin's state; each check has a name (unique), a sentence of up to 160 characters and optional arguments (up to 5, each `string`, `number` or `boolean`). Up to 20 checks. The scan shows it among what the plugin declares. |
 | `required` | no | Honoured only for plugins that ship with aidea: the plugin cannot be removed or disabled. |
 
 A manifest with a missing required field, an unknown `api`, a bad `id` or a `main` or `ui` path that leaves the folder is invalid: the problem names the field, and nothing of that plugin runs.

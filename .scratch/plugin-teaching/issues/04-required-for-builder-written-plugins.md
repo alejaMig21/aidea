@@ -2,7 +2,7 @@
 
 **What to build:** A plugin the Builder writes that adds a Panel, a layer or other state of its own cannot be proposed for installing without a valid view, valid checks and a lesson; the reason is shown in plain words. A plugin with no state of its own (a theme, a guard rule) needs only its lesson. For every other plugin a missing or stale surface is a warning in the quarantine report, at load and in the update difference, never a block. The plugin template carries an empty surface and the Creator Mode skill says to write and update it.
 
-**Blocked by:** plugin-teaching 01, plugin-lessons 03, plugin-lessons 04.
+**Blocked by:** plugin-lessons 03, plugin-lessons 04.
 
 **Status:** ready-for-agent
 
