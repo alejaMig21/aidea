@@ -4,7 +4,7 @@
 
 **Blocked by:** plugin-teaching 02.
 
-**Status:** ready-for-agent
+**Status:** superseded 2026-11-05 by tutor-rewrite 04 (the teach loop is rewritten and this is one of its boxes)
 
 - [ ] A fixture plugin with a lesson part that names a check closes the step when the check passes and re-teaches when it does not (scripted Tutor).
 - [ ] A lesson part that names a check the plugin does not declare is a finding (plugin-lessons 03 covers it).

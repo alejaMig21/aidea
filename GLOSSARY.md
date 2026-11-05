@@ -148,7 +148,7 @@ The screen shown when no Project is open. It lists the Recent projects and expla
 _Avoid_: Start page, dashboard, launcher
 
 **Probe**:
-The tutor's short assessment (at most five questions) of what the user already understands, given before the first class of each layer and skipping what the Learner graph already shows.
+The tutor's measurement of what the user already understands: inside the conversation, it finds for each prerequisite topic the hardest thing they get right and the easiest they get wrong, and stops when every topic is bracketed. It skips what the Learner graph already shows.
 _Avoid_: Entrance exam, placement test
 
 **Learner graph**:
@@ -194,8 +194,16 @@ The plugin that connects an Instance to a concrete agent or model, such as one f
 _Avoid_: Backend, vendor
 
 **Assignment**:
-A request to a Builder to do a task, written by the person and sent by the person: goal in plain words, the context it rests on (Nodes, Contract items, plugins, lessons), constraints, acceptance checks and the Builder it is for. The Tutor teaches how to write one and checks it; it never sends one. The Builder keeps its own permission mode and any Policy in force.
+A request to a Builder to do a task: the person's own message in the Builder's chat (a goal in plain words, the context it rests on, constraints, how they will know it is done). The Tutor teaches how to write one and checks it; it never sends one, and nothing but the person's message starts a Builder. The Builder keeps its own permission mode and any Policy in force.
 _Avoid_: Brief (reserved: the Contract is not a brief), Prompt, Order
+
+**Practice**:
+A session of its own, asked for by the person or by the Tutor, where the person solves problems on ideas already taught but not reliably recalled, with hints one level at a time and a grader. A practical problem is a task in a plugin, closed by the plugin's check. The Tutor never does the task.
+_Avoid_: Quiz, exam, homework
+
+**Agent tool**:
+An action a plugin offers to the agents: a Builder gets the ones a plugin offers (read the Contract), the Tutor read-only ones. A tool that would write is not offered: it makes a Proposal.
+_Avoid_: Plugin command
 
 **Policy**:
 A condition that a plugin imposes, while it is on, on the actions of other plugins, matched by the class and scope of the action (for example, writes inside this Project) and never by the type of plugin. It is a guard rule with a precise target. Where aidea mediates the action it prevents it; where it does not, aidea detects and reverts or flags it, and says which.

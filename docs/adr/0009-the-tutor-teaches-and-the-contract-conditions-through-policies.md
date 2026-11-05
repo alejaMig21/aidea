@@ -5,7 +5,7 @@
 ## Decision
 
 1. **The Tutor teaches and has no autonomy over the Project; the person has it.** Everything the Tutor wants to do it communicates or turns into a lesson; the person acts. It never sends anything to a Builder and never changes a layer or a plugin by itself: it makes Proposals that the person accepts.
-2. **An Assignment is the way the person asks a Builder for work.** The person writes it; the Tutor teaches how and checks it; only the person's own action sends it. There is no automatic sending, not even optional.
+2. **An Assignment is the way the person asks a Builder for work.** The person writes it; the Tutor teaches how and checks it; only the person's own action sends it. There is no automatic sending, not even optional. *Amended by ADR 0010 (decision 5): the person's own action is a message in the Builder's chat, not a card with a Send button.*
 3. **The Contract is the Plan Mode of aidea for a whole project.** The person approves it, Builders work inside it, a change after approval is a Proposal. It gains tasks with a status and an owner. It lasts and is shared, unlike the plan of one task, which each Builder makes in its own plan mode.
 4. **The Contract is a plugin that ships with aidea.** With it off there is no Contract and no condition. With it on the condition is hard: what is not in the Contract is not developed (to be tuned after real use).
 5. **Plugins can condition other plugins through policies.** A policy matches an action by its class and scope (for example, writes inside this Project), never by the type of plugin, and never names a Builder, so a Builder made with Creator Mode is held the same way and a plugin that writes essays outside any Project is not.

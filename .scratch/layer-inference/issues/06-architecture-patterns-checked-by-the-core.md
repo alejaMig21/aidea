@@ -2,7 +2,7 @@
 
 **What to build:** The Tutor proposes the boxes a person would draw and the pattern they follow (layered, hexagonal, event-driven, plugin-based) as a Pattern group with a role for each box, with evidence. The core checks the pattern against the real relationships with no model: for layered, no dependency goes upward; for hexagonal, no domain module imports an adapter; for event-driven, modules talk through the bus. A claim the code contradicts is shown as a Difference of type pattern and not drawn as fact. The Pattern groups and the check exist for the first kinds (tutor 14); this extends them and the rule that the claim must hold.
 
-**Blocked by:** layer-inference 03.
+**Blocked by:** layer-inference 03, tutor-rewrite 04.
 
 **Status:** ready-for-agent
 
