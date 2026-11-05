@@ -37,7 +37,8 @@ export type PluginContext = {
   // Tools for the agents (roles-and-contract 10). Builders get every tool a plugin offers; the Tutor only those declared `readOnly`. A tool that would write in the Project is not offered this way: it makes a Proposal.
   agents: { tools: { add: (tool: AgentToolDeclaration) => void } };
   // The teaching surface: the plugin gives a snapshot of its state, which the view and the checks of its `teach.module` read (plugin-teaching 02).
-  teach: { state: (provide: () => unknown) => void };
+  // The function is called with {project}: the id of the Project of the Tutor's session, when there is one.
+  teach: { state: (provide: (context: { project?: string }) => unknown) => void };
   // The language slot: a plugin whose manifest declares `language` provides its adapter once (`analyze`, and `flow`, `run` if it has them).
   languages: { provide: (adapter: LanguageAdapter) => void };
   data: { readonly dir: string };
@@ -79,7 +80,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
   const services = new Map<string, { owner: string; value: unknown }>();
   const logs: { plugin: string; message: string }[] = [];
   const agentTools = new Map<string, AgentTool & { run: (input: any) => unknown }>(); // by the name the agents see: <plugin id>_<name>
-  const teachStates = new Map<string, () => unknown>(); // plugin id -> its snapshot of state for the Tutor
+  const teachStates = new Map<string, (context: { project?: string }) => unknown>(); // plugin id -> its snapshot of state for the Tutor
   const declared = new Map<string, { owner: string; mode: "announce" | "ask"; version: number }>(); // events of active plugins, by full name
   const listeners = new Map<string, { owner: string; fn: (data: any) => unknown }[]>();
   const rules: { owner: string; fn: (action: any) => unknown }[] = [];
@@ -359,13 +360,13 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
       try { return { ok: true, value: await tool.run(structuredClone(input)) }; } catch (e) { return { ok: false, error: reason(e) }; }
     },
     // What the Tutor needs to read the view of an ACTIVE plugin or run a check of it (plugin-teaching 02), or the plain reason it cannot.
-    teachOf: (id: string): { folder: string; teach: Teach; snapshot: () => unknown } | { problem: string } => {
+    teachOf: (id: string): { folder: string; teach: Teach; snapshot: (context: { project?: string }) => unknown } | { problem: string } => {
       const e = entries.get(id);
       if (!e || id.includes("#") || e.state !== "active" || !e.manifest) return { problem: "No installed, enabled plugin has that id." };
       const { teach } = e.manifest;
       if (!teach) return { problem: 'This plugin declares no teaching surface (there is no "teach" in its manifest).' };
       if (!teach.module) return { problem: 'This plugin declares a view but ships no code for it (there is no "module" in its "teach").' };
-      return { folder: e.folder, teach, snapshot: () => teachStates.get(id)?.() ?? null };
+      return { folder: e.folder, teach, snapshot: (context) => teachStates.get(id)?.(context) ?? null };
     },
     // The file of the interface half of an ACTIVE plugin, or undefined.
     uiFile: (id: string) => {

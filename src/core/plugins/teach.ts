@@ -63,7 +63,7 @@ export function taskProblem(core: Core, plugin: unknown, check: unknown, args: u
 }
 
 // Runs `name` when it is one of the two tools; null when it is not.
-export async function runPluginTeachTool(name: unknown, args: Record<string, unknown>, core: Core, limits: TeachLimits = {}): Promise<TeachResult | null> {
+export async function runPluginTeachTool(name: unknown, args: Record<string, unknown>, core: Core, limits: TeachLimits = {}, context: { project?: string } = {}): Promise<TeachResult | null> {
   if (name !== "read_plugin_view" && name !== "check_plugin") return null;
   const maxChars = limits.maxChars ?? 20_000;
   const found = core.plugins.teachOf(typeof args.id === "string" ? args.id : "");
@@ -78,7 +78,7 @@ export async function runPluginTeachTool(name: unknown, args: Record<string, unk
     Object.assign(request, { name: asked.check.name, args: asked.given, op: "check" });
   }
   let state: unknown;
-  try { state = await snapshot(); } catch (e) { return fail(`The plugin could not give its state: ${String((e as Error)?.message ?? e).slice(0, 200)}`); }
+  try { state = await snapshot(context); } catch (e) { return fail(`The plugin could not give its state: ${String((e as Error)?.message ?? e).slice(0, 200)}`); }
   if (!sizeOk(state ?? null, 1_000_000)) return fail("The state of the plugin is too large to read.");
   const run = await runChild(folder, file, { ...request, snapshot: state ?? null }, limits);
   if (!run.ok) return fail(`The ${request.op === "view" ? "view" : "check"} of this plugin ${run.error}.`);

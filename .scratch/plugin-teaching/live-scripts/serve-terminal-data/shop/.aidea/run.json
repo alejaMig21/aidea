@@ -1,0 +1,1 @@
+{"parts":[{"name":"hello","command":"node -e \"console.log('hello from the part')\""}]}

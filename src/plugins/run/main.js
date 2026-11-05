@@ -339,14 +339,16 @@ export function activate(ctx) {
     for (const run of runs.values()) stopped.push(...await stopNames(run, [...run.order]));
     return { stopped };
   });
-  ctx.api.handle("output", (body) => {
+  const outputOf = (body) => {
     const root = rootOf(body);
     const run = runOf(root);
     return {
       parts: [...run.parts.values()].map((e) => ({ name: e.part.name, alive: e.alive, exit: e.exit, stopped: e.stopped, lines: e.lines.slice(), dropped: e.dropped })),
       stoppedOrder: run.stoppedOrder,
     };
-  });
+  };
+  ctx.api.handle("output", outputOf);
+  ctx.services.provide("run.output", outputOf); // the Terminal's teaching surface reads it (plugin-teaching 07)
 
   // Deactivating the plugin (or closing aidea) stops everything Play started.
   return async () => { for (const run of runs.values()) await stopNames(run, [...run.order]); };

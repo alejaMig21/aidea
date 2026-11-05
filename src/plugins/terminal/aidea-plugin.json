@@ -5,6 +5,12 @@
   "description": "A Panel at the bottom of the window that shows what the programs started with Play write, one tab for each program.",
   "publisher": "aidea",
   "api": "0.1",
+  "main": "main.js",
   "ui": "ui.js",
-  "lesson": "lesson.json"
+  "lesson": "lesson.json",
+  "teach": {
+    "view": "state",
+    "module": "teach.mjs",
+    "checks": [{ "name": "program-wrote", "says": "A program started with Play wrote something to its tab.", "args": { "program": "string" } }]
+  }
 }

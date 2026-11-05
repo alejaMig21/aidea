@@ -6,7 +6,7 @@
   "publisher": "aidea",
   "api": "0.1",
   "main": "main.js",
-  "provides": ["run.propose"],
+  "provides": ["run.propose", "run.output"],
   "ui": "ui.js",
   "capabilities": ["processes", "files", "network"]
 }

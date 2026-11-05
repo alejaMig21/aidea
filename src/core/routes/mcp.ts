@@ -158,7 +158,7 @@ const handler: Handler = async (req, res, core) => {
         core.send(res, 200, toolText(id, a.text, a.isError));
         return true;
       }
-      const taught = await runPluginTeachTool(name, args, core);
+      const taught = await runPluginTeachTool(name, args, core, {}, { project: core.permissions.conversationOf(token)?.project });
       if (taught) {
         core.send(res, 200, toolText(id, taught.text, taught.isError));
         return true;

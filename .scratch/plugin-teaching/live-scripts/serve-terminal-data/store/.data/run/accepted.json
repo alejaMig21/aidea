@@ -1,0 +1,1 @@
+{"D:\\Projects\\aidea\\.scratch\\plugin-teaching\\live-scripts\\serve-terminal-data\\shop":{"hash":"33b66ada8d89a981b4633275e425309108cd980c284412d783b47e9a741f9eb0","recipe":{"parts":[{"name":"hello","command":"node -e \"console.log('hello from the part')\"","folder":".","waitFor":[],"ready":null,"timeoutSeconds":60,"env":[]}]}}}

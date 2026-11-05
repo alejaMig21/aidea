@@ -78,7 +78,7 @@ export async function runPracticeTool(name: string, args: Record<string, unknown
     }
     let correct = false, feedback: string | undefined, checked: { note: string; result: { ok: boolean; reason?: string } } | undefined;
     if (!a.dontKnow && q.kind === "task") {
-      const run = await runPluginTeachTool("check_plugin", { id: q.plugin, name: q.check, args: q.args }, core);
+      const run = await runPluginTeachTool("check_plugin", { id: q.plugin, name: q.check, args: q.args }, core, {}, { project: c.project });
       if (run?.isError) return err(`The check could not run: ${run.text} The problem stays open: pose it again.`);
       checked = JSON.parse(run!.text);
       correct = checked!.result.ok;

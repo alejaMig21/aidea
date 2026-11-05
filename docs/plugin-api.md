@@ -94,7 +94,7 @@ A plugin can offer tools to the agents from its host half: `ctx.agents.tools.add
 
 A plugin that can be taught gives the Tutor a read-only view of its state and named checks (manifest field `teach`).
 
-- The host half gives a snapshot of its state: `ctx.teach.state(() => data)`. The function returns plain data (it may be async) and is called when the Tutor asks.
+- The host half gives a snapshot of its state: `ctx.teach.state(() => data)`. The function returns plain data (it may be async) and is called when the Tutor asks, with `{ project }`: the id of the Project of the Tutor's session.
 - `teach.module` is an ES module with `export function view(snapshot)` (returns plain data) and `export const checks = { "name": (snapshot, args) => ({ ok: true | false, reason: "one short sentence" }) }`.
 - The Tutor reads the view with `read_plugin_view` and runs a check with `check_plugin`, only for an installed, enabled plugin. The arguments must match the shapes the manifest declares.
 - The module runs in a process of its own started with Node's `--permission`: it can read the plugin's folder and nothing else, so it cannot write a file or start a program; the network is cut before it loads. It has 3 seconds and 20,000 characters of answer; beyond that it is stopped with a plain message. This is a safety net, not a sandbox: the snapshot function runs in the plugin's own half with the plugin's own capabilities.

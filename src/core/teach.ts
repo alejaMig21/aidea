@@ -396,7 +396,7 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
   if (q.kind === "task") {
     let checked: { note: string; result: { ok: boolean; reason?: string } } | undefined;
     if (!heard.answer.dontKnow) {
-      const run = await runPluginTeachTool("check_plugin", { id: q.plugin, name: q.check, args: q.args }, core);
+      const run = await runPluginTeachTool("check_plugin", { id: q.plugin, name: q.check, args: q.args }, core, {}, { project });
       if (run?.isError) return err(`The check could not run: ${run.text} The step stays as it was.`);
       checked = JSON.parse(run!.text);
     }
