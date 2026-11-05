@@ -4,7 +4,7 @@
 
 **Blocked by:** language-adapters 04 and the person's choice.
 
-**Status:** needs-info (restated 2026-11-04). Question for the person: how should a TypeScript or JavaScript function be run safely for Playback (a separate Node process with permissions turned off, a worker, something else)? Play of whole projects through the run recipe exists since then and does not replace this: Playback runs one function with its guards
+**Status:** blocked by `.scratch/language-plugins/spec.md` (2026-11-04): languages become plugins, and how to run JavaScript safely is decided inside the TypeScript plugin (slice 6 there). Question still open for the person: a separate Node process with permissions turned off, a worker, or something else?
 
 - [ ] The chosen way of running, what is blocked and what the person is warned about are written here.
 - [ ] Through the protocol: a function with a file write or a network call is refused or replaced by fake data as in the Python Playback.
