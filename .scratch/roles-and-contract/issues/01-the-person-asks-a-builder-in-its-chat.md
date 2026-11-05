@@ -2,7 +2,7 @@
 
 **What to build:** The person starts a Builder by writing in its chat, for example "read the Contract and start with the first task". There is no Assignment card and no Send button: the person's own message is the action, and nothing else sends or starts anything (not the Tutor, not an automatic step). The Builder reads what it needs through the tools that plugins offer (roles-and-contract 10), and keeps its own permission mode and any Policy in force: a message never widens what a Builder may do. The composer may insert references (a Node, a Contract item, a lesson) as plain text the person can read and edit. This replaces the Assignment of ADR 0009 (decision 2); see ADR 0010.
 
-**Blocked by:** roles-and-contract 10.
+**Blocked by:** None (can start immediately).
 
 **Status:** ready-for-agent
 

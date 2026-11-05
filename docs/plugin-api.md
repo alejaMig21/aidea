@@ -79,6 +79,17 @@ A slot has an owner, a kind and an entry shape. The owner declares it; the kerne
 - Version 0.1 declares one slot: **`layout.panel`** (`list`). Entry: `{ id, title, render(container) -> dispose, side?: "left" | "right" | "bottom", startsHidden?: boolean, min?: number, icon?: string }` (`icon` is the inner shapes of a 16 by 16 SVG, as the menu draws them). It becomes a row in the Panels menu and a Panel in the Layout. The Panel's id is `<plugin id>.<entry id>`, except that an entry whose id equals the plugin's id (the usual plugin with one Panel) takes the plugin's id as its Panel id.
 - Later candidates (not in 0.1): a status item, a toolbar of a Panel, a renderer of a chat message, buttons of the selection control.
 
+### Tools for the agents (`agent.tools`)
+
+A plugin can offer tools to the agents from its host half: `ctx.agents.tools.add({ name, description, inputSchema, readOnly?, run })`.
+
+- `name`: lowercase letters, digits and `_`. The agents see it with the plugin's id in front (`<plugin id>_<name>`, with `.` and `-` turned into `_`), so two plugins never clash.
+- `run(input)` returns plain data (it may be async). What it returns reaches the agent marked as untrusted data, up to 20,000 characters.
+- A **Builder** gets every tool of every active plugin. The **Tutor** gets only those declared `readOnly: true`: a tool that is not read-only is not even offered to it.
+- A tool that would write in the Project is not offered this way: write through a Proposal. The Tutor and the Builders never talk to each other; the Contract plugin uses this to let a Builder read the Contract.
+- A tool goes through the guard rules of the plugins like any other action: the action is `{ kind: "agent-tool", tool, plugin, input }`. A rule that denies stops it and it never runs; a rule that asks stops it too, with the question, until there is a card for it.
+- A tool exists while its plugin is active. `GET /plugins/inspect` lists them in `agentTools`.
+
 ### The teaching surface
 
 A plugin that can be taught gives the Tutor a read-only view of its state and named checks (manifest field `teach`).

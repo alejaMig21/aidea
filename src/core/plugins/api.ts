@@ -48,5 +48,6 @@ export function inspect(host: PluginHost) {
     services: host.services(),
     events: host.eventList(),
     plugins: host.details(),
+    agentTools: host.agentTools(),
   };
 }

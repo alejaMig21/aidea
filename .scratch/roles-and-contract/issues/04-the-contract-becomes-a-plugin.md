@@ -2,7 +2,7 @@
 
 **What to build:** The Contract and the Differences leave the core and the Tutor's panel for a plugin that ships with aidea, with its lesson, its read-only view and its named checks. The plugin offers Builders the tools to read the Contract (and later to report a task's status) through roles-and-contract 10, so the Builder reads it from the plugin and the Tutor and the Builders never talk to each other. With the plugin off there is no Contract and no condition. The Tutor's knowledge of them is removed in tutor-rewrite 08.
 
-**Blocked by:** roles-and-contract 10.
+**Blocked by:** None (can start immediately).
 
 **Status:** ready-for-agent
 

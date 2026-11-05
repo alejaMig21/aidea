@@ -22,6 +22,8 @@ type Entry = { id: string; folder: string; builtin: boolean; manifest?: Manifest
 // What an event listener or a guard rule may answer. Only "deny" and "ask" count; anything else, an "allow" included, is ignored (a plugin can only tighten).
 export type Verdict = { decision: "allow" } | { decision: "deny"; reason: string } | { decision: "ask"; question: string };
 
+export type AgentToolDeclaration = { name: string; description: string; inputSchema: object; readOnly?: boolean; run: (input: any) => unknown };
+export type AgentTool = { plugin: string; name: string; description: string; inputSchema: object; readOnly: boolean };
 export type PluginContext = {
   plugin: { id: string; title: string; version: string };
   services: { provide: (key: string, value: unknown) => void; get: (key: string) => unknown };
@@ -30,6 +32,8 @@ export type PluginContext = {
   ask: (name: string, data?: unknown) => Verdict;
   on: (fullName: string, listener: (data: any) => unknown) => void;
   guards: { add: (rule: (action: any) => unknown) => void };
+  // Tools for the agents (roles-and-contract 10). Builders get every tool a plugin offers; the Tutor only those declared `readOnly`. A tool that would write in the Project is not offered this way: it makes a Proposal.
+  agents: { tools: { add: (tool: AgentToolDeclaration) => void } };
   // The teaching surface: the plugin gives a snapshot of its state, which the view and the checks of its `teach.module` read (plugin-teaching 02).
   teach: { state: (provide: () => unknown) => void };
   // The language slot: a plugin whose manifest declares `language` provides its adapter once (`analyze`, and `flow`, `run` if it has them).
@@ -72,6 +76,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
   const entries = new Map<string, Entry>();
   const services = new Map<string, { owner: string; value: unknown }>();
   const logs: { plugin: string; message: string }[] = [];
+  const agentTools = new Map<string, AgentTool & { run: (input: any) => unknown }>(); // by the name the agents see: <plugin id>_<name>
   const teachStates = new Map<string, () => unknown>(); // plugin id -> its snapshot of state for the Tutor
   const declared = new Map<string, { owner: string; mode: "announce" | "ask"; version: number }>(); // events of active plugins, by full name
   const listeners = new Map<string, { owner: string; fn: (data: any) => unknown }[]>();
@@ -93,6 +98,20 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
     const manifest = entry.manifest!;
     let provided = false;
     return {
+      agents: {
+        tools: {
+          add: (tool) => {
+            if (!tool || typeof tool.name !== "string" || !/^[a-z][a-z0-9_]{0,39}$/.test(tool.name)) throw new Error('the "name" of an agent tool must be lowercase letters, digits and "_", starting with a letter');
+            if (typeof tool.description !== "string" || !tool.description.trim() || tool.description.length > 600) throw new Error(`the agent tool "${tool.name}" needs a description of up to 600 characters`);
+            if (!tool.inputSchema || typeof tool.inputSchema !== "object") throw new Error(`the agent tool "${tool.name}" needs an "inputSchema"`);
+            if (typeof tool.run !== "function") throw new Error(`the agent tool "${tool.name}" needs a "run" function`);
+            const full = `${entry.id.replace(/[^a-z0-9]/g, "_")}_${tool.name}`;
+            if (agentTools.has(full)) throw new Error(`the agent tool "${tool.name}" is already offered`);
+            agentTools.set(full, { plugin: entry.id, name: full, description: tool.description, inputSchema: tool.inputSchema, readOnly: tool.readOnly === true, run: tool.run });
+            entry.undo.push(() => agentTools.delete(full));
+          },
+        },
+      },
       teach: {
         state: (provide) => {
           teachStates.set(entry.id, provide);
@@ -322,6 +341,19 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
       const read = readLesson(e.folder, e.manifest.lesson);
       return "lesson" in read ? [{ id: e.id, title: e.manifest.title, parts: read.lesson.parts }] : [];
     }),
+    // The tools active plugins offer to the agents, as the agents see them (the Tutor asks for `readOnly` ones only).
+    agentTools: (readOnly = false): AgentTool[] => [...agentTools.values()].filter((t) => !readOnly || t.readOnly).map(({ run: _run, ...tool }) => tool),
+    // Runs one of them. A guard rule of any plugin can refuse it first, as it can refuse any action; a rule that asks refuses too (there is no card for it yet).
+    callAgentTool: async (name: string, input: unknown): Promise<{ ok: true; value: unknown } | { ok: false; error: string }> => {
+      const tool = agentTools.get(name);
+      if (!tool) return { ok: false, error: `Unknown tool: ${name}` };
+      const verdict = combine(rules.map((r) => {
+        try { return { owner: r.owner, answer: r.fn(structuredClone({ kind: "agent-tool", tool: name, plugin: tool.plugin, input })) }; } catch (e) { return { owner: r.owner, answer: { decision: "ask", question: `The rule of ${r.owner} failed (${reason(e)})` } }; }
+      }));
+      if (verdict.decision === "deny") return { ok: false, error: `A plugin rule refused this action: ${verdict.reason}` };
+      if (verdict.decision === "ask") return { ok: false, error: `A plugin rule needs the person to confirm this action first: ${verdict.question}` };
+      try { return { ok: true, value: await tool.run(structuredClone(input)) }; } catch (e) { return { ok: false, error: reason(e) }; }
+    },
     // What the Tutor needs to read the view of an ACTIVE plugin or run a check of it (plugin-teaching 02), or the plain reason it cannot.
     teachOf: (id: string): { folder: string; teach: Teach; snapshot: () => unknown } | { problem: string } => {
       const e = entries.get(id);
