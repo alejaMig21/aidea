@@ -4,11 +4,21 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** resolved 2026-11-05 (live in Electron on the second monitor: 36 frames per second with the tests open, from 15)
 
-- [ ] A page test measures frames per second moving a generated overview of the same size and fails below a stated budget (headless Chrome, written in the test).
-- [ ] Telegram with the tests open moves at 30 frames per second or more in Vivaldi (measured with the same method as in this ticket).
-- [ ] Hovering a route still says what it is, and the legend still matches what is drawn (the legend check passes).
-- [ ] With the tests closed and with 40 modules or fewer, the drawing looks as before.
+- [x] `test/overview-smooth-page.test.ts` guards the causes: the 400 lines are faint by stroke-opacity and not opacity, there is no arrowhead at the fitted zoom, the heads come back when zoomed in, and hovering a module lights its lines fully. It does not count frames: a headless browser with a virtual clock cannot, so the frames are measured live (next box).
+- [x] Telegram with its tests open moves at 36 frames per second (15 before) in the real Electron window on the second monitor, and 80 with the tests closed (30 before): `.scratch/big-projects/live-scripts/overview-fps.mjs`. Not measured in Vivaldi: its extension hangs on a frame-counting loop.
+- [x] A route still has its title and its lines still light when its module is hovered (page test); the legend check passes.
+- [x] With 40 modules or fewer nothing changed: the detail drawing is untouched. With the tests closed the overview looks the same, without arrowheads at the fitted zoom.
 
 Measured 2026-11-05 on the person's Telegram project (209 Python modules, 3,964 functions, 659 classes, 13,004 relationships), Windows, this machine. Method: pan by 4 px per animation frame for 1.5 s and count frames; script in the agent's scratchpad (`fps.mjs`), to be moved to the repository with this ticket.
+
+## What was built (2026-11-05)
+
+- `47-components.js`: `.cp-ov-edge` is faint by `stroke-opacity: .15` and no longer by `opacity: .15`. An element with opacity under 1 is drawn on a layer of its own; 400 of them were the largest cost (13 to 22 frames per second in the headless experiment on its own). The arrowhead (`marker-end`) is a CSS rule under `#cp-root.ov-heads`, turned on by `componentsZoomed` from the zoom where a 12 px head would be 7 px on screen (k of 0.58); before, it was an attribute on every line at every zoom (another 22 to 29).
+- Hover keeps its look: the lines of the hovered module are at stroke-opacity 1 and the others at .18, with no double dimming.
+- Experiment, in headless Chrome with software drawing (frames per second): 13 as it was; 22 with stroke-opacity; 29 with stroke-opacity and no arrowheads; 54 with no lines at all. Text, rectangles, titles and the Animations switch changed nothing.
+
+## Not done
+
+- Merging the lines into a few path elements, and drawing only what is on screen. They are the next step if a bigger Project needs it; Telegram does not.

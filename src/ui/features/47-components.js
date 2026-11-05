@@ -29,7 +29,10 @@
     #cp-root:not(.ov-names) .cp-ov-name, #cp-root:not(.ov-counts) .cp-ov-counts { display: none; }
     rect[data-id].cp-ov-module { cursor: pointer; } rect[data-id].cp-ov-module:is(:hover, :focus) { stroke: var(--accent); }
     .cp-ov-name { font: 600 13px var(--sans); pointer-events: none; } .cp-ov-counts { font: 400 12px var(--mono); fill: var(--muted); pointer-events: none; }
-    .cp-ov-edge { fill: none; stroke: var(--cp-line); stroke-width: 1.4; opacity: .15; pointer-events: stroke; }
+    /* The lines are faint by stroke-opacity, not opacity: an element with opacity under 1 is drawn on a layer of its own, and 400 of them made the overview slow to move (17 fps against 53). The arrowheads are drawn only from the zoom where they can be read (componentsZoomed). */
+    .cp-ov-edge { fill: none; stroke: var(--cp-line); stroke-width: 1.4; stroke-opacity: .15; pointer-events: stroke; }
+    #cp-root.ov-heads .cp-ov-edge { marker-end: url(#cp-open-base); }
+    svg#canvas.nt-hl .cp-ov-edge:not(.nt-lit) { opacity: 1; stroke-opacity: .18; transition: stroke-opacity .2s; } svg#canvas.nt-hl .cp-ov-edge.nt-lit { stroke-opacity: 1; }
     .cp-ov-edge[data-kind="imports"], .cp-ov-edge[data-resolution="inferred"] { stroke-dasharray: 6 4; }
     .cp-imports { fill: var(--raised); stroke: var(--control); }
     .cp-import { fill: transparent; stroke: none; cursor: pointer; } .cp-import:is(:hover, :focus) { fill: color-mix(in srgb, var(--accent) 14%, transparent); }
@@ -264,7 +267,7 @@ function componentsOverviewDraw(world, nodes, layout) {
     const [a, c, b] = route.points;
     const path = el("path", {
       class: "cp-ov-edge", d: `M${a.x} ${a.y}Q${c.x} ${c.y} ${b.x} ${b.y}`, "data-kind": route.kind, "data-resolution": route.resolution,
-      "data-ref": route.from, "data-ends": route.ends.join(" "), "marker-end": "url(#cp-open-base)",
+      "data-ref": route.from, "data-ends": route.ends.join(" "),
     });
     path.append(el("title", {}, `${route.kind} ${route.name}${route.count > 1 ? ` (x${route.count})` : ""}: ${route.resolution}`));
     world.append(path);
@@ -314,6 +317,7 @@ function componentsZoomed(k, force = false) {
   componentsZoomK = k;
   root.classList.toggle("ov-names", k * 13 >= 11);
   root.classList.toggle("ov-counts", k * 12 >= 11);
+  root.classList.toggle("ov-heads", k * 12 >= 7); // an arrowhead is 12 px: drawn only when it would be 7 px or more on screen
   const kk = Math.min(k, 1);
   for (const t of root.querySelectorAll(".cp-ov-label")) {
     const d = t.dataset, room = d.w * kk - 12, full = d.full, shown = notationClip(full, Math.max(3, Math.floor(room / 7.9)));

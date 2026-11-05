@@ -9,12 +9,11 @@ Rules:
 4. The status of a ticket says whether it can start: `ready-for-agent`, or `needs-info` and what it waits for (shown in the Wait column).
 5. Every new built-in plugin ships a lesson and a teaching surface (plugin-lessons, plugin-teaching): items that create one depend on those.
 
-Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (87 items, 6 levels).
+Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (86 items, 6 levels).
 ## Level 0: no dependencies
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
-| bp02 | T | M | The Components overview stays smooth with the test modules open (17 fps today, routes are the cost, target 30 fps) | big-projects 02 | - | 1 | - |
 | pl01 | T | M | A plugin ships a lesson and the Tutor reads it | plugin-lessons 01 | - | 21 | - |
 | pt01 | T | M | The manifest can declare a teaching surface (a read-only view and named checks) | plugin-teaching 01 | - | 19 | - |
 | lp01 | T | M | The `language` slot in the plugin API, designed so that project-kind plugins and index providers fit the same family of slots | language-plugins 01 | - | 14 | - |
@@ -27,6 +26,7 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | prov | T | XL | Roles and Providers: the Tutor and the Builder become roles filled by provider plugins; the agent adapter becomes a (required) plugin. Part of migrating the rest of the existing features into plugins (Files, Code, Playback, the layers), each with its own specification, as the plugin-system spec left it | roles-and-providers 01 | - | 3 | the spec the plugin-system spec left out (which services stay single-instance, the list of named slots, the required plugins) |
 | cbs | T | M | Spike: measure Codebase Memory MCP as a code-graph tool for the agents on Telegram, a Unity project and a Node monorepo, with and without it (indexing writes nothing into the project; one background process per account shares the person's cache; licence not looked at) | layer-inference 11 | - | 2 | quota |
 | inst_spec | T | S | Write the Instances spec: a plugin declares a minimum number of instances and can run N times (N Builders each on a branch, N Tutors, N Canvases each on a layer); the Panel registry and the saved Layout name an instance | roles-and-providers 02 | - | 2 | the person decides the open points |
+| bp03 | T | S | Say why module pairs are hidden and let the person see them | big-projects 03 | - | - | - |
 | bp05 | T | L | The cold analysis of a big project takes under 2 s: per-file facts extracted in parallel worker processes, resolved across files; incremental | big-projects 05 | - | - | - |
 | collab | T | XL | Real-time cursors and shared work (needs a relay server) | collaboration 01 | - | - | an idea |
 | ed | T | S | Let the person edit the input data of a recording (the named lists cover part of it) | animation-and-data 05 | - | - | - |
@@ -45,7 +45,7 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | tb | T | S | Merge the Canvas's own title bar with the layer bar (needs a ticket) | housekeeping 01 | - | - | - |
 | v1g01 | T | S | Live check: the Builder cannot write aidea files except by Proposals | v1-gaps 01 | - | - | real Builder (quota) |
 
-## Level 1: depends only on levels below (26 items)
+## Level 1: depends only on levels below (25 items)
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
@@ -61,7 +61,6 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | inst | T | XL | Instances: any plugin can be started several times | roles-and-providers 03 | inst_spec, prov | 1 | waits for the Instances spec, from which its boxes are written |
 | agents | T | M | Another agent adapter (Codex, Kimi, DeepSeek over ACP): a spike, then one each, as provider plugins | roles-and-providers 04 | prov | - | the person picks which agent first |
 | att | T | L | The Tutor reads sources the person attaches (a folder, a web page), as untrusted data, taught as a lesson | layer-inference 12 | li03 | - | an idea |
-| bp03 | T | S | Say why module pairs are hidden and let the person see them | big-projects 03 | bp02 | - | - |
 | bp04 | T | M | The Tutor reads the structure of a project fast (overview, callers and callees, one function's code) from the structural map, whichever source fills it | big-projects 04 | li02 | - | - |
 | cmp | T | M | Compare two algorithms side by side on the same data | animation-and-data 02 | anim | - | an idea |
 | dbg | T | XL | A visual debugger for people who are not engineers (Playback and Data cover part) | animation-and-data 07 | anim | - | say what Playback and Data still lack for this |
