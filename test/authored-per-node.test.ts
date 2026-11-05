@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { startTestCore } from "./helpers.ts";
+import { runReadTool } from "../src/core/tutor-reads.ts";
 
 let t: Awaited<ReturnType<typeof startTestCore>>;
 const scratch: string[] = [];
@@ -133,4 +134,13 @@ test("a Node file whose parent or relation points at a Node in another file reso
   const dir = await open(onePerNode);
   const web = (await json(`/authored?${q(dir)}`)).layers.architecture.nodes.find((n: any) => n.id === "web");
   assert.deepEqual(web.relations, [{ to: "db", label: "reads" }]);
+});
+
+test("the Tutor's read tools see the same Nodes whether they are stored one per file or one per layer", async () => {
+  const a = await open(oneFilePerLayer);
+  const b = await open(onePerNode);
+  const tool = (dir: string, name: string, args: Record<string, unknown> = {}) => runReadTool(name, args, { proposals: new Map() } as any, { id: "x", name: "x", path: dir, nodes: [], errors: [], relationships: [], unresolved: 0, languages: [] })!.text;
+  assert.equal(tool(b, "read_layers"), tool(a, "read_layers"));
+  for (const id of ["cs-owners", "us-quote", "web", "db"]) assert.equal(tool(b, "read_node", { id }), tool(a, "read_node", { id }), id);
+  assert.match(tool(b, "read_node", { id: "us-quote" }), /Request a quote/);
 });
