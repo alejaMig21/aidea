@@ -1,6 +1,7 @@
 // The manifest of a plugin, `aidea-plugin.json`: static metadata read without running any code. The rules are those of docs/plugin-api.md.
 import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import { isAbsolute, join, resolve, sep } from "node:path";
+import { ACTION_CLASSES, isActionClass } from "./actions.ts";
 import { readLesson } from "./lesson.ts";
 import { schemaProblems } from "./settings.ts";
 import type { SettingField } from "./settings.ts";
@@ -22,7 +23,7 @@ export type Teach = { view: string; checks: TeachCheck[]; module?: string }; // 
 export type LanguageDeclaration = { id: string; label: string; extensions: string[] };
 export type Manifest = {
   id: string; version: string; title: string; description: string; publisher: string; api: string;
-  main?: string; ui?: string; icon?: string; lesson?: string; teach?: Teach; language?: LanguageDeclaration;
+  main?: string; ui?: string; icon?: string; lesson?: string; teach?: Teach; language?: LanguageDeclaration; actions?: string[];
   capabilities: string[]; requires: string[]; provides: string[];
   events: Record<string, EventDeclaration>;
   settings: Record<string, SettingField>;
@@ -118,6 +119,7 @@ export function readManifest(dir: string): { manifest: Manifest } | { problems: 
     if (mod !== undefined && inside(dir, mod) === null) problems.push('"teach" "module" must be a path inside the plugin folder');
   }
   if (m.language !== undefined) problems.push(...languageProblems(m.language));
+  if (m.actions !== undefined && (!Array.isArray(m.actions) || m.actions.some((a) => !isActionClass(a)))) problems.push(`"actions" must be a list of classes of action: ${ACTION_CLASSES.map((c) => c.id).join(", ")}${Array.isArray(m.actions) ? ` (not ${m.actions.filter((a) => !isActionClass(a)).join(", ")})` : ""}`);
   if (m.required !== undefined && typeof m.required !== "boolean") problems.push('"required" must be true or false');
   if (m.icon !== undefined && !problems.some((p) => p.startsWith('"icon"'))) {
     try { if (lstatSync(join(dir, m.icon as string)).size > MAX_ICON_BYTES) problems.push('"icon" is larger than 256 KiB'); } catch { /* a missing icon is only a missing picture */ }
@@ -126,7 +128,7 @@ export function readManifest(dir: string): { manifest: Manifest } | { problems: 
   return {
     manifest: {
       id: m.id as string, version: m.version as string, title: m.title as string, description: m.description as string, publisher: m.publisher as string, api: m.api as string,
-      main: m.main as string | undefined, ui: m.ui as string | undefined, icon: m.icon as string | undefined, lesson: m.lesson as string | undefined, teach: m.teach as Teach | undefined, language: m.language as LanguageDeclaration | undefined,
+      main: m.main as string | undefined, ui: m.ui as string | undefined, icon: m.icon as string | undefined, lesson: m.lesson as string | undefined, teach: m.teach as Teach | undefined, language: m.language as LanguageDeclaration | undefined, actions: m.actions as string[] | undefined,
       capabilities: (m.capabilities as string[]) ?? [], requires: (m.requires as string[]) ?? [], provides: (m.provides as string[]) ?? [],
       events: (m.events as Record<string, EventDeclaration>) ?? {}, settings: (m.settings as Record<string, SettingField>) ?? {}, required: m.required === true,
     },

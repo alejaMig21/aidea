@@ -121,6 +121,21 @@ An event belongs to the plugin that defines it (`<plugin id>/<name>`), declares 
 - `ask`: a listener may answer `{ decision: "deny", reason }` or `{ decision: "ask", question }`, never allow; any `deny` wins.
 - A plugin cannot define an event in another plugin's namespace.
 
+### Classes of action
+
+An action is classified by what it does and where, never by the kind of plugin that does it, so a policy can match it (docs: guard rules). The list is closed:
+
+| Class | The action |
+|---|---|
+| `writes-project` | writes a file inside a Project (its code or its authored layers) |
+| `writes-outside` | writes a file outside any Project |
+| `runs-program` | starts a program |
+| `uses-network` | uses the network |
+| `reads-secrets` | reads secrets |
+
+- A plugin declares the classes it uses in the manifest, `"actions": ["runs-program"]`. The scan compares the list with what its code does: using a class that was not declared blocks the install (any write needs `writes-project` or `writes-outside`); declaring one the code does not seem to use is a warning. A plugin that declares no `actions` is judged by its capabilities, as before.
+- The kernel tags every action it mediates. A guard rule receives it with `class`, `scope` (for a write, its `path`, relative to the Project when inside it) and `by` (`{ role: "builder" }`, or `{ role: "plugin", plugin }` for a tool a plugin offers; such a tool may declare its `class` in `ctx.agents.tools.add`). Reading, searching and the tools aidea itself offers are no class.
+
 ## Guard rules
 
 A plugin may add a guard rule: a function that returns nothing, `{ decision: "deny", reason }` or `{ decision: "ask", question }`. It can only tighten. The kernel combines all rules (any `deny` wins) and shows the question when one asks.

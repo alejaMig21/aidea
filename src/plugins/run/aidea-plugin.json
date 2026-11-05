@@ -9,6 +9,7 @@
   "provides": ["run.propose", "run.output"],
   "ui": "ui.js",
   "capabilities": ["processes", "files", "network"],
+  "actions": ["runs-program", "writes-project", "writes-outside", "uses-network"],
   "teach": {
     "view": "state",
     "module": "teach.mjs",

@@ -27,6 +27,9 @@ const USES: Record<string, RegExp[]> = {
   window: [/\bdocument\.(?:body|documentElement|head)\b/, /\bwindow\.(?:parent|top|opener)\b/, /\bdocument\.write\b/],
   secrets: [/\b(?:safeStorage|keytar)\b/],
 };
+// A write of a file, whatever the folder: it needs one of the two write classes (plugin-policies 01). Whether it is inside a Project is known only at run time.
+const WRITES = /\b(?:writeFile|writeFileSync|appendFile|appendFileSync|createWriteStream|mkdir|mkdirSync|rm|rmSync|rmdir|rmdirSync|unlink|unlinkSync|rename|renameSync|copyFile|copyFileSync|truncate|truncateSync)\s*\(/;
+const CLASS_OF: Record<string, string> = { network: "uses-network", processes: "runs-program", secrets: "reads-secrets" };
 
 function isBinary(file: string, head: Buffer) {
   if (BINARY_EXTENSIONS.has(extname(file).toLowerCase())) return true;
@@ -42,6 +45,7 @@ export function scanPlugin(dir: string): Report {
   if ("problems" in read) add({ id: "invalid-manifest", severity: "block", message: read.problems.join("; "), file: "aidea-plugin.json" });
   const declared = new Set(manifest?.capabilities ?? []);
   const used = new Map<string, string>(); // capability -> the first file that uses it
+  let writes: string | undefined; // the first file that writes a file
   let root = dir;
   try { root = realpathSync(dir); } catch { /* a missing folder has nothing to walk */ }
 
@@ -84,12 +88,27 @@ export function scanPlugin(dir: string): Report {
     if (names >= 5 || hex > 40 || decodeAndRun) add({ id: "obfuscated", severity: "block", message: `${rel} looks obfuscated (${decodeAndRun ? "it decodes text and runs it" : "names and escapes made to be unreadable"})`, file: rel });
     else if (/\beval\s*\(|\bnew\s+Function\s*\(/.test(text)) add({ id: "dynamic-code", severity: "warn", message: `${rel} builds code at run time (eval or Function)`, file: rel });
     if (text.split("\n").some((line) => line.length > 5000)) add({ id: "long-lines", severity: "warn", message: `${rel} has very long lines (minified or bundled code is hard to read)`, file: rel });
+    if (!writes && WRITES.test(text)) writes = rel;
     for (const [capability, patterns] of Object.entries(USES)) if (!used.has(capability) && patterns.some((p) => p.test(text))) used.set(capability, rel);
     if (rel === manifest?.ui && (/#[0-9a-fA-F]{3,8}\b/.test(text) || /\brgba?\(/.test(text) || /\b\d+(?:\.\d+)?px\b/.test(text))) add({ id: "literal-style", severity: "warn", message: `${rel} uses literal colours or sizes; use the style tokens of the API`, file: rel });
   };
 
   walk(dir);
   if (manifest) {
+    // The classes of action (plugin-policies 01): a manifest that declares them is compared with what the code does; one that declares none is judged by its capabilities, as before.
+    if (manifest.actions) {
+      const declaredActions = new Set(manifest.actions);
+      const usedClasses = new Map<string, string>([...used].filter(([c]) => CLASS_OF[c]).map(([c, file]) => [CLASS_OF[c], file]));
+      if (writes) usedClasses.set("writes", writes);
+      for (const [cls, file] of usedClasses) {
+        const covered = cls === "writes" ? declaredActions.has("writes-project") || declaredActions.has("writes-outside") : declaredActions.has(cls);
+        if (!covered) add({ id: "undeclared-action", severity: "block", message: `uses ${cls === "writes" ? "a write to files (writes-project or writes-outside)" : cls} without declaring it in "actions"`, file });
+      }
+      for (const cls of declaredActions) {
+        const needed = cls === "writes-project" || cls === "writes-outside" ? !!writes : usedClasses.has(cls);
+        if (!needed) add({ id: "unused-action", severity: "warn", message: `declares "${cls}" but its code does not seem to use it`, file: "aidea-plugin.json" });
+      }
+    }
     // The lesson (plugin-lessons 03): what it names must still exist; no lesson is only a warning.
     for (const p of surfaceProblems(dir, manifest)) add({ id: p.id, severity: "warn", message: p.message, file: "aidea-plugin.json" }); // the teaching surface (plugin-teaching 04)
     if (manifest.lesson) for (const message of lessonFindings(dir, manifest)) add({ id: "lesson-stale", severity: "warn", message, file: manifest.lesson });

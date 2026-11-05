@@ -1,0 +1,1 @@
+{"id":"fixture.unused","version":"1.0.0","title":"Fixture fixture.unused","description":"A fixture.","publisher":"tests","api":"0.1","main":"main.js","capabilities":[],"actions":["reads-secrets"]}

@@ -17,6 +17,7 @@ import { TUTOR_TOOLS } from "../tutor.ts";
 import { runTeachTool } from "../teach.ts";
 import { readManifest } from "../plugins/manifest.ts";
 import { surfaceProblems } from "../plugins/surface.ts";
+import { classOfTool } from "../plugins/actions.ts";
 import { runPluginTeachTool } from "../plugins/teach.ts";
 import { PLUGIN_READ_TOOLS, READ_TOOLS, runReadTool } from "../tutor-reads.ts";
 import type { Core, Handler } from "../types.ts";
@@ -201,7 +202,8 @@ const handler: Handler = async (req, res, core) => {
       const gaveUp = new AbortController();
       res.on("close", () => gaveUp.abort());
       // The guard rules of the plugins come first: a deny refuses the action with no card, an ask puts the question on the card. A rule can never allow.
-      const verdict = core.plugins.guardCheck({ kind: "tool", tool: args.tool_name, input: args.input, project: core.permissions.conversationOf(token)?.project });
+      const projectId = core.permissions.conversationOf(token)?.project;
+      const verdict = core.plugins.guardCheck({ kind: "tool", tool: args.tool_name, input: args.input, project: projectId, ...classOfTool(args.tool_name, args.input, projectId ? core.projects.get(projectId)?.path : undefined), by: { role: "builder" } });
       const decision = verdict.decision === "deny"
         ? { behavior: "deny" as const, message: `A plugin rule refused this action: ${verdict.reason}` }
         : (await core.permissions.ask(token, args.tool_name, args.input, gaveUp.signal, verdict.decision === "ask" ? verdict.question : undefined)) ?? { behavior: "deny" as const, message: "The conversation is not running" };

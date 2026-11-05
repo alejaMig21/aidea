@@ -1,0 +1,1 @@
+{"id":"fixture.undeclared","version":"1.0.0","title":"Fixture fixture.undeclared","description":"A fixture.","publisher":"tests","api":"0.1","main":"main.js","capabilities":["processes","network"],"actions":["uses-network"]}

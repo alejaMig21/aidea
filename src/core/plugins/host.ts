@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { registerLanguage } from "../adapters.ts";
 import type { LanguageAdapter } from "../adapters.ts";
+import { isActionClass } from "./actions.ts";
+import type { ActionClass } from "./actions.ts";
 import { readLesson } from "./lesson.ts";
 import { lessonFindings } from "./lesson-refs.ts";
 import { surfaceProblems } from "./surface.ts";
@@ -24,8 +26,8 @@ type Entry = { id: string; folder: string; builtin: boolean; manifest?: Manifest
 // What an event listener or a guard rule may answer. Only "deny" and "ask" count; anything else, an "allow" included, is ignored (a plugin can only tighten).
 export type Verdict = { decision: "allow" } | { decision: "deny"; reason: string } | { decision: "ask"; question: string };
 
-export type AgentToolDeclaration = { name: string; description: string; inputSchema: object; readOnly?: boolean; run: (input: any) => unknown };
-export type AgentTool = { plugin: string; name: string; description: string; inputSchema: object; readOnly: boolean };
+export type AgentToolDeclaration = { name: string; description: string; inputSchema: object; readOnly?: boolean; class?: ActionClass; run: (input: any) => unknown };
+export type AgentTool = { plugin: string; name: string; description: string; inputSchema: object; readOnly: boolean; class?: ActionClass };
 export type PluginContext = {
   plugin: { id: string; title: string; version: string };
   services: { provide: (key: string, value: unknown) => void; get: (key: string) => unknown };
@@ -108,9 +110,10 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
             if (typeof tool.description !== "string" || !tool.description.trim() || tool.description.length > 600) throw new Error(`the agent tool "${tool.name}" needs a description of up to 600 characters`);
             if (!tool.inputSchema || typeof tool.inputSchema !== "object") throw new Error(`the agent tool "${tool.name}" needs an "inputSchema"`);
             if (typeof tool.run !== "function") throw new Error(`the agent tool "${tool.name}" needs a "run" function`);
+            if (tool.class !== undefined && !isActionClass(tool.class)) throw new Error(`the "class" of the agent tool "${tool.name}" must be one of the classes of action (docs/plugin-api.md)`);
             const full = `${entry.id.replace(/[^a-z0-9]/g, "_")}_${tool.name}`;
             if (agentTools.has(full)) throw new Error(`the agent tool "${tool.name}" is already offered`);
-            agentTools.set(full, { plugin: entry.id, name: full, description: tool.description, inputSchema: tool.inputSchema, readOnly: tool.readOnly === true, run: tool.run });
+            agentTools.set(full, { plugin: entry.id, name: full, description: tool.description, inputSchema: tool.inputSchema, readOnly: tool.readOnly === true, ...(tool.class && { class: tool.class }), run: tool.run });
             entry.undo.push(() => agentTools.delete(full));
           },
         },
@@ -353,7 +356,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
       const tool = agentTools.get(name);
       if (!tool) return { ok: false, error: `Unknown tool: ${name}` };
       const verdict = combine(rules.map((r) => {
-        try { return { owner: r.owner, answer: r.fn(structuredClone({ kind: "agent-tool", tool: name, plugin: tool.plugin, input })) }; } catch (e) { return { owner: r.owner, answer: { decision: "ask", question: `The rule of ${r.owner} failed (${reason(e)})` } }; }
+        try { return { owner: r.owner, answer: r.fn(structuredClone({ kind: "agent-tool", tool: name, plugin: tool.plugin, by: { role: "plugin", plugin: tool.plugin }, ...(tool.class && { class: tool.class }), input })) }; } catch (e) { return { owner: r.owner, answer: { decision: "ask", question: `The rule of ${r.owner} failed (${reason(e)})` } }; }
       }));
       if (verdict.decision === "deny") return { ok: false, error: `A plugin rule refused this action: ${verdict.reason}` };
       if (verdict.decision === "ask") return { ok: false, error: `A plugin rule needs the person to confirm this action first: ${verdict.question}` };
