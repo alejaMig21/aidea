@@ -2,7 +2,7 @@
 
 **What to build:** Keep the loop that already works, one fact per step: predict, explain starting from the prediction, check with confidence, repair a miss before going on. The steps come from the Plan. When the topic is a plugin, the Tutor reads the plugin's lesson (plugin-lessons 01) and, for a part with a practical task, asks the person to do it and runs the plugin's named check (plugin-teaching 02): the step closes when the check passes. What a plugin returns is untrusted data. This ticket absorbs plugin-teaching 03.
 
-**Blocked by:** tutor-rewrite 03.
+**Blocked by:** None (can start immediately).
 
 **Status:** ready-for-agent
 

@@ -10,6 +10,8 @@
 - [ ] The Tutor still explains the purpose of each layer and how to use aidea, from lessons (a fake Tutor reads them).
 - [ ] Every part that was taught by the old code is taught by a lesson (a list proves it).
 - [ ] No code path knows a kind of class (a test searches for the old kinds; moved here from tutor-rewrite 01).
+- [ ] The decisions per layer leave the Plan (moved from tutor-rewrite 03).
+- [ ] The fixed list of concepts per layer (`LAYER_CONCEPTS` in `measure.ts`) is gone (moved here from tutor-rewrite 02).
 - [ ] Core API tests pass; `npm run verify` is green.
 
 Source: `.scratch/tutor-rewrite/spec.md` and ADR 0010.

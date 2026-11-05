@@ -1,5 +1,5 @@
-// "Teach me through it" on all five diagram layers (ticket 09). The button starts a layer class led by the Tutor (the Probe first, if the
-// layer has not been checked); while the Tutor is unavailable it runs the fixed quick tour instead and says so. The teaching content comes
+// "Teach me through it" on all five diagram layers (ticket 09). The button starts a layer class led by the Tutor (the Tutor measures
+// inside the class when it needs to); while the Tutor is unavailable it runs the fixed quick tour instead and says so. The teaching content comes
 // from the core (GET /layers/help); Business keeps its own dimming tour from 46-business-help.js. The button is that file's opener.
 {
   const style = document.createElement("style");
@@ -73,14 +73,11 @@
   close.onclick = closeTour;
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !tour.hidden && legendPop.hidden) closeTour(); });
 
-  // The button: Probe if the layer was never checked, then the class; the quick tour if the Tutor cannot be reached.
+  // The button: the class; the quick tour if the Tutor cannot be reached.
   async function teach() {
     const layer = authoredShown, project = current;
     if (!project || !window.tutorUi) return quickTour(layer, false);
     closeTour();
-    const stored = await fetch(`/tutor/probes?project=${encodeURIComponent(project)}&layer=${layer}`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-    if (stored && !stored.result && window.probeUi) await window.probeUi.begin(layer);
-    if (project !== current || authoredShown !== layer) return;
     const unavailable = await window.tutorUi.startClass({ payload: { project, layer }, fallback: true });
     if (unavailable && project === current && authoredShown === layer) quickTour(layer, true);
   }

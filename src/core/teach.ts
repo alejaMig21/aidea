@@ -5,7 +5,7 @@
 import { evidenceOf } from "./learner.ts";
 import type { Evidence } from "./learner.ts";
 import { callRole, normalise } from "./learner-pipeline.ts";
-import { heldStrongly } from "./probe.ts";
+import { MAX_MEASURE_QUESTIONS, createMeasureState, heldIdea, heldStrongly, parseBrackets } from "./measure.ts";
 import { runAuthoringTool } from "./tutor-authoring.ts";
 import { itemFor, runPlanTool } from "./plan.ts";
 import { answerForTutor, parsePoint, parseQuestion } from "./tutor.ts";
@@ -37,6 +37,7 @@ export function createLesson() {
   let reviewDue: string | undefined; // the idea of a review question the first step waits for
   let reviewIdea: string | undefined; // the same idea, until the question has been asked
   let reviewRefusals = 0; // begin_step calls refused for the review; after two the review is dropped so a Teacher that never asks it cannot trap the class
+  const measure = createMeasureState(); // the measurement of this session: questions asked, topics asked about, handed over
   const texts: string[] = []; // every explanation, in order: the Teacher's prose for the Learner graph
 
   const stepOf = (id: unknown, call: string): Step | Failure => {
@@ -52,6 +53,7 @@ export function createLesson() {
   return {
     texts,
     elements,
+    measure,
     // true in the "How aidea works" class: no Plan gate, get_plan / set_plan are refused, and so are proposals
     get aboutAidea() {
       return aboutAidea;
@@ -219,6 +221,69 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
     return ok({ ideas: held.map((p) => ({ name: p.name, statement: p.statement })) }); // ideas only, never the person's answers
   }
 
+  if (name === "measure") {
+    const m = lesson.measure;
+    if (m.done) return err("The measurement is finished. Go on with the Plan.");
+    const raw = typeof args.topic === "string" ? args.topic : "";
+    const topic = normalise(raw);
+    if (!raw.trim() || raw.length > 200 || !topic) return err("measure needs `topic`: the short name of the prerequisite this question measures, for example \"container\"");
+    if (m.asked >= MAX_MEASURE_QUESTIONS) return err(`You have already asked ${MAX_MEASURE_QUESTIONS} questions, the most a measurement allows. Call measure_done now with what you found.`);
+    const held = heldIdea(core, topic);
+    if (held) return err(`The Learner graph already holds "${held.name}": the person has shown they understand it. Count it as known, and ask about a different topic (or call measure_done if nothing else is left).`);
+    if (m.topics.has(topic)) return err(`You already asked about "${raw.trim()}". Ask about a different topic, or call measure_done.`);
+    const parsed = parseQuestion(args);
+    if ("error" in parsed) return err(parsed.error);
+    m.asked++;
+    m.topics.add(topic);
+    const q = { ...parsed.question, idea: topic, skippable: true as const, probe: { n: m.asked, of: MAX_MEASURE_QUESTIONS } };
+    const result = await core.permissions.askQuestion(token, q, gaveUp);
+    if (!result) return err("The class is not running");
+    if (!result.heard) return { text: result.text, isError: result.isError };
+    const { heard } = result;
+    try {
+      const base = heard.answer.skip
+        ? ({ classId, questionId: heard.questionId, project, kind: "probe-skip", correct: null, confidence: null, answer: null, thought: heard.answer.thought ?? null, dontKnow: false, time: new Date().toISOString() } satisfies Evidence)
+        : evidenceOf(classId, heard.questionId, project, q, heard.answer);
+      core.learner.recordEvidence({ ...base, phase: "probe", idea: topic });
+    } catch (e) {
+      console.error(e); // a ledger that cannot be written must not stop the class
+    }
+    return ok({
+      ...(JSON.parse(result.text) as object),
+      topic,
+      questionsLeft: MAX_MEASURE_QUESTIONS - m.asked,
+      next: m.asked >= MAX_MEASURE_QUESTIONS ? "That was the last question. Call measure_done now." : "Ask about another topic, or call measure_done if every topic is bracketed.",
+    });
+  }
+
+  if (name === "measure_done") {
+    const m = lesson.measure;
+    if (m.done) return err("You already handed over the measurement: it is recorded once. Go on with the Plan.");
+    const parsed = parseBrackets(args.topics);
+    if ("error" in parsed) return err(parsed.error);
+    core.measures.put({ project, topics: parsed.topics, questions: m.asked, time: new Date().toISOString() });
+    m.done = true;
+    conversation.emit({ type: "measure_done", topics: parsed.topics, questions: m.asked });
+    return ok({ next: "The measurement is recorded. Build the Plan from it with set_plan, explain it to the person in a few sentences and wait for their go-ahead." });
+  }
+
+  if (name === "plan_ahead") {
+    if (lesson.aboutAidea) return err("This class is about aidea itself, so the Project's Plan is not used.");
+    if (!core.plans.get(project)) return err("There is no Plan yet. Set it with set_plan first.");
+    if (lesson.openStep()) return err(`Step "${lesson.openStep()}" is still open. Close it before showing the Plan again.`);
+    if (!nonEmpty(args.summary, 1500)) return err("plan_ahead needs a summary: a few sentences saying what you will teach, in what order and why (at most 1500 characters)");
+    const q: Question = { kind: "choice", prompt: args.summary.trim(), options: ["Go ahead", "Change the Plan first"], correct: 0, allowDontKnow: false, phase: "plan" };
+    const result = await core.permissions.askQuestion(token, q, gaveUp);
+    if (!result) return err("The class is not running");
+    if (!result.heard) return { text: result.text, isError: result.isError };
+    const { answer } = result.heard;
+    if (answer.option === 0) {
+      core.plans.approve(project);
+      return ok({ approved: true, next: "The person said go ahead. Begin the first step with begin_step, giving `item`." });
+    }
+    return ok({ approved: false, change: answer.thought ?? null, next: "The person wants the Plan changed. Revise it with set_plan as they asked (keep what stays), say in a sentence what changed, and ask again with plan_ahead." });
+  }
+
   if (name === "begin_step") {
     const planItem = lesson.aboutAidea ? {} : itemFor(core, project, args.item);
     if ("error" in planItem) return err(planItem.error);
@@ -237,6 +302,8 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
       }
       return err(`The person already understands "${held.name}": they answered correctly about it and the Learner graph holds it. Do not teach it again. Pick a different idea for this step (held_ideas lists what to skip), or build on it in a step about something new.`);
     }
+    const waiting = lesson.aboutAidea ? undefined : core.plans.get(project);
+    if (waiting && !waiting.approved) return err("The person has not said go ahead to the Plan yet. Explain it in a few sentences and ask with plan_ahead; no step begins before that.");
     const r = lesson.begin(args, planItem.item ?? (idea || undefined)); // without a Plan, the idea named is the step's item for its Evidence
     if ("error" in r) return err(r.error);
     conversation.emit({ type: "tutor_step", stepId: r.stepId, title: String(args.title).trim() });

@@ -1,7 +1,7 @@
 // What each of the six diagram layers is, in plain words: one structure per layer, so the Tutor teaches from it and the interface's
 // quick tour reads it (GET /layers/help). Per layer: what it is, the guiding question, an example and the order its elements are told in;
 // per element: { name, hint, what, question, example, narration }. The Business entries repeat 46-business-help.js (a test keeps them equal).
-import { LAYER_CONCEPTS } from "./probe.ts";
+import { LAYER_CONCEPTS } from "./measure.ts";
 
 type Element = { name: string; hint: string; what: string; question: string; example: string; narration: string };
 type LayerHelp = { name: string; what: string; question: string; example: string; order: string[]; elements: Record<string, Element> };

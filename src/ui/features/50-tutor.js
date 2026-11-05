@@ -50,7 +50,7 @@
   topic.setAttribute("aria-label", "Topic of the class (optional)");
   start.before(topic);
   start.after(end);
-  $("tutor-settings").after(log); // below the way to begin; the Probe line (51-probe.js) goes between the two
+  $("tutor-settings").after(log); // below the way to begin
 
   let running = null; // { abort, project } while a class is open
   let counter = 0;
@@ -65,7 +65,7 @@
     help.textContent = open ? "The Tutor asks you questions about your project, one at a time." : "Open a Project to start a class.";
   }
 
-  const PHASE_LABELS = { predict: "Predict", review: "Review of an earlier class" };
+  const PHASE_LABELS = { predict: "Predict", review: "Review of an earlier class", plan: "Your Plan" };
   function collapse(card, summary) {
     if (card.dataset.point) window.dataUi?.clearPoint(); // a prediction that pointed at Data stops pointing once it is answered
     card.className = "tutor-card tutor-done";
@@ -102,14 +102,19 @@
         first ??= radio;
         options.append(el("label", {}, radio, text));
       });
-      const stops = el("fieldset", { className: "tutor-stops" });
-      stops.append(el("legend", { textContent: "How sure are you? (0 is a guess, 100 is certain)" }));
-      for (const s of STOPS) {
-        const radio = el("input", { type: "radio", name: `tutor-confidence-${n}`, value: String(s), checked: s === 50 });
-        stops.append(el("label", {}, radio, String(s)));
+      if (q.phase === "plan") { // the go-ahead to the Plan: nothing to be sure about
+        body = [options];
+        summary = () => `You chose: ${q.options[Number(form.elements[`tutor-option-${n}`].value)]}`;
+      } else {
+        const stops = el("fieldset", { className: "tutor-stops" });
+        stops.append(el("legend", { textContent: "How sure are you? (0 is a guess, 100 is certain)" }));
+        for (const s of STOPS) {
+          const radio = el("input", { type: "radio", name: `tutor-confidence-${n}`, value: String(s), checked: s === 50 });
+          stops.append(el("label", {}, radio, String(s)));
+        }
+        body = [options, stops];
+        summary = () => `You answered: ${q.options[Number(form.elements[`tutor-option-${n}`].value)]} (confidence ${form.elements[`tutor-confidence-${n}`].value})`;
       }
-      body = [options, stops];
-      summary = () => `You answered: ${q.options[Number(form.elements[`tutor-option-${n}`].value)]} (confidence ${form.elements[`tutor-confidence-${n}`].value})`;
     } else {
       const text = el("textarea", { id: `tutor-text-${n}`, rows: 3, required: true, placeholder: "Your answer" });
       text.setAttribute("aria-label", "Your answer");
@@ -150,7 +155,7 @@
     form.onsubmit = (e) => {
       e.preventDefault();
       if (q.kind === "choice") {
-        submit({ option: Number(form.elements[`tutor-option-${n}`].value), confidence: Number(form.elements[`tutor-confidence-${n}`].value) }, summary());
+        submit({ option: Number(form.elements[`tutor-option-${n}`].value), ...(q.phase === "plan" ? {} : { confidence: Number(form.elements[`tutor-confidence-${n}`].value) }) }, summary());
       } else submit({ text: form.querySelector("textarea").value }, summary());
     };
     if (dontKnow) dontKnow.onclick = () => {
@@ -196,9 +201,12 @@
     else if (event.type === "tutor_question_expired") expire(event.id);
     else if (event.type === "error") { const p = el("p", { className: "tutor-error", textContent: event.message }); p.setAttribute("role", "alert"); log.append(p); }
     else if (event.type === "learner") { learnerLine(event); document.dispatchEvent(new CustomEvent("plan-changed")); }
-    else if (event.type === "tutor_plan") document.dispatchEvent(new CustomEvent("plan-changed"));
-    else if (event.type === "probe_done") line("tutor-meta", `Known: ${event.counts.known}, partly: ${event.counts.partial}, new to you: ${event.counts.unknown}`);
-    else if (event.type === "probe_skipped") line("tutor-meta", "Probe skipped. You can start a class anyway.");
+    else if (event.type === "tutor_plan") {
+      document.dispatchEvent(new CustomEvent("plan-changed"));
+      const c = event.changes; // a revised Plan says what changed (tutor-rewrite 03)
+      if (c && (c.removed.length || (c.kept.length && c.added.length))) line("tutor-meta", `Plan changed. Added: ${c.added.join(", ") || "nothing"}. Removed: ${c.removed.join(", ") || "nothing"}.`);
+    }
+    else if (event.type === "measure_done") line("tutor-meta", `Measured ${event.topics.length} topic${event.topics.length === 1 ? "" : "s"}: ${event.topics.map((t) => t.name).join(", ")}`);
   }
 
   // A Proposal the Tutor made from the person's answer: the Canvas shows it pending on its layer; here a line says so and offers the way there.
@@ -243,7 +251,7 @@
     start.textContent = opts.ended ? "Start a class" : "Start another class";
   }
 
-  // `opts` lets another feature (the Probe, 51-probe.js) use the same column: its endpoint and body, the label of the stop button, what stop does, and the closing line.
+  // `opts` lets another feature use the same column: its endpoint and body, the label of the stop button, what stop does, and the closing line.
   async function startClass(opts = {}) {
     if (!current || running) return;
     const project = current;

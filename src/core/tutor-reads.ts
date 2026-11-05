@@ -45,7 +45,7 @@ export const READ_TOOLS = [
   },
 ];
 
-// Only the Tutor gets this one (the Prober and the Teacher have no business with plugins).
+// Only the Tutor gets this one (the Teacher has no business with plugins).
 export const PLUGIN_READ_TOOLS: { name: string; description: string; inputSchema: object }[] = [
   {
     name: "read_quarantined_plugin",

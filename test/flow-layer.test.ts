@@ -27,17 +27,13 @@ test("a Tutor class can be opened on the Flow layer and not on Algorithms", asyn
   assert.equal((await t.post("/tutor/classes", { project: fixture("flow"), layer: "algorithms" })).status, 400);
 });
 
-test("a Probe result and a Plan stored under the old layer id are read back as Flow", async () => {
+test("a Plan stored under the old layer id is read back as Flow", async () => {
   const project = fixture("flow");
   const dir = mkdtempSync(join(tmpdir(), "aidea-flow-"));
-  writeFileSync(join(dir, "probes.jsonl"), JSON.stringify({ project, layer: "algorithms", status: "done", topics: [], questions: 2, time: "2026-01-01T00:00:00.000Z" }) + "\n");
   writeFileSync(join(dir, "plans.jsonl"), JSON.stringify({ project, concepts: [{ name: "loops", dependsOn: [], layer: "algorithms" }], decisions: [{ layer: "algorithms", question: "When does it stop?" }] }) + "\n");
   const core = await startCore({ port: 0, learnerDir: dir });
   try {
     await fetch(core.url + "/projects", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ path: project }) });
-    const probe = (await (await fetch(`${core.url}/tutor/probes?project=${encodeURIComponent(project)}&layer=flow`)).json()) as { result: { layer: string; questions: number } | null };
-    assert.equal(probe.result?.layer, "flow");
-    assert.equal(probe.result?.questions, 2);
     const plan = JSON.stringify(await (await fetch(`${core.url}/tutor/plan?project=${encodeURIComponent(project)}`)).json());
     assert.match(plan, /"layer":"flow"/);
     assert.doesNotMatch(plan, /algorithms/);

@@ -1,0 +1,4 @@
+
+{"project":"D:\\Projects\\aidea\\.scratch\\tutor-rewrite\\live-scripts\\serve-fake-data\\shop","concepts":[{"id":"c1","name":"Shop class","dependsOn":[]},{"id":"c2","name":"total method","dependsOn":["Shop class"]}],"decisions":[],"time":"2026-11-05T10:38:30.206Z"}
+
+{"project":"D:\\Projects\\aidea\\.scratch\\tutor-rewrite\\live-scripts\\serve-fake-data\\shop","concepts":[{"id":"c1","name":"Shop class","dependsOn":[]},{"id":"c2","name":"total method","dependsOn":["Shop class"]}],"decisions":[],"time":"2026-11-05T10:38:30.206Z","approved":true}

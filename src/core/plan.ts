@@ -5,19 +5,27 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { normalise } from "./learner-pipeline.ts";
-import { LAYER_CONCEPTS, currentLayer, isLayer } from "./probe.ts";
+import { LAYER_CONCEPTS, currentLayer, isLayer } from "./measure.ts";
 import type { Core } from "./types.ts";
 
-export type PlanConcept = { name: string; dependsOn: string[]; layer?: string };
+export type PlanConcept = { id: string; name: string; dependsOn: string[]; layer?: string };
 export type PlanDecision = { layer: string; question: string };
-export type Plan = { project: string; concepts: PlanConcept[]; decisions: PlanDecision[]; time: string };
+// `approved`: the person said "Go ahead" to exactly this Plan (tutor-rewrite 03). A different Plan starts without it.
+export type Plan = { project: string; concepts: PlanConcept[]; decisions: PlanDecision[]; time: string; approved?: true };
+export type PlanChanges = { added: string[]; removed: string[]; kept: string[] };
 
 const str = { type: "string" };
 export const PLAN_TOOLS = [
   {
     name: "get_plan",
-    description: "Returns the Plan stored for this Project (null if none) and the stored Probe results per layer, so you can build or revise the Plan from what the person already knows.",
+    description: "Returns the Plan stored for this Project (null if none) and the stored measurement (per topic: floor, ceiling, note; null if you have not measured yet), so you can build or revise the Plan from what the person already knows.",
     inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "plan_ahead",
+    description:
+      "Shows the person the Plan with your explanation (a few sentences: what you will teach, in what order, and why) and waits for their answer: \"Go ahead\" or \"Change the Plan first\" (with their words). Call it after set_plan. No step begins before they say go ahead; if they want a change, revise the Plan with set_plan, say what changed, and ask again.",
+    inputSchema: { type: "object", properties: { summary: str }, required: ["summary"] },
   },
   {
     name: "set_plan",
@@ -45,10 +53,10 @@ const onlyKeys = (o: Record<string, unknown>, keys: string[], at: string) => {
 };
 
 // Checks what the Teacher sent. The error text is written for the model: it says what to change.
-export function parsePlan(args: Record<string, unknown>): { concepts: PlanConcept[]; decisions: PlanDecision[] } | { error: string } {
+export function parsePlan(args: Record<string, unknown>): { concepts: Omit<PlanConcept, "id">[]; decisions: PlanDecision[] } | { error: string } {
   const { concepts: raw, decisions: rawDecisions = [] } = args;
   if (!Array.isArray(raw) || raw.length < 1 || raw.length > 30) return { error: "set_plan needs concepts: a list of 1 to 30 entries {name, dependsOn, layer?}" };
-  const concepts: PlanConcept[] = [];
+  const concepts: Omit<PlanConcept, "id">[] = [];
   const seen = new Set<string>();
   for (const [i, c] of raw.entries()) {
     const at = `concepts[${i}]`;
@@ -84,11 +92,11 @@ export function parsePlan(args: Record<string, unknown>): { concepts: PlanConcep
 }
 
 // The first dependency cycle, as a closed path of names, or null.
-function findCycle(concepts: PlanConcept[]): string[] | null {
+function findCycle(concepts: { name: string; dependsOn: string[] }[]): string[] | null {
   const byKey = new Map(concepts.map((c) => [normalise(c.name), c]));
   const state = new Map<string, 1 | 2>(); // 1 on the current path, 2 finished
   const path: string[] = [];
-  const visit = (c: PlanConcept): string[] | null => {
+  const visit = (c: { name: string; dependsOn: string[] }): string[] | null => {
     const k = normalise(c.name);
     if (state.get(k) === 2) return null;
     if (state.get(k) === 1) return [...path.slice(path.findIndex((n) => normalise(n) === k)), c.name];
@@ -119,6 +127,7 @@ export function createPlans(dir?: string) {
         const p = JSON.parse(line);
         if (p?.project && Array.isArray(p.concepts)) {
           for (const x of [...p.concepts, ...(p.decisions ?? [])]) if (x.layer) x.layer = currentLayer(x.layer);
+          p.concepts.forEach((c: PlanConcept, i: number) => { c.id ??= `c${i + 1}`; }); // a Plan stored before ids existed
           plans.set(p.project, p);
         }
       } catch {
@@ -128,6 +137,11 @@ export function createPlans(dir?: string) {
   }
   return {
     get: (project: string) => plans.get(project),
+    // The person said "Go ahead" to the Plan as it is.
+    approve(project: string) {
+      const p = plans.get(project);
+      if (p && !p.approved) this.put({ ...p, approved: true });
+    },
     put(p: Plan) {
       if (file) {
         mkdirSync(dir!, { recursive: true });
@@ -138,6 +152,22 @@ export function createPlans(dir?: string) {
   };
 }
 export type Plans = ReturnType<typeof createPlans>;
+
+// The concepts of a revised Plan keep the id of the item of the same name; a new item gets a fresh one.
+function withIds(concepts: Omit<PlanConcept, "id">[], previous?: Plan): PlanConcept[] {
+  const old = new Map((previous?.concepts ?? []).map((c) => [normalise(c.name), c.id]));
+  let next = Math.max(0, ...(previous?.concepts ?? []).map((c) => Number(/^c(\d+)$/.exec(c.id)?.[1] ?? 0))) + 1;
+  return concepts.map((c) => ({ id: old.get(normalise(c.name)) ?? `c${next++}`, ...c }));
+}
+const shapeOf = (p: Plan) => JSON.stringify(p.concepts.map((c) => [normalise(c.name), c.dependsOn.map(normalise).sort()]).sort());
+const changesOf = (previous: Plan | undefined, now: PlanConcept[]): PlanChanges => {
+  const before = new Set((previous?.concepts ?? []).map((c) => normalise(c.name))), after = new Set(now.map((c) => normalise(c.name)));
+  return {
+    added: now.filter((c) => !before.has(normalise(c.name))).map((c) => c.name),
+    removed: (previous?.concepts ?? []).filter((c) => !after.has(normalise(c.name))).map((c) => c.name),
+    kept: now.filter((c) => before.has(normalise(c.name))).map((c) => c.name),
+  };
+};
 
 // The names of the Plan's concepts the person has covered: the idea is on the Learner graph, or a check about it was answered correctly.
 export function coveredOf(core: Core, plan: Plan): string[] {
@@ -161,17 +191,19 @@ type Reply = { text: string; isError?: true };
 // Runs get_plan and set_plan for a class. Null when the tool is not one of them.
 export function runPlanTool(name: string, args: Record<string, unknown>, core: Core, project: string, emit: (e: object) => void): Reply | null {
   if (name === "get_plan") {
-    const probes = Object.keys(LAYER_CONCEPTS).flatMap((l) => {
-      const r = core.probes.get(project, l);
-      return r ? [{ layer: l, status: r.status, topics: r.topics }] : [];
-    });
-    return { text: JSON.stringify({ plan: core.plans.get(project) ?? null, probes }) };
+    return { text: JSON.stringify({ plan: core.plans.get(project) ?? null, measure: core.measures.get(project) ?? null }) };
   }
   if (name !== "set_plan") return null;
   const parsed = parsePlan(args);
   if ("error" in parsed) return { text: parsed.error, isError: true };
-  const plan: Plan = { project, ...parsed, time: new Date().toISOString() };
+  const previous = core.plans.get(project);
+  const plan: Plan = { project, concepts: withIds(parsed.concepts, previous), decisions: parsed.decisions, time: new Date().toISOString() };
+  if (previous?.approved && shapeOf(previous) === shapeOf(plan)) plan.approved = true; // the same Plan sent again keeps the go-ahead
+  const changes = changesOf(previous, plan.concepts);
   core.plans.put(plan);
-  emit({ type: "tutor_plan", plan, covered: coveredOf(core, plan) });
-  return { text: JSON.stringify({ ok: true, next: "The Plan is set and shown to the person. Begin a step with begin_step, giving `item`: one of the Plan's concepts." }) };
+  emit({ type: "tutor_plan", plan, covered: coveredOf(core, plan), changes });
+  const next = plan.approved
+    ? "The Plan is as the person approved it. Begin a step with begin_step, giving `item`: one of the Plan's concepts."
+    : "The Plan is set and shown to the person. Explain it in a few sentences and ask with plan_ahead: no step begins before they say go ahead.";
+  return { text: JSON.stringify({ ok: true, plan, changes, next }) };
 }

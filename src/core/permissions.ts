@@ -12,7 +12,7 @@ export type Decision = { behavior: "allow" } | { behavior: "deny"; message: stri
 const MAX_PENDING = 20; // requests one conversation may have waiting at once
 
 // A "tutor" conversation is a class: the same token and secret mechanism, but its tools are the Tutor's and its requests are questions.
-type Role = "builder" | "tutor" | "prober";
+type Role = "builder" | "tutor";
 type Conversation = { project: string; secret: string; emit: (event: object) => void; pending: Set<string>; role: Role; classId?: string };
 // `onClose` is what a waiting request resolves to when its conversation ends. A question carries its committed answer.
 type Request = { conversation: Conversation; resolve: (value: any) => void; onClose: unknown; question?: Question };

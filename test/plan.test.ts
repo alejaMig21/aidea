@@ -31,7 +31,7 @@ async function newCore(dir = mkdtempSync(join(tmpdir(), "aidea-plan-"))) {
   await fetch(core.url + "/projects", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ path: project }) });
   const post = (path: string, body: unknown = {}) => fetch(core.url + path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   const get = async (path: string) => (await fetch(core.url + path)).json() as Promise<any>;
-  const runClass = async (reply: (q: any) => Record<string, unknown> = () => ({ text: "a guess" })) => {
+  const runClass = async (reply: (q: any) => Record<string, unknown> = (q) => (q.phase === "plan" ? { option: 0 } : { text: "a guess" })) => {
     const res = await post("/tutor/classes", { project });
     const out: any[] = [];
     let buf = "";
@@ -113,6 +113,7 @@ test("with a plan, a step about an item outside it is rejected, so its questions
   const seen: Record<string, any> = {};
   teacher = async function* (call) {
     await call("set_plan", PLAN);
+    await call("plan_ahead", { summary: "The queue first." });
     seen.outside = await call("begin_step", { stepId: "s1", title: "Sharding", item: "Sharding" });
     seen.noItem = await call("begin_step", { stepId: "s1", title: "Anything" });
     seen.inside = await call("begin_step", { stepId: "s1", title: "What a queue is for", item: "queue" }); // matched ignoring case
@@ -125,7 +126,7 @@ test("with a plan, a step about an item outside it is rejected, so its questions
   assert.equal(seen.noItem.isError, true);
   assert.match(text(seen.noItem), /item/);
   assert.equal(seen.inside.isError, undefined);
-  assert.equal(events.filter((e) => e.type === "tutor_question").length, 1);
+  assert.equal(events.filter((e) => e.type === "tutor_question" && e.phase !== "plan").length, 1, "only the prediction reached the person, besides the go-ahead");
 });
 
 test("without a plan, steps need no item (a plan is never a gate to the first class)", async () => {
@@ -157,6 +158,7 @@ test("what is covered is derived from the Evidence and the Learner graph, never 
   const t = await newCore();
   teacher = async function* (call) {
     await call("set_plan", PLAN);
+    await call("plan_ahead", { summary: "The queue first." });
     await call("begin_step", { stepId: "s1", title: "Queue", item: "Queue" });
     await call("predict", { stepId: "s1", prompt: "What is a queue for?" });
     await call("explain", { stepId: "s1", text: "A queue holds work." });
@@ -166,7 +168,7 @@ test("what is covered is derived from the Evidence and the Learner graph, never 
     yield { type: "text", text: "done" };
   };
   let n = 0;
-  await t.runClass((q) => (q.kind === "text" ? { text: "to hold work" } : { option: n++ === 0 ? 0 : 1, confidence: 50 }));
+  await t.runClass((q) => (q.phase === "plan" ? { option: 0 } : q.kind === "text" ? { text: "to hold work" } : { option: n++ === 0 ? 0 : 1, confidence: 50 }));
   assert.deepEqual((await t.plan()).covered, ["Queue"]);
   assert.doesNotMatch(readFileSync(join(t.dir, "plans.jsonl"), "utf8"), /covered/);
 });
@@ -210,6 +212,7 @@ test("the Plan cannot change while a step is open, so an open step never asks ab
   const seen: Record<string, any> = {};
   teacher = async function* (call) {
     await call("set_plan", PLAN);
+    await call("plan_ahead", { summary: "The queue first." });
     await call("begin_step", { stepId: "s1", title: "Queue", item: "Queue" });
     seen.whileOpen = await call("set_plan", { concepts: [{ name: "Other", dependsOn: [] }] });
     yield { type: "text", text: "done" };

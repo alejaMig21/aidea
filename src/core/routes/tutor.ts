@@ -16,7 +16,7 @@ import { guideClassMessage } from "../guide.ts";
 import { driftClassMessage, driftOf } from "../drift.ts";
 import { limitOf, selectionMessage, sourceProblem, validSelection } from "../select.ts";
 import { pluginClassMessage } from "../tutor-reads.ts";
-import { LAYER_CONCEPTS, isLayer } from "../probe.ts";
+import { LAYER_CONCEPTS, isLayer } from "../measure.ts";
 
 const MAX_MESSAGE_CHARS = 20_000;
 const MAX_TOPIC_CHARS = 500;

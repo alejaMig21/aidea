@@ -17,7 +17,6 @@ import { TUTOR_TOOLS } from "../tutor.ts";
 import { runTeachTool } from "../teach.ts";
 import { runPluginTeachTool } from "../plugins/teach.ts";
 import { PLUGIN_READ_TOOLS, READ_TOOLS, runReadTool } from "../tutor-reads.ts";
-import { PROBE_TOOLS, runProbeTool } from "../probe.ts";
 import type { Core, Handler } from "../types.ts";
 
 const pluginGuide = fileURLToPath(new URL("../../../docs/plugin-skill.md", import.meta.url));
@@ -145,20 +144,11 @@ const handler: Handler = async (req, res, core) => {
   } else if (method === "ping") {
     core.send(res, 200, rpcResult(id, {}));
   } else if (method === "tools/list") {
-    const prober = core.permissions.conversationOf(token)?.role === "prober";
-    core.send(res, 200, rpcResult(id, { tools: tutor ? [...TUTOR_TOOLS, ...READ_TOOLS, ...PLUGIN_READ_TOOLS, ...pluginTools(core, true)] : prober ? [...PROBE_TOOLS, ...READ_TOOLS] : [...TOOLS, ...pluginTools(core, false)] }));
+    core.send(res, 200, rpcResult(id, { tools: tutor ? [...TUTOR_TOOLS, ...READ_TOOLS, ...PLUGIN_READ_TOOLS, ...pluginTools(core, true)] : [...TOOLS, ...pluginTools(core, false)] }));
   } else if (method === "tools/call") {
     const args = isObject(params.arguments) ? params.arguments : {};
     const name = params.name;
 
-    if (core.permissions.conversationOf(token)?.role === "prober") {
-      // A Probe has its own tool set; its question is withdrawn if Claude Code drops this request before it is answered.
-      const gaveUp = new AbortController();
-      res.on("close", () => gaveUp.abort());
-      const result = await runProbeTool(String(name), args, { core, token, gaveUp: gaveUp.signal });
-      core.send(res, 200, result ? toolText(id, result.text, result.isError) : rpcError(id, -32602, `Unknown tool: ${String(name)}`));
-      return true;
-    }
     if (tutor) {
       // A class has its own tool set. The question is withdrawn if Claude Code drops this request before it is answered.
       if (typeof name === "string" && core.plugins.agentTools(true).some((t) => t.name === name)) {

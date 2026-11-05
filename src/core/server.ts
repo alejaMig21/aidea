@@ -8,7 +8,7 @@ import { createBroker } from "./permissions.ts";
 import { createRecents } from "./recents.ts";
 import { createPreferences } from "./preferences.ts";
 import { createLearner } from "./learner-pipeline.ts";
-import { createProbes } from "./probe.ts";
+import { createMeasures } from "./measure.ts";
 import { createPlans } from "./plan.ts";
 import { createPluginHost } from "./plugins/host.ts";
 import { createQuarantine } from "./plugins/quarantine.ts";
@@ -18,7 +18,7 @@ import { createManager } from "./plugins/manager.ts";
 import { createPluginState } from "./plugins/state.ts";
 
 const MAX_BODY_BYTES = 64 * 1024;
-const ROLES = ["builder", "tutor", "prober", "extractor", "auditor", "grader", "definer"];
+const ROLES = ["builder", "tutor", "extractor", "auditor", "grader", "definer"];
 const routesDir = fileURLToPath(new URL("./routes/", import.meta.url));
 const shippedPlugins = fileURLToPath(new URL("../plugins/", import.meta.url));
 
@@ -69,7 +69,7 @@ export async function startCore({ port, adapter: defaultAdapter = createClaudeAd
     recordings: new Map<string, unknown>(),
     cacheDir,
     lessons: new Map(),
-    probes: createProbes(learnerDir),
+    measures: createMeasures(learnerDir),
     plans: createPlans(learnerDir),
     permissions: createBroker(),
     plugins: pluginHost,

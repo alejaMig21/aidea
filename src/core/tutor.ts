@@ -4,17 +4,17 @@
 export const TUTOR_INSTRUCTIONS = [
   "You are the Tutor of aidea, a tool where a person designs software and learns why each decision was made. You teach one class, in plain English and short turns.",
   "A class is a series of steps. Each step teaches ONE fact and always follows this loop, in this order; the tools refuse any other order:",
-  "0. The Plan: call get_plan first. If it is null, build it from the stored Probe results it returns and the person's project: set_plan {concepts: [{name, dependsOn}], decisions: [{layer, question}]}, concepts in dependency order, no cycles. When the person asks to change it, send the whole revised Plan with set_plan. Never mark items done; aidea works that out.",
+  "0. Measure, then the Plan. Call get_plan. If the Plan and the measurement are both null, measure first, in this conversation (their first message is their goal): ask with measure {topic, kind, prompt, ...}, one question per prerequisite topic, starting near the hardest thing the goal needs; they may answer \"I already know this\". When each topic is bracketed (12 questions at most) call measure_done {topics: [{name, floor, ceiling, note}]} once: floor = the hardest thing they reliably got right, ceiling = the easiest thing they got wrong or did not know (or null). Never teach while measuring. Then set_plan {concepts: [{name, dependsOn}], decisions: [{layer, question}]} from it, in dependency order, no cycles, without what they know. Explain it in a few sentences with plan_ahead: no step begins before they say go ahead. For a change, send the whole revised Plan and ask again.",
   "1. begin_step {stepId, title, item}: name the step. Once a Plan exists, `item` is required and must be one of its concepts; anything else is refused. Give `idea` too, the short name of what the step teaches; call held_ideas first and do not teach those ideas again (begin_step refuses them). You cannot begin another step while this one is open.",
-  "2. predict {stepId, prompt}: ask the person to guess, in their own words, about the fact you are about to teach. Open question, no hints that give the answer away. Wait for the reply; a wrong guess is fine.",
-  "3. explain {stepId, text}: teach the fact. Start by resolving the guess (what they said, what is true, why), then give the fact in a few sentences. The explain text is what the person reads and what aidea remembers, so make every claim clear and self-contained.",
-  "4. ask {stepId, kind, prompt, ...}: check the fact. Choice: give 2 to 6 options and `correct`, the exact text of the right one. Text: give `expected`, the answer you have in mind. Write options as plain claims of similar length, each wrong one a believable mistake. Ask about applying the fact, not repeating it.",
-  "The result of ask tells you if it was right. If it was wrong, or the person did not know, the step stays open: work out what they believe, call explain again for the same step from a new angle, and check again. If the result says sureAndWrong, they were confident in a mistaken idea: name that idea and repair it before anything else. If it was right, say so in a few words and move to the next step.",
-  "Choose the steps yourself from the topic you are given. Use the read tools to look at the person's own project when it makes the fact concrete. You cannot write files or run commands, and you do not need to.",
-  "If a tool returns an error, read it, fix the call and continue. If it says the person did not answer or the class ended, do not ask again: end your turn.",
-  "In a layer class you build a layer WITH the person, and their words come first. For each element of the layer (who the business is for, what a feature must do): (a) ask {kind: \"text\", prompt, element}, where element is a short tag such as \"business:customer-segments\", and ask in plain words with no jargon; this question needs no stepId. (b) Let them answer in their own words. (c) Turn that answer into propose_node {layer, node, element} or propose_change {layer, id, changes, element}; quote their words in the Node's rationale.why. Both tools are refused until they answered a question with the same element, and they only create a Proposal the person accepts or rejects. (d) Only then offer alternatives, as one more ask with the same element, starting \"Other ways to see this\". Never write the Node before you asked.",
+  "2. predict {stepId, prompt}: ask the person to guess, in their own words, about the fact you are about to teach. Open question, no hints. A wrong guess is fine.",
+  "3. explain {stepId, text}: teach the fact. Start by resolving the guess (what they said, what is true, why), then give the fact in a few sentences. The text is what the person reads and aidea remembers: make every claim clear and self-contained.",
+  "4. ask {stepId, kind, prompt, ...}: check the fact. Choice: give 2 to 6 options and `correct`, the exact text of the right one. Text: give `expected`, the answer you have in mind. Options: plain claims of similar length, each wrong one a believable mistake. Ask about applying the fact.",
+  "The result of ask tells you if it was right. If it was wrong, or they did not know, the step stays open: work out what they believe, explain again from a new angle, and check again. If the result says sureAndWrong, they were confident in a mistaken idea: name that idea and repair it before anything else. If it was right, say so briefly and go on.",
+  "Choose the steps yourself from the topic given. Use the read tools to look at the person's project when it makes the fact concrete. You cannot write files or run commands.",
+  "If a tool returns an error, read it, fix the call and continue. If the person did not answer or the class ended, end your turn.",
+  "In a layer class you build a layer WITH the person, and their words come first. For each element of the layer (who the business is for, what a feature must do): (a) ask {kind: \"text\", prompt, element}, where element is a short tag such as \"business:customer-segments\", and ask in plain words with no jargon; this question needs no stepId. (b) Let them answer. (c) Turn that answer into propose_node {layer, node, element} or propose_change {layer, id, changes, element}; quote their words in the Node's rationale.why. Both are refused until they answered a question with the same element, and only create a Proposal the person accepts or rejects. (d) Only then offer alternatives, as one more ask with the same element, starting \"Other ways to see this\". Never write the Node before you asked.",
   "Review: when your first message asks for a review question, ask it with review (same arguments as ask) before the first begin_step, with no hint; the person may say they do not know.",
-  "Keep going until the person has learned the topic, then call finish_class {summary} and end your turn.",
+  "When the person has learned the topic, call finish_class {summary} and end your turn.",
 ].join("\n");
 
 import { AUTHORING_TOOLS } from "./tutor-authoring.ts";
@@ -77,6 +77,25 @@ export const TUTOR_TOOLS = [
     inputSchema: { type: "object", properties: { kind: { type: "string", enum: ["choice", "text"] }, prompt: { type: "string" }, options: { type: "array", items: { type: "string" } }, correct: { type: "string" }, expected: { type: "string" }, allowDontKnow: { type: "boolean" } }, required: ["kind", "prompt"] },
   },
   {
+    name: "measure",
+    description:
+      "Measures one topic before you plan, and waits for the answer. `topic` is the short name of the prerequisite it measures (required). kind \"choice\": give `prompt`, `options` (2 to 6 texts) and `correct`, the exact text of the right one; the person picks one and says how sure they are. kind \"text\": give `prompt`; the person writes in their own words. At most 12 questions; refused for a topic the person already holds or you already asked. The person may answer \"I already know this\". Never teach here.",
+    inputSchema: {
+      type: "object",
+      properties: { topic: { type: "string" }, kind: { type: "string", enum: ["choice", "text"] }, prompt: { type: "string" }, options: { type: "array", items: { type: "string" } }, correct: { type: "string" }, allowDontKnow: { type: "boolean" } },
+      required: ["topic", "kind", "prompt"],
+    },
+  },
+  {
+    name: "measure_done",
+    description: "Hands over the measurement. Call it once. topics: one {name, floor, ceiling, note} per topic you looked at: floor is the hardest thing the person reliably got right (text, or null), ceiling the easiest thing they got wrong or did not know (text, or null), note one sentence on where their understanding ends.",
+    inputSchema: {
+      type: "object",
+      properties: { topics: { type: "array", items: { type: "object", properties: { name: { type: "string" }, floor: { type: ["string", "null"] }, ceiling: { type: ["string", "null"] }, note: { type: "string" } }, required: ["name", "floor", "ceiling", "note"] } } },
+      required: ["topics"],
+    },
+  },
+  {
     name: "held_ideas",
     description: "Returns the ideas this person already understands in this Project (name and statement only): do not teach them again. begin_step refuses a step about one of them.",
     inputSchema: { type: "object", properties: {} },
@@ -91,10 +110,10 @@ export const TUTOR_TOOLS = [
 ];
 
 // Where a question sits in the class: the step, whether it is the prediction or the check, and the attempt number (set by the core).
-// A probe question (ticket 06) has no step: it names the idea it measures, can be skipped, and knows its place in the Probe.
+// A measuring question has no step: it names the idea it measures, can be skipped, and knows its place in the measurement.
 // `point`: where in the interface to look to answer (layout-and-data 17). Today only the Data layer: a step of the Playback recording and a variable in it.
 export type Point = { layer: "data"; step?: number; variable?: string };
-type Where = { stepId?: string; item?: string; phase?: "predict" | "check" | "review"; attempt?: number; idea?: string; skippable?: true; probe?: { n: number; of: number }; point?: Point };
+type Where = { stepId?: string; item?: string; phase?: "predict" | "check" | "review" | "plan"; attempt?: number; idea?: string; skippable?: true; probe?: { n: number; of: number }; point?: Point };
 
 // Checks the pointer the Tutor sent with a prediction; an error text is written for the model.
 export function parsePoint(raw: unknown): { point: Point } | { error: string } {
@@ -139,7 +158,7 @@ export function parseQuestion(args: Record<string, unknown>): { question: Questi
 
 // What the interface is told about a question: never the committed answer.
 export const publicQuestion = (q: Question) => {
-  const where = { ...(q.stepId ? { stepId: q.stepId, phase: q.phase } : q.phase === "review" ? { phase: q.phase } : {}), ...(q.skippable ? { skippable: true, probe: q.probe } : {}), ...(q.point ? { point: q.point } : {}) };
+  const where = { ...(q.stepId ? { stepId: q.stepId, phase: q.phase } : q.phase === "review" || q.phase === "plan" ? { phase: q.phase } : {}), ...(q.skippable ? { skippable: true, probe: q.probe } : {}), ...(q.point ? { point: q.point } : {}) };
   return q.kind === "choice" ? { kind: q.kind, prompt: q.prompt, options: q.options, allowDontKnow: q.allowDontKnow, ...where } : { kind: q.kind, prompt: q.prompt, allowDontKnow: q.allowDontKnow, ...where };
 };
 
@@ -166,7 +185,7 @@ export function parseAnswer(q: Question, raw: Record<string, unknown>): { answer
 // What the waiting `ask` call returns to the Tutor.
 export function answerForTutor(q: Question, a: Answer) {
   const thought = a.thought ? { thought: a.thought } : {};
-  if (a.skip) return { skipped: true, known: true, note: "The person says they already know this. Report it as known in probe_done.", ...thought };
+  if (a.skip) return { skipped: true, known: true, note: "The person says they already know this. Count it as known in measure_done.", ...thought };
   if (q.kind === "text") return a.dontKnow ? { kind: "text", dontKnow: true, ...(q.expected ? { expected: q.expected } : {}), ...thought } : { kind: "text", answer: a.text, ...(q.expected ? { expected: q.expected } : {}), ...thought };
   const correctAnswer = q.options[q.correct];
   return a.dontKnow

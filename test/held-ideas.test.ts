@@ -83,6 +83,7 @@ test("an alias of a held idea is refused too, and so is the Plan item the step n
   teacher = async function* (call) {
     seen.alias = await call("begin_step", { stepId: "s1", title: "Runners", idea: "Job Runner" });
     await call("set_plan", { concepts: [{ name: "Worker", dependsOn: [] }, { name: "Retry", dependsOn: ["Worker"] }] });
+    await call("plan_ahead", { summary: "Workers, then retries." });
     seen.item = await call("begin_step", { stepId: "s2", title: "Workers", item: "Worker" });
     seen.fresh = await call("begin_step", { stepId: "s3", title: "Retries", item: "Retry" });
     yield { type: "text", text: "done" };
@@ -163,6 +164,7 @@ test("a Plan whose every open concept is held does not trap the class: the last 
   const seen: Record<string, any> = {};
   teacher = async function* (call) {
     await call("set_plan", { concepts: [{ name: "Worker", dependsOn: [] }] });
+    await call("plan_ahead", { summary: "Workers." });
     seen.only = await call("begin_step", { stepId: "s1", title: "Workers", item: "Worker" });
     yield { type: "text", text: "done" };
   };

@@ -148,7 +148,7 @@ export function evidenceOf(classId: string, questionId: string, project: string,
     classId, questionId, project, kind: q.kind, correct, confidence,
     answer: dontKnow ? null : q.kind === "choice" ? q.options[a.option!] : (a.text ?? null),
     thought: a.thought ?? null, dontKnow, time,
-    ...(q.stepId ? { stepId: q.stepId, phase: q.phase, attempt: q.attempt, ...(q.item ? { item: q.item } : {}) } : {}),
+    ...(q.stepId ? { stepId: q.stepId, phase: q.phase === "plan" ? undefined : q.phase, attempt: q.attempt, ...(q.item ? { item: q.item } : {}) } : {}),
     ...(choice && correct === false && (confidence ?? 0) >= 70 ? { sureAndWrong: true as const } : {}),
   };
 }
