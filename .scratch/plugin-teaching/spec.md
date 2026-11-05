@@ -16,7 +16,7 @@ A plugin that can be taught declares a **teaching surface** in its manifest, wit
 2. **A read-only view of its state**: a named read the Tutor may ask for, returning plain data (for the Canvas: which Nodes and relations exist). It cannot change anything.
 3. **Named checks**: each has a name, one plain sentence saying what it verifies, and an answer of yes or no with a short plain reason (for the Canvas: "a container with a relation to a database exists"). The Tutor runs a check after it asks the person to do something, and uses the answer to decide whether to move on or teach again.
 
-The Tutor never acts inside a plugin. When something has to change inside a plugin, it makes a Proposal and the person accepts it, as with the authored layers (ticket 06).
+The Tutor never acts inside a plugin. When something has to change inside a plugin, it makes a Proposal and the person accepts it, as with the authored layers (ticket 06). This is the principle of the Tutor as a whole (the person, 2026-11-05): it teaches, it has no autonomy over the Project, everything it does is communicated or turned into a lesson, and the person acts.
 
 ## Decisions (agreed with the person)
 

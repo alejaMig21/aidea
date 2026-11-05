@@ -15,15 +15,15 @@ Checked in the code on 2026-11-05:
 
 ## Shape
 
-### 1. Briefs: how one role asks another for work
+### 1. Briefs: how the person asks a Builder for work, taught by the Tutor
 
-A **Brief** is a short structured request: the goal in plain words, the context it rests on (references to Nodes, Contract items, plugins and lessons), constraints, acceptance checks (items of the Contract or named checks of a plugin's teaching surface), and the target (which Builder instance).
+A **Brief** is a short structured request to a Builder: the goal in plain words, the context it rests on (references to Nodes, Contract items, plugins and lessons), constraints, acceptance checks (items of the Contract or named checks of a plugin's teaching surface), and the target (which Builder instance).
 
-- The Tutor drafts a Brief when the person needs one. The person reads it, edits it and sends it. The kernel delivers it to the chosen Builder as its task.
-- The Builder keeps its own permission mode: a Brief never widens what a Builder may do.
-- **Creator Mode is the first case:** the person says what they want a plugin to do, the Tutor writes the Brief a Builder needs to build it properly (the plugin API, the template, the lesson and teaching surface required).
-- The same channel can later run the other way: a Builder blocked on a decision asks for help and the Tutor teaches it to the person.
-- Default: the person approves every Brief. Sending without approval could be offered per instance later, never by default.
+**The principle (the person, 2026-11-05): the Tutor is there to teach, it has no autonomy over the Project, the person has it.** So the Tutor never sends anything to a Builder. When a Brief is needed it does what LearnHarness does with any skill: it turns it into a lesson. It explains what a good request has and why, and the person writes the Brief in their own words first (the co-authoring pattern of tutor 08); the Tutor checks it against the parts above, says what is missing, and may offer a better version as a Proposal the person accepts or not. The only thing that sends a Brief to a Builder is the person's own button. There is no auto-send, not even optional.
+
+- The kernel delivers the Brief the person sent to the chosen Builder instance as its task. The Builder keeps its own permission mode and the Contract's conditions: a Brief never widens what a Builder may do.
+- **Creator Mode is the first case:** the lesson is "how to ask for a plugin": the plugin API, the template, the lesson and the teaching surface a plugin needs. The person ends with a Brief that a Builder can build from, and has learnt why.
+- The same channel can later run the other way: a Builder that needs a decision explains it, and the Tutor turns it into a lesson for the person; the person answers the Builder.
 
 ### 2. The Contract is the Plan Mode of aidea, for a whole project
 
@@ -55,6 +55,6 @@ The plugin system (built), plugin-teaching (the Tutor learns plugins through the
 
 ## Open
 
-- Whether the Tutor may ever send a Brief without the person's approval (proposal: no).
+- (Answered 2026-11-05: the Tutor never sends a Brief; the person does.)
 - Whether a Builder may ask the Tutor for help (proposal: later, same channel).
 - The final name of the Contract-as-plan if "Contract" is thought to clash with the Contract of a software (proposal: keep Contract).
