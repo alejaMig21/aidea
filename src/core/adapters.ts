@@ -25,7 +25,7 @@
 import type { Project } from "./types.ts";
 import { pythonAdapter } from "./python-adapter.ts";
 import { typescriptAdapter } from "./typescript-adapter.ts";
-import { addLanguage, detectLanguages, languageOfFile } from "./languages.ts";
+import { addLanguage, detectLanguages, giveUpLanguage, languageOfFile, languageOwner } from "./languages.ts";
 
 export class AdapterError extends Error {
   status: number;
@@ -64,7 +64,10 @@ export type LanguageAdapter = {
 // TypeScript and JavaScript are read by one adapter (typescript-adapter.ts).
 const adapters = new Map<string, LanguageAdapter>([["python", pythonAdapter], ["typescript", typescriptAdapter], ["javascript", typescriptAdapter]]);
 
-export const registerAdapter = (language: string, adapter: LanguageAdapter) => void adapters.set(language, adapter);
+// A seam for tests and embedders: an adapter registered here wins over the plugin's, and survives plugins being loaded or unloaded.
+const overrides = new Map<string, LanguageAdapter>();
+export const registerAdapter = (language: string, adapter: LanguageAdapter) => void overrides.set(language, adapter);
+const adapterOf = (language: string) => overrides.get(language) ?? adapters.get(language);
 
 // The language slot of a plugin (docs/plugin-api.md): the language and its adapter come and go together. Returns what takes both away.
 export function registerLanguage(language: { id: string; label: string; extensions: string[] }, owner: string, adapter: LanguageAdapter): () => void {
@@ -75,19 +78,26 @@ export function registerLanguage(language: { id: string; label: string; extensio
   return () => { adapters.delete(language.id); remove(); };
 }
 
-export const hasAdapter = (language: string) => adapters.has(language);
+// Python is a plugin that ships with aidea (src/plugins/python). startCore calls this: false when the shipped plugins are loaded (the plugin owns Python, and switching it off leaves Python unread),
+// true when they are not (the core keeps Python built in, owned by aidea).
+export function builtInPython(on: boolean) {
+  if (on && languageOwner("python") !== "aidea") { giveUpLanguage("python"); addLanguage("python", "Python", [".py"], "aidea"); adapters.set("python", pythonAdapter); }
+  else if (!on && languageOwner("python")) { giveUpLanguage("python"); adapters.delete("python"); }
+}
 
-// The adapter for a Project: the one of the language it holds (languages.ts), or Python when none is analysed.
+export const hasAdapter = (language: string) => !!adapterOf(language);
+
+// The adapter for a Project: the one of the language it holds (languages.ts), or one that reads nothing when none is analysed.
 // ponytail: a Project with several analysed languages merges their analyses (module ids that collide across
 // languages, such as util.py and util.js, are not told apart); flow and run go to the adapter of the file's language.
 export function adapterFor(projectPath: string): LanguageAdapter {
-  const mine = [...new Set(detectLanguages(projectPath).filter((l) => l.analysed).map((l) => adapters.get(l.language)!))];
-  if (mine.length === 0) return adapters.get("python")!;
+  const mine = [...new Set(detectLanguages(projectPath).filter((l) => l.analysed).map((l) => adapterOf(l.language)!))];
+  if (mine.length === 0) return { analyze: async () => ({ nodes: [], errors: [], relationships: [], unresolved: 0 }) };
   if (mine.length === 1) return mine[0];
   // The adapter of the file's language does the work; a language without it says so in plain words.
   const of = (file: string, what: string) => {
     const own = languageOfFile(file);
-    return { adapter: own && adapters.get(own.language), says: () => new AdapterError(`aidea cannot ${what} ${own?.label ?? "this kind of file"} code yet`, 422) };
+    return { adapter: own && adapterOf(own.language), says: () => new AdapterError(`aidea cannot ${what} ${own?.label ?? "this kind of file"} code yet`, 422) };
   };
   return {
     async analyze(path) {

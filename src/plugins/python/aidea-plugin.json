@@ -1,0 +1,13 @@
+{
+  "id": "python",
+  "version": "0.1.0",
+  "title": "Python",
+  "description": "Reads Python code for aidea: the Components layer, the Flow of a function, its tests' examples, and Play with test data.",
+  "publisher": "aidea",
+  "api": "0.1",
+  "main": "main.js",
+  "lesson": "lesson.json",
+  "language": { "id": "python", "label": "Python", "extensions": [".py"] },
+  "capabilities": ["processes", "files"],
+  "actions": ["runs-program"]
+}

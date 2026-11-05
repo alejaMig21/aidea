@@ -1,0 +1,34 @@
+{
+  "parts": [
+    {
+      "name": "What aidea reads in Python",
+      "hint": "Every .py file of the Project, without running it",
+      "what": "This plugin reads the Python files of a Project (it skips virtual environments, build folders and folders that start with a dot) and finds the modules, classes and functions, and which of them use which. That is what the Components layer draws. Reading only looks at the text of the code: nothing is run.",
+      "question": "Why can aidea draw the Components of a Project without running it?",
+      "example": "A file app.py with def hello() becomes a module app with a function app.hello.",
+      "narration": "aidea reads the code as text and draws what it finds.",
+      "tryIt": "Open a Project with a few .py files and look at the Components layer.",
+      "refs": ["python"]
+    },
+    {
+      "name": "What Python can run",
+      "hint": "Only Play, one function with test data",
+      "what": "When the person plays a function, the plugin starts a Python program with test data, using the Project's own virtual environment (.venv or venv) if it has one, or aidea's Python. It records the steps passed through and the values on arrival. A function that needs the network, files or other outside things is refused until the person gives it fakes. Blocking is a safety net, not a sandbox.",
+      "question": "What does aidea start on the machine when you play a function?",
+      "example": "Playing score(3) runs Python once with the argument 3 and shows each step with its values.",
+      "narration": "Play runs one function once, with the data the person chose.",
+      "tryIt": "Pick a small function, fill its test data and press Play.",
+      "refs": ["python"]
+    },
+    {
+      "name": "Switching Python off",
+      "hint": "Python is a plugin; it can be turned off",
+      "what": "Python ships with aidea and is on by default, but it is a plugin like any other: it can be switched off in the plugin manager. Then Python files are listed as not analysed, and the layers the person writes (Business, Requirements, Architecture) keep working.",
+      "question": "What changes in a Project when the Python plugin is off?",
+      "example": "With Python off, a Project of .py files opens with no Components and says no plugin reads Python.",
+      "narration": "Without the plugin, aidea does not read Python.",
+      "tryIt": "Switch the Python plugin off in the plugin manager, open a Python Project, then switch it on again.",
+      "refs": ["python"]
+    }
+  ]
+}

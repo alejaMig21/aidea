@@ -9,12 +9,11 @@ Rules:
 4. The status of a ticket says whether it can start: `ready-for-agent`, or `needs-info` and what it waits for (shown in the Wait column).
 5. Every new built-in plugin ships a lesson and a teaching surface (plugin-lessons, plugin-teaching): items that create one depend on those.
 
-Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (70 items, 4 levels).
+Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (69 items, 4 levels).
 ## Level 0: no dependencies
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
-| lp02 | T | L | Python becomes a built-in plugin, on by default; every test unchanged | language-plugins 02 | - | 8 | - |
 | rc04 | T | L | The Contract and the Differences become a plugin that offers the Builders their tools (read the Contract) and the Tutor its view and checks | roles-and-contract 04 | - | 8 | - |
 | li03 | T | M | Every claim in a Proposal carries evidence (files and lines; observed, inferred or unknown) and the core refuses citations that do not hold | layer-inference 03 | - | 7 | - |
 | lp07 | T | L | A plugin can ship a variant per system, use a program on the machine, or download one with permission | language-plugins 07 | - | 7 | - |
@@ -50,13 +49,13 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
-| lp03 | T | L | TypeScript and JavaScript become a built-in plugin with a variant per system | language-plugins 03 | lp02, lp07 | 4 | - |
+| lp03 | T | L | TypeScript and JavaScript become a built-in plugin with a variant per system | language-plugins 03 | lp07 | 4 | - |
 | rc05 | T | M | The person approves the Contract (the Plan Mode of the whole project) and it is versioned | roles-and-contract 05 | rc04 | 4 | - |
 | li07 | T | M | Git history tells live code from legacy (tool `read_history`) | layer-inference 07 | li02 | 3 | - |
 | dep | T | XL | The Deployment layer (C4-style level 1, an environment selector, instances pointing at Architecture, legend, Probe and class) | deployment 01 | li03 | 1 | a spec first |
 | inst | T | XL | Instances: any plugin can be started several times | roles-and-providers 03 | inst_spec, prov | 1 | waits for the Instances spec, from which its boxes are written |
 | li10 | T | L | A structural index of any language from a replaceable provider (Codebase Memory first) | layer-inference 10 | lp07, cbs | 1 | the comparison spike |
-| pl05 | T | M | Split the old guide into the kernel trunk and one lesson per plugin (and the live check of aidea-guide 01) | plugin-lessons 05 | pl02, rc04, lp02 | 1 | the person: which parts are the kernel's |
+| pl05 | T | M | Split the old guide into the kernel trunk and one lesson per plugin (and the live check of aidea-guide 01) | plugin-lessons 05 | pl02, rc04 | 1 | the person: which parts are the kernel's |
 | agents | T | M | Another agent adapter (Codex, Kimi, DeepSeek over ACP): a spike, then one each, as provider plugins | roles-and-providers 04 | prov | - | the person picks which agent first |
 | att | T | L | The Tutor reads sources the person attaches (a folder, a web page), as untrusted data, taught as a lesson | layer-inference 12 | li03 | - | an idea |
 | bp04 | T | M | The Tutor reads the structure of a project fast (overview, callers and callees, one function's code) from the structural map, whichever source fills it | big-projects 04 | li02 | - | - |
@@ -67,7 +66,7 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | li06 | T | L | Architecture patterns judged by the Tutor and checked by the core (layered, hexagonal, event-driven, plugin-based) | layer-inference 06 | li03 | - | - |
 | perf | T | XL | A performance lens: how time and memory grow with the size of the data | animation-and-data 06 | anim | - | an idea |
 | pieces | T | M | More drawing pieces for Data: hash table, call stack and recursion tree, state machine, grid, weighted graph | animation-and-data 03 | anim | - | an idea |
-| pm | T | M | Measure aidea with a very high number of heavy plugins (after the built-in features are plugins, so the measure is the real one) | housekeeping 05 | lp02, rc04 | - | - |
+| pm | T | M | Measure aidea with a very high number of heavy plugins (after the built-in features are plugins, so the measure is the real one) | housekeeping 05 | rc04 | - | - |
 | pp03 | T | L | Detect and revert a write to the Project that nobody mediated | plugin-policies 03 | pp02 | - | - |
 | pp04 | T | M | The screen says, per rule and plugin, prevented or detected, and why something was stopped | plugin-policies 04 | pp02 | - | - |
 | pp05 | T | S | The person can lift a policy for one task, visibly and logged | plugin-policies 05 | pp02 | - | - |

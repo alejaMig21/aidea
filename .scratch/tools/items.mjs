@@ -148,15 +148,6 @@ export const items = [
   "d": []
  },
  {
-  "id": "lp02",
-  "k": "T",
-  "s": "L",
-  "file": "language-plugins/02",
-  "t": "Python becomes a built-in plugin, on by default; every test unchanged",
-  "w": "language-plugins 02",
-  "d": []
- },
- {
   "id": "lp05",
   "k": "T",
   "s": "M",
@@ -173,7 +164,6 @@ export const items = [
   "t": "TypeScript and JavaScript become a built-in plugin with a variant per system",
   "w": "language-plugins 03",
   "d": [
-   "lp02",
    "lp07"
   ]
  },
@@ -216,8 +206,7 @@ export const items = [
   "w": "plugin-lessons 05",
   "d": [
    "pl02",
-   "rc04",
-   "lp02"
+   "rc04"
   ]
  },
  {
@@ -448,7 +437,6 @@ export const items = [
   "t": "Measure aidea with a very high number of heavy plugins (after the built-in features are plugins, so the measure is the real one)",
   "w": "housekeeping 05",
   "d": [
-   "lp02",
    "rc04"
   ],
   "file": "housekeeping/05"

@@ -4,6 +4,7 @@ import { readdirSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import type { Adapter, Core, Handler, Project } from "./types.ts";
 import { createClaudeAdapter } from "./adapter/claude.ts";
+import { builtInPython } from "./adapters.ts";
 import { createBroker } from "./permissions.ts";
 import { createRecents } from "./recents.ts";
 import { createPreferences } from "./preferences.ts";
@@ -59,6 +60,7 @@ export async function startCore({ port, adapter: defaultAdapter = createClaudeAd
   const learner = createLearner(learnerDir, adapter, learnerModel);
   const chosen = createPluginState(pluginsDir);
   const settings = createSettings(pluginsDir, secretStore);
+  builtInPython(!builtinPluginsDir);
   const pluginHost = createPluginHost([...(builtinPluginsDir ? [{ dir: builtinPluginsDir, builtin: true }] : []), ...(pluginsDir ? [{ dir: pluginsDir, builtin: false }] : [])], chosen, safeMode, settings);
   const quarantine = createQuarantine(pluginsDir);
   pluginHost.useProjects((id) => core.projects.get(id)?.path);

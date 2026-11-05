@@ -2,7 +2,7 @@
 
 **What to build:** The person wants to know how aidea behaves with many plugins, some heavy. Build a generator of fixture plugins (light, and heavy in time, memory, timers and Panels) and measure start-up time, memory, the Panels menu and moving the Canvas with 10, 50 and 200 plugins. Write the numbers and the budgets that become tests. Best done after the built-in features are plugins, so the measure is the real one.
 
-**Blocked by:** language-plugins 02, roles-and-contract 04.
+**Blocked by:** roles-and-contract 04.
 
 **Status:** ready-for-agent
 
