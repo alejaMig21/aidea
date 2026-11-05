@@ -34,7 +34,7 @@ How it differs from the Plan Mode of one task: the Contract lasts, is shared by 
 - **The Contract (project):** the approved plan of the whole project. Each requirement becomes one or more **tasks** with a status and an owner (a Builder instance, and a branch when they work in parallel). The Differences become the progress of the plan and the drift from it.
 - **The plan of one task:** when a Builder takes a task or a Brief it first works in its own plan mode (read, think, propose a plan) and only after the person approves does it edit.
 
-Open: whether a Builder may edit files while the Contract is not approved (proposal: a small change outside any Contract is allowed with its own task plan; a Project that has a Contract being built is not).
+Decided by the person (2026-11-05): with the Contract plugin off there is no Contract and Builders are free; with it on the condition is hard: what is not in the Contract is not developed (to be tuned after use). How a plugin conditions others is in `.scratch/plugin-policies/spec.md`.
 
 ### 3. The Contract as a plugin
 
