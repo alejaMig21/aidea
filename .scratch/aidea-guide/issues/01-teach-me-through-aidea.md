@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** built (button, quick tour, protocol); the design it describes is superseded by `.scratch/plugin-lessons/spec.md` (2026-11-04): "How aidea works" will teach the whole app, plugins included, as a short kernel trunk plus one lesson per installed plugin, with the class interruptible. This text still names Class and Direct mode (removed in 58d676d) and one fixed structure in the core; read it as history. The last box (live check with the real Claude Code) is NOT to be run on today's content: it moves to the end of the plugin-lessons work, once the trunk and the first plugin lessons exist.
 
 - [x] The app's teaching content is one structure served by the core, in plain words, with no jargon (checked by the same test as the layer content).
 - [x] Through the protocol: the class starts with the app content as data, follows the teach loop, and the first step is about what the person sees first, not a lecture.
