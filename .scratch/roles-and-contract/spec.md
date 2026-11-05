@@ -11,7 +11,7 @@ Checked in the code on 2026-11-05:
 1. **The Tutor and the Builder cannot talk to each other.** The Tutor has tools to teach and to read and propose layers; the Builder has tools to read the Contract and to propose. Nothing lets the Tutor hand work to a Builder. A person who does not know how to ask the Builder for a plugin in Creator Mode, or for anything precise, has no help writing the request, and with several Builders and several Tutors it only gets worse.
 2. **The Contract is the plan of the build, and nothing says so.** The Builder reads it (`read_contract`), but it is a list of what was agreed with no tasks, no owner and no progress, so several Builders cannot split it.
 3. **The Contract and the Differences live inside the core and the Tutor's panel.** The Tutor knows them by name (the sections Plan, Differences, Contract of its panel), which is the opposite of what ADR 0008 and plugin-teaching ask: that the Tutor learn a plugin through the plugin's own teaching surface.
-4. **Two things are called Plan.** The Tutor's Plan is a list of concepts to learn; the Contract is the plan to build. They need different names.
+4. **Two things are called Plan.** The Tutor's Plan is a list of concepts to learn; the Contract is the plan to build, and Builders also have a plan mode. Optional: rename the Tutor's Plan to "Learning plan".
 
 ## Shape
 
@@ -25,9 +25,16 @@ A **Brief** is a short structured request: the goal in plain words, the context 
 - The same channel can later run the other way: a Builder blocked on a decision asks for help and the Tutor teaches it to the person.
 - Default: the person approves every Brief. Sending without approval could be offered per instance later, never by default.
 
-### 2. The Contract as the plan of the build
+### 2. The Contract is the Plan Mode of aidea, for a whole project
 
-Once the layers are complete the Contract is the plan, as in a plan mode: Builders work from it, and a departure goes through a Proposal as today. It gains **tasks**: each requirement becomes one or more tasks with a status, an owner (a Builder instance) and, for parallel Builders, a branch. The Differences become the progress of the plan and the drift from it.
+In an agent such as Claude Code, Plan Mode means the agent may read and think but not edit; it writes a plan, the person approves it, and only then does it act. The Contract is the same idea at the scale of a project (the person's words, 2026-11-05): the plan that the Builders work from, agreed layer by layer (Business, Requirements, Architecture) and approved by the person. A Builder works inside it, and a departure goes through a Proposal the person accepts, as today.
+
+How it differs from the Plan Mode of one task: the Contract lasts, is shared by every Builder, and afterwards checks the code against itself (the Differences). Two levels follow:
+
+- **The Contract (project):** the approved plan of the whole project. Each requirement becomes one or more **tasks** with a status and an owner (a Builder instance, and a branch when they work in parallel). The Differences become the progress of the plan and the drift from it.
+- **The plan of one task:** when a Builder takes a task or a Brief it first works in its own plan mode (read, think, propose a plan) and only after the person approves does it edit.
+
+Open: whether a Builder may edit files while the Contract is not approved (proposal: a small change outside any Contract is allowed with its own task plan; a Project that has a Contract being built is not).
 
 ### 3. The Contract as a plugin
 
