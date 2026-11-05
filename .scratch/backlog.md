@@ -46,6 +46,11 @@ All pending or half-done work, not only the first version: written tickets, deci
 | T | The `language` slot in the plugin API | language-plugins 01 | nothing |
 | T | One Components layer for several languages, the language in each Node's info | language-plugins 05 | language-plugins 01 |
 | T | Creator Mode can write a language plugin | language-plugins 06 | language-plugins 01 |
+| T | The Tutor tests the person on a plugin (1 of 5): the manifest can declare a teaching surface (a read-only view and named checks) | plugin-teaching 01 | nothing |
+| T | The Tutor can read a plugin's view and run its checks, read-only and with limits (2) | plugin-teaching 02 | plugin-teaching 01 |
+| T | A lesson part can name a check; the teach loop closes the step when it passes (3) | plugin-teaching 03 | 02, plugin-lessons 01 |
+| T | Required for plugins the Builder writes, a warning for the rest (4) | plugin-teaching 04 | 01, plugin-lessons 03 and 04 |
+| T | The Run plugin declares a real surface; live check with the real Tutor (5) | plugin-teaching 05 | plugin-teaching 02 |
 | T | Long waits for an answer: measure 3, 10 and 30 minutes with the real Claude Code | live-findings 05 | real Claude (quota, up to 30 min) |
 | D | Detect warnings (not only failures) when Play starts parts; "restart only this part" quickly | interviews-pending 1 | nothing |
 | D | Measure aidea with a very high number of heavy plugins | person's note | the plugin system (built) |
@@ -65,11 +70,11 @@ All pending or half-done work, not only the first version: written tickets, deci
 | T | Run a TypeScript or JavaScript function for Playback: separate Node process with `--permission` plus a fake-network guard (decided 2026-11-03) | language-adapters 05 | language-plugins 03 |
 | T | The record of values for TypeScript and JavaScript (nothing is recorded today) | layout-and-data 13 note | the line above |
 | I | A timeline view for concurrency | ideas | |
+| T | The Tutor proposes a change inside a plugin, through a Proposal the person accepts | plugin-teaching 06 | plugin-teaching 02; the person: how a plugin applies an accepted Proposal |
 | I | Reconstruct the layers of an existing project: a Tutor class that reads the code and proposes Business, Requirements and Architecture with the files each rests on | ideas | |
 | I | The Tutor reads sources the person attaches (a folder, a web page), as untrusted data | ideas | |
 | I | Contribute to a public repository (fork, branch, pull request); `git clone` does not exist | interviews-pending 6 | |
 | I | Logical network level of Deployment (subnets, VLANs) | interviews-pending 5 | a real network engineer's diagram |
-| D | **Teaching surface of a plugin**: what a plugin declares so the Tutor can teach and test it: its lesson (plugin-lessons), a read-only view of its state, and named checks the Tutor uses to evaluate what the person did (for example the Canvas: "a container with a relation to a database exists"). The Tutor never acts inside a plugin: a change goes through a Proposal the person accepts. Required for plugins the Builder writes (as the lesson is), a warning for others, if the person confirms. The person said (2026-11-04) that the Tutor being able to use plugins is a must; it had been parked as "later" by mistake | person's idea, 2026-11-04 | spec first; plugin-lessons 01 |
 
 ## XL
 

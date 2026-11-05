@@ -45,7 +45,7 @@ Each `refs` entry is compared with what the live inspection (`GET /plugins/inspe
 
 ## Not here
 
-- The Tutor using a plugin (acting) or reading its live state to evaluate the person (the example: it asks the person to lay out an architecture in the Canvas and checks it). Needs a read-only view each plugin may declare, and a permission rule for anything that acts. A spec of its own.
+- The Tutor using a plugin or reading its live state to evaluate the person: now its own spec, `.scratch/plugin-teaching/spec.md` (required for plugins the Builder writes).
 - A versions plugin (v1.0.0 numbers proposed from the commits since the last version: `fix` raises the last number, `feat` the middle one, a breaking change the first). A plugin of its own, not part of this.
 - Performance of aidea with a very high number of heavy plugins. A separate measurement.
 
