@@ -14,7 +14,6 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
-| bp01 | T | M | Opening a big project is fast: one AST walk, effects only on demand, per-file cache outside the project (Telegram 5.2 s, target under 2 s cold and 0.5 s warm) | big-projects 01 | - | 1 | - |
 | bp02 | T | M | The Components overview stays smooth with the test modules open (17 fps today, routes are the cost, target 30 fps) | big-projects 02 | - | 1 | - |
 | pl01 | T | M | A plugin ships a lesson and the Tutor reads it | plugin-lessons 01 | - | 21 | - |
 | pt01 | T | M | The manifest can declare a teaching surface (a read-only view and named checks) | plugin-teaching 01 | - | 19 | - |
@@ -28,6 +27,7 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | prov | T | XL | Roles and Providers: the Tutor and the Builder become roles filled by provider plugins; the agent adapter becomes a (required) plugin. Part of migrating the rest of the existing features into plugins (Files, Code, Playback, the layers), each with its own specification, as the plugin-system spec left it | roles-and-providers 01 | - | 3 | the spec the plugin-system spec left out (which services stay single-instance, the list of named slots, the required plugins) |
 | cbs | T | M | Spike: measure Codebase Memory MCP as a code-graph tool for the agents on Telegram, a Unity project and a Node monorepo, with and without it (indexing writes nothing into the project; one background process per account shares the person's cache; licence not looked at) | layer-inference 11 | - | 2 | quota |
 | inst_spec | T | S | Write the Instances spec: a plugin declares a minimum number of instances and can run N times (N Builders each on a branch, N Tutors, N Canvases each on a layer); the Panel registry and the saved Layout name an instance | roles-and-providers 02 | - | 2 | the person decides the open points |
+| bp05 | T | L | The cold analysis of a big project takes under 2 s: per-file facts extracted in parallel worker processes, resolved across files; incremental | big-projects 05 | - | - | - |
 | collab | T | XL | Real-time cursors and shared work (needs a relay server) | collaboration 01 | - | - | an idea |
 | ed | T | S | Let the person edit the input data of a recording (the named lists cover part of it) | animation-and-data 05 | - | - | - |
 | jr | T | S | Missing dev-journal entries (presets, keyboard, Class and Direct removal, READING, Data layer, 2026-11-04 and 2026-11-05) | housekeeping 02 | - | - | - |
@@ -62,7 +62,7 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | agents | T | M | Another agent adapter (Codex, Kimi, DeepSeek over ACP): a spike, then one each, as provider plugins | roles-and-providers 04 | prov | - | the person picks which agent first |
 | att | T | L | The Tutor reads sources the person attaches (a folder, a web page), as untrusted data, taught as a lesson | layer-inference 12 | li03 | - | an idea |
 | bp03 | T | S | Say why module pairs are hidden and let the person see them | big-projects 03 | bp02 | - | - |
-| bp04 | T | M | The Tutor reads the structure of a project fast (overview, callers and callees, one function's code) from the structural map, whichever source fills it | big-projects 04 | bp01, li02 | - | - |
+| bp04 | T | M | The Tutor reads the structure of a project fast (overview, callers and callees, one function's code) from the structural map, whichever source fills it | big-projects 04 | li02 | - | - |
 | cmp | T | M | Compare two algorithms side by side on the same data | animation-and-data 02 | anim | - | an idea |
 | dbg | T | XL | A visual debugger for people who are not engineers (Playback and Data cover part) | animation-and-data 07 | anim | - | say what Playback and Data still lack for this |
 | jn | T | XL | Guided, game-like journeys with achievements: a sample Python Project that ships inside aidea, the interface reporting actions, a progress map | guided-journeys 01 | pl01 | - | a spec first and the wording of Tutor story 31 (no score is kept) |

@@ -1,16 +1,17 @@
 import { mkdirSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
 import { adapterFor } from "../adapters.ts";
+import { cachedAnalysis } from "../analysis-cache.ts";
 import { detectLanguages } from "../languages.ts";
 import type { ServerResponse } from "node:http";
 import type { Core, Handler, Project } from "../types.ts";
 
 
-async function openProject(path: string): Promise<Project> {
+async function openProject(path: string, cacheDir?: string): Promise<Project> {
   const languages = detectLanguages(path);
   // Nothing to analyse: no adapter is run, the Components layer is just empty.
   const { nodes, errors, relationships, unresolved } = languages.some((l) => l.analysed)
-    ? await adapterFor(path).analyze(path)
+    ? await cachedAnalysis(cacheDir, path, adapterFor(path))
     : { nodes: [], errors: [], relationships: [], unresolved: 0 };
   // The full path is the id: two folders can share a name.
   return { id: path, name: basename(path), path, nodes, errors, relationships, unresolved, languages };
@@ -32,7 +33,7 @@ function folderNameProblem(name: unknown): string | undefined {
 async function openAndRecord(core: Core, res: ServerResponse, path: string): Promise<true> {
   let project: Project;
   try {
-    project = await openProject(path);
+    project = await openProject(path, core.cacheDir);
   } catch (e) {
     const slow = (e as { killed?: boolean }).killed;
     core.send(res, 500, { error: slow

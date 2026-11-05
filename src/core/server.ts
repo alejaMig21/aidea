@@ -44,7 +44,7 @@ export function parseRoleAdapters(text: string | undefined): Record<string, stri
 }
 
 // `safeMode` starts with every plugin that does not ship with aidea off. `pluginsDir` is the plugin store: one folder per plugin (docs/plugin-api.md). `builtinPluginsDir` holds the plugins that ship with aidea (src/plugins by default; false loads none).
-export async function startCore({ port, adapter: defaultAdapter = createClaudeAdapter(), adapters = {}, roleAdapters = {}, recentsFile, preferencesFile, learnerDir, learnerModel, pluginsDir, builtinPluginsDir = shippedPlugins, safeMode = false, secretStore = createMemorySecretStore() }: { port: number; adapter?: Adapter; adapters?: Record<string, Adapter>; roleAdapters?: Record<string, string>; recentsFile?: string; preferencesFile?: string; learnerDir?: string; learnerModel?: string; pluginsDir?: string; builtinPluginsDir?: string | false; safeMode?: boolean; secretStore?: SecretStore }) {
+export async function startCore({ port, adapter: defaultAdapter = createClaudeAdapter(), adapters = {}, roleAdapters = {}, recentsFile, preferencesFile, learnerDir, learnerModel, cacheDir, pluginsDir, builtinPluginsDir = shippedPlugins, safeMode = false, secretStore = createMemorySecretStore() }: { port: number; adapter?: Adapter; adapters?: Record<string, Adapter>; roleAdapters?: Record<string, string>; recentsFile?: string; preferencesFile?: string; learnerDir?: string; learnerModel?: string; cacheDir?: string; pluginsDir?: string; builtinPluginsDir?: string | false; safeMode?: boolean; secretStore?: SecretStore }) {
   const named: Record<string, Adapter> = { ...adapters, default: defaultAdapter };
   for (const [role, name] of Object.entries(roleAdapters)) {
     if (!ROLES.includes(role)) throw new Error(`Unknown role "${role}". Roles: ${ROLES.join(", ")}`);
@@ -67,6 +67,7 @@ export async function startCore({ port, adapter: defaultAdapter = createClaudeAd
     learner,
     projects: new Map<string, Project>(),
     recordings: new Map<string, unknown>(),
+    cacheDir,
     lessons: new Map(),
     probes: createProbes(learnerDir),
     plans: createPlans(learnerDir),

@@ -12,10 +12,11 @@ PURE_PREFIXES = ("os.path.join", "os.path.basename", "os.path.dirname", "os.path
 READS = {"input", "read_text", "read_bytes", "get", "read", "recv", "urlopen", "listdir", "glob"}
 
 
-def import_aliases(tree):
-    """Names a module gives to what it imports: `import os as o` and `from os import remove as rm`."""
+def import_aliases(tree, nodes=None):
+    """Names a module gives to what it imports: `import os as o` and `from os import remove as rm`.
+    `nodes` is the tree already walked breadth first, when the caller did it (the order decides which of two imports of one name wins)."""
     aliases = {}
-    for node in ast.walk(tree):
+    for node in (nodes if nodes is not None else ast.walk(tree)):
         if isinstance(node, ast.Import):
             for a in node.names:
                 aliases[(a.asname or a.name).split(".")[0]] = a.name if a.asname else a.name.split(".")[0]

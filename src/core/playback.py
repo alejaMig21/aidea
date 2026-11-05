@@ -75,14 +75,28 @@ def load_flow():
     return module
 
 
-def effects_of(function, fakes, aliases):
+def call_name(func):
+    """The callee as written. A dotted name (`a.b.c`) is read off the attributes, which is what `ast.unparse` gives without its cost;
+    anything else (a call, a subscript) is unparsed as before."""
+    parts, inner = [], func
+    while isinstance(inner, ast.Attribute):
+        parts.append(inner.attr)
+        inner = inner.value
+    if isinstance(inner, ast.Name):
+        parts.append(inner.id)
+        return ".".join(reversed(parts))
+    return ast.unparse(func)
+
+
+def effects_of(function, fakes, aliases, nodes=None):
     """Calls in the function's own body that touch the outside world and are not replaced.
-    This looks at names only: a helper that the function calls is not inspected (the audit hook covers it)."""
+    This looks at names only: a helper that the function calls is not inspected (the audit hook covers it).
+    `nodes` is every node of the function when the caller already walked it."""
     found = []
-    for node in ast.walk(function):
+    for node in (nodes if nodes is not None else ast.walk(function)):
         if not isinstance(node, ast.Call):
             continue
-        name = ast.unparse(node.func)
+        name = call_name(node.func)
         resolved = resolve_alias(name, aliases)
         if name in fakes or resolved in fakes:
             continue

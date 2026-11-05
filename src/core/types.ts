@@ -90,6 +90,8 @@ export type Core = {
   projects: Map<string, Project>;
   // Playback recordings by id. A recording is replayed from here and never re-run.
   recordings: Map<string, unknown>;
+  // The per-user folder where the analysis of each Project is kept between openings (analysis-cache.ts); none keeps nothing.
+  cacheDir?: string;
   send: (res: ServerResponse, status: number, body: unknown, headers?: Record<string, string>) => void;
   // The builder's permission requests, waiting for the person's answer.
   permissions: Broker;

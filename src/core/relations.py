@@ -25,6 +25,42 @@ def dotted(expr):
     return [expr.id] + parts[::-1]
 
 
+def children(node):
+    """The direct child nodes in the order `ast.iter_child_nodes` gives them, without its two generator layers:
+    on a big project the analysis spends most of its time walking trees, and this is that walk."""
+    out = []
+    for name in node._fields:
+        field = getattr(node, name, None)
+        if isinstance(field, ast.AST):
+            if field._fields:  # a node with no fields (Load, Store, Add, Pass...) holds nothing to find
+                out.append(field)
+        elif isinstance(field, list):
+            for item in field:
+                if isinstance(item, ast.AST) and item._fields:
+                    out.append(item)
+    return out
+
+
+def walk(node):
+    """Every node under `node` (itself first), breadth first, in the order `ast.walk` gives them."""
+    todo, i = [node], 0
+    while i < len(todo):
+        todo.extend(children(todo[i]))
+        i += 1
+    return todo
+
+
+def flatten(stmts):
+    """Every node under the statements, in the order `calls_in` visits them (a stack: the last child first).
+    A function is walked once, here, and the lists are shared by the relationships and the effects."""
+    out, stack = [], list(stmts)
+    while stack:
+        n = stack.pop()
+        out.append(n)
+        stack.extend(children(n))
+    return out
+
+
 def calls_in(stmts, into_defs):
     """Every call in the statements; with `into_defs` false, function and class bodies are left to their own Nodes."""
     stack = list(stmts)
@@ -34,10 +70,11 @@ def calls_in(stmts, into_defs):
             continue
         if isinstance(n, ast.Call):
             yield n
-        stack.extend(ast.iter_child_nodes(n))
+        stack.extend(children(n))
 
 
-def find(nodes, trees, defs):
+def find(nodes, trees, defs, flats=None, walks=None):
+    """`flats` maps a function id to `flatten(its body)`, and `walks` a module id to `walk(its tree)`, when the caller already made them."""
     by_id = {n["id"]: n for n in nodes}
     modules = {n["id"] for n in nodes if n["kind"] == "module"}
     rels, seen = [], set()
@@ -67,7 +104,7 @@ def find(nodes, trees, defs):
         package = module.rsplit(".", 1)[0] if "." in module else ""
         if module.endswith(".__init__"):
             package = module[: -len(".__init__")]
-        for stmt in ast.walk(tree):
+        for stmt in (walks[module] if walks and module in walks else walk(tree)):
             if isinstance(stmt, ast.Import):
                 for alias in stmt.names:
                     bound = alias.name if alias.asname else alias.name.split(".")[0]
@@ -242,7 +279,7 @@ def find(nodes, trees, defs):
     modvars = {}
     for module, (tree, _) in trees.items():
         scope = scopes[module]
-        stores = {n.id for s in tree.body if not isinstance(s, FUNCTIONS + (ast.ClassDef,)) for n in ast.walk(s)
+        stores = {n.id for s in tree.body if not isinstance(s, FUNCTIONS + (ast.ClassDef,)) for n in walk(s)
                   if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store)}
         modvars[module] = stores - scope.keys()
         report(module, calls_in(tree.body, False), (scope, set(), set(), modvars[module], None, None))
@@ -250,14 +287,14 @@ def find(nodes, trees, defs):
         if by_id[fid]["kind"] != "function":
             continue
         module = module_of(fid)
-        walk = [n for s in stmt.body for n in ast.walk(s)]
-        local = {n.arg for n in walk if isinstance(n, ast.arg)} | {a.arg for a in ast.walk(stmt.args) if isinstance(a, ast.arg)} \
-            | {n.id for n in walk if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store)}
-        nested = {n.name for n in walk if isinstance(n, FUNCTIONS + (ast.ClassDef,))}
+        flat = flats[fid] if flats and fid in flats else flatten(stmt.body)
+        local = {n.arg for n in flat if isinstance(n, ast.arg)} | {a.arg for a in walk(stmt.args) if isinstance(a, ast.arg)} \
+            | {n.id for n in flat if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store)}
+        nested = {n.name for n in flat if isinstance(n, FUNCTIONS + (ast.ClassDef,))}
         positional = stmt.args.posonlyargs + stmt.args.args
         self_name = positional[0].arg if owner is not None and positional and not by_id[fid]["markers"].get("static") else None
         ctx = (scopes[module], local, nested, modvars[module], by_id[fid]["parent"] if owner is not None else None, self_name)
-        report(fid, calls_in(stmt.body, True), ctx)
+        report(fid, (n for n in flat if isinstance(n, ast.Call)), ctx)  # the same order `calls_in(stmt.body, True)` gives
 
     rels.sort(key=lambda r: (r["from"], r["kind"], r["line"], r["name"], r["to"] or ""))
     return rels

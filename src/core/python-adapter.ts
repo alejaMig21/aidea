@@ -2,6 +2,9 @@
 import { AdapterError } from "./adapters.ts";
 import type { Analysis, Example, Flow, LanguageAdapter, RunRequest, RunResult } from "./adapters.ts";
 import { projectPython, runPython } from "./python.ts";
+import { createHash } from "node:crypto";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
 
 // Turns the exit code of a script into a failure the person can act on; anything else is a crash.
 function explain(e: unknown, tookTooLong: string): never {
@@ -12,9 +15,31 @@ function explain(e: unknown, tookTooLong: string): never {
   throw e;
 }
 
+// The files `analyze.py` reads, by the rule it uses (SKIP_DIRS and folders that start with a dot are left out), and the scripts whose code decides what it says.
+const SKIP_DIRS = new Set(["__pycache__", "venv", "env", "node_modules", "dist", "build", "site-packages"]);
+const ANALYZER_FILES = ["analyze.py", "relations.py", "playback.py", "effects.py"];
+function pythonFiles(dir: string, out: string[] = []): string[] {
+  for (const e of readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+    if (e.isDirectory()) { if (!SKIP_DIRS.has(e.name) && !e.name.startsWith(".")) pythonFiles(join(dir, e.name), out); }
+    else if (e.name.endsWith(".py")) out.push(join(dir, e.name));
+  }
+  return out;
+}
+
 export const pythonAdapter: LanguageAdapter = {
   async analyze(path): Promise<Analysis> {
     return JSON.parse(await runPython("analyze.py", [path]));
+  },
+
+  // What the analysis depends on: the analyzer's own code, and each Python file's path, size and modification time.
+  signature(path): string {
+    const hash = createHash("sha1");
+    for (const f of ANALYZER_FILES) hash.update(readFileSync(new URL(`./${f}`, import.meta.url)));
+    for (const file of pythonFiles(path)) {
+      const s = statSync(file, { throwIfNoEntry: false });
+      hash.update(`${relative(path, file)}|${s?.size}|${s?.mtimeMs}\n`);
+    }
+    return hash.digest("hex");
   },
 
   async flow(file, qualifiedName): Promise<Flow> {

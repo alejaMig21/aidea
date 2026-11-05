@@ -51,6 +51,9 @@ export type Example = { source: string; values: Record<string, string> }; // whe
 
 export type LanguageAdapter = {
   analyze(projectPath: string): Promise<Analysis>;
+  // signature(projectPath) -> a string that changes whenever the analysis could: the files `analyze` reads and the analyzer's own code. With it the
+  // core keeps the analysis between openings (analysis-cache.ts); an adapter without one is analysed at every opening.
+  signature?(projectPath: string): string;
   // examples(projectPath, file, qualifiedName) -> Example[]: arguments the Project's own tests pass, read statically
   // (a test is never run); only literal arguments are offered, a call with any unreadable argument offers nothing.
   examples?(projectPath: string, file: string, qualifiedName: string): Promise<Example[]>;
@@ -85,6 +88,7 @@ export function adapterFor(projectPath: string): LanguageAdapter {
         relationships: all.flatMap((a) => a.relationships), unresolved: all.reduce((n, a) => n + a.unresolved, 0),
       };
     },
+    ...(mine.every((a) => a.signature) && { signature: (path: string) => mine.map((a) => a.signature!(path)).join("+") }),
     ...(mine.some((a) => a.flow) && { flow: async (file: string, name: string) => { const o = of(file, "draw a Flow for"); if (!o.adapter?.flow) throw o.says(); return o.adapter.flow(file, name); } }),
     ...(mine.some((a) => a.examples) && { examples: async (path: string, file: string, name: string) => { const o = of(file, "read tests of"); return o.adapter?.examples ? o.adapter.examples(path, file, name) : []; } }),
     ...(mine.some((a) => a.run) && { run: async (req: RunRequest) => { const o = of(req.file, "run functions of"); if (!o.adapter?.run) throw o.says(); return o.adapter.run(req); } }),

@@ -2,7 +2,7 @@
 
 **What to build:** The Tutor helps the person build the layers of a project, but today it can only list and read files one by one, so understanding a project it has not seen costs many reads and a lot of the session. Give it read tools over the structural map of the Project: an overview (packages, entry points, the modules most others depend on), who calls or imports a given function or module, and the code of one function. The map is the one aidea already builds (modules, classes, functions and 13,004 relationships for Telegram, each with its Resolution) and, later, whatever an index provider fills in for languages aidea has no plugin for (layer-inference 10): the tools do not care which source filled it. They answer from the map, so they are fast and cost the session little. The code graph is evidence for the Tutor's judgement and for choosing what to read; it is never drawn on the Canvas (layer-inference spec).
 
-**Blocked by:** big-projects 01, layer-inference 02.
+**Blocked by:** layer-inference 02.
 
 **Status:** ready-for-agent (reshaped 2026-11-05: provider-agnostic; the fingerprint is layer-inference 02)
 

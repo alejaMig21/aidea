@@ -86,9 +86,12 @@ EFFECT_SAMPLES = {"open": '"line one\\nline two"'}
 DEFAULT_EFFECT_SAMPLE = '{"status": 200}'
 
 
-def effects(function, aliases):
-    """External calls in the function's own body, each with a sample of the data to fake it with."""
-    names = sorted({e["name"] for e in playback.effects_of(function, {}, aliases)})
+def effects(function, aliases, flat):
+    """External calls in the function (its body, decorators, defaults and annotations), each with a sample of the data to fake it with.
+    `flat` is the function's body already walked, so the tree is not walked again."""
+    rest = [*function.decorator_list, function.args, *([function.returns] if function.returns else []), *getattr(function, "type_params", [])]
+    nodes = flat + [n for part in rest for n in relations.walk(part)]
+    names = sorted({e["name"] for e in playback.effects_of(function, {}, aliases, nodes)})
     return [{"name": n, "suggestion": EFFECT_SAMPLES.get(n, DEFAULT_EFFECT_SAMPLE)} for n in names]
 
 
@@ -127,7 +130,7 @@ def has_abc_base(cls):
     return any(ast.unparse(b).split(".")[-1] in ("ABC", "ABCMeta") for b in bases)
 
 
-def visit(body, parent, prefix, nodes, file, aliases, owner=None, defs=None):
+def visit(body, parent, prefix, nodes, file, aliases, owner=None, defs=None, flats=None):
     for stmt in body:
         if isinstance(stmt, ast.ClassDef):
             kind = "class"
@@ -146,7 +149,10 @@ def visit(body, parent, prefix, nodes, file, aliases, owner=None, defs=None):
             if owner is not None:  # the instance is built from the constructor's parameters
                 init = next((s for s in owner.body if isinstance(s, (ast.FunctionDef, ast.AsyncFunctionDef)) and s.name == "__init__"), None)
                 node["constructorParameters"] = parameters(init, True) if init else []
-            found = effects(stmt, aliases)
+            flat = relations.flatten(stmt.body)
+            if flats is not None:
+                flats[node_id] = flat
+            found = effects(stmt, aliases, flat)
             if found:
                 node["effects"] = found
         node["markers"] = markers(stmt, kind)
@@ -159,11 +165,11 @@ def visit(body, parent, prefix, nodes, file, aliases, owner=None, defs=None):
         nodes.append(node)
         # ponytail: nested functions are not listed, only classes and their members
         if kind == "class":
-            visit(stmt.body, node_id, node_id, nodes, file, aliases, stmt, defs)
+            visit(stmt.body, node_id, node_id, nodes, file, aliases, stmt, defs, flats)
 
 
 def analyze(root):
-    nodes, errors, trees, defs = [], [], {}, {}
+    nodes, errors, trees, defs, flats, walks = [], [], {}, {}, {}, {}
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not d.startswith(".")]
         for filename in sorted(filenames):
@@ -184,8 +190,9 @@ def analyze(root):
             nodes.append({"id": module, "kind": "module", "name": module, "parent": None,
                           "file": file, "line": 1, "endLine": end})
             trees[module] = (tree, file)
-            visit(tree.body, module, module, nodes, file, playback.import_aliases(tree), None, defs)
-    relationships = relations.find(nodes, trees, defs)
+            walks[module] = relations.walk(tree)  # one walk of the whole tree, used for the imports here and in the relationships
+            visit(tree.body, module, module, nodes, file, playback.import_aliases(tree, walks[module]), None, defs, flats)
+    relationships = relations.find(nodes, trees, defs, flats, walks)
     return {"nodes": nodes, "errors": errors, "relationships": relationships,
             "unresolved": sum(r["resolution"] == "unresolved" for r in relationships)}
 
