@@ -19,6 +19,7 @@ import { pluginClassMessage } from "../tutor-reads.ts";
 import { LAYER_CONCEPTS, isLayer } from "../measure.ts";
 
 const MAX_MESSAGE_CHARS = 20_000;
+const PRACTICE_MESSAGE = "The person asked to practise. This is a practice session: call practice_targets, then pose problems on those ideas with problem (solve each yourself first), one at a time. Hints only when the person asks for them. When you are done, or there is nothing to practise, call finish_class.";
 const MAX_TOPIC_CHARS = 500;
 const FIRST_MESSAGE = "The person has opened a class but gave no topic. Look at their project with the read tools, pick the one idea worth teaching first, and begin the first step.";
 const topicMessage = (topic: string) => `The person has opened a class. The topic is: ${topic}
@@ -55,6 +56,8 @@ const handler: Handler = async (req, res, core) => {
   if (layer !== undefined && !isLayer(layer)) return reject(400, `layer must be one of ${Object.keys(LAYER_CONCEPTS).join(", ")}`);
   const guide = body?.guide;
   if (guide !== undefined && guide !== true) return reject(400, "guide must be true");
+  const practice = body?.practice;
+  if (practice !== undefined && practice !== true) return reject(400, "practice must be true");
   const difference = body?.drift === undefined ? undefined : driftOf(project).find((d) => d.id === body.drift);
   if (body?.drift !== undefined && !difference) return reject(400, "drift must be the id of a difference on the project's drift list (GET /drift)");
   const selection = body?.selection;
@@ -64,12 +67,12 @@ const handler: Handler = async (req, res, core) => {
   const plugin = body?.plugin;
   if (plugin !== undefined && (typeof plugin !== "string" || !core.quarantine.get(plugin))) return reject(400, "plugin must be the id of a plugin waiting in the quarantine");
   // The context the interface attached, all of it; the person's own question (if any) comes first.
-  const contexts = [guide && guideClassMessage(core.plugins.lessons()), layer && layerClassMessage(layer), difference && driftClassMessage(difference), selection && selectionMessage(selection), plugin && pluginClassMessage(plugin)].filter((c): c is string => typeof c === "string");
+  const contexts = [guide && guideClassMessage(core.plugins.lessons()), layer && layerClassMessage(layer), difference && driftClassMessage(difference), selection && selectionMessage(selection), plugin && pluginClassMessage(plugin), practice && PRACTICE_MESSAGE].filter((c): c is string => typeof c === "string");
   const question = typeof body?.message === "string" && body.message.trim() ? body.message : undefined;
   const opening = contexts.length ? (question ? `The person asks: ${question}\n\n` : "") + contexts.join("\n\n") : question ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
   // One review question about an earlier idea opens a FREE class (started with "Start a class"), unless the person turned it off. A class on a layer, on selected text,
   // on a difference, on a plugin or on how aidea works is something the person asked for on purpose: a review before it would only be in the way.
-  const free = !layer && !difference && !selection && !guide && !plugin;
+  const free = !layer && !difference && !selection && !guide && !plugin && !practice;
   const review = !free || !reviewQuestionOn(core, project.id) ? undefined : pickReview(core, project.id, typeof topic === "string" ? [topic] : []);
   const message = review && typeof opening === "string" ? opening + "\n" + reviewMessage(review) : opening;
   if (typeof message !== "string" || !message.trim() || message.length > MAX_MESSAGE_CHARS) {
@@ -85,6 +88,7 @@ const handler: Handler = async (req, res, core) => {
   const texts: string[] = []; // the Teacher's prose, for the Learner graph
   const lesson = createLesson();
   if (review) lesson.setReview(review.idea);
+  if (practice) lesson.practice.on = true;
   if (guide) lesson.setAboutAidea(); // a class about the app is not part of the Project's Plan
   core.lessons.set(classId, lesson);
   const conversation = core.permissions.open(send, project.id, "tutor", classId);

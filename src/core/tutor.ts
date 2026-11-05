@@ -99,6 +99,37 @@ export const TUTOR_TOOLS = [
     },
   },
   {
+    name: "offer_practice",
+    description: "Offers the person a practice session when ideas were taught but are not recalled well. `reason` is one or two plain sentences saying why. Waits for their answer: only a yes starts practice (they can also ask for it themselves). Never practise without it.",
+    inputSchema: { type: "object", properties: { reason: { type: "string" } }, required: ["reason"] },
+  },
+  {
+    name: "practice_targets",
+    description: "In a practice session: the ideas of this Project that were taught and are not reliably recalled. Write problems only about these.",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "problem",
+    description:
+      "In a practice session: poses one problem and waits for the answer. `problemId` (new each time), `idea` (one of practice_targets), `form`: recall, discrimination (tell apart two close ideas) or composition (use several ideas together). " +
+      "Solve it yourself FIRST: `solution` (your worked answer) and `rubric` (what a right answer contains, what shortcut would skip the idea) stay with aidea and are revealed to you only after the answer. " +
+      "Then the question as in ask: kind choice (prompt, options, correct), text (prompt) or task (prompt, plugin, check, args: the person does it in a plugin and its check decides). The person may ask for a hint: the result then says so, and you give it with hint.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        problemId: { type: "string" }, idea: { type: "string" }, form: { type: "string", enum: ["recall", "discrimination", "composition"] }, solution: { type: "string" }, rubric: { type: "string" },
+        kind: { type: "string", enum: ["choice", "text", "task"] }, prompt: { type: "string" }, options: { type: "array", items: { type: "string" } }, correct: { type: "string" },
+        plugin: { type: "string" }, check: { type: "string" }, args: { type: "object" }, allowDontKnow: { type: "boolean" },
+      },
+      required: ["problemId", "idea", "form", "solution", "rubric", "kind", "prompt"],
+    },
+  },
+  {
+    name: "hint",
+    description: "Gives the hint the person just asked for (the result of problem named its level: from an attention cue up to a worked step, one level per request, never the answer) and waits for their answer to the same problem again. Refused if no hint was asked for.",
+    inputSchema: { type: "object", properties: { problemId: { type: "string" }, text: { type: "string" } }, required: ["problemId", "text"] },
+  },
+  {
     name: "held_ideas",
     description: "Returns the ideas this person already understands in this Project (name and statement only): do not teach them again. begin_step refuses a step about one of them.",
     inputSchema: { type: "object", properties: {} },
@@ -116,7 +147,7 @@ export const TUTOR_TOOLS = [
 // A measuring question has no step: it names the idea it measures, can be skipped, and knows its place in the measurement.
 // `point`: where in the interface to look to answer (layout-and-data 17). Today only the Data layer: a step of the Playback recording and a variable in it.
 export type Point = { layer: "data"; step?: number; variable?: string };
-type Where = { stepId?: string; item?: string; phase?: "predict" | "check" | "review" | "plan"; attempt?: number; idea?: string; skippable?: true; probe?: { n: number; of: number }; point?: Point };
+type Where = { stepId?: string; item?: string; phase?: "predict" | "check" | "review" | "plan" | "offer" | "practice"; attempt?: number; idea?: string; skippable?: true; probe?: { n: number; of: number }; point?: Point; hints?: { n: number; of: number } };
 
 // Checks the pointer the Tutor sent with a prediction; an error text is written for the model.
 export function parsePoint(raw: unknown): { point: Point } | { error: string } {
@@ -136,7 +167,7 @@ export type Question =
   // A task in a plugin (tutor-rewrite 04): the person does it and says so; the plugin's named check decides. The plugin and the check stay in the core.
   | ({ kind: "task"; prompt: string; plugin: string; check: string; args: Record<string, unknown>; allowDontKnow: boolean } & Where);
 
-export type Answer = { option?: number; text?: string; confidence?: number; thought?: string; dontKnow?: boolean; skip?: boolean; done?: boolean };
+export type Answer = { option?: number; text?: string; confidence?: number; thought?: string; dontKnow?: boolean; skip?: boolean; done?: boolean; hint?: boolean };
 
 const nonEmpty = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
 
@@ -169,16 +200,17 @@ export function parseQuestion(args: Record<string, unknown>): { question: Questi
 
 // What the interface is told about a question: never the committed answer.
 export const publicQuestion = (q: Question) => {
-  const where = { ...(q.stepId ? { stepId: q.stepId, phase: q.phase } : q.phase === "review" || q.phase === "plan" ? { phase: q.phase } : {}), ...(q.skippable ? { skippable: true, probe: q.probe } : {}), ...(q.point ? { point: q.point } : {}) };
+  const where = { ...(q.stepId ? { stepId: q.stepId, phase: q.phase } : q.phase === "review" || q.phase === "plan" || q.phase === "offer" || q.phase === "practice" ? { phase: q.phase } : {}), ...(q.hints ? { hints: q.hints } : {}), ...(q.skippable ? { skippable: true, probe: q.probe } : {}), ...(q.point ? { point: q.point } : {}) };
   return q.kind === "choice" ? { kind: q.kind, prompt: q.prompt, options: q.options, allowDontKnow: q.allowDontKnow, ...where } : { kind: q.kind, prompt: q.prompt, allowDontKnow: q.allowDontKnow, ...where }; // a task: no plugin, no check
 };
 
 // Checks the person's answer against the question it belongs to (the interface sends it, so it is checked, not trusted).
 export function parseAnswer(q: Question, raw: Record<string, unknown>): { answer: Answer } | { error: string } {
-  const { option, text, confidence, thought, dontKnow, skip, done } = raw;
+  const { option, text, confidence, thought, dontKnow, skip, done, hint } = raw;
   if (thought !== undefined && (typeof thought !== "string" || thought.length > MAX_TEXT)) return { error: `thought must be text of at most ${MAX_TEXT} characters` };
   const t = typeof thought === "string" && thought.trim() ? { thought: thought.trim() } : {};
   if (skip === true && q.skippable) return { answer: { skip: true, ...t } };
+  if (hint === true && q.hints) return { answer: { hint: true } }; // a practice problem: the person asks for the next hint
   if (dontKnow === true) {
     if (!q.allowDontKnow) return { error: "This question does not offer \"I don't know\"" };
     return { answer: { dontKnow: true, ...t } };

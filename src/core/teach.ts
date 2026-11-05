@@ -8,6 +8,7 @@ import { callRole, normalise } from "./learner-pipeline.ts";
 import { MAX_MEASURE_QUESTIONS, createMeasureState, heldIdea, heldStrongly, parseBrackets } from "./measure.ts";
 import { runAuthoringTool } from "./tutor-authoring.ts";
 import { itemFor, runPlanTool } from "./plan.ts";
+import { createPracticeState, runPracticeTool } from "./practice.ts";
 import { runPluginTeachTool, taskProblem } from "./plugins/teach.ts";
 import { answerForTutor, parsePoint, parseQuestion } from "./tutor.ts";
 import type { Answer, Question } from "./tutor.ts";
@@ -38,6 +39,7 @@ export function createLesson() {
   let reviewDue: string | undefined; // the idea of a review question the first step waits for
   let reviewIdea: string | undefined; // the same idea, until the question has been asked
   let reviewRefusals = 0; // begin_step calls refused for the review; after two the review is dropped so a Teacher that never asks it cannot trap the class
+  const practice = createPracticeState(); // practice (tutor-rewrite 05): on when the person asked for it or said yes to the Tutor's offer
   const measure = createMeasureState(); // the measurement of this session: questions asked, topics asked about, handed over
   const texts: string[] = []; // every explanation, in order: the Teacher's prose for the Learner graph
 
@@ -55,6 +57,7 @@ export function createLesson() {
     texts,
     elements,
     measure,
+    practice,
     // true in the "How aidea works" class: no Plan gate, get_plan / set_plan are refused, and so are proposals
     get aboutAidea() {
       return aboutAidea;
@@ -150,7 +153,7 @@ export function createLesson() {
     finish(args: Record<string, unknown>): Failure | { summary: string } {
       if (finished) return { error: "The class is finished. End your turn." };
       if (open) return { error: `Step "${open}" is still open: ${WHAT_NEXT[steps.get(open)!.state]}. Close it before finish_class.` };
-      if (!steps.size) return { error: "No step was taught. Begin one with begin_step, or end your turn." };
+      if (!steps.size && !practice.on) return { error: "No step was taught. Begin one with begin_step, or end your turn." };
       if (!nonEmpty(args.summary, MAX_PROSE)) return { error: "finish_class needs a summary: one or two sentences on what was covered" };
       finished = true;
       return { summary: args.summary.trim() };
@@ -222,6 +225,9 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
     const held = core.learner.graph().propositions.filter((p) => heldStrongly(core, project, normalise(p.name)));
     return ok({ ideas: held.map((p) => ({ name: p.name, statement: p.statement })) }); // ideas only, never the person's answers
   }
+
+  const practised = await runPracticeTool(name, args, { core, token, project, gaveUp, state: lesson.practice, stepOpen: lesson.openStep(), judge: (q, a) => judge(core, q, a), record, emit: (e) => conversation.emit(e) });
+  if (practised) return practised;
 
   if (name === "measure") {
     const m = lesson.measure;

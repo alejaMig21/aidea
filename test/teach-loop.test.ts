@@ -353,7 +353,7 @@ test("the Teacher's tool list carries the loop tools next to the read tools", as
     yield { type: "text", text: "x" };
   };
   await t.runClass();
-  assert.deepEqual(names, ["begin_step", "predict", "explain", "ask", "review", "measure", "measure_done", "held_ideas", "finish_class", "propose_node", "propose_change", "get_plan", "plan_ahead", "set_plan", "read_layers", "read_node", "list_files", "read_file", "read_recording", "read_quarantined_plugin", "list_plugin_lessons", "read_plugin_lesson", "read_plugin_view", "check_plugin"]);
+  assert.deepEqual(names, ["begin_step", "predict", "explain", "ask", "review", "measure", "measure_done", "offer_practice", "practice_targets", "problem", "hint", "held_ideas", "finish_class", "propose_node", "propose_change", "get_plan", "plan_ahead", "set_plan", "read_layers", "read_node", "list_files", "read_file", "read_recording", "read_quarantined_plugin", "list_plugin_lessons", "read_plugin_lesson", "read_plugin_view", "check_plugin"]);
 });
 
 // layout-and-data 17: a prediction can point at the Data layer (a step of the recording and a variable), so the interface can show where to look.

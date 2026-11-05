@@ -65,7 +65,7 @@
     help.textContent = open ? "The Tutor asks you questions about your project, one at a time." : "Open a Project to start a class.";
   }
 
-  const PHASE_LABELS = { predict: "Predict", review: "Review of an earlier class", plan: "Your Plan" };
+  const PHASE_LABELS = { predict: "Predict", review: "Review of an earlier class", plan: "Your Plan", offer: "Practice?", practice: "Practice" };
   const PHASE_TASK = "A task for you";
   function collapse(card, summary) {
     if (card.dataset.point) window.dataUi?.clearPoint(); // a prediction that pointed at Data stops pointing once it is answered
@@ -103,7 +103,7 @@
         first ??= radio;
         options.append(el("label", {}, radio, text));
       });
-      if (q.phase === "plan") { // the go-ahead to the Plan: nothing to be sure about
+      if (q.phase === "plan" || q.phase === "offer") { // the go-ahead to the Plan or to practice: nothing to be sure about
         body = [options];
         summary = () => `You chose: ${q.options[Number(form.elements[`tutor-option-${n}`].value)]}`;
       } else {
@@ -131,6 +131,11 @@
     if (q.allowDontKnow) {
       dontKnow = el("button", { type: "button", className: "tutor-dontknow", textContent: "Don't know" });
       buttons.append(dontKnow);
+    }
+    if (q.hints && q.hints.n < q.hints.of) { // a practice problem: one hint per press, from a nudge to a worked step
+      const hintButton = el("button", { type: "button", className: "tutor-dontknow", textContent: `Hint (${q.hints.n + 1} of ${q.hints.of})` });
+      hintButton.onclick = () => submit({ hint: true }, "You asked for a hint");
+      buttons.append(hintButton);
     }
     if (q.skippable) { // a probe question (ticket 06): the person may say they already know it
       const known = el("button", { type: "button", className: "tutor-dontknow", textContent: "I already know this" });
@@ -163,7 +168,7 @@
       e.preventDefault();
       if (q.kind === "task") submit({ done: true }, summary());
       else if (q.kind === "choice") {
-        submit({ option: Number(form.elements[`tutor-option-${n}`].value), ...(q.phase === "plan" ? {} : { confidence: Number(form.elements[`tutor-confidence-${n}`].value) }) }, summary());
+        submit({ option: Number(form.elements[`tutor-option-${n}`].value), ...(q.phase === "plan" || q.phase === "offer" ? {} : { confidence: Number(form.elements[`tutor-confidence-${n}`].value) }) }, summary());
       } else submit({ text: form.querySelector("textarea").value }, summary());
     };
     if (dontKnow) dontKnow.onclick = () => {
@@ -214,6 +219,7 @@
       const c = event.changes; // a revised Plan says what changed (tutor-rewrite 03)
       if (c && (c.removed.length || (c.kept.length && c.added.length))) line("tutor-meta", `Plan changed. Added: ${c.added.join(", ") || "nothing"}. Removed: ${c.removed.join(", ") || "nothing"}.`);
     }
+    else if (event.type === "tutor_hint") line("tutor-meta", `Hint ${event.level}: ${event.text}`);
     else if (event.type === "measure_done") line("tutor-meta", `Measured ${event.topics.length} topic${event.topics.length === 1 ? "" : "s"}: ${event.topics.map((t) => t.name).join(", ")}`);
   }
 

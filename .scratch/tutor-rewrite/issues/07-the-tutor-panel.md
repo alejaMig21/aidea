@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] The panel shows the conversation, the Plan and a Practice entry, and nothing of the old class kinds.
+- [ ] The panel shows the conversation, the Plan and a Practice entry (a button that starts `{practice: true}`), and nothing of the old class kinds.
 - [ ] Asking from a selection or a Node attaches it as context.
 - [ ] It works at 1920 and 1280 pixels and with the keyboard; the legend and layer tests pass.
 - [ ] The Plan panel shows items, dependencies and the current one (moved from tutor-rewrite 03).

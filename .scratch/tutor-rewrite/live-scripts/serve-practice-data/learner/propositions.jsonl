@@ -1,0 +1,1 @@
+{"op":"put","proposition":{"id":"worker","name":"Worker","statement":"A worker takes a job from the queue and runs it.","aliases":[],"provenance":[{"classId":"c1","message":0,"project":"D:\\Projects\\aidea\\.scratch\\tutor-rewrite\\live-scripts\\serve-practice-data\\shop"}]}}

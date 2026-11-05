@@ -18,7 +18,7 @@ export type Evidence = {
   classId: string; questionId: string; project: string; kind: "choice" | "text" | "task" | "probe-skip" | "decision-skip" | "run-prediction";
   correct: boolean | null; confidence: number | null; answer: string | null; thought: string | null; dontKnow: boolean; time: string;
   // Present for answers given inside the teach loop: the step, "predict" or "check", the attempt number, and a wrong answer given with confidence 70 or more.
-  stepId?: string; phase?: "predict" | "check" | "probe" | "review"; attempt?: number; sureAndWrong?: true;
+  stepId?: string; phase?: "predict" | "check" | "probe" | "review" | "practice"; attempt?: number; sureAndWrong?: true;
   // Present for answers given in a Probe or in the review question of a class: phase "probe" or "review" and the idea the question measured (normalised).
   idea?: string;
   // Present for answers in a step that was about a Plan concept (normalised name).
@@ -150,7 +150,7 @@ export function evidenceOf(classId: string, questionId: string, project: string,
     classId, questionId, project, kind: q.kind, correct, confidence,
     answer: dontKnow ? null : q.kind === "choice" ? q.options[a.option!] : (a.text ?? null),
     thought: a.thought ?? null, dontKnow, time,
-    ...(q.stepId ? { stepId: q.stepId, phase: q.phase === "plan" ? undefined : q.phase, attempt: q.attempt, ...(q.item ? { item: q.item } : {}) } : {}),
+    ...(q.stepId ? { stepId: q.stepId, phase: q.phase === "plan" || q.phase === "offer" ? undefined : q.phase, attempt: q.attempt, ...(q.item ? { item: q.item } : {}) } : {}),
     ...(choice && correct === false && (confidence ?? 0) >= 70 ? { sureAndWrong: true as const } : {}),
   };
 }
