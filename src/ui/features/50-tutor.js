@@ -4,7 +4,9 @@
 {
   const style = document.createElement("style");
   style.textContent = `
-    #pane-tutor:is(.tutor-live, .tutor-over) .tutor-help, #pane-tutor.tutor-live :is(#tutor-start, #tutor-topic) { display: none; }
+    #pane-tutor:is(.tutor-live, .tutor-over) .tutor-help, #pane-tutor.tutor-live :is(#tutor-start, #tutor-practice, #tutor-topic) { display: none; }
+    #tutor-practice { width: 100%; padding: 7px 14px; font-size: 13px; font-weight: 400; background: transparent; color: var(--text); border: 1px solid var(--control); }
+    #tutor-practice:disabled { opacity: .5; }
     #pane-tutor #tutor-end[hidden] { display: none; }
     #pane-tutor.tutor-live #tutor-end { align-self: flex-start; background: transparent; color: var(--text); border: 1px solid var(--control); font-size: 13px; font-weight: 400; }
     #tutor-log { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
@@ -46,9 +48,11 @@
   const log = Object.assign(document.createElement("div"), { id: "tutor-log", hidden: true });
   log.setAttribute("role", "log");
   log.setAttribute("aria-label", "Class with the Tutor");
-  const topic = Object.assign(document.createElement("input"), { type: "text", id: "tutor-topic", maxLength: 500, placeholder: "Topic (optional)" });
-  topic.setAttribute("aria-label", "Topic of the class (optional)");
+  const topic = Object.assign(document.createElement("input"), { type: "text", id: "tutor-topic", maxLength: 500, placeholder: "Ask anything about your project (optional)" });
+  topic.setAttribute("aria-label", "What you want to ask or learn (optional)");
+  const practice = Object.assign(document.createElement("button"), { type: "button", id: "tutor-practice", textContent: "Practice", disabled: true, title: "Problems on ideas you met but do not recall well yet" });
   start.before(topic);
+  start.after(practice);
   start.after(end);
   $("tutor-settings").after(log); // below the way to begin
 
@@ -62,6 +66,7 @@
   function setAvailable(open) {
     if (running) return;
     start.disabled = !open;
+    practice.disabled = !open;
     help.textContent = open ? "The Tutor asks you questions about your project, one at a time." : "Open a Project to start a class.";
   }
 
@@ -205,7 +210,7 @@
     if (event.type === "error" && running?.fallback && !running.heard && UNREACHABLE.includes(event.code)) { running.unavailable = true; return; }
     if (event.type !== "session" && event.type !== "error" && running) running.heard = true;
     if (event.type === "text") line("tutor-say", event.text);
-    else if (event.type === "tutor_step") { log.append(el("h3", { className: "tutor-step", textContent: event.title })); pane.scrollTop = pane.scrollHeight; }
+    else if (event.type === "tutor_step") { document.dispatchEvent(new CustomEvent("plan-step", { detail: { item: event.item ?? null } })); log.append(el("h3", { className: "tutor-step", textContent: event.title })); pane.scrollTop = pane.scrollHeight; }
     else if (event.type === "tutor_explain") { if (event.repair) line("tutor-label", "Let's look again"); line("tutor-say", event.text); }
     else if (event.type === "tutor_finished") line("tutor-meta", `Class finished: ${event.summary}`);
     else if (event.type === "proposal") tutorProposal(event);
@@ -262,6 +267,7 @@
     pane.classList.replace("tutor-live", "tutor-over");
     end.hidden = true;
     start.disabled = !current;
+    practice.disabled = !current;
     start.textContent = opts.ended ? "Start a class" : "Start another class";
   }
 
@@ -278,10 +284,11 @@
     pane.querySelectorAll("details.tutor-section[open]").forEach((d) => { d.open = false; }); // the sections stay folded during a class
     end.hidden = false;
     start.disabled = true;
+    practice.disabled = true;
     end.focus();
     let unavailable = false;
     try {
-      const res = await fetch(opts.path ?? "/tutor/classes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(opts.payload ?? { project, topic: topic.value.trim() || undefined }), signal: running.abort.signal });
+      const res = await fetch(opts.path ?? "/tutor/classes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(opts.payload ?? { project, message: topic.value.trim() || undefined }), signal: running.abort.signal });
       if (!res.ok) {
         const p = el("p", { className: "tutor-error", textContent: (await res.json().catch(() => ({}))).error ?? "The class could not start" });
         p.setAttribute("role", "alert");
@@ -310,6 +317,7 @@
   }
 
   start.onclick = () => startClass();
+  practice.onclick = () => startClass({ payload: { project: current, practice: true } }); // the core picks the ideas: taught, not yet recalled well
   end.onclick = () => (running?.skip ? running.skip() : running?.abort.abort()); // closing the stream ends the class in the core
   window.tutorUi = { startClass, abort: () => running?.abort.abort(), isRunning: () => running !== null };
   document.addEventListener("project-opened", (e) => {

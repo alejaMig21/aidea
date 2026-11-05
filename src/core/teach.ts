@@ -7,7 +7,7 @@ import type { Evidence } from "./learner.ts";
 import { callRole, normalise } from "./learner-pipeline.ts";
 import { MAX_MEASURE_QUESTIONS, createMeasureState, heldIdea, heldStrongly, parseBrackets } from "./measure.ts";
 import { runAuthoringTool } from "./tutor-authoring.ts";
-import { itemFor, runPlanTool } from "./plan.ts";
+import { coveredOf, itemFor, runPlanTool } from "./plan.ts";
 import { createPracticeState, runPracticeTool } from "./practice.ts";
 import { runPluginTeachTool, taskProblem } from "./plugins/teach.ts";
 import { answerForTutor, parsePoint, parseQuestion } from "./tutor.ts";
@@ -287,6 +287,8 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
     const { answer } = result.heard;
     if (answer.option === 0) {
       core.plans.approve(project);
+      const approved = core.plans.get(project)!;
+      conversation.emit({ type: "tutor_plan", plan: approved, covered: coveredOf(core, approved) }); // the panel stops saying it waits
       return ok({ approved: true, next: "The person said go ahead. Begin the first step with begin_step, giving `item`." });
     }
     return ok({ approved: false, change: answer.thought ?? null, next: "The person wants the Plan changed. Revise it with set_plan as they asked (keep what stays), say in a sentence what changed, and ask again with plan_ahead." });
@@ -314,7 +316,7 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
     if (waiting && !waiting.approved) return err("The person has not said go ahead to the Plan yet. Explain it in a few sentences and ask with plan_ahead; no step begins before that.");
     const r = lesson.begin(args, planItem.item ?? (idea || undefined)); // without a Plan, the idea named is the step's item for its Evidence
     if ("error" in r) return err(r.error);
-    conversation.emit({ type: "tutor_step", stepId: r.stepId, title: String(args.title).trim() });
+    conversation.emit({ type: "tutor_step", stepId: r.stepId, title: String(args.title).trim(), ...(planItem.item ? { item: planItem.item } : {}) });
     return ok({
       stepId: r.stepId,
       ...(allHeld ? { held: `The person already understands "${allHeld}", but every remaining Plan concept is held, so this step is allowed. Make it a short review or build on it, then call finish_class.` } : {}),

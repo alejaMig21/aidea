@@ -174,3 +174,18 @@ test("the class about aidea itself has no Plan, so nothing waits for a go-ahead"
   await t.session();
   assert.equal(seen.step.isError, undefined, text(seen.step));
 });
+
+test("the panel is told: the go-ahead sends the approved Plan, and each step event names its Plan item", async () => {
+  const t = await newCore();
+  tutor = async function* (call) {
+    await call("set_plan", PLAN);
+    await call("plan_ahead", { summary: "Containers first." });
+    await call("begin_step", step("s1", "Container"));
+    yield { type: "text", text: "done" };
+  };
+  const events = await t.session();
+  const plans = events.filter((e) => e.type === "tutor_plan");
+  assert.equal(plans.at(-1).plan.approved, true, "the last Plan the panel hears about is the approved one");
+  assert.equal(plans[0].plan.approved, undefined);
+  assert.equal(events.find((e) => e.type === "tutor_step").item, "container");
+});

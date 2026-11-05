@@ -9,7 +9,7 @@ Rules:
 4. The status of a ticket says whether it can start: `ready-for-agent`, or `needs-info` and what it waits for (shown in the Wait column).
 5. Every new built-in plugin ships a lesson and a teaching surface (plugin-lessons, plugin-teaching): items that create one depend on those.
 
-Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (85 items, 5 levels).
+Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (84 items, 5 levels).
 ## Level 0: no dependencies
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
@@ -28,7 +28,6 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | prov | T | XL | Roles and Providers: the Tutor and the Builder become roles filled by provider plugins; the agent adapter becomes a (required) plugin. Part of migrating the rest of the existing features into plugins (Files, Code, Playback, the layers), each with its own specification, as the plugin-system spec left it | roles-and-providers 01 | - | 3 | the spec the plugin-system spec left out (which services stay single-instance, the list of named slots, the required plugins) |
 | cbs | T | M | Spike: measure Codebase Memory MCP as a code-graph tool for the agents on Telegram, a Unity project and a Node monorepo, with and without it (indexing writes nothing into the project; one background process per account shares the person's cache; licence not looked at) | layer-inference 11 | - | 2 | quota |
 | inst_spec | T | S | Write the Instances spec: a plugin declares a minimum number of instances and can run N times (N Builders each on a branch, N Tutors, N Canvases each on a layer); the Panel registry and the saved Layout name an instance | roles-and-providers 02 | - | 2 | the person decides the open points |
-| tr07 | T | M | The Tutor panel is one chat, the Plan view and a way to ask for practice; no class kinds, no Probe card | tutor-rewrite 07 | - | 1 | - |
 | tr09 | T | L | The three authored layers (Business, Requirements, Architecture) become plugins with a lesson, a view and checks, so the Tutor uses them like any other | tutor-rewrite 09 | - | 1 | the person decides whether the three authored layers become plugins |
 | bp03 | T | S | Say why module pairs are hidden and let the person see them | big-projects 03 | - | - | - |
 | bp05 | T | L | The cold analysis of a big project takes under 2 s: per-file facts extracted in parallel worker processes, resolved across files; incremental | big-projects 05 | - | - | - |
@@ -36,6 +35,7 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | ed | T | S | Let the person edit the input data of a recording (the named lists cover part of it) | animation-and-data 05 | - | - | - |
 | jn | T | XL | Guided, game-like journeys with achievements: a sample Python Project that ships inside aidea, the interface reporting actions, a progress map | guided-journeys 01 | - | - | a spec first and the wording of Tutor story 31 (no score is kept) |
 | jr | T | S | Missing dev-journal entries (presets, keyboard, Class and Direct removal, READING, Data layer, 2026-11-04 and 2026-11-05) | housekeeping 02 | - | - | - |
+| la17 | T | S | Live check of the Tutor pointing at Data (and the two lines in `50-tutor.js`) | layout-and-data 17 | - | - | real Tutor (quota) |
 | la17s | T | S | Check "Save image" in Electron (the download dialog was never clicked) | layout-and-data 17 note | - | - | - |
 | ld10 | T | XL | A Panel on a second window | layout-and-data 10 | - | - | the person has one screen; ADR 0007 |
 | lf01 | T | S | Live measurement of idea names and duplicates | live-findings 01 | - | - | real classes (quota) |
@@ -54,7 +54,7 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | tb | T | S | Merge the Canvas's own title bar with the layer bar (needs a ticket) | housekeeping 01 | - | - | - |
 | v1g01 | T | S | Live check: the Builder cannot write aidea files except by Proposals | v1-gaps 01 | - | - | real Builder (quota) |
 
-## Level 1: depends only on levels below (24 items)
+## Level 1: depends only on levels below (23 items)
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
@@ -74,7 +74,6 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | cmp | T | M | Compare two algorithms side by side on the same data | animation-and-data 02 | anim | - | an idea |
 | dbg | T | XL | A visual debugger for people who are not engineers (Playback and Data cover part) | animation-and-data 07 | anim | - | say what Playback and Data still lack for this |
 | hints | T | M | Short contextual hints the first time a part is used | plugin-lessons 06 | pl02 | - | an idea |
-| la17 | T | S | Live check of the Tutor pointing at Data (and the two lines in `50-tutor.js`) | layout-and-data 17 | tr07 | - | real Tutor (quota) |
 | li01 | T | M | Opening shows the fingerprint at once and never waits for the analysis; the layers fill in as it finishes | layer-inference 01 | li02 | - | - |
 | li06 | T | L | Architecture patterns judged by the Tutor and checked by the core (layered, hexagonal, event-driven, plugin-based) | layer-inference 06 | li03 | - | - |
 | perf | T | XL | A performance lens: how time and memory grow with the size of the data | animation-and-data 06 | anim | - | an idea |

@@ -44,9 +44,9 @@ const PARTS: Record<string, Part> = {
   tutor: {
     name: "The Tutor",
     hint: "How do I learn here?",
-    what: `The "Tutor" panel is where you learn why things are the way they are. "Start a class" begins a class on a topic you type, or on something the Tutor picks from your project. A class goes in small steps: it asks you to guess first, then explains, then checks what you understood. Each layer also has a "Teach me through it" button, which starts a class on that layer. Select any text on screen to get "Explain" for a short explanation, or "Enter the Tutor" for a class on it. The Tutor never changes your code; it can only suggest changes to the written layers, as Proposals.`,
+    what: `The "Tutor" panel is where you learn why things are the way they are. You can ask it anything about your project: type your question and press "Start a class". It first asks a few questions to see what you already know, shows you a plan and waits for your go-ahead, then teaches in small steps: it asks you to guess first, then explains, then checks what you understood. "Practice" gives you problems on ideas you met but do not recall well yet, with hints when you ask for them. Each layer also has a "Teach me through it" button, which starts a class on that layer. Select any text on screen to get "Explain" for a short explanation, or "Enter the Tutor" for a class on it. The Tutor never changes your code; it can only suggest changes to the written layers, as Proposals.`,
     question: "What is something in your project you could not explain to a friend yet?",
-    example: "Type queues as a topic and press Start a class.",
+    example: "Type why a queue is used here and press Start a class.",
     narration: "The Tutor panel is the part of aidea that cares whether you understand what gets built.",
     tryIt: `Open the "Tutor" panel and press "Start a class", or press "Teach me through it" on the layer you have open.`,
   },
