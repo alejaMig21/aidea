@@ -15,7 +15,7 @@ export type Proposition = { id: string; name: string; statement: string; aliases
 export type Chain = { id: string; premises: string[]; conclusion: string; provenance: Provenance[] };
 export type Graph = { propositions: Proposition[]; chains: Chain[] };
 export type Evidence = {
-  classId: string; questionId: string; project: string; kind: "choice" | "text" | "probe-skip" | "decision-skip" | "run-prediction";
+  classId: string; questionId: string; project: string; kind: "choice" | "text" | "task" | "probe-skip" | "decision-skip" | "run-prediction";
   correct: boolean | null; confidence: number | null; answer: string | null; thought: string | null; dontKnow: boolean; time: string;
   // Present for answers given inside the teach loop: the step, "predict" or "check", the attempt number, and a wrong answer given with confidence 70 or more.
   stepId?: string; phase?: "predict" | "check" | "probe" | "review"; attempt?: number; sureAndWrong?: true;
@@ -23,6 +23,8 @@ export type Evidence = {
   idea?: string;
   // Present for answers in a step that was about a Plan concept (normalised name).
   item?: string;
+  // kind "task" (tutor-rewrite 06): the person did something in a plugin and the plugin's named check said whether it was done. `correct` is the check's answer (null for "I don't know").
+  check?: { plugin: string; name: string };
   // kind "decision-skip": no longer made (decision classes are gone); ledgers written by earlier versions may still hold it, so it is still read.
   decision?: string;
   // kind "run-prediction": a guess made before a step of a Playback recording (the class id is `run:<recording>`). Never an idea of the Learner graph.
@@ -142,10 +144,10 @@ export type LearnerStore = ReturnType<typeof createLearnerStore>;
 export function evidenceOf(classId: string, questionId: string, project: string, q: Question, a: Answer, graded?: boolean, time = new Date().toISOString()): Evidence {
   const dontKnow = a.dontKnow === true;
   const choice = q.kind === "choice" && !dontKnow;
-  const correct = choice ? a.option === q.correct : q.kind === "text" && !dontKnow && graded !== undefined ? graded : null;
+  const correct = choice ? a.option === q.correct : (q.kind === "text" || q.kind === "task") && !dontKnow && graded !== undefined ? graded : null;
   const confidence = choice ? (a.confidence ?? null) : null;
   return {
-    classId, questionId, project, kind: q.kind === "task" ? "text" : q.kind, correct, confidence,
+    classId, questionId, project, kind: q.kind, correct, confidence,
     answer: dontKnow ? null : q.kind === "choice" ? q.options[a.option!] : (a.text ?? null),
     thought: a.thought ?? null, dontKnow, time,
     ...(q.stepId ? { stepId: q.stepId, phase: q.phase === "plan" ? undefined : q.phase, attempt: q.attempt, ...(q.item ? { item: q.item } : {}) } : {}),

@@ -384,7 +384,7 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
     });
   }
 
-  // A task: the plugin's check decides, never the Tutor and never the person's word (nothing is recorded as Evidence here: tutor-rewrite 06).
+  // A task: the plugin's check decides, never the Tutor and never the person's word. Its answer is Evidence of "did it", marked as coming from a check.
   if (q.kind === "task") {
     let checked: { note: string; result: { ok: boolean; reason?: string } } | undefined;
     if (!heard.answer.dontKnow) {
@@ -393,6 +393,7 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
       checked = JSON.parse(run!.text);
     }
     const correct = checked?.result.ok === true;
+    record(q, heard.answer, heard.questionId, checked ? correct : undefined, { check: { plugin: q.plugin, name: q.check } });
     lesson.checked(stepId, correct);
     return ok({
       kind: "task", ...(heard.answer.dontKnow ? { dontKnow: true } : { done: true }), correct, stepId, attempt: q.attempt, stepClosed: correct,
