@@ -15,6 +15,7 @@ import type { Proposal } from "../proposals.ts";
 import { NODE_HELP } from "../tutor-authoring.ts";
 import { TUTOR_TOOLS } from "../tutor.ts";
 import { runTeachTool } from "../teach.ts";
+import { readManifest } from "../plugins/manifest.ts";
 import { runPluginTeachTool } from "../plugins/teach.ts";
 import { PLUGIN_READ_TOOLS, READ_TOOLS, runReadTool } from "../tutor-reads.ts";
 import type { Core, Handler } from "../types.ts";
@@ -231,6 +232,17 @@ const handler: Handler = async (req, res, core) => {
           folder = real;
         } catch {
           core.send(res, 200, toolText(id, "Give the path of a folder of this Project, relative to it (not the Project itself, not outside it).", true));
+          return true;
+        }
+        // A plugin the Builder writes must come with a valid lesson (plugin-lessons 04); one that comes from anywhere else is never refused for lacking it.
+        const read = readManifest(folder);
+        const lessonProblems = "problems" in read ? read.problems.filter((p) => p.startsWith('"lesson"')) : [];
+        if (lessonProblems.length) {
+          core.send(res, 200, toolText(id, `The lesson of this plugin is not valid: ${lessonProblems.join("; ")}. Fix lesson.json (see the skill, step "Write the lesson") and propose it again.`, true));
+          return true;
+        }
+        if ("manifest" in read && !read.manifest.lesson) {
+          core.send(res, 200, toolText(id, 'A plugin you write must come with a lesson that teaches it, so the person\'s Tutor can explain what it does: add a lesson.json (copy it from docs/plugin-template) and name it as "lesson" in the manifest. Then propose it again.', true));
           return true;
         }
         try {

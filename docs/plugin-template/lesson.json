@@ -1,0 +1,14 @@
+{
+  "parts": [
+    {
+      "name": "What my plugin does",
+      "hint": "What is this plugin for?",
+      "what": "One or two plain sentences saying what the plugin adds and where the person finds it.",
+      "question": "What would you expect to see after you open it?",
+      "example": "One concrete example of using it.",
+      "narration": "Let's look at what my plugin does.",
+      "tryIt": "One thing the person can do right now to see it working.",
+      "refs": ["my-plugin"]
+    }
+  ]
+}

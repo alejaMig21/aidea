@@ -37,7 +37,7 @@ let n = 0;
 async function start() {
   const project = join(scratch, `project${n++}`);
   cpSync(fixture("shop"), project, { recursive: true });
-  const dir = (name: string, files: Record<string, string>) => { mkdirSync(join(project, name), { recursive: true }); for (const [f, t] of Object.entries(files)) writeFileSync(join(project, name, f), t); };
+  const dir = (name: string, files: Record<string, string>) => { mkdirSync(join(project, name), { recursive: true }); for (const [f, t] of Object.entries({ "lesson.json": LESSON, ...files })) writeFileSync(join(project, name, f), t); }; // a Builder-written plugin comes with its lesson (plugin-lessons 04)
   const store = join(scratch, `store${n++}`);
   mkdirSync(store, { recursive: true });
   const core = await startCore({ port: 0, adapter: asBuilder, pluginsDir: store, builtinPluginsDir: false });
@@ -50,7 +50,8 @@ async function start() {
   };
   return { core, project, dir, post, chat, store };
 }
-const manifest = (id: string) => JSON.stringify({ id, version: "1.0.0", title: `Title of ${id}`, description: "Written by the builder.", publisher: "builder", api: "0.1", main: "main.js" });
+const manifest = (id: string) => JSON.stringify({ id, version: "1.0.0", title: `Title of ${id}`, description: "Written by the builder.", publisher: "builder", api: "0.1", main: "main.js", lesson: "lesson.json" });
+const LESSON = JSON.stringify({ parts: [{ name: "The plugin", hint: "What is it?", what: "It does one thing.", question: "What would you expect it to do?", example: "Press the button.", narration: "Let's look.", tryIt: "Open it.", refs: [] }] });
 
 test("the Builder has a tool to propose a plugin and one to read the guide, and no tool that installs, enables, updates or removes one", async () => {
   const t = await start();
