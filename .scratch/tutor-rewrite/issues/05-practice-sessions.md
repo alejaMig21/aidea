@@ -2,7 +2,7 @@
 
 **What to build:** A separate kind of session, as in LearnHarness: the person or the Tutor asks for it. The Tutor picks ideas from the Learner graph that were taught but not reliably recalled and writes problems in three forms (recall, discrimination, composition), solving each before posing it and keeping the model solution and a rubric. Hints come one level at a time, from a nudge to a worked step, only when asked. A grader scores the answer and says where the reasoning first broke. A practical problem asks the person to do something in a plugin (lay out a given architecture on the Canvas) and the plugin's named check says whether they did. The Tutor never does the task for the person.
 
-**Blocked by:** tutor-rewrite 04.
+**Blocked by:** None (can start immediately).
 
 **Status:** ready-for-agent
 

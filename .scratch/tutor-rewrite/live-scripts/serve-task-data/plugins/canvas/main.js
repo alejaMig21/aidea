@@ -1,0 +1,1 @@
+export function activate(ctx) { ctx.teach.state(() => ({ relations: [['shop', 'db']] })); }

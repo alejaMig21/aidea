@@ -39,6 +39,29 @@ function runChild(folder: string, file: string, request: object, { timeoutMs = 3
 
 const sizeOk = (value: unknown, max: number) => JSON.stringify(value).length <= max;
 
+// Checks the name of a check and its arguments against what the manifest declares. The error text is for the model.
+function checkRequest(teach: { checks: { name: string; args?: Record<string, string> }[] }, name: unknown, args: unknown): { check: { name: string }; given: Record<string, unknown> } | { error: string } {
+  const check = teach.checks.find((c) => c.name === name);
+  if (!check) return { error: `This plugin has no check named ${JSON.stringify(name)}. Its checks: ${teach.checks.map((c) => c.name).join(", ") || "none"}.` };
+  const given = args === undefined ? {} : args;
+  if (!given || typeof given !== "object" || Array.isArray(given)) return { error: '"args" must be an object' };
+  const declared = check.args ?? {};
+  for (const key of Object.keys(given)) if (!(key in declared)) return { error: `"${key}" is not an argument of this check. Its arguments: ${Object.keys(declared).join(", ") || "none"}.` };
+  for (const [key, shape] of Object.entries(declared)) {
+    if (!(key in given)) return { error: `"${key}" is missing: it must be a ${shape}.` };
+    if (typeof (given as Record<string, unknown>)[key] !== shape) return { error: `"${key}" must be a ${shape}.` };
+  }
+  return { check, given: given as Record<string, unknown> };
+}
+
+// The problem with a task a lesson step wants to ask (the plugin, the check or its arguments do not exist or do not fit), or null. Nothing is run.
+export function taskProblem(core: Core, plugin: unknown, check: unknown, args: unknown): string | null {
+  const found = core.plugins.teachOf(typeof plugin === "string" ? plugin : "");
+  if ("problem" in found) return found.problem;
+  const asked = checkRequest(found.teach, check, args);
+  return "error" in asked ? asked.error : null;
+}
+
 // Runs `name` when it is one of the two tools; null when it is not.
 export async function runPluginTeachTool(name: unknown, args: Record<string, unknown>, core: Core, limits: TeachLimits = {}): Promise<TeachResult | null> {
   if (name !== "read_plugin_view" && name !== "check_plugin") return null;
@@ -50,17 +73,9 @@ export async function runPluginTeachTool(name: unknown, args: Record<string, unk
   if (!existsSync(file)) return fail(`The teach module of this plugin is missing, so there is no code to run.`);
   const request: { op: string; name?: string; args?: unknown } = { op: "view" };
   if (name === "check_plugin") {
-    const check = teach.checks.find((c) => c.name === args.name);
-    if (!check) return fail(`This plugin has no check named ${JSON.stringify(args.name)}. Its checks: ${teach.checks.map((c) => c.name).join(", ") || "none"}.`);
-    const given = args.args === undefined ? {} : args.args;
-    if (!given || typeof given !== "object" || Array.isArray(given)) return fail('"args" must be an object');
-    const declared = check.args ?? {};
-    for (const key of Object.keys(given)) if (!(key in declared)) return fail(`"${key}" is not an argument of this check. Its arguments: ${Object.keys(declared).join(", ") || "none"}.`);
-    for (const [key, shape] of Object.entries(declared)) {
-      if (!(key in given)) return fail(`"${key}" is missing: it must be a ${shape}.`);
-      if (typeof (given as Record<string, unknown>)[key] !== shape) return fail(`"${key}" must be a ${shape}.`);
-    }
-    Object.assign(request, { name: check.name, args: given, op: "check" });
+    const asked = checkRequest(teach, args.name, args.args);
+    if ("error" in asked) return fail(asked.error);
+    Object.assign(request, { name: asked.check.name, args: asked.given, op: "check" });
   }
   let state: unknown;
   try { state = await snapshot(); } catch (e) { return fail(`The plugin could not give its state: ${String((e as Error)?.message ?? e).slice(0, 200)}`); }

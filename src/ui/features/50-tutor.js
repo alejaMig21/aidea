@@ -66,6 +66,7 @@
   }
 
   const PHASE_LABELS = { predict: "Predict", review: "Review of an earlier class", plan: "Your Plan" };
+  const PHASE_TASK = "A task for you";
   function collapse(card, summary) {
     if (card.dataset.point) window.dataUi?.clearPoint(); // a prediction that pointed at Data stops pointing once it is answered
     card.className = "tutor-card tutor-done";
@@ -115,6 +116,11 @@
         body = [options, stops];
         summary = () => `You answered: ${q.options[Number(form.elements[`tutor-option-${n}`].value)]} (confidence ${form.elements[`tutor-confidence-${n}`].value})`;
       }
+    } else if (q.kind === "task") { // a task in a plugin (tutor-rewrite 04): the person does it there, then says so; the plugin's check decides
+      send.textContent = "I did it";
+      first = send;
+      body = [el("p", { className: "tutor-prompt", textContent: q.prompt })];
+      summary = () => "You said: I did it";
     } else {
       const text = el("textarea", { id: `tutor-text-${n}`, rows: 3, required: true, placeholder: "Your answer" });
       text.setAttribute("aria-label", "Your answer");
@@ -131,7 +137,8 @@
       known.onclick = () => submit({ skip: true }, "You said: I already know this");
       buttons.append(known);
     }
-    if (PHASE_LABELS[q.phase]) form.prepend(el("p", { className: "tutor-label", textContent: PHASE_LABELS[q.phase] }));
+    if (q.kind === "task") form.prepend(el("p", { className: "tutor-label", textContent: PHASE_TASK }));
+    else if (PHASE_LABELS[q.phase]) form.prepend(el("p", { className: "tutor-label", textContent: PHASE_LABELS[q.phase] }));
     if (q.probe) form.prepend(el("p", { className: "tutor-label", textContent: `Question ${q.probe.n} of ${q.probe.of}` }));
     form.append(...body, thoughtLink, thoughtBox, buttons, status);
 
@@ -154,7 +161,8 @@
     };
     form.onsubmit = (e) => {
       e.preventDefault();
-      if (q.kind === "choice") {
+      if (q.kind === "task") submit({ done: true }, summary());
+      else if (q.kind === "choice") {
         submit({ option: Number(form.elements[`tutor-option-${n}`].value), ...(q.phase === "plan" ? {} : { confidence: Number(form.elements[`tutor-confidence-${n}`].value) }) }, summary());
       } else submit({ text: form.querySelector("textarea").value }, summary());
     };

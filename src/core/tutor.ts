@@ -4,14 +4,14 @@
 export const TUTOR_INSTRUCTIONS = [
   "You are the Tutor of aidea, a tool where a person designs software and learns why each decision was made. You teach one class, in plain English and short turns.",
   "A class is a series of steps. Each step teaches ONE fact and always follows this loop, in this order; the tools refuse any other order:",
-  "0. Measure, then the Plan. Call get_plan. If the Plan and the measurement are both null, measure first, in this conversation (their first message is their goal): ask with measure {topic, kind, prompt, ...}, one question per prerequisite topic, starting near the hardest thing the goal needs; they may answer \"I already know this\". When each topic is bracketed (12 questions at most) call measure_done {topics: [{name, floor, ceiling, note}]} once: floor = the hardest thing they reliably got right, ceiling = the easiest thing they got wrong or did not know (or null). Never teach while measuring. Then set_plan {concepts: [{name, dependsOn}], decisions: [{layer, question}]} from it, in dependency order, no cycles, without what they know. Explain it in a few sentences with plan_ahead: no step begins before they say go ahead. For a change, send the whole revised Plan and ask again.",
+  "0. Measure, then the Plan. Call get_plan. If the Plan and the measurement are both null, measure first, in this conversation (their first message is their goal): ask with measure {topic, kind, prompt, ...}, one question per prerequisite topic, starting near the hardest thing the goal needs; they may answer \"I already know this\". When each topic is bracketed (12 questions at most) call measure_done {topics: [{name, floor, ceiling, note}]} once: floor = the hardest thing they reliably got right, ceiling = the easiest thing they got wrong or did not know (or null). Then set_plan {concepts: [{name, dependsOn}], decisions: [{layer, question}]} from it, in dependency order, no cycles, without what they know. Explain it in a few sentences with plan_ahead: no step begins before they say go ahead. For a change, send the whole revised Plan and ask again.",
   "1. begin_step {stepId, title, item}: name the step. Once a Plan exists, `item` is required and must be one of its concepts; anything else is refused. Give `idea` too, the short name of what the step teaches; call held_ideas first and do not teach those ideas again (begin_step refuses them). You cannot begin another step while this one is open.",
-  "2. predict {stepId, prompt}: ask the person to guess, in their own words, about the fact you are about to teach. Open question, no hints. A wrong guess is fine.",
+  "2. predict {stepId, prompt}: ask the person to guess, in their own words, about the fact you are about to teach. Open question, no hints.",
   "3. explain {stepId, text}: teach the fact. Start by resolving the guess (what they said, what is true, why), then give the fact in a few sentences. The text is what the person reads and aidea remembers: make every claim clear and self-contained.",
-  "4. ask {stepId, kind, prompt, ...}: check the fact. Choice: give 2 to 6 options and `correct`, the exact text of the right one. Text: give `expected`, the answer you have in mind. Options: plain claims of similar length, each wrong one a believable mistake. Ask about applying the fact.",
+  "4. ask {stepId, kind, prompt, ...}: check the fact. Choice: give 2 to 6 options and `correct`, the exact text of the right one. Text: give `expected`, the answer you have in mind. Options: plain claims of similar length, each wrong one a believable mistake. Ask about applying the fact. Kind task {plugin, check, args}: the person does something in a plugin; its check decides.",
   "The result of ask tells you if it was right. If it was wrong, or they did not know, the step stays open: work out what they believe, explain again from a new angle, and check again. If the result says sureAndWrong, they were confident in a mistaken idea: name that idea and repair it before anything else. If it was right, say so briefly and go on.",
-  "Choose the steps yourself from the topic given. Use the read tools to look at the person's project when it makes the fact concrete. You cannot write files or run commands.",
-  "If a tool returns an error, read it, fix the call and continue. If the person did not answer or the class ended, end your turn.",
+  "Choose the steps yourself from the topic given. Use the read tools to look at their project when it helps. You cannot write files or run commands.",
+  "If a tool errors, fix the call and continue. If the person did not answer or the class ended, end your turn.",
   "In a layer class you build a layer WITH the person, and their words come first. For each element of the layer (who the business is for, what a feature must do): (a) ask {kind: \"text\", prompt, element}, where element is a short tag such as \"business:customer-segments\", and ask in plain words with no jargon; this question needs no stepId. (b) Let them answer. (c) Turn that answer into propose_node {layer, node, element} or propose_change {layer, id, changes, element}; quote their words in the Node's rationale.why. Both are refused until they answered a question with the same element, and only create a Proposal the person accepts or rejects. (d) Only then offer alternatives, as one more ask with the same element, starting \"Other ways to see this\". Never write the Node before you asked.",
   "Review: when your first message asks for a review question, ask it with review (same arguments as ask) before the first begin_step, with no hint; the person may say they do not know.",
   "When the person has learned the topic, call finish_class {summary} and end your turn.",
@@ -59,11 +59,14 @@ export const TUTOR_TOOLS = [
       type: "object",
       properties: {
         stepId,
-        kind: { type: "string", enum: ["choice", "text"] },
+        kind: { type: "string", enum: ["choice", "text", "task"] },
         prompt: { type: "string" },
         options: { type: "array", items: { type: "string" } },
         correct: { type: "string" },
         expected: { type: "string" },
+        plugin: { type: "string", description: "kind task: the id of the plugin the person works in" },
+        check: { type: "string", description: "kind task: the name of the plugin's check that tells whether they did what you asked" },
+        args: { type: "object", description: "kind task: the arguments that check declares" },
         allowDontKnow: { type: "boolean" },
         element: { type: "string", description: "Layer classes: a short tag for the layer element this question is about, for example \"business:customer-segments\". Then kind is \"text\", the person answers in their own words, stepId and the step loop do not apply, and propose_node / propose_change for that element are allowed afterwards." },
       },
@@ -129,19 +132,27 @@ export function parsePoint(raw: unknown): { point: Point } | { error: string } {
 // What stays in the core. `correct` is the committed answer (choice: the index of the right option).
 export type Question =
   | ({ kind: "choice"; prompt: string; options: string[]; correct: number; allowDontKnow: boolean } & Where)
-  | ({ kind: "text"; prompt: string; expected?: string; allowDontKnow: boolean } & Where);
+  | ({ kind: "text"; prompt: string; expected?: string; allowDontKnow: boolean } & Where)
+  // A task in a plugin (tutor-rewrite 04): the person does it and says so; the plugin's named check decides. The plugin and the check stay in the core.
+  | ({ kind: "task"; prompt: string; plugin: string; check: string; args: Record<string, unknown>; allowDontKnow: boolean } & Where);
 
-export type Answer = { option?: number; text?: string; confidence?: number; thought?: string; dontKnow?: boolean; skip?: boolean };
+export type Answer = { option?: number; text?: string; confidence?: number; thought?: string; dontKnow?: boolean; skip?: boolean; done?: boolean };
 
 const nonEmpty = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
 
 // Checks what the Tutor sent. The error text is written for the model: it says what to change.
 export function parseQuestion(args: Record<string, unknown>): { question: Question } | { error: string } {
   const { kind, prompt, options, correct, expected, allowDontKnow } = args;
-  if (kind !== "choice" && kind !== "text") return { error: 'kind must be "choice" or "text"' };
+  if (kind !== "choice" && kind !== "text" && kind !== "task") return { error: 'kind must be "choice", "text" or "task"' };
   if (!nonEmpty(prompt) || prompt.length > MAX_TEXT) return { error: `prompt must be the question, as text of at most ${MAX_TEXT} characters` };
   if (allowDontKnow !== undefined && typeof allowDontKnow !== "boolean") return { error: "allowDontKnow must be true or false" };
   const dk = allowDontKnow ?? true;
+  if (kind === "task") {
+    const { plugin, check, args: given } = args;
+    if (!nonEmpty(plugin) || !nonEmpty(check)) return { error: 'A task needs `plugin` (the id of the plugin) and `check` (the name of its check that tells whether the person did it)' };
+    if (given !== undefined && (typeof given !== "object" || given === null || Array.isArray(given))) return { error: "args must be an object" };
+    return { question: { kind, prompt, plugin, check, args: (given ?? {}) as Record<string, unknown>, allowDontKnow: dk } };
+  }
   if (kind === "text") {
     if (expected !== undefined && typeof expected !== "string") return { error: "expected must be text" };
     return { question: { kind, prompt, expected, allowDontKnow: dk } };
@@ -159,12 +170,12 @@ export function parseQuestion(args: Record<string, unknown>): { question: Questi
 // What the interface is told about a question: never the committed answer.
 export const publicQuestion = (q: Question) => {
   const where = { ...(q.stepId ? { stepId: q.stepId, phase: q.phase } : q.phase === "review" || q.phase === "plan" ? { phase: q.phase } : {}), ...(q.skippable ? { skippable: true, probe: q.probe } : {}), ...(q.point ? { point: q.point } : {}) };
-  return q.kind === "choice" ? { kind: q.kind, prompt: q.prompt, options: q.options, allowDontKnow: q.allowDontKnow, ...where } : { kind: q.kind, prompt: q.prompt, allowDontKnow: q.allowDontKnow, ...where };
+  return q.kind === "choice" ? { kind: q.kind, prompt: q.prompt, options: q.options, allowDontKnow: q.allowDontKnow, ...where } : { kind: q.kind, prompt: q.prompt, allowDontKnow: q.allowDontKnow, ...where }; // a task: no plugin, no check
 };
 
 // Checks the person's answer against the question it belongs to (the interface sends it, so it is checked, not trusted).
 export function parseAnswer(q: Question, raw: Record<string, unknown>): { answer: Answer } | { error: string } {
-  const { option, text, confidence, thought, dontKnow, skip } = raw;
+  const { option, text, confidence, thought, dontKnow, skip, done } = raw;
   if (thought !== undefined && (typeof thought !== "string" || thought.length > MAX_TEXT)) return { error: `thought must be text of at most ${MAX_TEXT} characters` };
   const t = typeof thought === "string" && thought.trim() ? { thought: thought.trim() } : {};
   if (skip === true && q.skippable) return { answer: { skip: true, ...t } };
@@ -172,6 +183,7 @@ export function parseAnswer(q: Question, raw: Record<string, unknown>): { answer
     if (!q.allowDontKnow) return { error: "This question does not offer \"I don't know\"" };
     return { answer: { dontKnow: true, ...t } };
   }
+  if (q.kind === "task") return done === true ? { answer: { done: true, ...t } } : { error: "Send done: true when you did it, or dontKnow" };
   if (q.kind === "text") {
     if (!nonEmpty(text) || text.length > MAX_TEXT) return { error: `Send text of at most ${MAX_TEXT} characters, or dontKnow` };
     return { answer: { text: text.trim(), ...t } };
@@ -186,6 +198,7 @@ export function parseAnswer(q: Question, raw: Record<string, unknown>): { answer
 export function answerForTutor(q: Question, a: Answer) {
   const thought = a.thought ? { thought: a.thought } : {};
   if (a.skip) return { skipped: true, known: true, note: "The person says they already know this. Count it as known in measure_done.", ...thought };
+  if (q.kind === "task") return a.dontKnow ? { kind: "task", dontKnow: true, ...thought } : { kind: "task", done: true, ...thought };
   if (q.kind === "text") return a.dontKnow ? { kind: "text", dontKnow: true, ...(q.expected ? { expected: q.expected } : {}), ...thought } : { kind: "text", answer: a.text, ...(q.expected ? { expected: q.expected } : {}), ...thought };
   const correctAnswer = q.options[q.correct];
   return a.dontKnow

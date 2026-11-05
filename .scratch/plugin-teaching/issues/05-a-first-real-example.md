@@ -2,7 +2,7 @@
 
 **What to build:** The Run plugin (Playback) declares a view (the recordings made, and the step reached) and checks ("a function was recorded", "the recording was stepped to its end") and a lesson part that uses them, to prove the design on something real before the Canvas and the layers get theirs.
 
-**Blocked by:** tutor-rewrite 04.
+**Blocked by:** None (can start immediately).
 
 **Status:** ready-for-agent
 

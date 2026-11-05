@@ -8,6 +8,7 @@ import { callRole, normalise } from "./learner-pipeline.ts";
 import { MAX_MEASURE_QUESTIONS, createMeasureState, heldIdea, heldStrongly, parseBrackets } from "./measure.ts";
 import { runAuthoringTool } from "./tutor-authoring.ts";
 import { itemFor, runPlanTool } from "./plan.ts";
+import { runPluginTeachTool, taskProblem } from "./plugins/teach.ts";
 import { answerForTutor, parsePoint, parseQuestion } from "./tutor.ts";
 import type { Answer, Question } from "./tutor.ts";
 import type { Core } from "./types.ts";
@@ -174,6 +175,7 @@ const GRADE_INSTRUCTIONS =
 async function judge(core: Core, q: Question, a: Answer): Promise<{ correct: boolean; feedback?: string } | null> {
   if (a.dontKnow) return { correct: false };
   if (q.kind === "choice") return { correct: a.option === q.correct };
+  if (q.kind === "task") return { correct: false }; // a task is decided by the plugin's check, not here
   try {
     return await grade(core, q, a);
   } catch (e) {
@@ -356,6 +358,11 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
     });
   }
 
+  // A task in a plugin is refused before the person sees it when the plugin, the check or its arguments do not exist.
+  if (name === "ask" && args.kind === "task") {
+    const problem = taskProblem(core, args.plugin, args.check, args.args);
+    if (problem) return err(problem);
+  }
   // predict and ask pose a question and wait for the person.
   const posed = name === "predict" ? lesson.predict(args) : lesson.check(args);
   if ("error" in posed) return err(posed.error);
@@ -374,6 +381,25 @@ export async function runTeachTool(name: string, args: Record<string, unknown>, 
       ...(heard.answer.dontKnow ? { prediction: null, dontKnow: true } : { prediction: heard.answer.text }),
       ...(heard.answer.thought ? { thought: heard.answer.thought } : {}),
       next: "Now call explain for this step. Open it by resolving their prediction: what they said, what is true, and why.",
+    });
+  }
+
+  // A task: the plugin's check decides, never the Tutor and never the person's word (nothing is recorded as Evidence here: tutor-rewrite 06).
+  if (q.kind === "task") {
+    let checked: { note: string; result: { ok: boolean; reason?: string } } | undefined;
+    if (!heard.answer.dontKnow) {
+      const run = await runPluginTeachTool("check_plugin", { id: q.plugin, name: q.check, args: q.args }, core);
+      if (run?.isError) return err(`The check could not run: ${run.text} The step stays as it was.`);
+      checked = JSON.parse(run!.text);
+    }
+    const correct = checked?.result.ok === true;
+    lesson.checked(stepId, correct);
+    return ok({
+      kind: "task", ...(heard.answer.dontKnow ? { dontKnow: true } : { done: true }), correct, stepId, attempt: q.attempt, stepClosed: correct,
+      ...(checked ? { untrusted: true, note: checked.note, check: checked.result } : {}),
+      next: correct
+        ? "The step is closed. Say so in a few words, then begin the next step with begin_step, or call finish_class if the topic is done."
+        : "The step stays open. Say in a sentence what is missing, re-teach it with a new explain for the same step, then check again. begin_step is refused until this step is closed.",
     });
   }
 

@@ -1,0 +1,1 @@
+{"id":"canvas","version":"1.0.0","title":"Canvas","description":"A fixture.","publisher":"tests","api":"0.1","main":"main.js","teach":{"view":"state","module":"teach.mjs","checks":[{"name":"has-relation","says":"A relation between two Nodes exists.","args":{"from":"string","to":"string"}}]}}

@@ -145,7 +145,7 @@ export function evidenceOf(classId: string, questionId: string, project: string,
   const correct = choice ? a.option === q.correct : q.kind === "text" && !dontKnow && graded !== undefined ? graded : null;
   const confidence = choice ? (a.confidence ?? null) : null;
   return {
-    classId, questionId, project, kind: q.kind, correct, confidence,
+    classId, questionId, project, kind: q.kind === "task" ? "text" : q.kind, correct, confidence,
     answer: dontKnow ? null : q.kind === "choice" ? q.options[a.option!] : (a.text ?? null),
     thought: a.thought ?? null, dontKnow, time,
     ...(q.stepId ? { stepId: q.stepId, phase: q.phase === "plan" ? undefined : q.phase, attempt: q.attempt, ...(q.item ? { item: q.item } : {}) } : {}),

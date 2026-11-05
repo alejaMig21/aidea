@@ -1,0 +1,2 @@
+export const view = (s) => s;
+export const checks = { "has-relation": (s, a) => { const f = s.relations.some(([x, y]) => x === a.from && y === a.to); return { ok: f, reason: f ? "The relation exists." : "There is no such relation." }; } };
