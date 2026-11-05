@@ -69,7 +69,7 @@ All pending or half-done work, not only the first version: written tickets, deci
 | I | The Tutor reads sources the person attaches (a folder, a web page), as untrusted data | ideas | |
 | I | Contribute to a public repository (fork, branch, pull request); `git clone` does not exist | interviews-pending 6 | |
 | I | Logical network level of Deployment (subnets, VLANs) | interviews-pending 5 | a real network engineer's diagram |
-| I | Tutor reads a plugin's live state and acts inside it (evaluate the person on the Canvas, for example) | person's idea | a spec and a permission rule |
+| D | **Teaching surface of a plugin**: what a plugin declares so the Tutor can teach and test it: its lesson (plugin-lessons), a read-only view of its state, and named checks the Tutor uses to evaluate what the person did (for example the Canvas: "a container with a relation to a database exists"). The Tutor never acts inside a plugin: a change goes through a Proposal the person accepts. Required for plugins the Builder writes (as the lesson is), a warning for others, if the person confirms. The person said (2026-11-04) that the Tutor being able to use plugins is a must; it had been parked as "later" by mistake | person's idea, 2026-11-04 | spec first; plugin-lessons 01 |
 
 ## XL
 
