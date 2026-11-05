@@ -1,6 +1,6 @@
 # Languages as plugins
 
-Status: draft, waiting for the person's read (then `/to-tickets`)
+Status: ticketed (2026-11-04), tickets in `issues/`
 
 Source: ADR 0008 (decision 2 lists "language adapters" among the plugins), ADR 0004 (language adapters behind one interface), `src/core/adapters.ts`, the plugin system tickets, and the person's answers of 2026-11-04: languages should be plugins; Python is the default language; a developer who wants R asks the Builder in Creator Mode for an R plugin, and in a better future downloads one already written.
 
@@ -42,7 +42,18 @@ A slot kind `language` with: the file extensions it claims, `analyze`, optional 
 - The R plugin itself.
 - Changing the shapes recorded for values (layout-and-data 13).
 
-## Open
+## Answered by the person (2026-11-04)
 
-- How the TypeScript compiler library travels with the TypeScript plugin (a plugin is a finished folder; the library is large).
-- Whether a Project with several languages shows one Components layer or one per language (today one, mixed).
+- A Project with several languages shows ONE Components layer, never one per language. Each Node's info says its language; the agent adds a small language tag on the boxes only when the Project has more than one language (language-plugins 05).
+
+## Open: how the TypeScript compiler travels with its plugin
+
+aidea uses TypeScript 7: a JavaScript wrapper (about 3 MB) over a native program that differs per operating system and processor (about 28 MB for Windows x64; ten variants exist). A plugin is meant to be a finished folder, so the question is real. Options:
+
+- **A. Built-in, resolved when aidea is built.** The TypeScript plugin ships inside each aidea installer, which already carries the one native program for its own system. Simple and honest; works only for plugins that ship with aidea, not for ones downloaded later.
+- **B. One plugin variant per system.** The manifest says which system a variant is for and aidea installs the right one; each carries its own 28 MB. Works for downloaded plugins too; more to publish and keep in step.
+- **C. The kernel offers the compiler as a shared service.** Plugins ask for it; one copy. aidea then carries TypeScript even with the plugin off, and the plugin API now promises a TypeScript.
+- **D. Use the TypeScript the Project already has** (in its own `node_modules`). Nothing to ship; a JavaScript-only Project, or one without it installed, cannot be read, and versions drift.
+- **E. Replace the compiler with a light parser** (tree-sitter, one small file for every system, and grammars exist for many languages, R among them). Rewrites the two TypeScript files and loses the type-aware resolution that marks a relationship as resolved or inferred. Worth studying when a third language arrives.
+
+The agent recommends A now, with a manifest that can later say "variant per system" (B), and E as a study for later. The person chooses (language-plugins 03).

@@ -1,6 +1,6 @@
 # Plugin lessons: "How aidea works" becomes modular
 
-Status: draft, waiting for the person's read (then `/to-tickets`)
+Status: ticketed (2026-11-04), tickets in `issues/`
 
 Source: the person's ideas of 2026-11-04 (second session); ADR 0008 (small kernel, everything else a plugin); `src/core/guide.ts` (today's guide); plugin-system tickets 08 (update as a difference), 14 (live inspection, template, skill) and 15 (the Builder proposes a plugin).
 
