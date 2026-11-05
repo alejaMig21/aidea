@@ -69,23 +69,25 @@ export function activate(ui) {
 }
 ```
 
-`ui.panels.show(id)` shows a Panel by its id (any plugin's) when it is hidden, for an offer such as "Open the Terminal"; it does nothing when the Panel is shown or does not exist. `ui.slots.add(slot, entry)` adds to a slot that the owner declared; adding to a slot that does not exist throws and the plugin fails to activate. It returns the function that removes the entry. Content is plain DOM or web components; there is no framework and no iframe. Colours, sizes and fonts come only from the style tokens below, so a plugin looks like the rest of aidea.
+`ui.panels.show(id)` shows a Panel by its id (any plugin's) when it is hidden, for an offer such as "Open the Terminal"; it does nothing when the Panel is shown or does not exist. `ui.slots.add(slot, entry)` adds to a slot that the owner declared; adding to a slot that does not exist throws and the plugin fails to activate. It returns the function that removes the entry. `ui.on(name, fn)` listens to a page event, `"project-drawn"` (the Project was drawn again) or `"proposals-changed"` (a Proposal was accepted or rejected), and returns what stops listening. `ui.layers.show(layer)` shows a layer in the Canvas. `ui.tutor.startClass(options)` starts a class of the Tutor (it resolves with a reason when it cannot). Content is plain DOM or web components; there is no framework and no iframe. Colours, sizes and fonts come only from the style tokens below, so a plugin looks like the rest of aidea.
 
 ## Slots
 
 A slot has an owner, a kind and an entry shape. The owner declares it; the kernel refuses entries for slots nobody declared.
 
 - Kinds: `list` (many entries, in order), `single` (one occupant), `keyed` (one entry per key).
-- Version 0.1 declares one slot: **`layout.panel`** (`list`). Entry: `{ id, title, render(container) -> dispose, side?: "left" | "right" | "bottom", startsHidden?: boolean, min?: number, icon?: string }` (`icon` is the inner shapes of a 16 by 16 SVG, as the menu draws them). It becomes a row in the Panels menu and a Panel in the Layout. The Panel's id is `<plugin id>.<entry id>`, except that an entry whose id equals the plugin's id (the usual plugin with one Panel) takes the plugin's id as its Panel id.
+- Version 0.1 declares two slots: **`layout.panel`** and **`layer.marks`** (both `list`).
+- **`layout.panel`**: Entry: `{ id, title, render(container) -> dispose, side?: "left" | "right" | "bottom", startsHidden?: boolean, min?: number, icon?: string }` (`icon` is the inner shapes of a 16 by 16 SVG, as the menu draws them). It becomes a row in the Panels menu and a Panel in the Layout. The Panel's id is `<plugin id>.<entry id>`, except that an entry whose id equals the plugin's id (the usual plugin with one Panel) takes the plugin's id as its Panel id.
+- **`layer.marks`**: a plugin marks Nodes of the authored layers and explains the marks in each layer's legend. Entry: `{ legend?: [{ layers: ["business" | "requirements" | "architecture", ...], mark: "differs" | "waiting", text }], attach(api) -> dispose }`. `api.set([{ layer, node, mark }])` replaces the marks of the entry; the page draws them (`differs`: dashed red outline, `waiting`: dotted grey outline) and keeps them across redraws. The legend lines go away with the entry.
 - Later candidates (not in 0.1): a status item, a toolbar of a Panel, a renderer of a chat message, buttons of the selection control.
 
 ### Tools for the agents (`agent.tools`)
 
-A plugin can offer tools to the agents from its host half: `ctx.agents.tools.add({ name, description, inputSchema, readOnly?, run })`.
+A plugin can offer tools to the agents from its host half: `ctx.agents.tools.add({ name, description, inputSchema, readOnly?, builders?, run })`.
 
-- `name`: lowercase letters, digits and `_`. The agents see it with the plugin's id in front (`<plugin id>_<name>`, with `.` and `-` turned into `_`), so two plugins never clash.
-- `run(input)` returns plain data (it may be async). What it returns reaches the agent marked as untrusted data, up to 20,000 characters.
-- A **Builder** gets every tool of every active plugin. The **Tutor** gets only those declared `readOnly: true`: a tool that is not read-only is not even offered to it.
+- `name`: lowercase letters, digits and `_`. The agents see it with the plugin's id in front (`<plugin id>_<name>`, with `.` and `-` turned into `_`), so two plugins never clash. A plugin that ships with aidea keeps the plain name (`read_contract`), because the instructions it gives the Builders name the tool.
+- `run(input, { project })` returns plain data (it may be async); `project` is the id of the Project of the conversation (`ctx.projects.path(project)` gives its folder). What it returns reaches the agent marked as untrusted data, up to 20,000 characters; the answer of a plugin that ships with aidea is passed on as it is.
+- A **Builder** gets every tool of every active plugin. The **Tutor** gets only those declared `readOnly: true` and not `builders: true`: any other tool is not even offered to it. `builders: true` keeps a read-only tool for the Builders alone (the Tutor reads such a plugin through its view and checks).
 - A tool that would write in the Project is not offered this way: write through a Proposal. The Tutor and the Builders never talk to each other; the Contract plugin uses this to let a Builder read the Contract.
 - A tool goes through the guard rules of the plugins like any other action: the action is `{ kind: "agent-tool", tool, plugin, input }`. A rule that denies stops it and it never runs; a rule that asks stops it too, with the question, until there is a card for it.
 - A tool exists while its plugin is active. `GET /plugins/inspect` lists them in `agentTools`.

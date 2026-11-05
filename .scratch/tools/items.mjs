@@ -205,8 +205,7 @@ export const items = [
   "t": "Split the old guide into the kernel trunk and one lesson per plugin (and the live check of aidea-guide 01)",
   "w": "plugin-lessons 05",
   "d": [
-   "pl02",
-   "rc04"
+   "pl02"
   ]
  },
  {
@@ -220,24 +219,13 @@ export const items = [
   "d": []
  },
  {
-  "id": "rc04",
-  "k": "T",
-  "s": "L",
-  "file": "roles-and-contract/04",
-  "t": "The Contract and the Differences become a plugin that offers the Builders their tools (read the Contract) and the Tutor its view and checks",
-  "w": "roles-and-contract 04",
-  "d": []
- },
- {
   "id": "rc05",
   "k": "T",
   "s": "M",
   "file": "roles-and-contract/05",
   "t": "The person approves the Contract (the Plan Mode of the whole project) and it is versioned",
   "w": "roles-and-contract 05",
-  "d": [
-   "rc04"
-  ]
+  "d": []
  },
  {
   "id": "rc06",
@@ -334,7 +322,6 @@ export const items = [
   "w": "plugin-policies 06",
   "d": [
    "pp02",
-   "rc04",
    "rc06"
   ]
  },
@@ -425,9 +412,7 @@ export const items = [
   "s": "M",
   "t": "Measure aidea with a very high number of heavy plugins (after the built-in features are plugins, so the measure is the real one)",
   "w": "housekeeping 05",
-  "d": [
-   "rc04"
-  ],
+  "d": [],
   "file": "housekeeping/05"
  },
  {
@@ -687,7 +672,6 @@ export const items = [
   "t": "The Tutor stops knowing the layers, the differences, the Contract and the guide by name: it learns each one from its plugin's lesson, view and checks",
   "w": "tutor-rewrite 08",
   "d": [
-   "rc04",
    "pl05",
    "tr09"
   ]

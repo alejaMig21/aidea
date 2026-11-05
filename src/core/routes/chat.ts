@@ -29,7 +29,7 @@ const handler: Handler = async (req, res, core) => {
     const bad = sourceProblem(f.source);
     if (bad) return reject(400, bad);
     if (!validSelection(f.text, f.source)) return reject(400, `fix.text must be the selected text, at most ${limitOf(f.source)} characters`);
-    message = fixMessage(f.text);
+    message = fixMessage(f.text, core.plugins.active("contract"));
   }
   if (typeof message !== "string" || !message.trim() || message.length > MAX_MESSAGE_CHARS) {
     return reject(400, `message must be a non-empty string of at most ${MAX_MESSAGE_CHARS} characters`);
@@ -65,7 +65,7 @@ const handler: Handler = async (req, res, core) => {
   try {
     watch = begin(project.path);
     const { mode, model } = currentChoice(core, project.id);
-    for await (const event of core.adapter.run({ cwd: project.path, message, sessionId, mode, model, signal: abort.signal, permission, instructions: BUILDER_INSTRUCTIONS })) {
+    for await (const event of core.adapter.run({ cwd: project.path, message, sessionId, mode, model, signal: abort.signal, permission, instructions: core.plugins.active("contract") ? BUILDER_INSTRUCTIONS : undefined })) {
       send(event);
     }
   } catch (e) {

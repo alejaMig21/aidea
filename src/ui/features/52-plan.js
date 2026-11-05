@@ -20,7 +20,7 @@
 
   const section = tutorSection("plan", "Plan");
   const card = section.el;
-  $("contract-card").before(card); // above the Contract: it is what the person reads first
+  $("pane-tutor").append(card);
 
   // Concepts so that each comes after the ones it needs (the core guarantees there is no cycle).
   const planNorm = (s) => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); // the core's `normalise`

@@ -53,6 +53,18 @@ async function pluginUiActivate(id) {
     },
     // Shows a Panel by its id (any plugin's) when it is hidden: for an offer such as "Open the Terminal". It changes nothing when the Panel is already shown or does not exist.
     panels: { show: (panel) => { if (typeof layoutDef !== "undefined" && layoutDef[panel] && !layoutShown[panel]) layoutToggle(panel); } },
+    // The page's own events a plugin may listen to: "project-drawn" (the Project was drawn again) and "proposals-changed" (a Proposal was accepted or rejected). Returns what stops listening.
+    on(name, fn) {
+      if (name !== "project-drawn" && name !== "proposals-changed") throw new Error('ui.on knows "project-drawn" and "proposals-changed"');
+      document.addEventListener(name, fn);
+      const remove = () => document.removeEventListener(name, fn);
+      removers.push(remove);
+      return remove;
+    },
+    // Shows a layer of the Project ("business", "requirements", "architecture", ...) in the Canvas.
+    layers: { show: (layer) => { if (typeof showLayer === "function") showLayer(layer); } },
+    // Starts a class of the Tutor with the payload given (a Difference, a plugin...). It resolves with a reason when the Tutor cannot start one.
+    tutor: { startClass: (opts) => window.tutorUi?.startClass(opts) },
     slots: {
       add(slot, entry) {
         const declared = pluginSlots[slot];

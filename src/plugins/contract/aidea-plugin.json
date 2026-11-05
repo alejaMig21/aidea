@@ -1,0 +1,20 @@
+{
+  "id": "contract",
+  "version": "0.1.0",
+  "title": "Contract",
+  "description": "The Contract is what you agreed on the Business, Requirements and Architecture layers. The Builders read it, and the Differences show where the code is not what you agreed.",
+  "publisher": "aidea",
+  "api": "0.1",
+  "main": "main.js",
+  "ui": "ui.js",
+  "lesson": "lesson.json",
+  "capabilities": ["files"],
+  "teach": {
+    "view": "state",
+    "module": "teach.mjs",
+    "checks": [
+      { "name": "check-met", "says": "One of the checks of the Contract is met.", "args": { "id": "string" } },
+      { "name": "no-differences", "says": "The code has no Difference with the Contract (what is only not built yet does not count)." }
+    ]
+  }
+}

@@ -2,7 +2,7 @@
 
 **What to build:** With the Contract plugin on and an approved Contract, a policy denies writes inside the Project that no task of the Contract covers, to any plugin; a small change outside goes through a Proposal that adds it to the Contract. With the plugin off, or with no approved Contract, there is no rule. The rule names no Builder. It is hard and is meant to be tuned after real use.
 
-**Blocked by:** plugin-policies 02, roles-and-contract 04, roles-and-contract 06.
+**Blocked by:** plugin-policies 02, roles-and-contract 06.
 
 **Status:** ready-for-agent
 

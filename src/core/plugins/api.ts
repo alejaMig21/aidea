@@ -26,6 +26,14 @@ export const SLOTS = [
       signature: "function(projectPath) -> text that changes whenever the analysis could, optional: lets aidea keep the analysis between openings",
     },
   },
+  {
+    name: "layer.marks",
+    kind: "list",
+    entry: {
+      legend: "list of { layers: [\"business\" | \"requirements\" | \"architecture\"], mark: \"differs\" | \"waiting\", text }, optional: the lines that explain the marks in the legend of those layers",
+      attach: "function(api) -> dispose, required: api.set([{ layer, node, mark }]) replaces the marks of this entry",
+    },
+  },
   { name: "layout.topbar", kind: "list", entry: { id: "text, required", render: "function(container) -> dispose, required: draws the control in the top bar" } },
 ];
 export const STYLE_TOKENS = ["--bg", "--bar", "--canvas", "--panel", "--raised", "--selected", "--line", "--control", "--text", "--muted", "--label", "--accent", "--accent-soft", "--on-accent", "--proposal", "--authored", "--derived", "--danger", "--unresolved", "--sans", "--mono"];

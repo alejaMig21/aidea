@@ -26,8 +26,9 @@ type Entry = { id: string; folder: string; builtin: boolean; manifest?: Manifest
 // What an event listener or a guard rule may answer. Only "deny" and "ask" count; anything else, an "allow" included, is ignored (a plugin can only tighten).
 export type Verdict = { decision: "allow" } | { decision: "deny"; reason: string } | { decision: "ask"; question: string };
 
-export type AgentToolDeclaration = { name: string; description: string; inputSchema: object; readOnly?: boolean; class?: ActionClass; run: (input: any) => unknown };
-export type AgentTool = { plugin: string; name: string; description: string; inputSchema: object; readOnly: boolean; class?: ActionClass };
+// `builders`: only the Builders get the tool, never the Tutor (the Tutor reads a plugin through its view and checks). `run` also gets {project}: the id of the Project of the conversation.
+export type AgentToolDeclaration = { name: string; description: string; inputSchema: object; readOnly?: boolean; builders?: boolean; class?: ActionClass; run: (input: any, context: { project?: string }) => unknown };
+export type AgentTool = { plugin: string; name: string; description: string; inputSchema: object; readOnly: boolean; builders: boolean; builtin: boolean; class?: ActionClass };
 export type PluginContext = {
   plugin: { id: string; title: string; version: string };
   services: { provide: (key: string, value: unknown) => void; get: (key: string) => unknown };
@@ -46,7 +47,8 @@ export type PluginContext = {
   data: { readonly dir: string };
   settings: { get: (key: string) => unknown };
   secrets: { get: (name: string) => string | undefined };
-  projects: { path: (id: string) => string | undefined };
+  // `get` is for the plugins that ship with aidea only: the open Project with its analysis (read it, never change it); any other plugin gets undefined.
+  projects: { path: (id: string) => string | undefined; get: (id: string) => any };
   api: { handle: (name: string, fn: (body: any) => unknown) => void };
   effect: (undo: Undo) => void;
   log: (message: string) => void;
@@ -81,11 +83,12 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
   const entries = new Map<string, Entry>();
   const services = new Map<string, { owner: string; value: unknown }>();
   const logs: { plugin: string; message: string }[] = [];
-  const agentTools = new Map<string, AgentTool & { run: (input: any) => unknown }>(); // by the name the agents see: <plugin id>_<name>
+  const agentTools = new Map<string, AgentTool & { run: (input: any, context: { project?: string }) => unknown }>(); // by the name the agents see: <plugin id>_<name>
   const teachStates = new Map<string, (context: { project?: string }) => unknown>(); // plugin id -> its snapshot of state for the Tutor
   const declared = new Map<string, { owner: string; mode: "announce" | "ask"; version: number }>(); // events of active plugins, by full name
   const listeners = new Map<string, { owner: string; fn: (data: any) => unknown }[]>();
   const rules: { owner: string; fn: (action: any) => unknown }[] = [];
+  let projectGet: (id: string) => unknown = () => undefined;
   let projectPath: (id: string) => string | undefined = () => undefined; // set by the core once it holds the open Projects
   const handlers = new Map<string, (body: any) => unknown>(); // "<plugin id>\0<call name>" -> the handler
 
@@ -111,9 +114,9 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
             if (!tool.inputSchema || typeof tool.inputSchema !== "object") throw new Error(`the agent tool "${tool.name}" needs an "inputSchema"`);
             if (typeof tool.run !== "function") throw new Error(`the agent tool "${tool.name}" needs a "run" function`);
             if (tool.class !== undefined && !isActionClass(tool.class)) throw new Error(`the "class" of the agent tool "${tool.name}" must be one of the classes of action (docs/plugin-api.md)`);
-            const full = `${entry.id.replace(/[^a-z0-9]/g, "_")}_${tool.name}`;
+            const full = entry.builtin ? tool.name : `${entry.id.replace(/[^a-z0-9]/g, "_")}_${tool.name}`; // a plugin that ships with aidea keeps the plain name its instructions use
             if (agentTools.has(full)) throw new Error(`the agent tool "${tool.name}" is already offered`);
-            agentTools.set(full, { plugin: entry.id, name: full, description: tool.description, inputSchema: tool.inputSchema, readOnly: tool.readOnly === true, ...(tool.class && { class: tool.class }), run: tool.run });
+            agentTools.set(full, { plugin: entry.id, name: full, description: tool.description, inputSchema: tool.inputSchema, readOnly: tool.readOnly === true, builders: tool.builders === true, builtin: entry.builtin, ...(tool.class && { class: tool.class }), run: tool.run });
             entry.undo.push(() => agentTools.delete(full));
           },
         },
@@ -175,7 +178,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
         },
       },
       // The folder of an open Project, by the id the window uses (undefined when it is not open).
-      projects: { path: (id) => projectPath(id) },
+      projects: { path: (id) => projectPath(id), get: (id) => (entry.builtin ? projectGet(id) : undefined) },
       // Named calls the interface half (or a test) can make to this plugin: POST /plugins/<id>/call/<name>.
       api: {
         handle: (name, fn) => {
@@ -341,6 +344,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
     unregister,
     // The settings schema of an installed plugin (for the settings routes).
     schemaOf: (id: string) => (id.includes("#") ? undefined : entries.get(id)?.manifest?.settings),
+    active: (id: string) => entries.get(id)?.state === "active",
     has: (id: string) => entries.has(id) && !id.includes("#"),
     list: (): PluginInfo[] => [...entries.values()].map(info),
     // The lessons of the ACTIVE plugins that ship one (plugin-lessons 01), read from their files each time so an update shows. A plugin that is off, removed or has none is absent.
@@ -350,9 +354,9 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
       return "lesson" in read ? [{ id: e.id, title: e.manifest.title, parts: read.lesson.parts }] : [];
     }),
     // The tools active plugins offer to the agents, as the agents see them (the Tutor asks for `readOnly` ones only).
-    agentTools: (readOnly = false): AgentTool[] => [...agentTools.values()].filter((t) => !readOnly || t.readOnly).map(({ run: _run, ...tool }) => tool),
+    agentTools: (readOnly = false): AgentTool[] => [...agentTools.values()].filter((t) => !readOnly || (t.readOnly && !t.builders)).map(({ run: _run, ...tool }) => tool),
     // Runs one of them. A guard rule of any plugin can refuse it first, as it can refuse any action; a rule that asks refuses too (there is no card for it yet).
-    callAgentTool: async (name: string, input: unknown): Promise<{ ok: true; value: unknown } | { ok: false; error: string }> => {
+    callAgentTool: async (name: string, input: unknown, context: { project?: string } = {}): Promise<{ ok: true; value: unknown } | { ok: false; error: string }> => {
       const tool = agentTools.get(name);
       if (!tool) return { ok: false, error: `Unknown tool: ${name}` };
       const verdict = combine(rules.map((r) => {
@@ -360,7 +364,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
       }));
       if (verdict.decision === "deny") return { ok: false, error: `A plugin rule refused this action: ${verdict.reason}` };
       if (verdict.decision === "ask") return { ok: false, error: `A plugin rule needs the person to confirm this action first: ${verdict.question}` };
-      try { return { ok: true, value: await tool.run(structuredClone(input)) }; } catch (e) { return { ok: false, error: reason(e) }; }
+      try { return { ok: true, value: await tool.run(structuredClone(input), context) }; } catch (e) { return { ok: false, error: reason(e) }; }
     },
     // What the Tutor needs to read the view of an ACTIVE plugin or run a check of it (plugin-teaching 02), or the plain reason it cannot.
     teachOf: (id: string): { folder: string; teach: Teach; snapshot: (context: { project?: string }) => unknown } | { problem: string } => {
@@ -404,7 +408,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
       const fn = handlers.get(`${id}\0${name}`);
       return fn ? (async () => fn(body))() : undefined;
     },
-    useProjects: (fn: (id: string) => string | undefined) => { projectPath = fn; },
+    useProjects: (fn: (id: string) => string | undefined, get: (id: string) => unknown = () => undefined) => { projectPath = fn; projectGet = get; },
     logs: () => logs.slice(),
     // What the plugins registered, to compare before and after (the test tool for plugin authors).
     registry: () => ({ services: [...services.keys()].sort(), events: [...declared.keys()].sort(), listeners: [...listeners.values()].reduce((n, l) => n + l.length, 0), rules: rules.length }),

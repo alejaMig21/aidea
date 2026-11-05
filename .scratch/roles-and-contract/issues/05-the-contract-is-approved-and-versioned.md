@@ -2,7 +2,7 @@
 
 **What to build:** The Contract is the Plan Mode of aidea for a whole project: the person approves it, as one approves a plan in an agent's plan mode, and from then it is the plan the Builders work from. An approval has a version and a date; a change after approval is a Proposal the person accepts and makes a new version. Until it is approved the Contract is a draft.
 
-**Blocked by:** roles-and-contract 04.
+**Blocked by:** None (can start immediately).
 
 **Status:** ready-for-agent
 

@@ -1,0 +1,34 @@
+{
+  "parts": [
+    {
+      "name": "What the Contract is",
+      "hint": "What you agreed, as a plan the Builders follow",
+      "what": "The Contract is what you have accepted on the Business, Requirements and Architecture layers, put together. It is not a file of its own: aidea computes it from the layers each time, so it is always the current state of what you agreed. Pending Proposals are not in it. A Builder reads it before it builds, and when the work needs something the Contract does not hold, the Builder makes a Proposal instead of deciding alone.",
+      "question": "Why does a Proposal that you have not accepted yet not appear in the Contract?",
+      "example": "You accept a requirement 'Request a quote' and a container 'Web app'. The Contract now holds both, and a Builder will build the form inside the Web app.",
+      "narration": "The Contract is what you agreed, nothing more.",
+      "tryIt": "Open the Contract panel and see how many checks are met.",
+      "refs": ["contract"]
+    },
+    {
+      "name": "The checklist",
+      "hint": "Six checks of how complete the Contract is",
+      "what": "The Contract panel lists six checks: customer segments, value proposition, functional requirements, non-functional requirements, acceptance criteria and containers. Each is met when you have written something for it. The list only describes how much you have agreed; it never blocks you or a Builder.",
+      "question": "What does it mean that the checklist never blocks anyone?",
+      "example": "A Project with a container but no acceptance criteria shows 'Acceptance criteria' as missing and can still be built.",
+      "narration": "The checklist shows what is missing, it does not forbid anything.",
+      "tryIt": "Add an acceptance criterion to a requirement and watch the check turn done.",
+      "refs": ["contract"]
+    },
+    {
+      "name": "The Differences",
+      "hint": "Where the code is not what you agreed",
+      "what": "The Differences compare the code with the Contract. They find six kinds: a link that points at something gone, a requirement marked built with no code behind it, a relation you declared that the code does not have, a dependency in the code that you did not declare, a broken Pattern rule, and a requirement not built yet (only a question, never an alarm). A Node with a difference gets a dashed outline on its layer. A difference is information: either side may be the one to change.",
+      "question": "When the code and the Contract differ, who decides which one is right?",
+      "example": "The code calls the Database from the Web app but the Architecture does not declare that relation: 'In the code, not declared'.",
+      "narration": "A difference tells you the plan and the code disagree.",
+      "tryIt": "Pick a difference in the Contract panel and press 'Show on' to find it on its layer.",
+      "refs": ["contract"]
+    }
+  ]
+}
