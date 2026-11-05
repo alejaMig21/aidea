@@ -81,6 +81,12 @@ const el = (name, attrs, text) => {
   if (text) n.textContent = text;
   return n;
 };
+// Builds an element: Object.assign of its properties, then its children. The kernel's feature files share this one.
+function uiMake(tag, props = {}, ...kids) {
+  const e = Object.assign(document.createElement(tag), props);
+  e.append(...kids);
+  return e;
+}
 async function draw(nodes) {
   const project = current;
   const res = await fetch(`/layout?project=${encodeURIComponent(project)}&layer=components`);

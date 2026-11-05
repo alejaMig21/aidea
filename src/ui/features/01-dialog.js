@@ -27,7 +27,7 @@ let dialogShow, dialogConfirm, dialogPrompt; // assigned below: the block keeps 
 
   let count = 0;
   const stack = []; // the dialogs open now, the last one on top: only that one answers the keyboard
-  const make = (tag, props = {}, ...kids) => { const n = Object.assign(document.createElement(tag), props); n.append(...kids); return n; };
+  const make = uiMake;
 
   // dialogShow({ title, message?, body?, buttons: [{ label, value, primary?, onclick? }], cancelValue, focus?, onOpen? }) resolves with the value of the button pressed (a function is called for it),
   // or cancelValue on Escape. `body` is any element (a list, a field); `focus` is the element that starts with the focus (the first button when it is not given: a consent is never given by

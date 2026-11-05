@@ -229,6 +229,8 @@
   };
   // For the selection control: "Fix" hands selected text to the builder; the core frames it as data.
   window.chatUi = {
+    // Writes a message in the box and sends it, as if the person had pressed Send (the box's own rules apply: it must not be empty).
+    send: (message) => { input.value = message; fit(); form.requestSubmit(); },
     fix: (text, source) => talk(`Fix this (from the ${source ?? "screen"}): ${text.length > 160 ? text.slice(0, 160) + "…" : text}`, { fix: { text, source } }),
     isBusy: () => send.disabled,
   };

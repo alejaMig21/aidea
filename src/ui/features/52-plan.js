@@ -38,7 +38,7 @@
   }
 
   const planAfter = (numbers) => `after ${numbers.length > 1 ? `${numbers.slice(0, -1).join(", ")} and ${numbers.at(-1)}` : numbers[0]}`;
-  const mk = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids); return e; };
+  const mk = uiMake;
   let planToken = 0;
   let planCurrent = null; // the Plan item the open step is about (its name, normalised), while a class runs
   const planMark = () => card.querySelectorAll("li[data-item]").forEach((li) => li.classList.toggle("current", planCurrent !== null && li.dataset.item === planCurrent));

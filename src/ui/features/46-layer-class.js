@@ -19,7 +19,7 @@
   document.head.append(style);
 
   const main = document.querySelector("main");
-  const mk = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids); return e; };
+  const mk = uiMake;
   const note = mk("p", { id: "layer-class-note", hidden: true, textContent: "The Tutor is not available, so this is the quick tour." });
   note.setAttribute("role", "status");
   const stepEl = mk("p", { className: "step" }), sayEl = mk("p", { className: "say" }), moreEl = mk("p", { className: "more" });

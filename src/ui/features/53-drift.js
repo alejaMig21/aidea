@@ -26,7 +26,7 @@
     pattern: "Pattern rule",
     "not-built-yet": "Not built yet",
   };
-  const mk = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids); return e; };
+  const mk = uiMake;
   let driftList = [], driftToken = 0;
 
   // The Nodes named by a difference carry a dashed outline on the layer it is about. Every redraw calls this again.

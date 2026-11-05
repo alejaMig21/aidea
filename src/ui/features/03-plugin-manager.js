@@ -52,11 +52,7 @@ pmBox.setAttribute("aria-label", "Plugins");
   document.head.append(style);
 }
 
-const pmEl = (tag, props = {}, ...children) => {
-  const el = Object.assign(document.createElement(tag), props);
-  el.append(...children);
-  return el;
-};
+const pmEl = uiMake;
 const pmMessage = (text) => { document.getElementById("pm-message").textContent = text; };
 const pmJson = async (method, url, body) => {
   const res = await fetch(url, { method, headers: { "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });

@@ -63,11 +63,8 @@ export function activate(ui) {
       ask.dataset.askRecipe = "";
       let asking = null;
       ask.onclick = () => {
-        const input = document.getElementById("chat-input");
-        if (!input?.form || !asking) return;
-        input.value = asking.message;
-        input.dispatchEvent(new Event("input"));
-        input.form.requestSubmit();
+        if (!asking || !window.chatUi) return;
+        window.chatUi.send(asking.message);
         ask.hidden = true;
       };
       // After a failure the message says the Terminal shows the errors in depth: one action opens it (run-and-terminal 06).
