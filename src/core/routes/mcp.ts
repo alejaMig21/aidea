@@ -107,6 +107,9 @@ const pluginAnswer = async (core: Core, name: string, args: Record<string, unkno
   return text.length > 20_000 ? { text: "The plugin returned too much (more than 20,000 characters).", isError: true as const } : { text, isError: false };
 };
 
+// The names of the tools the Builder may call without a card (every tool of this file except `approve`, which is how Claude Code asks): chat.ts allows exactly these, so the list has one source.
+export const BUILDER_TOOLS = TOOLS.filter((t) => t.name !== "approve").map((t) => t.name);
+
 const rpcError = (id: unknown, code: number, message: string) => ({ jsonrpc: "2.0", id, error: { code, message } });
 const rpcResult = (id: unknown, result: unknown) => ({ jsonrpc: "2.0", id, result });
 // A tool that ran but did not succeed answers with isError, so the builder reads the reason and can try again.

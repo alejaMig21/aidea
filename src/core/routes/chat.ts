@@ -3,6 +3,7 @@ import { BUILDER_INSTRUCTIONS } from "../contract.ts";
 import { begin, finish } from "../guard.ts";
 import { fixMessage, limitOf, sourceProblem, validSelection } from "../select.ts";
 import { currentChoice } from "./agent-options.ts";
+import { BUILDER_TOOLS } from "./mcp.ts";
 
 const MAX_MESSAGE_CHARS = 20_000;
 const SESSION_ID = /^[A-Za-z0-9][\w-]{0,99}$/;
@@ -49,7 +50,7 @@ const handler: Handler = async (req, res, core) => {
   const permission = {
     mcpConfig: JSON.stringify({ mcpServers: { aidea: { type: "http", url: `http://${req.headers.host}/mcp/${conversation.token}` } } }),
     tool: "mcp__aidea__approve",
-    allowedTools: ["propose_add_node", "propose_update_node", "propose_remove_node", "propose_pattern_group", "list_proposals", "read_contract", "read_plugin_guide", "propose_plugin", "propose_run_recipe", ...core.plugins.agentTools().map((t) => t.name)].map((t) => `mcp__aidea__${t}`),
+    allowedTools: [...BUILDER_TOOLS, ...core.plugins.agentTools().map((t) => t.name)].map((t) => `mcp__aidea__${t}`),
     // The authored files change only through Proposals. A shell pattern is not a wall: the check after the turn (guard.ts) is.
     deniedTools: [...["Write", "Edit", "MultiEdit", "NotebookEdit"].map((t) => `${t}(.aidea/**)`), "Bash(*.aidea*)"],
   };
