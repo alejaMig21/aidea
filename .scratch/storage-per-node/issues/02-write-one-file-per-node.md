@@ -4,10 +4,10 @@
 
 **Blocked by:** storage-per-node 01.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] Through the protocol: accepting an add, an update and a remove on a per-Node project changes only that Node's file; on a single-file project the first accepted write converts the layer and the drawn result is identical before and after.
 - [x] A write that fails halfway (a read-only folder, for example) leaves the layer as it was and tells the person.
 - [x] Two Proposals for different Nodes accepted one after the other touch two different files (checked by file name), which is what avoids the merge conflict.
 - [x] Pattern groups accepted from a Proposal are stored as their own files; the hand-editable format of a Node file is documented in the loader's header comment and in ADR 0005's consequences.
-- [ ] Verified in the real app on the main screen: accept a Proposal in a copy of a fixture project and check the files on disk.
+- [x] Verified in the real app (2026-11-04, Vivaldi through the Claude extension, real Claude Code): on a copy of `test/fixtures/studio-requirements` (layers stored one file per layer) the Builder made a Proposal for a requirement, "Review" then "Accept" in the interface. Result on disk: `.aidea/requirements.json` was gone and `.aidea/requirements/` held nine files `001-...` to `009-...` for the existing Nodes plus `010-us-export-sales-csv.json` for the new one; `.aidea/architecture.json` was untouched (a layer converts on its own first write). The new file has the Node's content as proposed.

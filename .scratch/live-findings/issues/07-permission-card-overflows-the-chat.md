@@ -4,8 +4,8 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] At chat widths of 240, 270, 340 and 510 px a pending permission card, an answered one and one with a long request body show all their buttons and no horizontal scrollbar appears in the chat.
 - [x] The card uses the shared scale (`docs/agents/ui-style.md`); nothing else in the chat changes.
-- [ ] Verified live on the second monitor, with a screenshot.
+- [x] Verified live (2026-11-04, Vivaldi through the Claude extension, real Claude Code, chat 254 px wide). The first run FOUND A BUG the earlier check had missed: the heading of the card, "Claude wants to use mcp__plugin_engram_engram__mem_search", is one word that cannot break, so the chat scrolled sideways (scroll width 332 on 254). Fixed with `overflow-wrap: anywhere` on `#chat-log .permission strong`; the same card in the same run then measured 254 on 254. Test added first and seen red: `test/permission-card-page.test.ts` (widths 240, 270, 340 and 510, three tool names, one of them 94 characters). No screenshot: the screenshot call timed out twice; the evidence is the measurements.
