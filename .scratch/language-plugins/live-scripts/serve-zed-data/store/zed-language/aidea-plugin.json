@@ -1,0 +1,12 @@
+{
+  "id": "zed-language",
+  "version": "0.1.0",
+  "title": "Zed language",
+  "description": "Reads the files of one language so the Components layer can draw them.",
+  "publisher": "me",
+  "api": "0.1",
+  "main": "main.js",
+  "capabilities": ["files"],
+  "language": { "id": "zed-language", "label": "Zed language", "extensions": [".zed"] },
+  "lesson": "lesson.json"
+}

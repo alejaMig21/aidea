@@ -1,0 +1,14 @@
+{
+  "parts": [
+    {
+      "name": "What this language plugin reads",
+      "hint": "Which files does aidea understand now?",
+      "what": "One or two plain sentences saying which language the plugin reads and what it draws on the Components layer today (for example: each file as a module).",
+      "question": "What would you expect to see on the Components layer for a project in this language?",
+      "example": "One concrete example: a project with two files shows two modules.",
+      "narration": "Let's look at what aidea can now read.",
+      "tryIt": "Open a project that has files in this language and look at the Components layer.",
+      "refs": ["my-language", "capability:files"]
+    }
+  ]
+}

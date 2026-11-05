@@ -1,0 +1,12 @@
+{
+  "id": "my-language",
+  "version": "0.1.0",
+  "title": "My language",
+  "description": "Reads the files of one language so the Components layer can draw them.",
+  "publisher": "me",
+  "api": "0.1",
+  "main": "main.js",
+  "capabilities": ["files"],
+  "language": { "id": "my-language", "label": "My language", "extensions": [".mylang"] },
+  "lesson": "lesson.json"
+}

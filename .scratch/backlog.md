@@ -9,7 +9,7 @@ Rules:
 4. The status of a ticket says whether it can start: `ready-for-agent`, or `needs-info` and what it waits for (shown in the Wait column).
 5. Every new built-in plugin ships a lesson and a teaching surface (plugin-lessons, plugin-teaching): items that create one depend on those.
 
-Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (77 items, 4 levels).
+Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (76 items, 4 levels).
 ## Level 0: no dependencies
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
@@ -40,7 +40,6 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | lf05 | T | M | Long waits for an answer: measure 3, 10 and 30 minutes with the real Claude Code | live-findings 05 | - | - | real Claude (quota, up to 30 min) |
 | li08 | T | L | A project-kind plugin for Unity (scenes, prefabs, ScriptableObjects) | layer-inference 08 | - | - | the person: what a project-kind plugin may return |
 | lp05 | T | M | One Components layer for several languages, the language in each Node's info | language-plugins 05 | - | - | - |
-| lp06 | T | M | Creator Mode can write a language plugin | language-plugins 06 | - | - | - |
 | pt06 | T | L | A change inside a plugin reaches the person as a lesson and a Proposal they accept (the Tutor never acts) | plugin-teaching 06 | - | - | the person: how a plugin applies an accepted Proposal |
 | pw | T | M | Detect warnings (not only failures) when Play starts parts; restart only one part quickly | housekeeping 04 | - | - | how a warning is detected (a pattern the recipe declares, the stderr, an exit code) and shown |
 | rc09 | T | S | Optional: rename the Tutor's Plan to "Learning plan" (the Plan of the rewritten Tutor is the one LearnHarness shows) | roles-and-contract 09 | - | - | the person confirms the name |
