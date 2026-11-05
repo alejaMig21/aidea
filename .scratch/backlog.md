@@ -21,6 +21,7 @@ All pending or half-done work, not only the first version: written tickets, deci
 | | Work | Where | Waits for |
 |---|---|---|---|
 | T | Say why module pairs are hidden (it is lines between modules, not components) and let the person see them (Telegram: 400 of 942) | big-projects 03 | nothing |
+| D | Rename the Tutor's Plan (concepts to learn) to "Learning plan", so it does not clash with the Contract as the plan of the build | roles-and-contract spec | nothing |
 | T | Live check of the Tutor pointing at Data (and the two lines in `50-tutor.js`) | layout-and-data 17 | real Tutor (quota) |
 | T | Live check: the Builder proposes a run recipe | run-and-terminal 10 | real Builder (quota) |
 | T | Live check: the Builder cannot write aidea files except by Proposals | v1-gaps 01 | real Builder (quota) |
@@ -79,6 +80,9 @@ All pending or half-done work, not only the first version: written tickets, deci
 | T | Architecture patterns judged by the Tutor and checked by the core (layered, hexagonal, event-driven, plugin-based) | layer-inference 06 | layer-inference 03 |
 | T | A lens for Unity projects (scenes, prefabs, ScriptableObjects) as a plugin | layer-inference 08 | language-plugins 01; the person: the lens slot |
 | T | A structural index of any language from a replaceable provider (Codebase Memory first) | layer-inference 10 | language-plugins 01; the comparison spike |
+| D | **A Brief from the Tutor to a Builder** (goal, context, constraints, acceptance checks, target instance): the Tutor drafts, the person edits and sends, the Builder receives it; the first case is a good Creator Mode request for a plugin | roles-and-contract spec | nothing for one Builder; Instances for several |
+| D | **The Contract becomes a plugin** (the agreed items, the differences, a service and a teaching surface); the Tutor stops knowing the Contract and Differences by name | roles-and-contract spec | plugin-teaching 01 and 02 |
+| D | **The Contract as the plan of the build**: requirements become tasks with status and owner (a Builder instance, a branch); the Differences become progress | roles-and-contract spec | the Contract plugin; Instances for several Builders |
 | T | Python becomes a built-in plugin, on by default; every test unchanged | language-plugins 02 | language-plugins 01 |
 | T | TypeScript and JavaScript become a built-in plugin with a variant per system | language-plugins 03 | 01, 02, 07 |
 | T | A plugin can ship a variant per system, use a program on the machine, or download one with permission | language-plugins 07 | language-plugins 01 |
