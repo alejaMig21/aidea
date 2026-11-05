@@ -52,3 +52,6 @@ DECIDED 2026-11-04: installing a new plugin, enabling it, disabling it and remov
 
 ## Interview closed on 2026-11-04
 Sixteen decisions. Next: ADR 0008, then a spec and tickets. Still open for the spec: which services stay single-instance; how parallel Builders coordinate; the exact manifest fields; the list of named slots; the list of required plugins.
+
+## 9b. EXTENDED 2026-11-05: any plugin can have several instances, not only roles
+The person extended decision 9: a plugin in general can declare a minimum number of instances (for a role, at least one) and be started N times inside aidea. Examples: N Builders, N Tutors, and N Canvases, each showing a different layer, to see more than one layer at the same time. Not built and not ticketed; the backlog item is "Instances" in `.scratch/backlog.md`. Consequences to design then: every instance is its own session or view; the Panel registry (layout-and-data 18) and the saved Layout (19) must name an instance, not only a Panel; the manifest says the minimum (and perhaps a maximum).

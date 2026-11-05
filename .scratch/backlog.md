@@ -1,6 +1,13 @@
-# Everything still to do, by effort (2026-11-04)
+# The backlog: everything still to do, by effort
 
-All pending or half-done work, not only the first version: written tickets, decided work with no ticket yet, and ideas not decided. Sizes are the agent's estimate, calibrated on how long similar work took in this session; they are not measured.
+This is the one list the work follows (agreed with the person, 2026-11-05). Rules:
+
+1. **When an item is finished, it is deleted from this file** (the ticket and the git history keep the record).
+2. **When a new idea or decision comes up in a conversation, it is added here** in the same turn, with a size and its marker, and its source.
+3. A ticket that is written for an item keeps the item here until it is done; change its marker from `D` or `I` to `T`.
+4. Work is taken from the list; if the person names something else, it is added first.
+
+All pending or half-done work, not only the first version: written tickets, decided work with no ticket yet, and ideas not decided. Sizes are the agent's estimate, calibrated on how long similar work took in this session; they are not measured. Last reviewed: 2026-11-05.
 
 - **S**: under an hour or two (a check, a small fix, one test).
 - **M**: one focused session.
@@ -42,6 +49,7 @@ All pending or half-done work, not only the first version: written tickets, deci
 | T | Long waits for an answer: measure 3, 10 and 30 minutes with the real Claude Code | live-findings 05 | real Claude (quota, up to 30 min) |
 | D | Detect warnings (not only failures) when Play starts parts; "restart only this part" quickly | interviews-pending 1 | nothing |
 | D | Measure aidea with a very high number of heavy plugins | person's note | the plugin system (built) |
+| D | A release-numbers plugin (semver, `v1.0.0`): reads the commits since the last version tag and proposes the next number (a `fix` raises the last digit, a `feat` the middle one, a breaking change the first), says why, and the person accepts or not; keeps the count so the person does not have to. A plugin of its own, NOT the git history plugin of the XL section | person's idea, 2026-11-04 | the plugin system (built); conventional commits (already used) |
 | I | Compare two algorithms side by side on the same data | ideas | Data layer (built) |
 | I | More drawing pieces for Data: hash table, call stack and recursion tree, state machine, grid, weighted graph (each) | ideas | Data layer |
 | I | Short contextual hints the first time a part is used | ideas | plugin-lessons |
@@ -68,6 +76,7 @@ All pending or half-done work, not only the first version: written tickets, deci
 | | Work | Where | Waits for |
 |---|---|---|---|
 | T | A Panel on a second window (needs a second screen) | layout-and-data 10 | the person has one screen; ADR 0007 |
+| D | **Instances: any plugin can be started several times.** A plugin declares a minimum number of instances (a role needs at least one) and the person can start N: N Builders (each its own provider and, in parallel, its own git branch), N Tutors (a second class without breaking the first; a DeepSeek Tutor beside a Codex one), N Canvases each showing a different layer at the same time. Every instance is its own session or view; the Panel registry (layout-and-data 18) and the saved Layout (19) must name an instance, not only a Panel; the manifest says the minimum and perhaps a maximum. Decided in ADR 0008 point 7 for roles and extended to every plugin on 2026-11-05; the plugin system spec left it out of scope on purpose ("the registry must not forbid it"), so there is no ticket | ADR 0008, `.scratch/plugins/interview.md` 9 and 9b | the plugin system (built); a spec |
 | D | Packaging: one installer per system and processor (Windows, macOS, Linux; x64 and arm64), with signing and notarization on macOS, and the variants of the built-in plugins | language-plugins spec | nothing; today aidea runs with `electron .` |
 | D | The versions plugin: commits and files changed, the Canvas at a chosen commit, all branches as an animated graph, the state of the working folder (shown only) | interviews-pending 4 | the plugin system (built); the animation engine |
 | D | The animation engine: a language-neutral recording drawn with pieces (list, tree, graph, grid); part of it exists in Data | interviews-pending 4, ideas | |

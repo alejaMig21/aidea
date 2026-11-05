@@ -65,4 +65,4 @@ Step 1 is done: 3a and 3b were written into 45 files (headers, notes at the top 
 
 ## Correction (2026-11-04)
 
-Section 3b said language-adapters 05 was `needs-info` and waited for the person. That was wrong: it was decided on 2026-11-03 (`.scratch/future/interviews-pending.md`, section 7, which this audit had not read). The ticket now says so. Section 5 also missed the pending items listed in `.scratch/backlog-by-effort-2026-11-04.md`.
+Section 3b said language-adapters 05 was `needs-info` and waited for the person. That was wrong: it was decided on 2026-11-03 (`.scratch/future/interviews-pending.md`, section 7, which this audit had not read). The ticket now says so. Section 5 also missed the pending items listed in `.scratch/backlog.md`.

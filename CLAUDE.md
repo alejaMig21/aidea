@@ -15,3 +15,7 @@ Sizes, colours and alignment of anything under `src/ui` come from one shared sca
 ### Domain docs
 
 Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+### Backlog
+
+The work follows `.scratch/backlog.md`: everything still to do, by effort. Finished items are deleted from it; new ideas and decisions are added to it in the same turn they come up.
