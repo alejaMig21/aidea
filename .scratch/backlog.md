@@ -20,6 +20,7 @@ All pending or half-done work, not only the first version: written tickets, deci
 
 | | Work | Where | Waits for |
 |---|---|---|---|
+| T | Say why module pairs are hidden (it is lines between modules, not components) and let the person see them (Telegram: 400 of 942) | big-projects 03 | nothing |
 | T | Live check of the Tutor pointing at Data (and the two lines in `50-tutor.js`) | layout-and-data 17 | real Tutor (quota) |
 | T | Live check: the Builder proposes a run recipe | run-and-terminal 10 | real Builder (quota) |
 | T | Live check: the Builder cannot write aidea files except by Proposals | v1-gaps 01 | real Builder (quota) |
@@ -38,6 +39,9 @@ All pending or half-done work, not only the first version: written tickets, deci
 
 | | Work | Where | Waits for |
 |---|---|---|---|
+| T | **Priority, reported 2026-11-05.** Opening a big project takes 5 s (Telegram): single AST pass, effects only on demand, per-file cache outside the project; target under 2 s cold, under 0.5 s warm | big-projects 01 | nothing |
+| T | **Priority, reported 2026-11-05.** The Components overview moves at 17 fps with Telegram's tests open: routes are the cost (arrowheads half of it); target 30 fps | big-projects 02 | nothing |
+| T | The Tutor reads a project's structure fast: overview, callers and callees, one function's code, from the analysis aidea already has | big-projects 04 | big-projects 01 |
 | T | A plugin ships a lesson and the Tutor reads it | plugin-lessons 01 | nothing |
 | T | Leave the tour at any part; choose lessons; remember progress | plugin-lessons 02 | plugin-lessons 01 |
 | T | Mechanical check that a lesson still names what its plugin has | plugin-lessons 03 | plugin-lessons 01 |
