@@ -21,7 +21,7 @@ All pending or half-done work, not only the first version: written tickets, deci
 | | Work | Where | Waits for |
 |---|---|---|---|
 | T | Say why module pairs are hidden (it is lines between modules, not components) and let the person see them (Telegram: 400 of 942) | big-projects 03 | nothing |
-| D | Optional: rename the Tutor's Plan (concepts to learn) to "Learning plan" so it is not mistaken for the Contract or the Builders' plan mode | roles-and-contract spec | nothing |
+| T | The person can lift a policy for one task, visibly and logged | plugin-policies 05 | plugin-policies 02 |
 | T | Live check of the Tutor pointing at Data (and the two lines in `50-tutor.js`) | layout-and-data 17 | real Tutor (quota) |
 | T | Live check: the Builder proposes a run recipe | run-and-terminal 10 | real Builder (quota) |
 | T | Live check: the Builder cannot write aidea files except by Proposals | v1-gaps 01 | real Builder (quota) |
@@ -49,6 +49,15 @@ All pending or half-done work, not only the first version: written tickets, deci
 | T | A Project is my own, someone else's to study, or new: asked once, kept, changeable | layer-inference 04 | nothing |
 | T | Git history tells live code from legacy (tool `read_history`) | layer-inference 07 | layer-inference 02 |
 | T | The blind exam moves into the repository and runs with the Tutor; three or more projects, one not in Python; repeat runs | layer-inference 09 | layer-inference 05 |
+| T | A Brief: the person writes it and sends it to a Builder; no one else can | roles-and-contract 01 | nothing |
+| T | The Tutor teaches how to write a Brief (the person writes first, the Tutor checks) | roles-and-contract 02 | roles-and-contract 01 |
+| T | A lesson: how to ask for a plugin in Creator Mode | roles-and-contract 03 | roles-and-contract 02, plugin-teaching 04 |
+| T | The person approves the Contract (Plan Mode of the whole project) and it is versioned | roles-and-contract 05 | roles-and-contract 04 |
+| T | A Builder works in a plan mode for each task | roles-and-contract 07 | roles-and-contract 01, 06 |
+| T | Actions carry a class and a scope (writes in the Project, outside, runs a program, network, secrets) | plugin-policies 01 | nothing |
+| T | Guard rules match by class and scope, whoever acts | plugin-policies 02 | plugin-policies 01 |
+| T | The screen says, per rule and plugin, prevented or detected, and why something was stopped | plugin-policies 04 | plugin-policies 02 |
+| T | The Contract plugin offers its rule: what is not in the Contract is not developed | plugin-policies 06 | plugin-policies 02, roles-and-contract 04 and 06 |
 | T | A plugin ships a lesson and the Tutor reads it | plugin-lessons 01 | nothing |
 | T | Leave the tour at any part; choose lessons; remember progress | plugin-lessons 02 | plugin-lessons 01 |
 | T | Mechanical check that a lesson still names what its plugin has | plugin-lessons 03 | plugin-lessons 01 |
@@ -80,10 +89,11 @@ All pending or half-done work, not only the first version: written tickets, deci
 | T | Architecture patterns judged by the Tutor and checked by the core (layered, hexagonal, event-driven, plugin-based) | layer-inference 06 | layer-inference 03 |
 | T | A lens for Unity projects (scenes, prefabs, ScriptableObjects) as a plugin | layer-inference 08 | language-plugins 01; the person: the lens slot |
 | T | A structural index of any language from a replaceable provider (Codebase Memory first) | layer-inference 10 | language-plugins 01; the comparison spike |
-| D | **A Brief to a Builder, taught by the Tutor** (goal, context, constraints, acceptance checks, target instance): the Tutor turns it into a lesson, the person writes it first and the Tutor checks it, only the person sends it; the first case is a good Creator Mode request for a plugin | roles-and-contract spec | nothing for one Builder; Instances for several |
-| D | **The Contract becomes a plugin** (the agreed items, the differences, a service and a teaching surface); the Tutor stops knowing the Contract and Differences by name | roles-and-contract spec | plugin-teaching 01 and 02 |
-| D | **The Contract is the Plan Mode of aidea for a whole project**: approved by the person, Builders work inside it; requirements become tasks with status and owner (a Builder instance, a branch); the Differences become progress; each task has its own plan mode before editing | roles-and-contract spec | the Contract plugin; Instances for several Builders |
-| D | **Policies: plugins that condition other plugins.** A plugin on imposes conditions on the actions of others, matched by class and scope (for example "writes inside this Project"), never by type of plugin; the Contract plugin on means what is not in the Contract is not developed; off means no Contract and no condition. Prevented where aidea mediates (Claude Code asks aidea's permission tool), detected and reverted where it does not, and the screen says which | plugin-policies spec | plugin-system 11 (built); the Contract plugin |
+| T | The Contract and the Differences become a plugin; the Tutor stops knowing them by name | roles-and-contract 04 | plugin-teaching 01 and 02 |
+| T | The Contract has tasks with status and owner; the Differences become progress | roles-and-contract 06 | roles-and-contract 05 |
+| T | Detect and revert a write to the Project that nobody mediated | plugin-policies 03 | plugin-policies 02 |
+| T | Briefs and tasks name an instance (several Builders and Tutors) | roles-and-contract 08 | the Instances spec (not written) |
+| T | Optional: rename the Tutor's Plan to "Learning plan" (needs the person's confirmation) | roles-and-contract 09 | the person |
 | T | Python becomes a built-in plugin, on by default; every test unchanged | language-plugins 02 | language-plugins 01 |
 | T | TypeScript and JavaScript become a built-in plugin with a variant per system | language-plugins 03 | 01, 02, 07 |
 | T | A plugin can ship a variant per system, use a program on the machine, or download one with permission | language-plugins 07 | language-plugins 01 |

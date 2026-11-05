@@ -1,6 +1,6 @@
 # Plugins that condition other plugins (policies)
 
-Status: draft, waiting for the person's read
+Status: ticketed (2026-11-05), tickets in `issues/`
 
 Source: the person's remarks of 2026-11-05 (plugins are conditional and conditioning; the Contract restricts writers when it is on; no dependence on a type of Builder; classify plugins); plugin-system ticket 11 (guard rules from plugins, built); ADR 0008; `.scratch/roles-and-contract/spec.md`.
 

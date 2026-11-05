@@ -1,6 +1,6 @@
 # Roles that cooperate, and the Contract as its own plugin
 
-Status: draft, waiting for the person's read
+Status: ticketed (2026-11-05), tickets in `issues/`
 
 Source: the person's remarks of 2026-11-05; ADR 0008 (roles with several instances); `src/core/contract.ts`, `src/core/drift.ts`, `src/core/plan.ts`, `src/core/routes/mcp.ts`, `src/ui/features/48-tutor-sections.js`.
 
