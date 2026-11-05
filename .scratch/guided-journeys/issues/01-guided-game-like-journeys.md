@@ -2,7 +2,7 @@
 
 **What to build:** Decided 2026-10-31 and 11-04: tutorials, pre-made, that teach the whole aidea workflow to someone who has never programmed. They practise on a small Python sample Project that ships inside aidea. Two journeys: "A project that is not mine" (open it from Home, Files and Code, Components, select text and Explain, double-click a box, Playback and Play) and "A project from zero". aidea detects by itself that a mission was done, because the interface reports concrete actions; progress is a map that fills in, with achievements that make "platinum" possible. Not the Tutor's adaptive class.
 
-**Blocked by:** plugin-lessons 01.
+**Blocked by:** None (can start immediately).
 
 **Status:** needs-info: a spec first and the wording of Tutor story 31 (no score is kept)
 

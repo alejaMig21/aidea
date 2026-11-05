@@ -1,6 +1,7 @@
 // The manifest of a plugin, `aidea-plugin.json`: static metadata read without running any code. The rules are those of docs/plugin-api.md.
 import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import { isAbsolute, join, resolve, sep } from "node:path";
+import { readLesson } from "./lesson.ts";
 import { schemaProblems } from "./settings.ts";
 import type { SettingField } from "./settings.ts";
 
@@ -17,7 +18,7 @@ const MAX_ICON_BYTES = 256 * 1024;
 export type EventDeclaration = { mode: "announce" | "ask"; version: number };
 export type Manifest = {
   id: string; version: string; title: string; description: string; publisher: string; api: string;
-  main?: string; ui?: string; icon?: string;
+  main?: string; ui?: string; icon?: string; lesson?: string;
   capabilities: string[]; requires: string[]; provides: string[];
   events: Record<string, EventDeclaration>;
   settings: Record<string, SettingField>;
@@ -58,7 +59,11 @@ export function readManifest(dir: string): { manifest: Manifest } | { problems: 
   if (!isText(m.description, 200)) problems.push('"description" must be text of up to 200 characters');
   if (!isText(m.publisher, 80)) problems.push('"publisher" must be text of up to 80 characters');
   if (typeof m.api !== "string" || !/^\d+\.\d+$/.test(m.api)) problems.push('"api" must be a version like "0.1"');
-  for (const field of ["main", "ui", "icon"] as const) if (m[field] !== undefined && inside(dir, m[field]) === null) problems.push(`"${field}" must be a path inside the plugin folder`);
+  for (const field of ["main", "ui", "icon", "lesson"] as const) if (m[field] !== undefined && inside(dir, m[field]) === null) problems.push(`"${field}" must be a path inside the plugin folder`);
+  if (m.lesson !== undefined && !problems.some((p) => p.startsWith('"lesson"'))) {
+    const read = readLesson(dir, m.lesson as string); // a lesson that does not have the shape refuses the plugin, with the field named
+    if ("problems" in read) problems.push(...read.problems);
+  }
   if (m.main === undefined && m.ui === undefined) problems.push('the plugin needs a "main" or a "ui" half');
   if (m.capabilities !== undefined && (!isList(m.capabilities) || m.capabilities.some((c) => !(CAPABILITIES as readonly string[]).includes(c)))) problems.push(`"capabilities" must be a list of: ${CAPABILITIES.join(", ")}`);
   for (const field of ["requires", "provides"] as const) if (m[field] !== undefined && !isList(m[field])) problems.push(`"${field}" must be a list of service keys`);
@@ -76,7 +81,7 @@ export function readManifest(dir: string): { manifest: Manifest } | { problems: 
   return {
     manifest: {
       id: m.id as string, version: m.version as string, title: m.title as string, description: m.description as string, publisher: m.publisher as string, api: m.api as string,
-      main: m.main as string | undefined, ui: m.ui as string | undefined, icon: m.icon as string | undefined,
+      main: m.main as string | undefined, ui: m.ui as string | undefined, icon: m.icon as string | undefined, lesson: m.lesson as string | undefined,
       capabilities: (m.capabilities as string[]) ?? [], requires: (m.requires as string[]) ?? [], provides: (m.provides as string[]) ?? [],
       events: (m.events as Record<string, EventDeclaration>) ?? {}, settings: (m.settings as Record<string, SettingField>) ?? {}, required: m.required === true,
     },

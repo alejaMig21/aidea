@@ -4,7 +4,7 @@ import type { Handler } from "../types.ts";
 
 const handler: Handler = async (req, res, core) => {
   if (req.method !== "GET" || new URL(req.url ?? "/", "http://core").pathname !== "/guide") return false;
-  core.send(res, 200, { guide: GUIDE });
+  core.send(res, 200, { guide: GUIDE, plugins: core.plugins.lessons().map((l) => ({ id: l.id, title: l.title, parts: l.parts })) });
   return true;
 };
 

@@ -4,13 +4,20 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** resolved 2026-11-05 (live in Electron on the second monitor: the tour ends with the Terminal lesson)
 
-- [ ] The manifest accepts a `lesson` file; a lesson that does not have the shape is refused with the field named.
-- [ ] The Tutor can list and read the lessons of installed, enabled plugins, and of no other plugin (a disabled or removed one is absent).
-- [ ] A fixture lesson with text that looks like an instruction is treated as data (a fake Tutor proves it).
-- [ ] The class opens on the trunk and offers the menu; the Terminal plugin's lesson is in it.
-- [ ] Every label in double quotes in a lesson is a label the interface really shows (the rule `guide.ts` states, tested for lessons too).
-- [ ] Core API tests and a page test for the menu pass; `npm run verify` is green.
+- [x] The manifest accepts a `lesson` file; a lesson that does not have the shape is refused with the field named.
+- [x] The Tutor can list and read the lessons of installed, enabled plugins, and of no other plugin (a disabled or removed one is absent).
+- [x] A fixture lesson with text that looks like an instruction is treated as data (a fake Tutor proves it).
+- [x] The class opens on the trunk and offers the menu; the Terminal plugin's lesson is in it.
+- [x] Every label in double quotes in a lesson is a label the interface really shows (the rule `guide.ts` states, tested for lessons too).
+- [x] Core API tests and a page test for the menu pass; `npm run verify` is green.
 
 Source: `.scratch/plugin-lessons/spec.md`.
+
+## What was built (2026-11-05)
+
+- `src/core/plugins/lesson.ts` reads and checks the lesson file; `manifest.ts` refuses a plugin whose lesson has the wrong shape, naming the field. `host.lessons()` lists the lessons of active plugins.
+- Tutor tools `list_plugin_lessons` and `read_plugin_lesson` (Tutor only), results marked untrusted. `guideClassMessage` offers the lessons; `GET /guide` carries them; the quick tour (`46-layer-class.js`) appends them after aidea's own parts.
+- The Terminal plugin ships `lesson.json` (2 parts).
+- Live: `.scratch/plugin-lessons/live-scripts/lesson-tour.mjs` (12 steps, the last two are the Terminal lesson). The home screen hides the tour, so the check reads the steps from the page; with a Project open the Tutor class runs instead and was not launched (it calls the real agent).

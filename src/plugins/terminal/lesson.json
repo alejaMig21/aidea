@@ -1,0 +1,24 @@
+{
+  "parts": [
+    {
+      "name": "The Terminal strip",
+      "hint": "Where do I read what my programs print?",
+      "what": "Under the Canvas there is a strip called \"Terminal\". When you press \"Play\", every program that starts writes into a tab of its own in this strip, one tab for each program. You read what it prints there, and when a program stops you see the last lines it wrote, which is usually the reason.",
+      "question": "A program you started stops after a second. Where would you look first, and why?",
+      "example": "Play a project with a web server and a database: the strip gets two tabs, and the database tab shows it is ready before the server tab says it is listening.",
+      "narration": "Let's look at the strip where your programs talk.",
+      "tryIt": "Press \"Play\" on a project that has a run recipe and look at the \"Terminal\" strip: there should be a tab for each program.",
+      "refs": ["terminal"]
+    },
+    {
+      "name": "Asking about a line",
+      "hint": "What do I do with an error I do not understand?",
+      "what": "You can select any text in the strip, for example an error, and ask the Tutor about it. \"Explain\" tells you what it means in plain words, and nothing is changed. The strip is only for reading: it never runs commands of its own.",
+      "question": "What would you select to ask about a failure, the first line or the last lines of a long error?",
+      "example": "A traceback ends with the line that names the real problem, so select the last lines.",
+      "narration": "Now a way to learn from what the programs print.",
+      "tryIt": "Select a line in a tab of the \"Terminal\" strip and press \"Explain\".",
+      "refs": ["terminal"]
+    }
+  ]
+}

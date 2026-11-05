@@ -2,7 +2,7 @@
 
 **What to build:** The class "How aidea works" can be ended at any part. The person picks which lessons to take and in what order. A lesson left half way is not marked done. What was done is remembered for the person, outside the Project (like recent projects), and the menu shows it.
 
-**Blocked by:** plugin-lessons 01.
+**Blocked by:** None (can start immediately).
 
 **Status:** ready-for-agent
 

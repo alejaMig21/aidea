@@ -2,6 +2,8 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { readLesson } from "./lesson.ts";
+import type { Lesson } from "./lesson.ts";
 import { API_VERSION, compatible, readManifest } from "./manifest.ts";
 import type { Manifest } from "./manifest.ts";
 import { createPluginState } from "./state.ts";
@@ -291,6 +293,12 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
     schemaOf: (id: string) => (id.includes("#") ? undefined : entries.get(id)?.manifest?.settings),
     has: (id: string) => entries.has(id) && !id.includes("#"),
     list: (): PluginInfo[] => [...entries.values()].map(info),
+    // The lessons of the ACTIVE plugins that ship one (plugin-lessons 01), read from their files each time so an update shows. A plugin that is off, removed or has none is absent.
+    lessons: (): { id: string; title: string; parts: Lesson["parts"] }[] => [...entries.values()].flatMap((e) => {
+      if (e.state !== "active" || !e.manifest?.lesson) return [];
+      const read = readLesson(e.folder, e.manifest.lesson);
+      return "lesson" in read ? [{ id: e.id, title: e.manifest.title, parts: read.lesson.parts }] : [];
+    }),
     // The file of the interface half of an ACTIVE plugin, or undefined.
     uiFile: (id: string) => {
       const e = entries.get(id);

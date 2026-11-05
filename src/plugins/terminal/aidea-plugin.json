@@ -5,5 +5,6 @@
   "description": "A Panel at the bottom of the window that shows what the programs started with Play write, one tab for each program.",
   "publisher": "aidea",
   "api": "0.1",
-  "ui": "ui.js"
+  "ui": "ui.js",
+  "lesson": "lesson.json"
 }

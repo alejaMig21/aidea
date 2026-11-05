@@ -61,7 +61,7 @@ const handler: Handler = async (req, res, core) => {
   if (selection !== undefined && !validSelection(selection, body?.source)) return reject(400, `selection must be the selected text, at most ${limitOf(body?.source)} characters`);
   const plugin = body?.plugin;
   if (plugin !== undefined && (typeof plugin !== "string" || !core.quarantine.get(plugin))) return reject(400, "plugin must be the id of a plugin waiting in the quarantine");
-  const opening = guide ? guideClassMessage() : layer ? layerClassMessage(layer) : difference ? driftClassMessage(difference) : selection ? selectionMessage(selection) : plugin ? pluginClassMessage(plugin) : body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
+  const opening = guide ? guideClassMessage(core.plugins.lessons()) : layer ? layerClassMessage(layer) : difference ? driftClassMessage(difference) : selection ? selectionMessage(selection) : plugin ? pluginClassMessage(plugin) : body?.message ?? (typeof topic === "string" && topic.trim() ? topicMessage(topic.trim()) : FIRST_MESSAGE);
   // One review question about an earlier idea opens a FREE class (started with "Start a class"), unless the person turned it off. A class on a layer, on selected text,
   // on a difference, on a plugin or on how aidea works is something the person asked for on purpose: a review before it would only be in the way.
   const free = !layer && !difference && !selection && !guide && !plugin;

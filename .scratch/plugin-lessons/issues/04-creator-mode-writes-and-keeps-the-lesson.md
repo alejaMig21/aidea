@@ -2,7 +2,7 @@
 
 **What to build:** The plugin template carries an empty lesson. The Creator Mode skill says to write the lesson together with the plugin and to update it every time the plugin changes, and to run the check of ticket 03. A plugin the Builder wrote cannot be proposed for installing without a valid lesson. A plugin from anywhere else is never refused for lacking one.
 
-**Blocked by:** plugin-lessons 01, plugin-lessons 03.
+**Blocked by:** plugin-lessons 03.
 
 **Status:** ready-for-agent
 

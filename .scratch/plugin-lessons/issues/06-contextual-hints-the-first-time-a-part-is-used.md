@@ -2,7 +2,7 @@
 
 **What to build:** The first time the person uses a part of aidea, a short hint (taken from that part's lesson) appears once, can be dismissed for good and turned off in settings.
 
-**Blocked by:** plugin-lessons 01, plugin-lessons 02.
+**Blocked by:** plugin-lessons 02.
 
 **Status:** needs-info: an idea; the person confirms it is wanted
 

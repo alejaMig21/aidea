@@ -88,9 +88,12 @@
 
   // "How aidea works" in the top bar: a Tutor class about the app (GET /guide has the same content as the quick tour). Same fallback as above.
   async function guideTour(unavailable) {
-    const g = (await fetch("/guide").then((r) => (r.ok ? r.json() : null)).catch(() => null))?.guide;
+    const body = await fetch("/guide").then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    const g = body?.guide;
     if (!g) return;
-    steps = [{ title: g.name, say: g.what, question: g.question, example: g.example }, ...g.order.map((id) => ({ title: g.elements[id].name, say: g.elements[id].what, question: g.elements[id].question, example: g.elements[id].tryIt, exampleLabel: "Try it:" }))];
+    steps = [{ title: g.name, say: g.what, question: g.question, example: g.example }, ...g.order.map((id) => ({ title: g.elements[id].name, say: g.elements[id].what, question: g.elements[id].question, example: g.elements[id].tryIt, exampleLabel: "Try it:" })),
+      // The lessons the enabled plugins ship (plugin-lessons 01), after the parts of aidea itself.
+      ...(body.plugins ?? []).flatMap((p) => p.parts.map((x) => ({ title: p.title + ": " + x.name, say: x.what, question: x.question, example: x.tryIt, exampleLabel: "Try it:" })))];
     at = 0;
     render();
     note.hidden = !unavailable;
