@@ -244,7 +244,7 @@ export const items = [
   "k": "T",
   "s": "L",
   "file": "roles-and-contract/06",
-  "t": "The Contract has tasks with status and owner; the Differences become progress",
+  "t": "The Contract has tasks from the Architecture (first) and the Requirements (after), with status and owner; the Differences become progress",
   "w": "roles-and-contract 06",
   "d": [
    "rc05"

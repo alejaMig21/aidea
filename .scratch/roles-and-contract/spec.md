@@ -31,7 +31,7 @@ In an agent such as Claude Code, Plan Mode means the agent may read and think bu
 
 How it differs from the Plan Mode of one task: the Contract lasts, is shared by every Builder, and afterwards checks the code against itself (the Differences). Two levels exist:
 
-- **The Contract (project):** the approved plan of the whole project. Each requirement becomes one or more **tasks** with a status and an owner (a Builder instance, and a branch when they work in parallel). The Differences become the progress of the plan and the drift from it.
+- **The Contract (project):** the approved plan of the whole project. Each Architecture piece and relation, and each requirement, becomes one or more **tasks** (Architecture first; a requirement task depends on the tasks of the pieces that realise it) with a status and an owner (a Builder instance, and a branch when they work in parallel). The Differences become the progress of the plan and the drift from it.
 - **The plan of one task is the person's choice, not a rule (decided 2026-11-05):** the person sets the mode of each Builder (Plan, accept edits, ...) as they do today. aidea does not force a plan mode on a task and adds no guard rule for it; a person who hands the Contract to Builders in accept-edits mode accepts what may follow.
 
 Decided by the person (2026-11-05): with the Contract plugin off there is no Contract and Builders are free; with it on the condition is hard: what is not in the Contract is not developed (to be tuned after use). How a plugin conditions others is in `.scratch/plugin-policies/spec.md`.
@@ -39,6 +39,10 @@ Decided by the person (2026-11-05): with the Contract plugin off there is no Con
 ### 3. The Contract as a plugin
 
 The Contract moves out of the core and the Tutor's panel into a plugin that ships with aidea. It offers a service (the agreed items, the tasks, the differences), its own section, and a teaching surface (a lesson, a read-only view, named checks). The Tutor and the Builders use the service; the Tutor keeps no knowledge of Differences or the Contract in its own code.
+
+## Decided: what the Contract is for now (2026-11-05)
+
+The Contract stays a summary computed on demand from the layers the person accepted (`contractOf`); the plugin stores no Contract of its own. This may change later (a Contract as an object of its own, with a draft and an approval stored by the plugin); roles-and-contract 05 and 06 should keep that door open and not assume either.
 
 ## Depends on
 
