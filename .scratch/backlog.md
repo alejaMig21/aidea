@@ -21,9 +21,9 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | anim | T | XL | The animation engine: a language-neutral recording drawn with pieces (list, tree, graph, grid); part of it exists in Data | animation-and-data 01 | - | 6 | a spec first (what exists in Data and what the engine adds) |
 | li02 | T | M | The fingerprint of a project (tree, manifests, entry points, documents, git summary) and a Tutor tool to read it | layer-inference 02 | - | 6 | - |
 | pp01 | T | M | Actions carry a class and a scope (writes in the Project, outside, runs a program, network, secrets) | plugin-policies 01 | - | 6 | - |
+| prov | T | XL | Roles and Providers: the Tutor and the Builder become roles filled by provider plugins; the agent adapter becomes a (required) plugin. Part of migrating the rest of the existing features into plugins (Files, Code, Playback, the layers), each with its own specification, as the plugin-system spec left it | roles-and-providers 01 | - | 4 | the spec the plugin-system spec left out (which services stay single-instance, the list of named slots, the required plugins) |
 | li04 | T | M | A Project is my own, someone else's to study, or new: asked once, kept, changeable | layer-inference 04 | - | 3 | - |
 | pl02 | T | M | Leave the tour at any part; choose lessons; remember progress | plugin-lessons 02 | - | 3 | - |
-| prov | T | XL | Roles and Providers: the Tutor and the Builder become roles filled by provider plugins; the agent adapter becomes a (required) plugin. Part of migrating the rest of the existing features into plugins (Files, Code, Playback, the layers), each with its own specification, as the plugin-system spec left it | roles-and-providers 01 | - | 3 | the spec the plugin-system spec left out (which services stay single-instance, the list of named slots, the required plugins) |
 | rc02 | T | M | The Tutor teaches how to ask a Builder well (the person writes first, in the Builder's chat; the Tutor checks) | roles-and-contract 02 | - | 3 | - |
 | cbs | T | M | Spike: measure Codebase Memory MCP as a code-graph tool for the agents on Telegram, a Unity project and a Node monorepo, with and without it (indexing writes nothing into the project; one background process per account shares the person's cache; licence not looked at) | layer-inference 11 | - | 2 | quota |
 | inst_spec | T | S | Write the Instances spec: a plugin declares a minimum number of instances and can run N times (N Builders each on a branch, N Tutors, N Canvases each on a layer); the Panel registry and the saved Layout name an instance | roles-and-providers 02 | - | 2 | the person decides the open points |
@@ -41,7 +41,6 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | lf05 | T | M | Long waits for an answer: measure 3, 10 and 30 minutes with the real Claude Code | live-findings 05 | - | - | real Claude (quota, up to 30 min) |
 | li08 | T | L | A project-kind plugin for Unity (scenes, prefabs, ScriptableObjects) | layer-inference 08 | - | - | the person: what a project-kind plugin may return |
 | lp05 | T | M | One Components layer for several languages, the language in each Node's info | language-plugins 05 | - | - | - |
-| pt05 | T | M | The Run plugin declares a real surface; live check with the real Tutor | plugin-teaching 05 | - | - | - |
 | pt06 | T | L | A change inside a plugin reaches the person as a lesson and a Proposal they accept (the Tutor never acts) | plugin-teaching 06 | - | - | the person: how a plugin applies an accepted Proposal |
 | pw | T | M | Detect warnings (not only failures) when Play starts parts; restart only one part quickly | housekeeping 04 | - | - | how a warning is detected (a pattern the recipe declares, the stderr, an exit code) and shown |
 | rc09 | T | S | Optional: rename the Tutor's Plan to "Learning plan" (the Plan of the rewritten Tutor is the one LearnHarness shows) | roles-and-contract 09 | - | - | the person confirms the name |
@@ -53,7 +52,7 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | tb | T | S | Merge the Canvas's own title bar with the layer bar (needs a ticket) | housekeeping 01 | - | - | - |
 | v1g01 | T | S | Live check: the Builder cannot write aidea files except by Proposals | v1-gaps 01 | - | - | real Builder (quota) |
 
-## Level 1: depends only on levels below (22 items)
+## Level 1: depends only on levels below (23 items)
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
@@ -77,6 +76,7 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | perf | T | XL | A performance lens: how time and memory grow with the size of the data | animation-and-data 06 | anim | - | an idea |
 | pieces | T | M | More drawing pieces for Data: hash table, call stack and recursion tree, state machine, grid, weighted graph | animation-and-data 03 | anim | - | an idea |
 | pm | T | M | Measure aidea with a very high number of heavy plugins (after the built-in features are plugins, so the measure is the real one) | housekeeping 05 | lp02, rc04 | - | - |
+| pt08 | T | M | Playback declares a teaching surface (the recordings made, the step reached; checks) once it is a plugin | plugin-teaching 08 | prov | - | Playback must first be a plugin |
 | tl | T | L | A timeline view for concurrency | animation-and-data 04 | anim | - | an idea |
 | vg | T | XL | The git versions plugin: commits and files changed, the Canvas at a chosen commit, all branches as an animated graph, the state of the working folder (shown only). Ships a lesson and a teaching surface | versions 02 | anim | - | a spec first |
 
