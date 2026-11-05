@@ -2,6 +2,7 @@
 // with what the code does. A finding either blocks (installing needs a confirmation that names it) or only warns. A scan lowers the risk; it proves nothing.
 import { lstatSync, openSync, closeSync, readFileSync, readSync, readdirSync, realpathSync } from "node:fs";
 import { extname, join, sep } from "node:path";
+import { lessonFindings } from "./lesson-refs.ts";
 import { readManifest } from "./manifest.ts";
 import type { Manifest } from "./manifest.ts";
 
@@ -88,6 +89,9 @@ export function scanPlugin(dir: string): Report {
 
   walk(dir);
   if (manifest) {
+    // The lesson (plugin-lessons 03): what it names must still exist; no lesson is only a warning.
+    if (manifest.lesson) for (const message of lessonFindings(dir, manifest)) add({ id: "lesson-stale", severity: "warn", message, file: manifest.lesson });
+    else add({ id: "no-lesson", severity: "warn", message: "this plugin ships no lesson, so the Tutor cannot teach it", file: "aidea-plugin.json" });
     for (const [capability, file] of used) {
       if (declared.has(capability as never)) add({ id: "capability-used", severity: "warn", message: `uses ${capability} (declared)`, file });
       else add({ id: "undeclared-capability", severity: "block", message: `uses ${capability} without declaring it in "capabilities"`, file });

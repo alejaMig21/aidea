@@ -169,7 +169,7 @@ function pmQuarantineRow(entry) {
       pmEl("div", { className: "pm-desc", title: manifest?.description ?? "" }, manifest?.description ?? "It cannot be installed."),
       pmEl("div", { className: "pm-meta-line" }, ...(manifest ? [pmEl("span", { className: "pm-publisher" }, manifest.publisher), pmEl("span", { className: "pm-version" }, manifest.version), pmEl("span", {}, manifest.id)] : [])),
       pmEl("div", { className: "pm-source", title: entry.source }, entry.source),
-      ...(update ? [pmEl("div", { className: "pm-meta", id: `pm-diff-${entry.id}` }, `Update from ${update.version.from} to ${update.version.to}. Files: ${update.files.added.length} added, ${update.files.removed.length} removed, ${update.files.changed.length} changed. New capabilities: ${update.capabilities.added.join(", ") || "none"}.`)] : []),
+      ...(update ? [pmEl("div", { className: "pm-meta", id: `pm-diff-${entry.id}` }, `Update from ${update.version.from} to ${update.version.to}. Files: ${update.files.added.length} added, ${update.files.removed.length} removed, ${update.files.changed.length} changed. New capabilities: ${update.capabilities.added.join(", ") || "none"}.${update.lessonStale ? " The plugin changed, the lesson did not." : ""}`)] : []),
       findings,
       pmEl("div", { className: "pm-actions" }, install, ...(manifest ? [ask] : []), discard),
     ),

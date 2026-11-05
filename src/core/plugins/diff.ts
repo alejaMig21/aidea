@@ -27,7 +27,17 @@ export type Difference = {
   files: { added: string[]; removed: string[]; changed: string[] };
   capabilities: { added: string[]; removed: string[] };
   newFindings: Finding[];
+  // The plugin changed and its lesson did not (plugin-lessons 03): the lesson may no longer say what the plugin does.
+  lessonStale: boolean;
 };
+
+// Some file other than the lesson changed, and the lesson file itself did not.
+function lessonStale(was: Map<string, string>, now: Map<string, string>, lessons: (string | undefined)[]): boolean {
+  const names = new Set(lessons.filter((f): f is string => !!f));
+  if (!names.size) return false;
+  const touched = [...new Set([...was.keys(), ...now.keys()])].filter((f) => was.get(f) !== now.get(f));
+  return touched.some((f) => !names.has(f)) && !touched.some((f) => names.has(f));
+}
 
 export function difference(installedDir: string, installed: Report, next: Report, nextDir: string): Difference {
   const was = hashes(installedDir), now = hashes(nextDir);
@@ -42,6 +52,7 @@ export function difference(installedDir: string, installed: Report, next: Report
     },
     capabilities: { added: [...fresh].filter((c) => !old.has(c)).sort(), removed: [...old].filter((c) => !fresh.has(c)).sort() },
     newFindings: next.findings.filter((f) => !known.has(f.key)),
+    lessonStale: lessonStale(was, now, [installed.manifest?.lesson, next.manifest?.lesson]),
   };
 }
 
