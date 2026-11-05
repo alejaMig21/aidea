@@ -2,7 +2,7 @@
 
 **What to build:** With several Builders and Tutors (Instances), an Assignment and a task name the instance they are for, tasks are split among Builders each on its own branch, and a Tutor lesson on an Assignment addresses the instance the person picks.
 
-**Blocked by:** roles-and-contract 01, roles-and-contract 06, roles-and-providers 03.
+**Blocked by:** roles-and-contract 06, roles-and-providers 03.
 
 **Status:** needs-info: waits for the Instances spec
 

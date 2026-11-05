@@ -2,7 +2,7 @@
 
 **What to build:** A lesson, taught with the teach loop: how to ask a Builder for work in its chat (a goal in plain words, the context it rests on, constraints, how the person will know it is done). The person writes first, in the Builder's chat or in a practice problem; the Tutor checks what they wrote and says what is missing. The Tutor never writes or sends the request for them.
 
-**Blocked by:** roles-and-contract 01.
+**Blocked by:** None (can start immediately).
 
 **Status:** ready-for-agent
 
