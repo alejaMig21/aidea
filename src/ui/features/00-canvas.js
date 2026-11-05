@@ -106,9 +106,12 @@ function showLanguages(languages) {
   const none = $("no-code");
   noCodeWanted = done.length === 0;
   syncNoCode();
-  none.textContent = todo.length
-    ? "aidea cannot read the code of this project yet, so there is nothing to draw on this layer."
-    : "No code was found in this project, so there is nothing to draw on this layer yet.";
+  if (!todo.length) { none.textContent = "No code was found in this project, so there is nothing to draw on this layer yet."; return; }
+  // No plugin reads the language: say so, name it, and offer the way forward as a lesson. Nothing is prepared or sent for the person (language-plugins 04).
+  const names = todo.map((l) => l.label);
+  const ask = Object.assign(document.createElement("button"), { type: "button", id: "no-reader-offer", textContent: `Learn how to ask for a plugin for ${names[0]}` });
+  ask.onclick = () => window.tutorUi?.startClass({ payload: { project: current, guide: true, message: `aidea cannot read the ${names.join(", ")} code of my project yet. Teach me how to ask for a plugin that reads ${names[0]}.` }, fallback: true });
+  none.replaceChildren(`No plugin reads ${names.join(", ")}, so aidea cannot draw this project's code yet. Business, Requirements and Architecture still work. `, ask);
 }
 
 // Projects

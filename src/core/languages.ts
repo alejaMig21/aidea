@@ -12,6 +12,25 @@ const LANGUAGES: Record<string, { label: string; extensions: string[]; owner: st
 };
 const byExtension = new Map(Object.entries(LANGUAGES).flatMap(([language, { extensions }]) => extensions.map((e) => [e, language] as const)));
 
+// Languages that aidea knows by name and no plugin reads (language-plugins 04): a Project in one of them says so instead of looking empty. A language plugin that claims the same id or
+// extensions replaces the name; the names never block a plugin.
+const NAMED: Record<string, { label: string; extensions: string[] }> = {
+  r: { label: "R", extensions: [".r"] },
+  rust: { label: "Rust", extensions: [".rs"] },
+  go: { label: "Go", extensions: [".go"] },
+  java: { label: "Java", extensions: [".java"] },
+  csharp: { label: "C#", extensions: [".cs"] },
+  c: { label: "C", extensions: [".c", ".h"] },
+  cpp: { label: "C++", extensions: [".cpp", ".cc", ".hpp"] },
+  ruby: { label: "Ruby", extensions: [".rb"] },
+  php: { label: "PHP", extensions: [".php"] },
+  swift: { label: "Swift", extensions: [".swift"] },
+  kotlin: { label: "Kotlin", extensions: [".kt"] },
+};
+const namedByExtension = new Map(Object.entries(NAMED).flatMap(([language, { extensions }]) => extensions.map((e) => [e, language] as const)));
+const idOf = (ext: string) => byExtension.get(ext) ?? namedByExtension.get(ext);
+const labelOf = (id: string) => LANGUAGES[id]?.label ?? NAMED[id].label;
+
 // A language plugin adds its language (language-plugins 01). An id or an extension that is already read by another language is refused, naming who holds it. Returns what takes it away again.
 export function addLanguage(id: string, label: string, extensions: string[], owner: string): () => void {
   const exts = extensions.map((e) => e.toLowerCase());
@@ -23,13 +42,13 @@ export function addLanguage(id: string, label: string, extensions: string[], own
 }
 
 export const languageOfFile = (file: string) => {
-  const language = byExtension.get(file.slice(file.lastIndexOf(".")).toLowerCase());
-  return language ? { language, label: LANGUAGES[language].label } : undefined;
+  const language = idOf(file.slice(file.lastIndexOf(".")).toLowerCase());
+  return language ? { language, label: labelOf(language) } : undefined;
 };
 
 export type ProjectLanguage = { language: string; label: string; files: number; analysed: boolean };
 
-// Most files first; ties keep the order of LANGUAGES.
+// Most files first; ties keep the order of LANGUAGES, then of the names.
 export function detectLanguages(root: string): ProjectLanguage[] {
   const counts = new Map<string, number>();
   const walk = (dir: string) => {
@@ -37,13 +56,13 @@ export function detectLanguages(root: string): ProjectLanguage[] {
     try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; } // an unreadable folder counts as empty
     for (const e of entries) {
       if (e.isDirectory()) { if (!SKIP_DIRS.has(e.name) && !e.name.startsWith(".")) walk(join(dir, e.name)); continue; }
-      const language = byExtension.get(e.name.slice(e.name.lastIndexOf(".")).toLowerCase());
+      const language = idOf(e.name.slice(e.name.lastIndexOf(".")).toLowerCase());
       if (language) counts.set(language, (counts.get(language) ?? 0) + 1);
     }
   };
   walk(root);
-  return Object.keys(LANGUAGES)
+  return [...Object.keys(LANGUAGES), ...Object.keys(NAMED).filter((id) => !LANGUAGES[id])]
     .filter((language) => counts.has(language))
-    .map((language) => ({ language, label: LANGUAGES[language].label, files: counts.get(language)!, analysed: hasAdapter(language) }))
+    .map((language) => ({ language, label: labelOf(language), files: counts.get(language)!, analysed: hasAdapter(language) }))
     .sort((a, b) => b.files - a.files);
 }
