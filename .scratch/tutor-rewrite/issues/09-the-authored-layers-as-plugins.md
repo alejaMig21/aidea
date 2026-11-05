@@ -2,7 +2,7 @@
 
 **What to build:** The ADR moves only the Contract and the Differences out of the core. If the Tutor is to help build the layers by using plugins, the layers have to be plugins too, each with its lesson, its read-only view and its checks, and Proposals as the only way the Tutor changes them. The open point is whether to do it for the three authored layers, and how the Canvas draws a layer a plugin owns.
 
-**Blocked by:** plugin-teaching 02.
+**Blocked by:** None (can start immediately).
 
 **Status:** needs-info: the person decides whether the three authored layers become plugins
 

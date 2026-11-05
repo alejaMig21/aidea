@@ -2,7 +2,7 @@
 
 **What to build:** Today the Learner graph holds answers only. A check that passed (or failed) in a lesson or a practice problem is recorded as evidence that the person did something, marked as coming from a check, with the plugin and the check named. Nothing computes a score; the graph derives, never stores, what is understood.
 
-**Blocked by:** tutor-rewrite 04, plugin-teaching 02.
+**Blocked by:** tutor-rewrite 04.
 
 **Status:** ready-for-agent
 

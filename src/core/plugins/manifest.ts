@@ -18,7 +18,7 @@ const MAX_ICON_BYTES = 256 * 1024;
 export type EventDeclaration = { mode: "announce" | "ask"; version: number };
 // The teaching surface (plugin-teaching 01): the name of a read-only view of the plugin's state and named checks the Tutor can run, each with one plain sentence and optional arguments.
 export type TeachCheck = { name: string; says: string; args?: Record<string, "string" | "number" | "boolean"> };
-export type Teach = { view: string; checks: TeachCheck[] };
+export type Teach = { view: string; checks: TeachCheck[]; module?: string }; // module: the file with the view and the checks, run for the Tutor (plugin-teaching 02)
 export type LanguageDeclaration = { id: string; label: string; extensions: string[] };
 export type Manifest = {
   id: string; version: string; title: string; description: string; publisher: string; api: string;
@@ -112,7 +112,11 @@ export function readManifest(dir: string): { manifest: Manifest } | { problems: 
   }
   if (m.settings !== undefined && (!m.settings || typeof m.settings !== "object" || Array.isArray(m.settings))) problems.push('"settings" must be an object');
   else if (m.settings !== undefined) problems.push(...schemaProblems(m.settings as Record<string, unknown>));
-  if (m.teach !== undefined) problems.push(...teachProblems(m.teach));
+  if (m.teach !== undefined) {
+    problems.push(...teachProblems(m.teach));
+    const mod = (m.teach as { module?: unknown } | null)?.module;
+    if (mod !== undefined && inside(dir, mod) === null) problems.push('"teach" "module" must be a path inside the plugin folder');
+  }
   if (m.language !== undefined) problems.push(...languageProblems(m.language));
   if (m.required !== undefined && typeof m.required !== "boolean") problems.push('"required" must be true or false');
   if (m.icon !== undefined && !problems.some((p) => p.startsWith('"icon"'))) {

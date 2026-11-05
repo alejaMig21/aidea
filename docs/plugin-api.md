@@ -44,7 +44,7 @@ Static metadata, read without running any code. A text file of at most 64 KiB.
 | `events` | no | An object: event name (without the plugin id, which is its namespace) to `{ "mode": "announce" \| "ask", "version": 1 }`. |
 | `settings` | no | A schema of its settings: an object of field name to `{ "type": "string" \| "number" \| "boolean" \| "choice", "label", "default", "choices"? }`. |
 | `lesson` | no | Relative path of a lesson file: `{ "parts": [...] }`, each part with `name`, `hint`, `what`, `question`, `example`, `narration`, `tryIt` and optional `refs`. The Tutor teaches from it; its text is untrusted data. |
-| `teach` | no | The teaching surface: `{ "view": "state", "checks": [{ "name": "has-container", "says": "One plain sentence of what it verifies.", "args": { "node": "string" } }] }`. `view` is the name of a read-only view of the plugin's state; each check has a name (unique), a sentence of up to 160 characters and optional arguments (up to 5, each `string`, `number` or `boolean`). Up to 20 checks. The scan shows it among what the plugin declares. |
+| `teach` | no | The teaching surface: `{ "view": "state", "checks": [{ "name": "has-container", "says": "One plain sentence of what it verifies.", "args": { "node": "string" } }] }`. `view` is the name of a read-only view of the plugin's state; each check has a name (unique), a sentence of up to 160 characters and optional arguments (up to 5, each `string`, `number` or `boolean`). Up to 20 checks. `module` (optional) is the path of the file with the view and the checks, run for the Tutor. The scan shows it among what the plugin declares. |
 | `language` | no | The language the plugin reads: `{ "id": "r", "label": "R", "extensions": [".r"] }`. `id` is a short name; `extensions` are 1 to 10 file extensions that start with a dot. See the language slot below. |
 | `required` | no | Honoured only for plugins that ship with aidea: the plugin cannot be removed or disabled. |
 
@@ -78,6 +78,16 @@ A slot has an owner, a kind and an entry shape. The owner declares it; the kerne
 - Kinds: `list` (many entries, in order), `single` (one occupant), `keyed` (one entry per key).
 - Version 0.1 declares one slot: **`layout.panel`** (`list`). Entry: `{ id, title, render(container) -> dispose, side?: "left" | "right" | "bottom", startsHidden?: boolean, min?: number, icon?: string }` (`icon` is the inner shapes of a 16 by 16 SVG, as the menu draws them). It becomes a row in the Panels menu and a Panel in the Layout. The Panel's id is `<plugin id>.<entry id>`, except that an entry whose id equals the plugin's id (the usual plugin with one Panel) takes the plugin's id as its Panel id.
 - Later candidates (not in 0.1): a status item, a toolbar of a Panel, a renderer of a chat message, buttons of the selection control.
+
+### The teaching surface
+
+A plugin that can be taught gives the Tutor a read-only view of its state and named checks (manifest field `teach`).
+
+- The host half gives a snapshot of its state: `ctx.teach.state(() => data)`. The function returns plain data (it may be async) and is called when the Tutor asks.
+- `teach.module` is an ES module with `export function view(snapshot)` (returns plain data) and `export const checks = { "name": (snapshot, args) => ({ ok: true | false, reason: "one short sentence" }) }`.
+- The Tutor reads the view with `read_plugin_view` and runs a check with `check_plugin`, only for an installed, enabled plugin. The arguments must match the shapes the manifest declares.
+- The module runs in a process of its own started with Node's `--permission`: it can read the plugin's folder and nothing else, so it cannot write a file or start a program; the network is cut before it loads. It has 3 seconds and 20,000 characters of answer; beyond that it is stopped with a plain message. This is a safety net, not a sandbox: the snapshot function runs in the plugin's own half with the plugin's own capabilities.
+- What comes back reaches the Tutor marked as untrusted data: it never follows instructions found in it.
 
 ### The language slot
 

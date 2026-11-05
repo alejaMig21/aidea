@@ -15,6 +15,7 @@ import type { Proposal } from "../proposals.ts";
 import { NODE_HELP } from "../tutor-authoring.ts";
 import { TUTOR_TOOLS } from "../tutor.ts";
 import { runTeachTool } from "../teach.ts";
+import { runPluginTeachTool } from "../plugins/teach.ts";
 import { PLUGIN_READ_TOOLS, READ_TOOLS, runReadTool } from "../tutor-reads.ts";
 import { PROBE_TOOLS, runProbeTool } from "../probe.ts";
 import type { Handler } from "../types.ts";
@@ -151,6 +152,11 @@ const handler: Handler = async (req, res, core) => {
     }
     if (tutor) {
       // A class has its own tool set. The question is withdrawn if Claude Code drops this request before it is answered.
+      const taught = await runPluginTeachTool(name, args, core);
+      if (taught) {
+        core.send(res, 200, toolText(id, taught.text, taught.isError));
+        return true;
+      }
       if ([...READ_TOOLS, ...PLUGIN_READ_TOOLS].some((t) => t.name === name)) {
         const conversation = core.permissions.conversationOf(token);
         const project = conversation && core.projects.get(conversation.project);

@@ -6,6 +6,7 @@ import { registerLanguage } from "../adapters.ts";
 import type { LanguageAdapter } from "../adapters.ts";
 import { readLesson } from "./lesson.ts";
 import type { Lesson } from "./lesson.ts";
+import type { Teach } from "./manifest.ts";
 import { API_VERSION, compatible, readManifest } from "./manifest.ts";
 import type { Manifest } from "./manifest.ts";
 import { createPluginState } from "./state.ts";
@@ -29,6 +30,8 @@ export type PluginContext = {
   ask: (name: string, data?: unknown) => Verdict;
   on: (fullName: string, listener: (data: any) => unknown) => void;
   guards: { add: (rule: (action: any) => unknown) => void };
+  // The teaching surface: the plugin gives a snapshot of its state, which the view and the checks of its `teach.module` read (plugin-teaching 02).
+  teach: { state: (provide: () => unknown) => void };
   // The language slot: a plugin whose manifest declares `language` provides its adapter once (`analyze`, and `flow`, `run` if it has them).
   languages: { provide: (adapter: LanguageAdapter) => void };
   data: { readonly dir: string };
@@ -69,6 +72,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
   const entries = new Map<string, Entry>();
   const services = new Map<string, { owner: string; value: unknown }>();
   const logs: { plugin: string; message: string }[] = [];
+  const teachStates = new Map<string, () => unknown>(); // plugin id -> its snapshot of state for the Tutor
   const declared = new Map<string, { owner: string; mode: "announce" | "ask"; version: number }>(); // events of active plugins, by full name
   const listeners = new Map<string, { owner: string; fn: (data: any) => unknown }[]>();
   const rules: { owner: string; fn: (action: any) => unknown }[] = [];
@@ -89,6 +93,12 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
     const manifest = entry.manifest!;
     let provided = false;
     return {
+      teach: {
+        state: (provide) => {
+          teachStates.set(entry.id, provide);
+          entry.undo.push(() => teachStates.delete(entry.id));
+        },
+      },
       plugin: { id: manifest.id, title: manifest.title, version: manifest.version },
       services: {
         provide: (key, value) => {
@@ -312,6 +322,15 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
       const read = readLesson(e.folder, e.manifest.lesson);
       return "lesson" in read ? [{ id: e.id, title: e.manifest.title, parts: read.lesson.parts }] : [];
     }),
+    // What the Tutor needs to read the view of an ACTIVE plugin or run a check of it (plugin-teaching 02), or the plain reason it cannot.
+    teachOf: (id: string): { folder: string; teach: Teach; snapshot: () => unknown } | { problem: string } => {
+      const e = entries.get(id);
+      if (!e || id.includes("#") || e.state !== "active" || !e.manifest) return { problem: "No installed, enabled plugin has that id." };
+      const { teach } = e.manifest;
+      if (!teach) return { problem: 'This plugin declares no teaching surface (there is no "teach" in its manifest).' };
+      if (!teach.module) return { problem: 'This plugin declares a view but ships no code for it (there is no "module" in its "teach").' };
+      return { folder: e.folder, teach, snapshot: () => teachStates.get(id)?.() ?? null };
+    },
     // The file of the interface half of an ACTIVE plugin, or undefined.
     uiFile: (id: string) => {
       const e = entries.get(id);
