@@ -9,14 +9,14 @@ Rules:
 4. The status of a ticket says whether it can start: `ready-for-agent`, or `needs-info` and what it waits for (shown in the Wait column).
 5. Every new built-in plugin ships a lesson and a teaching surface (plugin-lessons, plugin-teaching): items that create one depend on those.
 
-Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (69 items, 4 levels).
+Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (68 items, 4 levels).
 ## Level 0: no dependencies
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
-| rc04 | T | L | The Contract and the Differences become a plugin that offers the Builders their tools (read the Contract) and the Tutor its view and checks | roles-and-contract 04 | - | 8 | - |
 | li03 | T | M | Every claim in a Proposal carries evidence (files and lines; observed, inferred or unknown) and the core refuses citations that do not hold | layer-inference 03 | - | 7 | - |
 | lp07 | T | L | A plugin can ship a variant per system, use a program on the machine, or download one with permission | language-plugins 07 | - | 7 | - |
+| rc04 | T | L | The Contract and the Differences become a plugin that offers the Builders their tools (read the Contract) and the Tutor its view and checks | roles-and-contract 04 | - | 7 | - |
 | anim | T | XL | The animation engine: a language-neutral recording drawn with pieces (list, tree, graph, grid); part of it exists in Data | animation-and-data 01 | - | 6 | a spec first (what exists in Data and what the engine adds) |
 | li02 | T | M | The fingerprint of a project (tree, manifests, entry points, documents, git summary) and a Tutor tool to read it | layer-inference 02 | - | 6 | - |
 | pp02 | T | M | Guard rules match by class and scope, whoever acts | plugin-policies 02 | - | 5 | - |
@@ -50,8 +50,8 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
 | lp03 | T | L | TypeScript and JavaScript become a built-in plugin with a variant per system | language-plugins 03 | lp07 | 4 | - |
-| rc05 | T | M | The person approves the Contract (the Plan Mode of the whole project) and it is versioned | roles-and-contract 05 | rc04 | 4 | - |
 | li07 | T | M | Git history tells live code from legacy (tool `read_history`) | layer-inference 07 | li02 | 3 | - |
+| rc05 | T | M | The person approves the Contract (the Plan Mode of the whole project) and it is versioned | roles-and-contract 05 | rc04 | 3 | - |
 | dep | T | XL | The Deployment layer (C4-style level 1, an environment selector, instances pointing at Architecture, legend, Probe and class) | deployment 01 | li03 | 1 | a spec first |
 | inst | T | XL | Instances: any plugin can be started several times | roles-and-providers 03 | inst_spec, prov | 1 | waits for the Instances spec, from which its boxes are written |
 | li10 | T | L | A structural index of any language from a replaceable provider (Codebase Memory first) | layer-inference 10 | lp07, cbs | 1 | the comparison spike |
@@ -79,15 +79,15 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
-| rc06 | T | L | The Contract has tasks with status and owner; the Differences become progress | roles-and-contract 06 | rc05 | 3 | - |
 | li05 | T | L | The Tutor teaches the three layers of a project the person studies: Proposals the person accepts, each explained with evidence; asks only the learning goal; study notes, not a Contract | layer-inference 05 | li02, li03, li04, li07 | 2 | - |
+| rc06 | T | L | The Contract has tasks with status and owner; the Differences become progress | roles-and-contract 06 | rc05 | 2 | - |
 | la05 | T | L | Run a TypeScript or JavaScript function for Playback: separate Node process with `--permission` plus a fake-network guard (decided 2026-11-03) | language-adapters 05 | lp03 | 1 | - |
 | pkg | T | XL | Packaging: one installer per system and processor (Windows, macOS, Linux; x64 and arm64), signing and notarization on macOS, the variants of the built-in plugins (today aidea runs with `electron .`) | packaging 01 | lp03, lp07 | 1 | a spec first (signing accounts, the CI, how updates arrive) |
 | lsp | T | XL | Reuse existing language servers for `analyze`, or a light parser instead of the TypeScript compiler | language-plugins 08 | li10 | - | - |
 | net | T | L | Logical network level of Deployment (subnets, VLANs) | deployment 02 | dep | - | waits for a real network engineer's diagram |
 | tr08 | T | L | The Tutor stops knowing the layers, the differences, the Contract and the guide by name: it learns each one from its plugin's lesson, view and checks | tutor-rewrite 08 | rc04, pl05, tr09 | - | - |
 
-## Level 3: depends only on levels below (7 items)
+## Level 3: depends only on levels below (6 items)
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
@@ -95,7 +95,6 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | li09 | T | M | The blind exam moves into the repository and runs with the Tutor (three or more projects, one not in Python, repeat runs) | layer-inference 09 | li05 | - | - |
 | pp06 | T | M | The Contract plugin offers its rule: what is not in the Contract is not developed | plugin-policies 06 | pp02, rc04, rc06 | - | - |
 | pr | T | L | Contribute to a public repository (fork, branch, pull request); `git clone` does not exist | layer-inference 13 | li05 | - | an idea |
-| rc07 | T | M | A Builder works in a plan mode for each task | roles-and-contract 07 | rc06 | - | - |
 | rc08 | T | L | Assignments and tasks name an instance (several Builders and Tutors) | roles-and-contract 08 | rc06, inst | - | - |
 | tr10 | T | S | The Learner graph starts empty in the first build: the person is its first learner | tutor-rewrite 10 | pkg | - | - |
 

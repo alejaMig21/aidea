@@ -4,7 +4,7 @@
 
 **Blocked by:** roles-and-contract 06.
 
-**Status:** ready-for-agent
+**Status:** wontfix (2026-11-05): the person chooses the mode of each Builder (Plan, accept edits, ...) and lives with the consequences. aidea never forces a plan mode on a task, and holds nobody back with a guard rule for it.
 
 - [ ] A Builder given a task proposes a plan and cannot edit until the person approves (a fake Builder proves it).
 - [ ] The person can approve, reject or ask for changes to the plan.

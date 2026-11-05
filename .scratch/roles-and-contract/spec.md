@@ -29,10 +29,10 @@ A **Assignment** is a short structured request to a Builder: the goal in plain w
 
 In an agent such as Claude Code, Plan Mode means the agent may read and think but not edit; it writes a plan, the person approves it, and only then does it act. The Contract is the same idea at the scale of a project (the person's words, 2026-11-05): the plan that the Builders work from, agreed layer by layer (Business, Requirements, Architecture) and approved by the person. A Builder works inside it, and a departure goes through a Proposal the person accepts, as today.
 
-How it differs from the Plan Mode of one task: the Contract lasts, is shared by every Builder, and afterwards checks the code against itself (the Differences). Two levels follow:
+How it differs from the Plan Mode of one task: the Contract lasts, is shared by every Builder, and afterwards checks the code against itself (the Differences). Two levels exist:
 
 - **The Contract (project):** the approved plan of the whole project. Each requirement becomes one or more **tasks** with a status and an owner (a Builder instance, and a branch when they work in parallel). The Differences become the progress of the plan and the drift from it.
-- **The plan of one task:** when a Builder takes a task or an Assignment it first works in its own plan mode (read, think, propose a plan) and only after the person approves does it edit.
+- **The plan of one task is the person's choice, not a rule (decided 2026-11-05):** the person sets the mode of each Builder (Plan, accept edits, ...) as they do today. aidea does not force a plan mode on a task and adds no guard rule for it; a person who hands the Contract to Builders in accept-edits mode accepts what may follow.
 
 Decided by the person (2026-11-05): with the Contract plugin off there is no Contract and Builders are free; with it on the condition is hard: what is not in the Contract is not developed (to be tuned after use). How a plugin conditions others is in `.scratch/plugin-policies/spec.md`.
 

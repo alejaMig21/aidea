@@ -251,17 +251,6 @@ export const items = [
   ]
  },
  {
-  "id": "rc07",
-  "k": "T",
-  "s": "M",
-  "file": "roles-and-contract/07",
-  "t": "A Builder works in a plan mode for each task",
-  "w": "roles-and-contract 07",
-  "d": [
-   "rc06"
-  ]
- },
- {
   "id": "rc08",
   "k": "T",
   "s": "L",
