@@ -6,6 +6,7 @@ import { registerLanguage } from "../adapters.ts";
 import type { LanguageAdapter } from "../adapters.ts";
 import { readLesson } from "./lesson.ts";
 import { lessonFindings } from "./lesson-refs.ts";
+import { surfaceProblems } from "./surface.ts";
 import type { Lesson } from "./lesson.ts";
 import type { Teach } from "./manifest.ts";
 import { API_VERSION, compatible, readManifest } from "./manifest.ts";
@@ -230,6 +231,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
       }
       entry.state = "active";
       for (const message of lessonFindings(entry.folder, entry.manifest)) logs.push({ plugin: entry.id, message }); // a lesson that names what is gone (plugin-lessons 03)
+      for (const p of surfaceProblems(entry.folder, entry.manifest)) logs.push({ plugin: entry.id, message: p.message }); // a missing or stale teaching surface (plugin-teaching 04)
       delete entry.reason;
     } catch (e) {
       await undoAll(entry);

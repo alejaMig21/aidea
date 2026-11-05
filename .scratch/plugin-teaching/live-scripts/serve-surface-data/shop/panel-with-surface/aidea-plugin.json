@@ -1,0 +1,1 @@
+{"id":"builder.panel-with-surface","version":"1.0.0","title":"Builder panel-with-surface","description":"Written by the Builder.","publisher":"builder","api":"0.1","main":"main.js","lesson":"lesson.json","ui":"ui.js","teach":{"view":"state","module":"teach.mjs","checks":[{"name":"is-open","says":"The Panel is open."}]}}

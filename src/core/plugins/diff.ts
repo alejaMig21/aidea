@@ -29,6 +29,8 @@ export type Difference = {
   newFindings: Finding[];
   // The plugin changed and its lesson did not (plugin-lessons 03): the lesson may no longer say what the plugin does.
   lessonStale: boolean;
+  // The same for the teaching surface (plugin-teaching 04): the module of the view and the checks did not change though the plugin did.
+  surfaceStale: boolean;
 };
 
 // Some file other than the lesson changed, and the lesson file itself did not.
@@ -53,6 +55,7 @@ export function difference(installedDir: string, installed: Report, next: Report
     capabilities: { added: [...fresh].filter((c) => !old.has(c)).sort(), removed: [...old].filter((c) => !fresh.has(c)).sort() },
     newFindings: next.findings.filter((f) => !known.has(f.key)),
     lessonStale: lessonStale(was, now, [installed.manifest?.lesson, next.manifest?.lesson]),
+    surfaceStale: lessonStale(was, now, [installed.manifest?.teach?.module, next.manifest?.teach?.module]),
   };
 }
 

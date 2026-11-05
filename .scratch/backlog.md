@@ -25,7 +25,6 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | li04 | T | M | A Project is my own, someone else's to study, or new: asked once, kept, changeable | layer-inference 04 | - | 3 | - |
 | pl02 | T | M | Leave the tour at any part; choose lessons; remember progress | plugin-lessons 02 | - | 3 | - |
 | prov | T | XL | Roles and Providers: the Tutor and the Builder become roles filled by provider plugins; the agent adapter becomes a (required) plugin. Part of migrating the rest of the existing features into plugins (Files, Code, Playback, the layers), each with its own specification, as the plugin-system spec left it | roles-and-providers 01 | - | 3 | the spec the plugin-system spec left out (which services stay single-instance, the list of named slots, the required plugins) |
-| pt04 | T | M | The surface is required for plugins the Builder writes, a warning for the rest | plugin-teaching 04 | - | 3 | - |
 | cbs | T | M | Spike: measure Codebase Memory MCP as a code-graph tool for the agents on Telegram, a Unity project and a Node monorepo, with and without it (indexing writes nothing into the project; one background process per account shares the person's cache; licence not looked at) | layer-inference 11 | - | 2 | quota |
 | inst_spec | T | S | Write the Instances spec: a plugin declares a minimum number of instances and can run N times (N Builders each on a branch, N Tutors, N Canvases each on a layer); the Panel registry and the saved Layout name an instance | roles-and-providers 02 | - | 2 | the person decides the open points |
 | tr09 | T | L | The three authored layers (Business, Requirements, Architecture) become plugins with a lesson, a view and checks, so the Tutor uses them like any other | tutor-rewrite 09 | - | 1 | the person decides whether the three authored layers become plugins |
@@ -44,6 +43,7 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | lp05 | T | M | One Components layer for several languages, the language in each Node's info | language-plugins 05 | - | - | - |
 | pt05 | T | M | The Run plugin declares a real surface; live check with the real Tutor | plugin-teaching 05 | - | - | - |
 | pt06 | T | L | A change inside a plugin reaches the person as a lesson and a Proposal they accept (the Tutor never acts) | plugin-teaching 06 | - | - | the person: how a plugin applies an accepted Proposal |
+| pt07 | T | S | The Terminal plugin declares a teaching surface (a view of its tabs and a check that a program wrote something); it logs a warning at load until then | plugin-teaching 07 | - | - | - |
 | pw | T | M | Detect warnings (not only failures) when Play starts parts; restart only one part quickly | housekeeping 04 | - | - | how a warning is detected (a pattern the recipe declares, the stderr, an exit code) and shown |
 | rc09 | T | S | Optional: rename the Tutor's Plan to "Learning plan" (the Plan of the rewritten Tutor is the one LearnHarness shows) | roles-and-contract 09 | - | - | the person confirms the name |
 | rl | T | S | Review leftovers: shared `make` helper, `chatUi.send` seam, test that the 2000 and 8000 limits match, split the secret detector out of `54-select.js`, `chat.ts` allowedTools list | housekeeping 03 | - | - | - |
@@ -87,7 +87,7 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 |---|---|---|---|---|---|---|---|
 | rc06 | T | L | The Contract has tasks with status and owner; the Differences become progress | roles-and-contract 06 | rc05 | 3 | - |
 | li05 | T | L | The Tutor teaches the three layers of a project the person studies: Proposals the person accepts, each explained with evidence; asks only the learning goal; study notes, not a Contract | layer-inference 05 | li02, li03, li04, li07 | 2 | - |
-| rc03 | T | M | A lesson: how to ask for a plugin in Creator Mode | roles-and-contract 03 | rc02, pt04 | 2 | - |
+| rc03 | T | M | A lesson: how to ask for a plugin in Creator Mode | roles-and-contract 03 | rc02 | 2 | - |
 | la05 | T | L | Run a TypeScript or JavaScript function for Playback: separate Node process with `--permission` plus a fake-network guard (decided 2026-11-03) | language-adapters 05 | lp03 | 1 | - |
 | pkg | T | XL | Packaging: one installer per system and processor (Windows, macOS, Linux; x64 and arm64), signing and notarization on macOS, the variants of the built-in plugins (today aidea runs with `electron .`) | packaging 01 | lp03, lp07 | 1 | a spec first (signing accounts, the CI, how updates arrive) |
 | lsp | T | XL | Reuse existing language servers for `analyze`, or a light parser instead of the TypeScript compiler | language-plugins 08 | li10 | - | - |
@@ -105,7 +105,7 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | la13 | T | L | The record of values for TypeScript and JavaScript (nothing is recorded today) | layout-and-data 13 note | la05 | - | - |
 | li09 | T | M | The blind exam moves into the repository and runs with the Tutor (three or more projects, one not in Python, repeat runs) | layer-inference 09 | li05 | - | - |
 | lp04 | T | S | When no plugin reads a Project's language: a plain message, the structural index if there is one, and the lesson on how to ask for a plugin (nothing is sent for the person) | language-plugins 04 | rc03 | - | - |
-| lp06 | T | M | Creator Mode can write a language plugin | language-plugins 06 | rc03, pt04 | - | - |
+| lp06 | T | M | Creator Mode can write a language plugin | language-plugins 06 | rc03 | - | - |
 | pp06 | T | M | The Contract plugin offers its rule: what is not in the Contract is not developed | plugin-policies 06 | pp02, rc04, rc06 | - | - |
 | pr | T | L | Contribute to a public repository (fork, branch, pull request); `git clone` does not exist | layer-inference 13 | li05 | - | an idea |
 | rc07 | T | M | A Builder works in a plan mode for each task | roles-and-contract 07 | rc01, rc06 | - | - |

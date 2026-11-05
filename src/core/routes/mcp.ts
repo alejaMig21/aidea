@@ -16,6 +16,7 @@ import { NODE_HELP } from "../tutor-authoring.ts";
 import { TUTOR_TOOLS } from "../tutor.ts";
 import { runTeachTool } from "../teach.ts";
 import { readManifest } from "../plugins/manifest.ts";
+import { surfaceProblems } from "../plugins/surface.ts";
 import { runPluginTeachTool } from "../plugins/teach.ts";
 import { PLUGIN_READ_TOOLS, READ_TOOLS, runReadTool } from "../tutor-reads.ts";
 import type { Core, Handler } from "../types.ts";
@@ -243,6 +244,12 @@ const handler: Handler = async (req, res, core) => {
         }
         if ("manifest" in read && !read.manifest.lesson) {
           core.send(res, 200, toolText(id, 'A plugin you write must come with a lesson that teaches it, so the person\'s Tutor can explain what it does: add a lesson.json (copy it from docs/plugin-template) and name it as "lesson" in the manifest. Then propose it again.', true));
+          return true;
+        }
+        // And, when it has state of its own (a Panel, a service, an event), a valid teaching surface (plugin-teaching 04). A theme or a guard rule needs only its lesson.
+        const surface = "manifest" in read ? surfaceProblems(folder, read.manifest) : [];
+        if (surface.length) {
+          core.send(res, 200, toolText(id, `A plugin you write that has state of its own must come with a teaching surface, so the person's Tutor can see what they did in it: ${surface.map((p) => p.message).join("; ")}. Add a "teach" with a view and named checks (copy it from docs/plugin-template, step "Write the lesson and the surface" of the skill) and propose it again.`, true));
           return true;
         }
         try {

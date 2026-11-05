@@ -3,6 +3,7 @@
 import { lstatSync, openSync, closeSync, readFileSync, readSync, readdirSync, realpathSync } from "node:fs";
 import { extname, join, sep } from "node:path";
 import { lessonFindings } from "./lesson-refs.ts";
+import { surfaceProblems } from "./surface.ts";
 import { readManifest } from "./manifest.ts";
 import type { Manifest } from "./manifest.ts";
 
@@ -90,6 +91,7 @@ export function scanPlugin(dir: string): Report {
   walk(dir);
   if (manifest) {
     // The lesson (plugin-lessons 03): what it names must still exist; no lesson is only a warning.
+    for (const p of surfaceProblems(dir, manifest)) add({ id: p.id, severity: "warn", message: p.message, file: "aidea-plugin.json" }); // the teaching surface (plugin-teaching 04)
     if (manifest.lesson) for (const message of lessonFindings(dir, manifest)) add({ id: "lesson-stale", severity: "warn", message, file: manifest.lesson });
     else add({ id: "no-lesson", severity: "warn", message: "this plugin ships no lesson, so the Tutor cannot teach it", file: "aidea-plugin.json" });
     for (const [capability, file] of used) {

@@ -5,6 +5,12 @@
   "description": "One sentence about what the plugin does.",
   "publisher": "me",
   "api": "0.1",
+  "main": "main.js",
   "ui": "ui.js",
+  "teach": {
+    "view": "state",
+    "module": "teach.mjs",
+    "checks": [{ "name": "is-open", "says": "The plugin's Panel is open." }]
+  },
   "lesson": "lesson.json"
 }
