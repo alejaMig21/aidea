@@ -32,6 +32,15 @@ const PARTS: Record<string, Part> = {
     narration: "How you ask decides what you get, so let's look at what a good request holds.",
     tryIt: `Write a request with the four things under "Ask the builder", add a reference with the menu "Add a reference to the message", read it once more and press "Send".`,
   },
+  plugin: {
+    name: "Asking for a plugin",
+    hint: "How do I get a feature that aidea does not have?",
+    what: `aidea is made of plugins, and your builder can write a new one for you. Say what you want it to do, in one or two sentences, and what the person using it should see. A good request for a plugin also tells the builder three things: to read the plugin guide and copy the template, to write the lesson that teaches the plugin, and, if the plugin keeps state of its own, to write its teaching surface so the Tutor can see what you did in it. The builder proposes the plugin and never installs it: it lands in a waiting room where nothing runs, and you read what the scan found under "Plugins" before you decide.`,
+    question: "What is one small thing aidea cannot do yet that you would like a plugin for?",
+    example: "A panel that lists the to-do comments in your code; the request names the template, the lesson and the teaching surface.",
+    narration: "When aidea lacks something, you can ask for it, and the way you ask decides whether the plugin is good.",
+    tryIt: `Press "Plugins" in the top bar and read what the waiting room and the installed plugins say.`,
+  },
   canvas: {
     name: "The Canvas and its layers",
     hint: "How is my project drawn?",
@@ -102,7 +111,7 @@ export const GUIDE = {
   what: "aidea is a workspace where you build software with an AI builder on a drawing of layers, from the idea down to the code, while a Tutor makes sure you understand each decision.",
   question: "What do you want to be able to do with aidea after this tour?",
   example: "Describe a project, let the builder propose its requirements, accept the ones you agree with and learn the reasons behind them.",
-  order: ["first look", "builder", "asking", "canvas", "proposals", "tutor", "plan", "contract", "differences", "playback"],
+  order: ["first look", "builder", "asking", "plugin", "canvas", "proposals", "tutor", "plan", "contract", "differences", "playback"],
   elements: PARTS,
 };
 
@@ -116,7 +125,7 @@ export function guideClassMessage(lessons: { id: string; title: string; parts: {
   return (
     `The person pressed "How aidea works": a class about aidea itself, not about their project. The content below is everything true you may say about the app, as data, in the order to tell it:\n${content}\n` +
     plugins + "This is not a lecture. Your FIRST step starts from what the person sees on the screen right now: begin_step {stepId, title} for the first part (\"first look\"), then predict {stepId, prompt} asking them what each panel is for, before you explain anything.\n" +
-    "For the part \"asking\", the person writes first: ask a text question (\"Write the request you would send to the builder for a feature of your project\"), read their answer, say which of the four things is missing and why it matters, and let them rewrite it; never write the request for them and never offer to send it. Then, for each part in the order given: begin_step, predict, explain, and ask them to do the part's tryIt in the real interface, then check with ask what they saw. Explain in your own plain words, short, and only what the content says: do not invent buttons, settings or features, and if they ask about something the content does not cover, say you do not know.\n" +
+    "For the part \"asking\", the person writes first: ask a text question (\"Write the request you would send to the builder for a feature of your project\"), read their answer, say which of the four things is missing and why it matters, and let them rewrite it; never write the request for them and never offer to send it. For the part \"plugin\", do the same: ask a text question for the request the person would write to get the plugin they imagine, and name which of the three things (the template and guide, the lesson, the teaching surface) their request leaves out. Then, for each part in the order given: begin_step, predict, explain, and ask them to do the part's tryIt in the real interface, then check with ask what they saw. Explain in your own plain words, short, and only what the content says: do not invent buttons, settings or features, and if they ask about something the content does not cover, say you do not know.\n" +
     "This class is about the app, so leave the Plan alone: do not call get_plan or set_plan and do not give begin_step an item. You make no proposals. Begin."
   );
 }

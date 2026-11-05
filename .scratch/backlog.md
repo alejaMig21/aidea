@@ -9,7 +9,7 @@ Rules:
 4. The status of a ticket says whether it can start: `ready-for-agent`, or `needs-info` and what it waits for (shown in the Wait column).
 5. Every new built-in plugin ships a lesson and a teaching surface (plugin-lessons, plugin-teaching): items that create one depend on those.
 
-Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (79 items, 4 levels).
+Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (78 items, 4 levels).
 ## Level 0: no dependencies
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
@@ -26,7 +26,6 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | pl02 | T | M | Leave the tour at any part; choose lessons; remember progress | plugin-lessons 02 | - | 3 | - |
 | cbs | T | M | Spike: measure Codebase Memory MCP as a code-graph tool for the agents on Telegram, a Unity project and a Node monorepo, with and without it (indexing writes nothing into the project; one background process per account shares the person's cache; licence not looked at) | layer-inference 11 | - | 2 | quota |
 | inst_spec | T | S | Write the Instances spec: a plugin declares a minimum number of instances and can run N times (N Builders each on a branch, N Tutors, N Canvases each on a layer); the Panel registry and the saved Layout name an instance | roles-and-providers 02 | - | 2 | the person decides the open points |
-| rc03 | T | M | A lesson: how to ask for a plugin in Creator Mode | roles-and-contract 03 | - | 2 | - |
 | tr09 | T | L | The three authored layers (Business, Requirements, Architecture) become plugins with a lesson, a view and checks, so the Tutor uses them like any other | tutor-rewrite 09 | - | 1 | the person decides whether the three authored layers become plugins |
 | bp03 | T | S | Say why module pairs are hidden and let the person see them | big-projects 03 | - | - | - |
 | bp05 | T | L | The cold analysis of a big project takes under 2 s: per-file facts extracted in parallel worker processes, resolved across files; incremental | big-projects 05 | - | - | - |
@@ -40,7 +39,9 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | lf01 | T | S | Live measurement of idea names and duplicates | live-findings 01 | - | - | real classes (quota) |
 | lf05 | T | M | Long waits for an answer: measure 3, 10 and 30 minutes with the real Claude Code | live-findings 05 | - | - | real Claude (quota, up to 30 min) |
 | li08 | T | L | A project-kind plugin for Unity (scenes, prefabs, ScriptableObjects) | layer-inference 08 | - | - | the person: what a project-kind plugin may return |
+| lp04 | T | S | When no plugin reads a Project's language: a plain message, the structural index if there is one, and the lesson on how to ask for a plugin (nothing is sent for the person) | language-plugins 04 | - | - | - |
 | lp05 | T | M | One Components layer for several languages, the language in each Node's info | language-plugins 05 | - | - | - |
+| lp06 | T | M | Creator Mode can write a language plugin | language-plugins 06 | - | - | - |
 | pt06 | T | L | A change inside a plugin reaches the person as a lesson and a Proposal they accept (the Tutor never acts) | plugin-teaching 06 | - | - | the person: how a plugin applies an accepted Proposal |
 | pw | T | M | Detect warnings (not only failures) when Play starts parts; restart only one part quickly | housekeeping 04 | - | - | how a warning is detected (a pattern the recipe declares, the stderr, an exit code) and shown |
 | rc09 | T | S | Optional: rename the Tutor's Plan to "Learning plan" (the Plan of the rewritten Tutor is the one LearnHarness shows) | roles-and-contract 09 | - | - | the person confirms the name |
@@ -52,7 +53,7 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | tb | T | S | Merge the Canvas's own title bar with the layer bar (needs a ticket) | housekeeping 01 | - | - | - |
 | v1g01 | T | S | Live check: the Builder cannot write aidea files except by Proposals | v1-gaps 01 | - | - | real Builder (quota) |
 
-## Level 1: depends only on levels below (24 items)
+## Level 1: depends only on levels below (22 items)
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
@@ -72,8 +73,6 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | hints | T | M | Short contextual hints the first time a part is used | plugin-lessons 06 | pl02 | - | an idea |
 | li01 | T | M | Opening shows the fingerprint at once and never waits for the analysis; the layers fill in as it finishes | layer-inference 01 | li02 | - | - |
 | li06 | T | L | Architecture patterns judged by the Tutor and checked by the core (layered, hexagonal, event-driven, plugin-based) | layer-inference 06 | li03 | - | - |
-| lp04 | T | S | When no plugin reads a Project's language: a plain message, the structural index if there is one, and the lesson on how to ask for a plugin (nothing is sent for the person) | language-plugins 04 | rc03 | - | - |
-| lp06 | T | M | Creator Mode can write a language plugin | language-plugins 06 | rc03 | - | - |
 | perf | T | XL | A performance lens: how time and memory grow with the size of the data | animation-and-data 06 | anim | - | an idea |
 | pieces | T | M | More drawing pieces for Data: hash table, call stack and recursion tree, state machine, grid, weighted graph | animation-and-data 03 | anim | - | an idea |
 | pm | T | M | Measure aidea with a very high number of heavy plugins (after the built-in features are plugins, so the measure is the real one) | housekeeping 05 | lp02, rc04 | - | - |
