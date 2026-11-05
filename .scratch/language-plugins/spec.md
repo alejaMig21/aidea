@@ -34,7 +34,7 @@ A slot kind `language` with: the file extensions it claims, `analyze`, optional 
 3. TypeScript and JavaScript move the same way.
 4. No language plugin: the plain message and the offer to ask the Builder (decision 4).
 5. Creator Mode: a template and a skill section for language plugins (analyze first, then flow, then run).
-6. language-adapters 05 (how to run JavaScript safely) is decided inside the TypeScript plugin, with the person's answer.
+6. language-adapters 05 (running JavaScript, decided 2026-11-03: a separate Node process with `--permission` plus aidea's fake-network guard) is built inside the TypeScript plugin.
 
 ## Not here
 
