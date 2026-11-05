@@ -4,7 +4,7 @@
 
 **Blocked by:** 03, 11.
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built and checked)
 
 - [x] The tool reports a leak when a fixture plugin forgets to undo something.
 - [x] The Panel and guard-rule contract tests run against the built-in Terminal plugin and a fixture.

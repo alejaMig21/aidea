@@ -4,7 +4,7 @@
 
 **Blocked by:** 01.
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built and checked)
 
 - [x] The core takes a plugin store folder as an option and lists its plugins on a route, with id, title, version and state (active, inactive, failed) and a reason.
 - [x] A good fixture plugin activates; deactivating it runs every undo it registered and leaves the registries as they were.

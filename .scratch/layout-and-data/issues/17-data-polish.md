@@ -10,5 +10,5 @@
 - [x] The text form shown matches the drawing for the same step. ("Text" button: `name = value` from the step's own `locals`, cut at 100 characters.)
 - [x] Export produces an image of the current drawing. ("Save image": standalone SVG with colours written out. Tested as a string; the download itself and the save dialog in Electron were not clicked through.)
 - [x] The named examples fill the form correctly and run. (Empty, Random, Sorted, Nearly sorted, Many duplicates: ten numbers, offered for the first parameter that looks like a list of numbers: annotated `list[...]`, or unannotated with a list default or a name like arr, nums, items.)
-- [ ] The Tutor can reference a Data element in a prediction question (protocol test on the element tags) and the layer class for Data teaches with its own help.
+- [ ] The Tutor can reference a Data element in a prediction question (protocol test on the element tags). (The part about Data teaching with its own help moved to `.scratch/plugin-lessons/spec.md`: every part of the app gets its lesson there.)
 - [ ] Verified live.

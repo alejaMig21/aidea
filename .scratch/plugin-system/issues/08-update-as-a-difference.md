@@ -4,7 +4,7 @@
 
 **Blocked by:** 06.
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built and checked)
 
 - [x] An update is never applied without the person's confirmation.
 - [x] The report shows new files, new capabilities and new findings against the accepted version.

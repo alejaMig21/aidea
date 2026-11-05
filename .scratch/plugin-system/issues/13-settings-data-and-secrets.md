@@ -4,7 +4,7 @@
 
 **Blocked by:** 06.
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built and checked)
 
 - [x] The manager draws a form from the settings schema and saves valid values only.
 - [x] A plugin reads and writes only its own data folder; the API gives no way to reach another plugin's.

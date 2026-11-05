@@ -4,7 +4,7 @@
 
 **Blocked by:** 03, 05.
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built and checked)
 
 - [x] The manager lists plugins and quarantine entries with their report; the screen says a scan lowers the risk and proves nothing.
 - [x] A plugin with no blocking finding installs after one confirmation; one with blocking findings needs a confirmation that names each.

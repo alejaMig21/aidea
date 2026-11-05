@@ -4,7 +4,7 @@
 
 **Blocked by:** 06, 14.
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built and checked)
 
 - [x] The Builder has a tool that adds a folder to the quarantine and proposes the install; it has no tool that installs.
 - [x] The proposal opens the manager on that plugin with its report.

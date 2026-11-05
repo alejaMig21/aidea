@@ -1,5 +1,8 @@
 # 16: The review question only opens a free class, and prefers ideas taught in this Project
 
+> Note (2026-11-04): Class mode, Direct mode and the decision classes were removed in commit 58d676d. Read what follows as history of how the Tutor was built, not as how it works now.
+
+
 **What to build:** Ticket 15 put one review question at the start of every class. A live run with the real Teacher showed two problems: the question came before classes the person had asked for on purpose (a class on selected text, on a difference from the Contract, on a layer), where it felt like a toll booth; and it was chosen only by how long ago it was last reviewed, so it could be about another Project entirely (a Python list, in a Project about quotes). Change it in two ways, decided with the person:
 
 1. **Only a free class has it.** A free class is the one started with "Start a class" (with or without a topic written in the box). A class on selected text, a class on a difference, a layer class and a decision class never have a review question.

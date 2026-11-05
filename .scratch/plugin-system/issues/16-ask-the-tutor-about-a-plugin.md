@@ -4,7 +4,7 @@
 
 **Blocked by:** 05, 06.
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built and checked)
 
 - [x] The Tutor gets a read-only means to read a quarantined plugin and its report.
 - [x] Text inside the plugin that looks like an instruction is treated as data (a fixture proves it).

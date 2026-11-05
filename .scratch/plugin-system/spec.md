@@ -1,6 +1,6 @@
 # The plugin system
 
-Status: ready-for-agent
+Status: built (audit 2026-11-04: see the ticket headers)
 
 Source: ADR 0008 (`docs/adr/0008-a-small-kernel-and-everything-else-is-a-plugin.md`, approved by the person on 2026-11-04), the sixteen decisions of `.scratch/plugins/interview.md`, and the study of the DeepSeek Harness in `.scratch/plugins/research/01-deepseek-plugin-philosophy.md`. Vocabulary: Kernel, Plugin, Quarantine, Role, Instance, Provider (to be added to GLOSSARY.md by the first ticket).
 

@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built and checked)
 
 - [x] The document lists every manifest field, which are required, and the limits (icon size, no link leaving the folder).
 - [x] It defines the API version scheme and the support time for the previous major version.

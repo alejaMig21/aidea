@@ -4,7 +4,7 @@
 
 **Blocked by:** 02.
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built and checked)
 
 - [x] Adding a folder copies it into the quarantine; a Git link is probed first and fetched without running any script.
 - [x] The report compares declared capabilities with the real use of the network, files, processes and the shell.

@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built)
 
 - [x] The title of the Panel and its row in the Panels menu read "Playback".
 - [x] The test that guards the retired names is updated so that "Run" is no longer retired for the Panel and the old names for it are.

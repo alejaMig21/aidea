@@ -1,5 +1,8 @@
 # 13: Select any text to learn about it
 
+> Note (2026-11-04): Class mode, Direct mode and the decision classes were removed in commit 58d676d. Read what follows as history of how the Tutor was built, not as how it works now.
+
+
 **What to build:** The person selects text anywhere (a builder reply, a Rationale, a line of code in the code box) and a small control offers "just define" (a brief explanation with no class) and "enter the Tutor" (a class on that text, which becomes the topic of a free class and is added to the Plan if it fits). It works in Class mode and in Direct mode, and never selects text of the person's own input boxes.
 
 **Blocked by:** 05

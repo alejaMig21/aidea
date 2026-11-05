@@ -1,6 +1,6 @@
 # Panels, Layout and the Data layer: aidea as an environment
 
-Status: ready-for-agent
+Status: in progress (audit 2026-11-04): 10 on hold, needs a second screen; 17 has the Tutor tags left
 
 ## Problem Statement
 

@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built)
 
 - [x] "Terminal" appears in the Panels menu with a check mark and shows or hides the Panel.
 - [x] When shown for the first time it sits in a full-width strip at the bottom of the window.

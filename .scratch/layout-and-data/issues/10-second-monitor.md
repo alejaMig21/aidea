@@ -4,7 +4,7 @@
 
 **Blocked by:** 08 (dockable Layout).
 
-**Status:** ready-for-agent
+**Status:** on hold (audit 2026-11-04): needs a second screen and the person works on one. A Panel that comes from a plugin should be movable to the other window the same way
 
 **In the first docking release (decided 2026-10-31, ADR 0007).** The person wants the second window in the first version, which is why the Layout is built on `dockview-core`: its popout moves a Panel's DOM into a window opened by the same page, so the second window keeps one JavaScript context and stays in step with the main one by construction. The first thing this ticket measures is the part the spike could not: how Electron's window-open rules treat that popout (placement on the other monitor, closing it, a window that was dragged to a monitor that is later unplugged).
 

@@ -6,10 +6,10 @@
 
 **Status:** resolved: the person chose `dockview-core` (2026-10-31) because they want the second window in the first docking release, which was the spike's own flip condition (ADR 0007).
 
-- [ ] Both prototypes live on a `prototype/` branch and are measured on the same scenario (drag, resize, nested split) on the real window.
+- [x] (closed 2026-11-04: decision made and built, the prototype branch is not needed) Both prototypes live on a `prototype/` branch and are measured on the same scenario (drag, resize, nested split) on the real window.
 - [x] A recommendation with the numbers or observations behind it, and a DECISION line in the log for the person to confirm (DECISION 6, `.scratch/overnight/LOG.md` entry 21).
 - [x] The ADR is written and ADR 0003 points to it (`docs/adr/0007-docking-layout-in-plain-code.md`, marked as a recommendation).
-- [ ] Only the verdict is folded back into the main code. (Nothing under `src/` changed, but the prototype was kept under `.scratch/layout-and-data/spike-07/` as evidence rather than deleted; left open until the person says whether to keep it.)
+- [x] (closed 2026-11-04: dockview-core was chosen and built) Only the verdict is folded back into the main code. (Nothing under `src/` changed, but the prototype was kept under `.scratch/layout-and-data/spike-07/` as evidence rather than deleted; left open until the person says whether to keep it.)
 
 The first box is also left open on purpose: the prototypes live in `.scratch/layout-and-data/spike-07/`, not on a `prototype/` branch, and were measured in headless Chrome, not in the real Electron window.
 

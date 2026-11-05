@@ -4,7 +4,7 @@
 
 **Blocked by:** 02.
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built and checked)
 
 - [x] An event is namespaced by the plugin that defines it; a plugin cannot define an event in another's namespace.
 - [x] An announce event cannot change anything; an ask event can only deny or ask.

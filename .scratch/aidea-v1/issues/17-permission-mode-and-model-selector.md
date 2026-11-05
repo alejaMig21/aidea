@@ -1,5 +1,8 @@
 # 17: Permission mode and model selector in the chat bar
 
+> Note (2026-11-04): the modes the Tutor had (Class and Direct) were removed in 58d676d; the Permission mode part of this ticket still stands.
+
+
 **What to build:** Next to the text input of the chat bar, the person can choose the Permission mode of the builder (for Claude Code: manual, accept edits, plan, auto) and the model it uses. The choices are not written into aidea: the active Agent adapter reports what its provider offers, so connecting another agent later (OpenCode, Codex) shows that agent's own modes and models.
 
 **Part of this version (decided by the person on 2026-10-27: "crucial para trabajar").** Supersedes the earlier "not part of v1" note.

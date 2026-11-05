@@ -4,7 +4,7 @@
 
 **Blocked by:** 02.
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built and checked)
 
 - [x] A fixture rule that denies stops the action; one that asks pauses it until the person answers.
 - [x] A fixture that tries to allow something another rule denied is refused at registration or has no effect.

@@ -4,7 +4,7 @@
 
 **Blocked by:** 02.
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built and checked)
 
 - [x] The interface half of an active plugin is loaded by the window; a Panel it adds appears in the Panels menu and in the Layout.
 - [x] Disabling the plugin removes the Panel and its menu entry at once, with no restart; a saved Layout that held it still restores.

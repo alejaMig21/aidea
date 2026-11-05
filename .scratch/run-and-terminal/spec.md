@@ -1,6 +1,6 @@
 # Run the whole project, and the terminal
 
-Status: ready-for-agent
+Status: built except the live check of ticket 10 and two page checks (tickets 06 and 07) (audit 2026-11-04)
 
 Source: the interviews of 2026-11-03 and 2026-11-04, recorded in `.scratch/future/interviews-pending.md` (topics 1 and 3). Every decision below was made by the person; the agent's own recommendations are noted only where the person chose otherwise.
 

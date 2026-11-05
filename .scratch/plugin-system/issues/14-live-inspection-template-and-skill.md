@@ -4,7 +4,7 @@
 
 **Blocked by:** 03, 12.
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built and checked)
 
 - [x] The inspection lists what is really registered, including what active plugins added, and changes nothing.
 - [x] The template, copied unchanged into the quarantine, passes the scan and installs.

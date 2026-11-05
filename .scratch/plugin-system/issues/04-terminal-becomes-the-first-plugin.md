@@ -4,7 +4,7 @@
 
 **Blocked by:** 03.
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built and checked)
 
 - [x] The Terminal is declared by a built-in plugin, not by the Layout code.
 - [x] Every test of `terminal-panel.test.ts` passes unchanged.

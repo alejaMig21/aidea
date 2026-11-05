@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built)
 
 - [x] The control shows "Explain" and "Enter the Tutor" for selected text in every Panel where it appeared before.
 - [x] No visible text, test, guide part or glossary entry still says "Just define".

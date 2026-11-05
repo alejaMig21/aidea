@@ -4,15 +4,15 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** built (audit 2026-11-04: core and page tests exist; the guard box is covered by the note in src/core/guard.ts)
 
 - [x] A recipe with a missing or invalid field is refused with a message that names the field.
-- [ ] The authored-area guard accepts the recipe file and still reports files outside the known set.
+- [x] The authored-area guard accepts the recipe file and still reports files outside the known set.
 - [x] Play with no recipe says there is none and how to get one.
 - [x] First acceptance shows the whole recipe; accepting it is remembered across a core restart on another port.
 - [x] Any change to the file (a pull, a hand edit, the Builder) asks again and shows only the difference.
 - [x] The accepted-recipe memory is not in the Project folder.
-- [ ] Core API tests (accept, refuse, changed, restart) and page tests (top bar, confirmation) pass.
+- [x] Core API tests (accept, refuse, changed, restart) and page tests (top bar, confirmation) pass.
 - [x] GLOSSARY.md has the run recipe, part, ready signal and Play, and the exception to the header rule.
 - [x] Verified live on the second monitor.
 

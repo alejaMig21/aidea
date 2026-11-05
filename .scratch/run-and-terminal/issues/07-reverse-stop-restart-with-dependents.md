@@ -4,7 +4,7 @@
 
 **Blocked by:** 06.
 
-**Status:** ready-for-agent
+**Status:** built; core tests exist (`test/plugin-run.test.ts`). Left open on purpose: no page test found for the Stop and Restart buttons (audit 2026-11-04)
 
 - [x] Stop all ends parts in reverse dependency order (checked with parts that record the order in which they receive the stop).
 - [x] The stop button of a tab ends only that part; the restart button restarts it and its dependents in order, waiting for each ready signal.

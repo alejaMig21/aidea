@@ -4,7 +4,7 @@
 
 **Blocked by:** 07.
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built and checked)
 
 - [x] A start option (and a control in the window) starts aidea in safe mode: no third-party plugin activates.
 - [x] The emergency screen works when every plugin is broken or missing.

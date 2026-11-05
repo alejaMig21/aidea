@@ -1,5 +1,8 @@
 # 02: The Tutor column, redesigned
 
+> Note (2026-11-04): Class mode, Direct mode and the decision classes were removed in commit 58d676d. Read what follows as history of how the Tutor was built, not as how it works now.
+
+
 **What to build:** A live run of the app at full screen showed that the Tutor column is crowded and unclear: its top is the empty state of the time when the column held nothing (an icon, a big title) with settings piled under it, and the main action ("Start a class") is at the bottom and looks disabled; the Probe offer competes with it as the loudest button; Plan, Differences and Contract are long stacked cards; questions of two kinds look unlike each other; edges and alignments are mixed. The person and the assistant went through the design decision by decision (the decisions below are confirmed). The look follows the shared scale in `docs/agents/ui-style.md`: no size or colour that the rest of the app does not already use.
 
 Decisions:

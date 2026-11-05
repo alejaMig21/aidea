@@ -1,5 +1,8 @@
 # 15: One review question at the start of a class (optional)
 
+> Note (2026-11-04): Class mode, Direct mode and the decision classes were removed in commit 58d676d. Read what follows as history of how the Tutor was built, not as how it works now.
+
+
 **What to build:** At the start of a class the Tutor asks one question about an idea from an earlier class, without hints, chosen from the Learner graph (never the idea it is about to teach). The answer is Evidence. The person can turn this off. This ticket may be dropped.
 
 **Blocked by:** 04, 05

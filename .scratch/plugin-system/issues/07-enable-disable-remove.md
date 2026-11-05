@@ -4,7 +4,7 @@
 
 **Blocked by:** 06.
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built and checked)
 
 - [x] Enable and disable apply live; removing a plugin that never ran in this session applies live.
 - [x] Removing or updating a plugin whose code already ran reports restart required and shows the button.

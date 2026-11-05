@@ -4,7 +4,7 @@
 
 **Blocked by:** 07.
 
-**Status:** ready-for-agent
+**Status:** done (audit 2026-11-04: every box ticked, built and checked)
 
 - [x] An incompatible plugin is listed with the reason and does not activate, at install and after a restart.
 - [x] Removing a plugin another one needs leaves the other inactive with a stated reason, and enabling it again re-activates it.

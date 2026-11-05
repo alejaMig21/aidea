@@ -1,6 +1,6 @@
 # Interface redesign: Home, work session and columns
 
-Status: ready-for-agent
+Status: built (audit 2026-11-04: see the ticket headers)
 
 ## Problem Statement
 

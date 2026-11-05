@@ -9,7 +9,7 @@
 - [ ] A written finding in this file: for waits of 3, 10 and 30 minutes with the real Claude Code, what happens to the tool call and to the process (record the Claude Code version).
 - [x] Through the protocol with a scripted Teacher: a question the person answers after the core has given up on it (the class ended) answers with a clear error (410, "The Tutor stopped waiting for this question ... start a class on the same topic"), and the card in the interface shows "Expired: the Tutor stopped waiting" as today, with a plain line and a button offering to start a class on the same topic. Tests in `test/tutor-session.test.ts` (Tutor gives up on a short injected timer; class ended); the card verified in headless Chrome at 1920 and 1280 with a fake adapter whose Tutor gives up after 0.4 s.
 - [ ] If the real process survives long waits, a test with a long wait is not added to the suite (too slow); the finding says so. If it does not, the core's own timeout is set below the real one and tells the person before the process ends.
-- [ ] Verified live on the second monitor: leave a question unanswered for the longest wait that works, answer it, and the class goes on; and one that does not work shows the plain message.
+- [ ] Verified live on the main screen, in Vivaldi through the Claude extension: leave a question unanswered for the longest wait that works, answer it, and the class goes on; and one that does not work shows the plain message.
 
 ## Finding (what is and is not known)
 

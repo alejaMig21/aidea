@@ -1,6 +1,6 @@
 # The Tutor: an agent that makes sure the person understands what they build
 
-Status: ready-for-agent
+Status: built (audit 2026-11-04: see the ticket headers)
 
 ## Problem Statement
 
