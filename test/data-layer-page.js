@@ -64,6 +64,17 @@ const dlRecord = async (words) => {
     pbGo(changedAt); await dlWait(200); legendLook();
     pbGo(last); await dlWait(200); legendLook();
 
+    // A prediction can point at Data (17): the step is shown, the variable is marked in words as well as by its look, and answering clears it.
+    pbGo(0);
+    await dlWait(200);
+    window.dataUi.point({ layer: "data", step: last, variable: "counts" });
+    await dlWait(300);
+    legendLook();
+    report.point = { index: pbIndex, last, layer: authoredShown, marked: [...document.querySelectorAll("#data .data-var.pointed")].map((g) => g.dataset.var), tags: [...document.querySelectorAll("#data .data-look")].map((t) => t.textContent) };
+    window.dataUi.clearPoint();
+    await dlWait(200);
+    report.point.after = document.querySelectorAll("#data .data-var.pointed").length + document.querySelectorAll("#data .data-look").length;
+
     // Objects that point to objects: nodes and arrows. Each fixture is played to its end; every step is visited so the legend rows are seen (a rewiring step, a cut).
     const dlOpenRecord = async (fn, params = {}, record = true) => {
       showLayer("components");

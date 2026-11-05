@@ -154,6 +154,13 @@ test("Flow and Data follow one Playback position, and the variable that changed 
   assert.deepEqual(page.together.tags, page.together.changedVars.map(() => "CHANGED"));
   assert.ok(page.first.vars.includes("words"));
 });
+test("a prediction can point at Data: the step is shown, the variable is marked with the words LOOK HERE, and clearing the pointer removes the mark", { skip }, () => {
+  assert.equal(page.point.index, page.point.last);
+  assert.equal(page.point.layer, "data");
+  assert.deepEqual(page.point.marked, ["counts"]);
+  assert.deepEqual(page.point.tags, ["LOOK HERE"]);
+  assert.equal(page.point.after, 0);
+});
 test("the legend of Data has a row for what is drawn, and every row matches something on screen", { skip }, () => {
   assert.ok(page.legend.length >= 4, JSON.stringify(page.legend));
   assert.deepEqual(page.legend.filter((r: any) => r.matches === 0).map((r: any) => r.text), []);

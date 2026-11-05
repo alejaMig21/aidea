@@ -67,6 +67,7 @@
 
   const PHASE_LABELS = { predict: "Predict", review: "Review of an earlier class" };
   function collapse(card, summary) {
+    if (card.dataset.point) window.dataUi?.clearPoint(); // a prediction that pointed at Data stops pointing once it is answered
     card.className = "tutor-card tutor-done";
     card.replaceChildren(...(PHASE_LABELS[card.dataset.phase] ? [el("p", { className: "tutor-label", textContent: PHASE_LABELS[card.dataset.phase] })] : []), el("p", { className: "tutor-prompt", textContent: card.dataset.prompt }), el("p", { className: "tutor-answered", textContent: summary }));
   }
@@ -76,6 +77,8 @@
     const form = el("form", { className: "tutor-card" });
     form.dataset.prompt = q.prompt;
     form.dataset.phase = q.phase ?? "";
+    form.dataset.point = q.point ? "1" : "";
+    if (q.point) window.dataUi?.point(q.point); // "look at this step and this variable in Data"
     form.setAttribute("aria-label", q.phase === "predict" ? "Prediction from the Tutor" : q.phase === "review" ? "Review question from the Tutor" : "Question from the Tutor");
     const status = el("p", { className: "tutor-status" });
     status.setAttribute("role", "alert");

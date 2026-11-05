@@ -35,7 +35,14 @@ export const TUTOR_TOOLS = [
   {
     name: "predict",
     description: "Asks the person to guess, in their own words, about the fact of the open step before you explain it. Waits for the answer and returns it.",
-    inputSchema: { type: "object", properties: { stepId, prompt: { type: "string" } }, required: ["stepId", "prompt"] },
+    inputSchema: {
+      type: "object",
+      properties: {
+        stepId, prompt: { type: "string" },
+        point: { type: "object", description: "Optional: where in the interface to look to answer. {layer: \"data\", step: the step of a Playback recording (from 0), variable: a variable's name}. The interface shows that step of the open recording and marks the variable. Only when a recording of the function exists (read_recording).", properties: { layer: { type: "string" }, step: { type: "number" }, variable: { type: "string" } }, required: ["layer"] },
+      },
+      required: ["stepId", "prompt"],
+    },
   },
   {
     name: "explain",
@@ -85,7 +92,21 @@ export const TUTOR_TOOLS = [
 
 // Where a question sits in the class: the step, whether it is the prediction or the check, and the attempt number (set by the core).
 // A probe question (ticket 06) has no step: it names the idea it measures, can be skipped, and knows its place in the Probe.
-type Where = { stepId?: string; item?: string; phase?: "predict" | "check" | "review"; attempt?: number; idea?: string; skippable?: true; probe?: { n: number; of: number } };
+// `point`: where in the interface to look to answer (layout-and-data 17). Today only the Data layer: a step of the Playback recording and a variable in it.
+export type Point = { layer: "data"; step?: number; variable?: string };
+type Where = { stepId?: string; item?: string; phase?: "predict" | "check" | "review"; attempt?: number; idea?: string; skippable?: true; probe?: { n: number; of: number }; point?: Point };
+
+// Checks the pointer the Tutor sent with a prediction; an error text is written for the model.
+export function parsePoint(raw: unknown): { point: Point } | { error: string } {
+  const bad = (why: string) => ({ error: `point ${why}. Send {layer: "data", step: <whole number from 0>, variable: <name>}, with step and variable optional, or leave point out.` });
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return bad("must be an object");
+  const { layer, step, variable, ...rest } = raw as Record<string, unknown>;
+  if (Object.keys(rest).length) return bad(`has fields that do not exist (${Object.keys(rest).join(", ")})`);
+  if (layer !== "data") return bad('can only point at the layer "data"');
+  if (step !== undefined && !(Number.isInteger(step) && (step as number) >= 0 && (step as number) < 100000)) return bad("step must be a whole number of 0 or more");
+  if (variable !== undefined && !(typeof variable === "string" && variable.trim().length > 0 && variable.length <= 100)) return bad("variable must be a name of at most 100 characters");
+  return { point: { layer, ...(step !== undefined ? { step: step as number } : {}), ...(variable !== undefined ? { variable: variable as string } : {}) } };
+}
 // What stays in the core. `correct` is the committed answer (choice: the index of the right option).
 export type Question =
   | ({ kind: "choice"; prompt: string; options: string[]; correct: number; allowDontKnow: boolean } & Where)
@@ -118,7 +139,7 @@ export function parseQuestion(args: Record<string, unknown>): { question: Questi
 
 // What the interface is told about a question: never the committed answer.
 export const publicQuestion = (q: Question) => {
-  const where = { ...(q.stepId ? { stepId: q.stepId, phase: q.phase } : q.phase === "review" ? { phase: q.phase } : {}), ...(q.skippable ? { skippable: true, probe: q.probe } : {}) };
+  const where = { ...(q.stepId ? { stepId: q.stepId, phase: q.phase } : q.phase === "review" ? { phase: q.phase } : {}), ...(q.skippable ? { skippable: true, probe: q.probe } : {}), ...(q.point ? { point: q.point } : {}) };
   return q.kind === "choice" ? { kind: q.kind, prompt: q.prompt, options: q.options, allowDontKnow: q.allowDontKnow, ...where } : { kind: q.kind, prompt: q.prompt, allowDontKnow: q.allowDontKnow, ...where };
 };
 

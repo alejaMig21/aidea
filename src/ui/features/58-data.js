@@ -37,6 +37,9 @@
     #data .data-title { fill: var(--muted); font: 11px var(--mono); }
     #data .data-var.changed .data-box { stroke: var(--accent); stroke-width: 2.4; }
     #data .data-changed { fill: var(--accent); font: 600 11px var(--sans); letter-spacing: .08em; text-anchor: end; }
+    #data .data-var.pointed .data-label { fill: var(--accent); font-weight: 600; }
+    #data .data-var.pointed .data-box { stroke: var(--accent); stroke-width: 3; }
+    #data .data-look { fill: var(--accent); font: 600 11px var(--sans); letter-spacing: .08em; text-anchor: end; }
     #data .data-note { fill: var(--muted); font: 13px var(--sans); }
     #data .data-textline { fill: var(--label); font: 12.5px var(--mono); }
     #zoom #data-text-toggle[hidden], #zoom #data-save-image[hidden] { display: none; }
@@ -282,8 +285,9 @@
     }
     const labels = el("g", { class: "data-names" });
     linked.forEach(([name, shape], i) => {
-      const ly = top + i * (CELL + 24), row = el("g", { class: `data-var${shape.changed ? " changed" : ""}`, "data-var": name });
+      const ly = top + i * (CELL + 24), row = el("g", { class: `data-var${shape.changed ? " changed" : ""}${name === dataPointed ? " pointed" : ""}`, "data-var": name });
       row.append(el("text", { x: LABEL, y: ly + CELL / 2 + 4.5, class: "data-label" }, name));
+      if (name === dataPointed) row.append(el("text", { x: LABEL, y: ly + CELL / 2 - 11, class: "data-look" }, "LOOK HERE"));
       if (shape.changed) row.append(el("text", { x: LABEL, y: ly + CELL / 2 + 19, class: "data-changed" }, "CHANGED"));
       labels.append(row);
       arrow(`var:${name}`, { x: LABEL + 8, y: ly + CELL / 2 }, scan.vars.get(name), name);
@@ -303,6 +307,7 @@
     return `<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(svgEl)}`;
   }
 
+  let dataPointed = null; // the variable the Tutor asked the person to look at (a prediction that points at Data)
   let dataFitted = false, dataFramed = { w: 0, h: 0 }; // the view is framed when the layer opens or the drawing outgrows the frame, not at every step
   function dataDraw() {
     if (authoredShown !== "data") return;
@@ -321,8 +326,9 @@
     const linked = [];
     for (const [name, shape] of Object.entries(entry.shapes)) {
       if (scan.vars.has(name)) { linked.push([name, shape]); continue; }
-      const row = el("g", { class: `data-var${shape.changed ? " changed" : ""}`, "data-var": name });
+      const row = el("g", { class: `data-var${shape.changed ? " changed" : ""}${name === dataPointed ? " pointed" : ""}`, "data-var": name });
       row.append(el("text", { x: LABEL, y: y + (shape.kind === "seq" ? EXTRA - 2 : 0) + CELL / 2 + 4.5, class: "data-label" }, name));
+      if (name === dataPointed) row.append(el("text", { x: LABEL, y: y + (shape.kind === "seq" ? EXTRA - 2 : 0) + CELL / 2 - 11, class: "data-look" }, "LOOK HERE"));
       if (shape.changed) row.append(el("text", { x: LABEL, y: y + (shape.kind === "seq" ? EXTRA - 2 : 0) + CELL / 2 + 19, class: "data-changed" }, "CHANGED"));
       const size = drawValue(row, shape, LABEL + 14, y);
       dataGroup.append(row);
@@ -352,6 +358,17 @@
   }
 
   document.addEventListener("playback-step", dataDraw);
+  // The Tutor's prediction can point at Data: show that step of the open recording and mark the variable in words. False when there is nothing to show (no recording, Data not open yet).
+  window.dataUi = {
+    point(p) {
+      if (dataTab.disabled || !pbRecording) return false;
+      dataPointed = p.variable ?? null;
+      showLayer("data");
+      if (p.step !== undefined) pbGo(Math.min(p.step, pbRecording.visits.length - 1)); else dataDraw();
+      return true;
+    },
+    clearPoint() { if (dataPointed === null) return; dataPointed = null; dataDraw(); },
+  };
   // The tab can be chosen once a function's Flow is open; a Project drawn again drops it, like the Flow tab.
   document.addEventListener("algorithm-opened", () => { dataTab.disabled = false; dataFitted = false; });
   const dataDrawProject = draw;
@@ -375,6 +392,7 @@
       [sw(`<rect x="2" y="5" width="14" height="14" rx="2"/><path d="M19 12H25" style="fill:none"/><rect x="28" y="5" width="14" height="14" rx="2"/>`), "A key pointing to its value: a dictionary", ".data-map"],
       [sw(`<rect x="3" y="5" width="38" height="14" rx="3" style="fill:none;stroke-dasharray:4 3"/>`), "Dashed: a part that is not drawn, with how many items are hidden", ".data-hidden-cell"],
       [sw(`<rect x="3" y="5" width="38" height="14" rx="3" style="stroke:var(--accent);stroke-width:2.4"/>`), "Heavier line and the word CHANGED: the variable the last step changed", ".data-var.changed"],
+      [sw(`<rect x="3" y="5" width="38" height="14" rx="3" style="stroke:var(--accent);stroke-width:3"/>`), "Heavy blue line and the words LOOK HERE: the variable the Tutor asks you to look at", ".data-var.pointed"],
       [sw(`<rect x="2" y="2" width="40" height="20" rx="5" style="fill:var(--bg);stroke:var(--line)"/><rect x="7" y="6" width="30" height="12" rx="3"/>`), "A framed object, list or dictionary that is pointed to", ".data-frame"],
       [sw(`<rect x="3" y="5" width="38" height="14" rx="3"/><circle cx="22" cy="12" r="3.5" style="fill:var(--muted);stroke:none"/>`), "A dot in a cell: a pointer. Its arrow ends at the object it points to", ".data-port"],
       [sw(`<rect x="3" y="5" width="38" height="14" rx="3" style="fill:none;stroke-dasharray:4 3"/>`), `Dashed, tagged cut: the drawing stops here, more than ${CUT_DEPTH} levels below the variable or more than ${CUT_NODES} values in one step`, ".data-cut"],

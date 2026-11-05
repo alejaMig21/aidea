@@ -355,3 +355,29 @@ test("the Teacher's tool list carries the loop tools next to the read tools", as
   await t.runClass();
   assert.deepEqual(names, ["begin_step", "predict", "explain", "ask", "review", "held_ideas", "finish_class", "propose_node", "propose_change", "get_plan", "set_plan", "read_layers", "read_node", "list_files", "read_file", "read_recording", "read_quarantined_plugin"]);
 });
+
+// layout-and-data 17: a prediction can point at the Data layer (a step of the recording and a variable), so the interface can show where to look.
+test("a prediction can point at a Data element: the question carries the pointer, and a bad pointer is refused in plain words", async () => {
+  const t = await newCore();
+  const seen: Record<string, any> = {};
+  teacher = async function* (call) {
+    await call("begin_step", { stepId: "s1", title: "What counts holds" });
+    seen.layer = await call("predict", { ...PREDICT(), point: { layer: "business" } });
+    seen.step = await call("predict", { ...PREDICT(), point: { layer: "data", step: -1 } });
+    seen.fraction = await call("predict", { ...PREDICT(), point: { layer: "data", step: 1.5 } });
+    seen.variable = await call("predict", { ...PREDICT(), point: { layer: "data", variable: "x".repeat(200) } });
+    seen.extra = await call("predict", { ...PREDICT(), point: { layer: "data", colour: "red" } });
+    seen.nothing = await call("predict", { ...PREDICT(), point: "counts" });
+    seen.ok = await call("predict", { ...PREDICT(), point: { layer: "data", step: 3, variable: "counts" } });
+    yield { type: "text", text: "done" };
+  };
+  const events = await t.runClass({}, () => ({ text: "a guess" }));
+  for (const bad of ["layer", "step", "fraction", "variable", "extra", "nothing"]) {
+    assert.equal(seen[bad].isError, true, bad);
+    assert.match(text(seen[bad]), /point/i, bad);
+  }
+  assert.equal(seen.ok.isError, undefined);
+  const questions = events.filter((e) => e.type === "tutor_question");
+  assert.equal(questions.length, 1, "only the good one was asked");
+  assert.deepEqual(questions[0].point, { layer: "data", step: 3, variable: "counts" });
+});

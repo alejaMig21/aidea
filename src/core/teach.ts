@@ -8,7 +8,7 @@ import { callRole, normalise } from "./learner-pipeline.ts";
 import { heldStrongly } from "./probe.ts";
 import { runAuthoringTool } from "./tutor-authoring.ts";
 import { itemFor, runPlanTool } from "./plan.ts";
-import { answerForTutor, parseQuestion } from "./tutor.ts";
+import { answerForTutor, parsePoint, parseQuestion } from "./tutor.ts";
 import type { Answer, Question } from "./tutor.ts";
 import type { Core } from "./types.ts";
 
@@ -99,8 +99,10 @@ export function createLesson() {
       if (failed(step)) return step;
       if (!nonEmpty(args.prompt, MAX_PROSE)) return { error: "predict needs a prompt: the open question you want the person to answer" };
       if (step.state !== "new") return { error: `Step "${args.stepId}" already has its prediction: ${WHAT_NEXT[step.state]}.` };
+      const pointed = args.point === undefined ? undefined : parsePoint(args.point);
+      if (pointed && "error" in pointed) return pointed;
       step.predicts++;
-      return { question: { kind: "text", prompt: args.prompt.trim(), allowDontKnow: true, stepId: args.stepId as string, ...(step.item ? { item: step.item } : {}), phase: "predict", attempt: step.predicts } };
+      return { question: { kind: "text", prompt: args.prompt.trim(), allowDontKnow: true, stepId: args.stepId as string, ...(step.item ? { item: step.item } : {}), ...(pointed ? { point: pointed.point } : {}), phase: "predict", attempt: step.predicts } };
     },
     predicted(stepId: string) {
       const step = steps.get(stepId);
