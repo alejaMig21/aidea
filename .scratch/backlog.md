@@ -23,7 +23,7 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | anim | D | XL | The animation engine: a language-neutral recording drawn with pieces (list, tree, graph, grid); part of it exists in Data | interviews-pending 4, ideas | - | 6 | - |
 | li02 | T | M | The fingerprint of a project (tree, manifests, entry points, documents, git summary) and a Tutor tool to read it | layer-inference 02 | - | 6 | - |
 | pp01 | T | M | Actions carry a class and a scope (writes in the Project, outside, runs a program, network, secrets) | plugin-policies 01 | - | 6 | - |
-| rc01 | T | M | A Assignment: the person writes it and sends it to a Builder; no one else can | roles-and-contract 01 | - | 6 | - |
+| rc01 | T | M | An Assignment: the person writes it and sends it to a Builder; no one else can | roles-and-contract 01 | - | 6 | - |
 | li04 | T | M | A Project is my own, someone else's to study, or new: asked once, kept, changeable | layer-inference 04 | - | 3 | - |
 | prov | D | XL | Roles and Providers: the Tutor and the Builder become roles filled by provider plugins; the agent adapter becomes a (required) plugin. Part of migrating the rest of the existing features into plugins (Files, Code, Playback, the layers), each with its own specification, as the plugin-system spec left it | ADR 0008, plugin-system spec 'Out of scope' | - | 3 | a spec per feature |
 | cbs | I | M | Spike: measure Codebase Memory MCP as a code-graph tool for the agents on Telegram, a Unity project and a Node monorepo, with and without it (indexing writes nothing into the project; one background process per account shares the person's cache; licence not looked at) | person's idea, 2026-11-05 | - | 2 | real Tutor and Builder (quota) |
