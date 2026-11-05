@@ -1,6 +1,6 @@
 # Inferring the layers of any project
 
-Status: draft, waiting for tickets
+Status: ticketed (2026-11-05), tickets in `issues/`
 
 Source: the debate of 2026-11-05 with the person, and the blind exam `.scratch/layer-inference-exam/results.md` (two projects, Python).
 
@@ -25,6 +25,7 @@ aidea will open projects of three kinds: a blank project, a project of the perso
 6. **The Tutor reads a chosen few files**, not all: entry points, most-called modules, most-changed files, tests.
 7. **Several passes**: Architecture first, then Requirements per surface, then Business, then a pass that looks for evidence against each claim.
 8. **The person accepts each Proposal**; the Tutor never writes a layer directly.
+9. **Opening never waits.** A Project opens at once with its fingerprint and an overview by folder; the analysis and any index run in the background, are cached outside the Project, and fill the layers in as they finish. A huge Project must not block the window. (The speed of the analysis itself is big-projects 01; the drawing speed, big-projects 02.)
 
 ## Architecture: facts from tools, patterns from judgement, checked by the core
 

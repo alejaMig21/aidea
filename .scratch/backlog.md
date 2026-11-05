@@ -42,6 +42,12 @@ All pending or half-done work, not only the first version: written tickets, deci
 | T | **Priority, reported 2026-11-05.** Opening a big project takes 5 s (Telegram): single AST pass, effects only on demand, per-file cache outside the project; target under 2 s cold, under 0.5 s warm | big-projects 01 | nothing |
 | T | **Priority, reported 2026-11-05.** The Components overview moves at 17 fps with Telegram's tests open: routes are the cost (arrowheads half of it); target 30 fps | big-projects 02 | nothing |
 | T | The Tutor reads a project's structure fast: overview, callers and callees, one function's code, from the analysis aidea already has | big-projects 04 | big-projects 01 |
+| T | **Opening shows the fingerprint at once and never waits for the analysis**; the layers fill in as the analysis finishes | layer-inference 01 | layer-inference 02 |
+| T | The fingerprint of a project (tree, manifests, entry points, documents, git summary) and a Tutor tool to read it | layer-inference 02 | nothing |
+| T | Every claim in a Proposal carries evidence (files and lines, observed, inferred or unknown) and the core refuses citations that do not hold | layer-inference 03 | nothing |
+| T | A Project is my own, someone else's to study, or new: asked once, kept, changeable | layer-inference 04 | nothing |
+| T | Git history tells live code from legacy (tool `read_history`) | layer-inference 07 | layer-inference 02 |
+| T | The blind exam moves into the repository and runs with the Tutor; three or more projects, one not in Python; repeat runs | layer-inference 09 | layer-inference 05 |
 | T | A plugin ships a lesson and the Tutor reads it | plugin-lessons 01 | nothing |
 | T | Leave the tour at any part; choose lessons; remember progress | plugin-lessons 02 | plugin-lessons 01 |
 | T | Mechanical check that a lesson still names what its plugin has | plugin-lessons 03 | plugin-lessons 01 |
@@ -69,6 +75,10 @@ All pending or half-done work, not only the first version: written tickets, deci
 
 | | Work | Where | Waits for |
 |---|---|---|---|
+| T | The Tutor builds the three layers of a project the person studies, asking only the learning goal; study notes, not a Contract | layer-inference 05 | layer-inference 02, 03, 04 |
+| T | Architecture patterns judged by the Tutor and checked by the core (layered, hexagonal, event-driven, plugin-based) | layer-inference 06 | layer-inference 03 |
+| T | A lens for Unity projects (scenes, prefabs, ScriptableObjects) as a plugin | layer-inference 08 | language-plugins 01; the person: the lens slot |
+| T | A structural index of any language from a replaceable provider (Codebase Memory first) | layer-inference 10 | language-plugins 01; the comparison spike |
 | T | Python becomes a built-in plugin, on by default; every test unchanged | language-plugins 02 | language-plugins 01 |
 | T | TypeScript and JavaScript become a built-in plugin with a variant per system | language-plugins 03 | 01, 02, 07 |
 | T | A plugin can ship a variant per system, use a program on the machine, or download one with permission | language-plugins 07 | language-plugins 01 |
@@ -76,7 +86,6 @@ All pending or half-done work, not only the first version: written tickets, deci
 | T | The record of values for TypeScript and JavaScript (nothing is recorded today) | layout-and-data 13 note | the line above |
 | I | A timeline view for concurrency | ideas | |
 | T | The Tutor proposes a change inside a plugin, through a Proposal the person accepts | plugin-teaching 06 | plugin-teaching 02; the person: how a plugin applies an accepted Proposal |
-| D | **Spec written 2026-11-05: `.scratch/layer-inference/spec.md`; tickets not yet.** Infer the layers of ANY project, documented or not, with simulated judgement** (debate 2026-11-05; Unity, someone else's repository, a blank project). The three authored layers are inferred from the code itself, not from a README: Architecture from manifests, processes, entry points and module clusters; Requirements from the surfaces of the software (commands, routes, screens, validations, tests); Business only as questions to the person. Rules: every claim cites files and lines and the core refuses a Proposal whose citations do not hold; every claim says observed, inferred or unknown; read a few chosen files (entry points, most-called modules, most-changed files) instead of all; several passes with a critic pass; the person accepts each Proposal; git history gives recency (legacy leftovers mislead). First blind exam done 2026-11-05 on 2 projects (`.scratch/layer-inference-exam/results.md`): Architecture inferred well, Requirements recover behaviour but not decisions, Business misled once (a wrong, accusing-sounding guess from a project name and legacy files). Next: the DeepSeek harness (the download failed twice), a repeat run, the same exam with the aidea Tutor and its tools, then a spec. Three situations, raised by the person 2026-11-05: a blank or own project (the person is the source of intent: the Tutor asks); a project of someone else that the person studies (nobody present knows the intent, so the Tutor must NOT ask about requirements or business: it explains with evidence and confidence, names what the code does not say, and asks only for the person's learning goal, which decides which layers matter; its layers are study notes, not a Contract for the Builder). The code index (Codebase Memory first, own tree-sitter WASM later) is the allocator of attention, not the source of intent; domain lenses (Unity scenes and prefabs) as plugins. Replaces the former L idea of reconstructing layers | person, 2026-11-05 | a spec |
 | I | The Tutor reads sources the person attaches (a folder, a web page), as untrusted data | ideas | |
 | I | Contribute to a public repository (fork, branch, pull request); `git clone` does not exist | interviews-pending 6 | |
 | I | Logical network level of Deployment (subnets, VLANs) | interviews-pending 5 | a real network engineer's diagram |
