@@ -135,7 +135,7 @@ export type ComponentsOverview = {
   rects: Rect[]; // a block per folder (id `folder:<path>`, "." for the project root) then a box per module
   counts: Record<string, { classes: number; functions: number }>; // per module id; functions include methods
   routes: ComponentsRoute[]; // module to module; points are [start, control, end] of a gentle quadratic curve
-  pairs: { total: number; shown: number };
+  pairs: { total: number; shown: number; cap: number }; // cap: how many of the strongest were asked for (the whole set when it is smaller)
   // Only when the project has test or fixture folders: how many modules and folders they hold, how many pairs touch them, and whether they are drawn.
   // Closed (the default), they are one block `tests:folded` and have no boxes and no lines; open, they stand after the other folders.
   tests?: { modules: number; folders: number; pairs: number; open: boolean };
@@ -158,7 +158,8 @@ const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0); // no loc
 const TEST_NAMES = new Set(["test", "tests", "__tests__", "fixtures", "spec", "specs"]);
 const isTestFolder = (dir: string) => dir.split("/").some((part) => TEST_NAMES.has(part.toLowerCase()));
 
-export function layoutComponentsOverview(nodes: CoreNode[], relationships: Relationship[] = [], { openTests = false } = {}): ComponentsOverview {
+// `maxPairs` is how many of the strongest lines are drawn (the default is MAX_PAIRS, Infinity draws them all); `focus` is a module whose every line is drawn even beyond that (big-projects 03).
+export function layoutComponentsOverview(nodes: CoreNode[], relationships: Relationship[] = [], { openTests = false, maxPairs = MAX_PAIRS, focus }: { openTests?: boolean; maxPairs?: number; focus?: string } = {}): ComponentsOverview {
   const moduleOf = moduleIndex(nodes);
   const modules = nodes.filter((n) => n.kind === "module");
   const counts: ComponentsOverview["counts"] = Object.fromEntries(modules.map((m) => [m.id, { classes: 0, functions: 0 }]));
@@ -227,7 +228,9 @@ export function layoutComponentsOverview(nodes: CoreNode[], relationships: Relat
     mine.count++;
     if (WEAKEST.indexOf(rel.resolution) > WEAKEST.indexOf(mine.resolution)) mine.resolution = rel.resolution;
   }
-  const strongest = [...pairs.values()].sort((a, b) => b.count - a.count || byText(a.from, b.from) || byText(a.to, b.to)).slice(0, MAX_PAIRS);
+  const ordered = [...pairs.values()].sort((a, b) => b.count - a.count || byText(a.from, b.from) || byText(a.to, b.to));
+  const strongest = ordered.slice(0, maxPairs);
+  if (focus) for (const p of ordered.slice(maxPairs)) if (p.from === focus || p.to === focus) strongest.push(p); // every line of the chosen module, whatever the cap
   const round = (n: number) => Math.round(n * 10) / 10;
   const routes: ComponentsRoute[] = strongest.map((p) => {
     const a = at.get(p.from)!, b = at.get(p.to)!;
@@ -247,7 +250,7 @@ export function layoutComponentsOverview(nodes: CoreNode[], relationships: Relat
     };
   });
   const tests = testDirs.length ? { tests: { modules: testDirs.reduce((n, d) => n + groups.get(d)!.length, 0), folders: testDirs.length, pairs: touchingTests.size, open: openTests } } : {};
-  return { rects, counts, routes, pairs: { total: pairs.size, shown: routes.length }, ...tests };
+  return { rects, counts, routes, pairs: { total: pairs.size, shown: routes.length, cap: Math.min(maxPairs, pairs.size) }, ...tests };
 }
 
 // The detailed layout of one module: its classes, methods and functions. What leaves the module is a stub, a resolved

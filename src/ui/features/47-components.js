@@ -120,7 +120,7 @@ function componentsOverviewLegend(pairs, unresolved, tests = null) {
     notShown: [
       "Classes, methods and functions: open a module (All modules brings you back)",
       ...(tests && !tests.open ? [`${componentsPlural(tests.modules, "module")} of the test and fixture folders, and the ${componentsPlural(tests.pairs, "pair")} that touch them: closed, open the block to see them`] : []),
-      pairs.total > pairs.shown ?`Only the ${pairs.shown} strongest of ${pairs.total} module pairs are drawn; ${pairs.total - pairs.shown} are hidden` : `All ${pairs.total} module pairs are drawn`,
+      pairs.total > pairs.shown ? `Only the ${pairs.shown} strongest of ${pairs.total} module pairs are drawn, to keep the picture smooth (a pair is two modules that talk to each other, drawn as one line); ${pairs.total - pairs.shown} lines are hidden. The note above draws more of them, and clicking a module draws every line it has` : `All ${pairs.total} module pairs are drawn`,
       `Relationships that cannot be followed (unresolved, ${unresolved} in this Project): they show in the detail of the module they leave`,
       "Imports of modules outside the Project, and calls to libraries and built-in functions",
       "Several relationships between the same two modules are one line (its tooltip says how many)",
@@ -342,8 +342,14 @@ function componentsChrome() {
   const pairs = componentsPairs;
   componentsNote.hidden = !(here && componentsMode === "overview" && pairs);
   if (!pairs) return;
-  const plain = pairs.total > pairs.shown ? `Showing the ${pairs.shown} strongest of ${pairs.total} module pairs; ${pairs.total - pairs.shown} hidden` : `${componentsPlural(pairs.total, "module pair")}`;
-  componentsNote.replaceChildren(plain);
+  const hidden = pairs.total - pairs.shown;
+  const more = (label, cap) => Object.assign(document.createElement("button"), { type: "button", textContent: label, onclick: () => { componentsCap = cap; componentsLoad(null, componentsTestsOpen); } });
+  componentsNote.replaceChildren(hidden > 0
+    ? `Showing the ${pairs.shown} strongest of ${pairs.total} module pairs. A pair is two modules that talk to each other, drawn as one line; ${hidden} lines are not drawn so the picture stays smooth, strongest first. `
+    : `${componentsPlural(pairs.total, "module pair")} drawn. `);
+  if (hidden > 0) componentsNote.append(more(`Draw ${Math.min(400, hidden)} more`, pairs.cap + 400), " ", more(`Draw all ${pairs.total} (slower)`, "all"), " Click a module to draw every line it has. ");
+  else if (componentsCap) componentsNote.append(more("Draw fewer", null), " ");
+  if (componentsFocus) componentsNote.append(`Every line of ${componentsFocus} is drawn. `, Object.assign(document.createElement("button"), { type: "button", textContent: "clear", onclick: () => { componentsFocus = null; componentsLoad(null, componentsTestsOpen); } }), " ");
   const tests = componentsTests; // the test and fixture folders: said in words with their count, and one control to open or close them
   if (tests) {
     const toggle = Object.assign(document.createElement("button"), { type: "button", textContent: tests.open ? "hide" : "show" });
@@ -358,9 +364,13 @@ const componentsShowLayerPlain = showLayer;
 showLayer = (which) => { componentsShowLayerPlain(which); componentsChrome(); };
 
 // Opens the detail of one module (id) or, with null, the overview again. Only the Components drawing is replaced.
+// How many module pairs the overview draws (null: the default; a number; "all") and the module whose every line is drawn (big-projects 03). A different Project starts again.
+let componentsCap = null, componentsFocus = null, componentsClickTimer = 0;
+document.addEventListener("project-opened", () => { componentsCap = null; componentsFocus = null; });
 async function componentsLoad(module, tests = false) {
   const project = current, started = performance.now();
-  const res = await fetch(`/layout?project=${encodeURIComponent(project)}&layer=components${module ? `&module=${encodeURIComponent(module)}` : tests ? "&tests=1" : ""}`);
+  const more = module ? "" : (tests ? "&tests=1" : "") + (componentsCap ? `&pairs=${componentsCap}` : "") + (componentsFocus ? `&focus=${encodeURIComponent(componentsFocus)}` : "");
+  const res = await fetch(`/layout?project=${encodeURIComponent(project)}&layer=components${module ? `&module=${encodeURIComponent(module)}` : more}`);
   const layout = await res.json();
   if (project !== current) return;
   $("error").textContent = res.ok ? "" : layout.error;
@@ -380,11 +390,17 @@ svg.addEventListener("pointerup", (e) => {
   componentsDown = null;
   const row = !moved && authoredShown === "components" ? document.elementFromPoint(e.clientX, e.clientY)?.closest?.("[data-import]") : null;
   if (row) componentsLoad(row.dataset.import);
+  // A click on a module of the overview draws every line it has (a second click, or a double click that opens it, undoes or replaces it).
+  const box = !moved && !row && componentsMode === "overview" && authoredShown === "components" ? document.elementFromPoint(e.clientX, e.clientY)?.closest?.(".cp-ov-module") : null;
+  if (box) {
+    clearTimeout(componentsClickTimer);
+    componentsClickTimer = setTimeout(() => { componentsFocus = componentsFocus === box.dataset.id ? null : box.dataset.id; componentsLoad(null, componentsTestsOpen); }, 260);
+  }
 });
 svg.addEventListener("dblclick", (e) => {
   const live = componentsMode === "overview" && authoredShown === "components";
   const box = live ? e.target.closest?.(".cp-ov-module") : null;
-  if (box) componentsLoad(box.dataset.id);
+  if (box) { clearTimeout(componentsClickTimer); componentsLoad(box.dataset.id); }
   else if (live && e.target.closest?.(".cp-ov-tests")) componentsToggleTests();
 });
 svg.addEventListener("keydown", (e) => {

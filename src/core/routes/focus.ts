@@ -61,7 +61,7 @@ const handler: Handler = async (req, res, core) => {
         return true;
       }
       if (project.nodes.filter((n) => n.kind === "module").length > OVERVIEW_ABOVE) {
-        core.send(res, 200, { layer, mode: "overview", ...layoutComponentsOverview(project.nodes, project.relationships, { openTests: url.searchParams.get("tests") === "1" }), unresolved: project.unresolved });
+        core.send(res, 200, { layer, mode: "overview", ...layoutComponentsOverview(project.nodes, project.relationships, { openTests: url.searchParams.get("tests") === "1", ...overviewOptions(url) }), unresolved: project.unresolved });
         return true;
       }
       const { rects, compartments, routes } = layoutComponentsDiagram(project.nodes, project.relationships);
@@ -139,5 +139,12 @@ const handler: Handler = async (req, res, core) => {
   }
   return false;
 };
+
+// How many lines the overview draws (pairs: a number from 50, or "all") and which module's lines are all drawn (focus); anything else is the default.
+function overviewOptions(url: URL): { maxPairs?: number; focus?: string } {
+  const raw = url.searchParams.get("pairs") ?? "";
+  const maxPairs = raw === "all" ? Infinity : /^\d+$/.test(raw) ? Math.min(100_000, Math.max(50, Number(raw))) : undefined;
+  return { ...(maxPairs !== undefined && { maxPairs }), ...(url.searchParams.get("focus") && { focus: url.searchParams.get("focus")! }) };
+}
 
 export default handler;
