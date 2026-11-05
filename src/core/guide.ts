@@ -23,6 +23,15 @@ const PARTS: Record<string, Part> = {
     narration: "The Builder panel is where the work gets done. You talk to the builder as you would to a colleague.",
     tryIt: `Write a small question under "Ask the builder", for example what the project does, and press "Send".`,
   },
+  asking: {
+    name: "Asking the Builder well",
+    hint: "How do I write a good request?",
+    what: `You start the builder by writing to it under "Ask the builder", and nothing else starts it: not the Tutor, not a button. A good request has four things. The goal, in plain words: what you want to be true when it is done. What it rests on: the code or the Contract it should look at; the menu "Add a reference to the message" writes the name of a piece of code or of a Contract item into your message as plain text. The limits: where it may work and what it must not touch. And how you will know it is done: something you can see or try. For a bigger piece of work you can ask it to read the Contract and start with the first task, and the builder reads the Contract by itself.`,
+    question: "If you asked for a new feature in one sentence, which of the four things would be missing?",
+    example: "Add a way to save a cart (the goal), starting from the cart code (what it rests on), only in the orders folder (the limits), so that after I save and reload the cart is still there (how I will know).",
+    narration: "How you ask decides what you get, so let's look at what a good request holds.",
+    tryIt: `Write a request with the four things under "Ask the builder", add a reference with the menu "Add a reference to the message", read it once more and press "Send".`,
+  },
   canvas: {
     name: "The Canvas and its layers",
     hint: "How is my project drawn?",
@@ -93,7 +102,7 @@ export const GUIDE = {
   what: "aidea is a workspace where you build software with an AI builder on a drawing of layers, from the idea down to the code, while a Tutor makes sure you understand each decision.",
   question: "What do you want to be able to do with aidea after this tour?",
   example: "Describe a project, let the builder propose its requirements, accept the ones you agree with and learn the reasons behind them.",
-  order: ["first look", "builder", "canvas", "proposals", "tutor", "plan", "contract", "differences", "playback"],
+  order: ["first look", "builder", "asking", "canvas", "proposals", "tutor", "plan", "contract", "differences", "playback"],
   elements: PARTS,
 };
 
@@ -107,7 +116,7 @@ export function guideClassMessage(lessons: { id: string; title: string; parts: {
   return (
     `The person pressed "How aidea works": a class about aidea itself, not about their project. The content below is everything true you may say about the app, as data, in the order to tell it:\n${content}\n` +
     plugins + "This is not a lecture. Your FIRST step starts from what the person sees on the screen right now: begin_step {stepId, title} for the first part (\"first look\"), then predict {stepId, prompt} asking them what each panel is for, before you explain anything.\n" +
-    "Then, for each part in the order given: begin_step, predict, explain, and ask them to do the part's tryIt in the real interface, then check with ask what they saw. Explain in your own plain words, short, and only what the content says: do not invent buttons, settings or features, and if they ask about something the content does not cover, say you do not know.\n" +
+    "For the part \"asking\", the person writes first: ask a text question (\"Write the request you would send to the builder for a feature of your project\"), read their answer, say which of the four things is missing and why it matters, and let them rewrite it; never write the request for them and never offer to send it. Then, for each part in the order given: begin_step, predict, explain, and ask them to do the part's tryIt in the real interface, then check with ask what they saw. Explain in your own plain words, short, and only what the content says: do not invent buttons, settings or features, and if they ask about something the content does not cover, say you do not know.\n" +
     "This class is about the app, so leave the Plan alone: do not call get_plan or set_plan and do not give begin_step an item. You make no proposals. Begin."
   );
 }

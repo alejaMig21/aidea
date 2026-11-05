@@ -2,7 +2,7 @@
 
 **What to build:** The first use of tickets 01 and 02: the person says what they want a plugin to do and the Tutor teaches, step by step, what a Builder needs to build it well: the plugin API, the template, the lesson and the teaching surface a plugin needs. The person ends with an Assignment a Builder can build from, and knows why each part is there.
 
-**Blocked by:** roles-and-contract 02.
+**Blocked by:** None (can start immediately).
 
 **Status:** ready-for-agent
 
