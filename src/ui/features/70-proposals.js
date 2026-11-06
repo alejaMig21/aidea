@@ -102,12 +102,13 @@ function showProposal(p) {
   const old = authoredData?.layers[p.layer]?.nodes.find((n) => n.id === p.nodeId);
   const rows = [];
   if (p.kind === "add") {
-    for (const [k, v] of Object.entries(p.node)) if (k !== "rationale") rows.push(node("div", { className: "field" }, node("strong", { textContent: `${k}: ` }), show(v)));
+    for (const [k, v] of Object.entries(p.node)) if (k !== "rationale") rows.push(node("div", { className: "field" }, node("strong", { textContent: `${k}: ` }), k === "evidence" ? evidenceLines(v).join("; ") : show(v)));
     rows.push(node("div", { className: "field" }, node("strong", { textContent: "why: " }), p.node.rationale.why));
     for (const r of p.node.rationale.rejected) rows.push(node("div", { className: "field" }, node("strong", { textContent: "rejected: " }), `${r.option}: ${r.reason}`));
   } else if (p.kind === "update") {
     for (const [k, v] of Object.entries(p.changes)) {
-      rows.push(node("div", { className: "field" }, node("strong", { textContent: `${k}: ` }), node("span", { className: "old", textContent: old ? show(old[k] ?? "(none)") : "" }), " → ", show(v)));
+      const say = (x) => (k === "evidence" && x ? evidenceLines(x).join("; ") : show(x));
+      rows.push(node("div", { className: "field" }, node("strong", { textContent: `${k}: ` }), node("span", { className: "old", textContent: old ? say(old[k] ?? "(none)") : "" }), " → ", say(v)));
     }
   } else {
     rows.push(node("div", { className: "field", textContent: old ? `"${old.title}" will be removed from the ${p.layer} layer.` : "This Node will be removed." }));

@@ -30,15 +30,6 @@ export const items = [
   "d": []
  },
  {
-  "id": "li03",
-  "k": "T",
-  "s": "M",
-  "file": "layer-inference/03",
-  "t": "Every claim in a Tutor Proposal carries evidence (files and lines; observed, inferred or unknown) and the core refuses citations that do not hold",
-  "w": "layer-inference 03",
-  "d": []
- },
- {
   "id": "li04",
   "k": "T",
   "s": "M",
@@ -76,9 +67,7 @@ export const items = [
   "file": "layer-inference/06",
   "t": "Architecture patterns judged by the Tutor and checked by the core (layered, hexagonal, event-driven, plugin-based)",
   "w": "layer-inference 06",
-  "d": [
-   "li03"
-  ]
+  "d": []
  },
  {
   "id": "li05",
@@ -89,7 +78,6 @@ export const items = [
   "w": "layer-inference 05",
   "d": [
    "li02",
-   "li03",
    "li04",
    "li07"
   ]
@@ -500,9 +488,7 @@ export const items = [
   "ext": "a spec first",
   "t": "The Deployment layer (C4-style level 1, an environment selector, instances pointing at Architecture, legend, Probe and class)",
   "w": "deployment 01",
-  "d": [
-   "li03"
-  ],
+  "d": [],
   "file": "deployment/01"
  },
  {
@@ -590,9 +576,7 @@ export const items = [
   "s": "L",
   "t": "The Tutor reads sources the person attaches (a folder, a web page), as untrusted data, taught as a lesson",
   "w": "layer-inference 12",
-  "d": [
-   "li03"
-  ],
+  "d": [],
   "file": "layer-inference/12",
   "ext": "an idea"
  },

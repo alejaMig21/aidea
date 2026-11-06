@@ -16,6 +16,13 @@ layerBar.setAttribute("role", "group"); // the buttons are toggles (aria-pressed
 layerBar.setAttribute("aria-label", "Layers");
 document.querySelector("main").append(layerBar);
 
+// The evidence of a Node (layer-inference 03) in words: its status, then each citation, then the reason when it is not known. The core has checked the shape and that the files and lines exist.
+const EVIDENCE_STATUS = { observed: "Observed in the code", inferred: "Inferred from the code, not seen directly", unknown: "Not known" };
+function evidenceLines(e) {
+  const cites = (e.cites ?? []).map((c) => `${c.file}, ${c.from === c.to ? `line ${c.from}` : `lines ${c.from}-${c.to}`}`);
+  return [EVIDENCE_STATUS[e.status] ?? e.status, ...cites, ...(e.why ? [e.why] : [])];
+}
+
 // The card is 240 wide: a longer line is cut (notationClip), and the whole text stays available as the tooltip of the card.
 const authoredShort = (t) => notationClip(t, 28);
 
@@ -34,6 +41,12 @@ function showRationale(n) {
   if (n.kind) parts.push(Object.assign(document.createElement("p"), { className: "node-sub", textContent: `[${n.kind}]` }));
   if (n.description) parts.push(Object.assign(document.createElement("p"), { textContent: n.description }));
   parts.push(why);
+  if (n.evidence) {
+    const [status, ...rest] = evidenceLines(n.evidence);
+    parts.push(Object.assign(document.createElement("h2"), { textContent: "Evidence" }), Object.assign(document.createElement("p"), { className: "evidence-status", textContent: status }));
+    if (rest.length) parts.push(Object.assign(document.createElement("ul"), { className: "evidence-cites" }));
+    if (rest.length) parts[parts.length - 1].replaceChildren(...rest.map((t) => Object.assign(document.createElement("li"), { textContent: t })));
+  }
   if (n.relations?.length) {
     const h3 = document.createElement("h2");
     h3.textContent = "Relations";

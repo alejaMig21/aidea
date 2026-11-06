@@ -15,7 +15,7 @@ export const NODE_HELP =
   "or \"non-functional\" (needs `statement`, `quality` (performance, security, usability, reliability, maintainability, compatibility, portability or safety) " +
   "and a measurable `measure`; `as`, `want`, `so` are not needed); architecture Nodes need `technology` and may have `parent` (the Node it is inside), `kind` (person, system, container or component), " +
   "a one-sentence `description`, `external` (true for a person or system outside the one being designed) and `relations`: [{ to, label, technology? }] naming other architecture Nodes that this one uses. Any Node may have " +
-  "`traces`: the ids of the Nodes in the layer below that realise it. To mark architecture Nodes as one pattern (for example hexagonal) use propose_pattern_group.";
+  "`traces`: the ids of the Nodes in the layer below that realise it. When a Node comes from reading the person's code, add `evidence`: { status: \"observed\" (you saw it), \"inferred\" (you deduced it) or \"unknown\", cites: [{ file, from, to }] (the file relative to the Project and the lines that back the claim; needed for observed and inferred), why (needed for unknown: say why the code does not tell) }. A citation to a file or lines that do not exist refuses the Proposal. To mark architecture Nodes as one pattern (for example hexagonal) use propose_pattern_group.";
 
 const element = { type: "string", description: "The layer element the question was about, the same short tag you gave `ask`, for example \"business:customer-segments\"" };
 const LAYERS = { type: "string", enum: ["business", "requirements", "architecture"] };

@@ -1,13 +1,13 @@
 {
   "nodes": [
     {
-      "id": "r-checkout", "title": "Checkout", "as": "a customer", "want": "to pay for my order", "so": "I receive it",
+      "id": "r-checkout", "evidence": {"status":"inferred","cites":[{"file":"domain.py","from":1,"to":2}]}, "title": "Checkout", "as": "a customer", "want": "to pay for my order", "so": "I receive it",
       "criteria": ["Given a full cart, when I pay, then I get a receipt", "Given a declined card, when I pay, then I see why"],
       "traces": ["render.make", "shapes.Circle", "ghost.fn"],
       "rationale": { "why": "Payment is the core of selling online.", "rejected": [] }
     },
     {
-      "id": "r-audit", "title": "Audit trail", "as": "the owner", "want": "to see every order change", "so": "I can settle disputes", "built": true,
+      "id": "r-audit", "evidence": {"status":"unknown","why":"The code does not say."}, "title": "Audit trail", "as": "the owner", "want": "to see every order change", "so": "I can settle disputes", "built": true,
       "rationale": { "why": "Marked as built before any code was linked.", "rejected": [] }
     },
     {

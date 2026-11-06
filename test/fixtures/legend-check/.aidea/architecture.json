@@ -6,11 +6,11 @@
       "rationale": { "why": "The main user.", "rejected": [] }
     },
     {
-      "id": "shop", "title": "Shop", "technology": "Python", "kind": "system", "description": "Everything we build.",
+      "id": "shop", "evidence": {"status":"unknown","why":"The code does not say."}, "title": "Shop", "technology": "Python", "kind": "system", "description": "Everything we build.",
       "rationale": { "why": "One boundary around what we own.", "rejected": [] }
     },
     {
-      "id": "web", "title": "Web adapter", "technology": "Python", "kind": "container", "parent": "shop", "description": "Talks to the outside.", "traces": ["adapters"],
+      "id": "web", "evidence": {"status":"inferred","cites":[{"file":"domain.py","from":1,"to":2}]}, "title": "Web adapter", "technology": "Python", "kind": "container", "parent": "shop", "description": "Talks to the outside.", "traces": ["adapters"],
       "relations": [
         { "to": "core", "label": "Places orders through" },
         { "to": "mailer", "label": "Sends receipts", "technology": "SMTP" }

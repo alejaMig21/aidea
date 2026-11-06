@@ -112,6 +112,26 @@ export function rationaleProblem(r: unknown): string | null {
   return null;
 }
 
+// The evidence a Node may carry (layer-inference 03): { status: "observed" | "inferred" | "unknown", cites?: [{ file, from, to }], why? }. Observed and inferred need at least one citation;
+// unknown needs the reason. Only the shape is checked here (it also reads files edited by hand); that the cited files and lines exist is checked when a Proposal is made (proposals.ts).
+export const EVIDENCE_STATUSES = ["observed", "inferred", "unknown"];
+export const MAX_CITES = 20;
+export function evidenceProblem(e: unknown): string | null {
+  if (!isObject(e)) return '"evidence" must be an object';
+  if (!EVIDENCE_STATUSES.includes(e.status as string)) return `"evidence.status" must be one of: ${EVIDENCE_STATUSES.join(", ")}`;
+  const cites = e.cites;
+  if (cites !== undefined && (!Array.isArray(cites) || cites.length > MAX_CITES)) return `"evidence.cites" must be a list of at most ${MAX_CITES} citations`;
+  if (e.status !== "unknown" && !(Array.isArray(cites) && cites.length > 0)) return `"evidence.cites" must hold at least one citation when the status is ${e.status as string}`;
+  for (const [i, c] of (cites ?? []).entries()) {
+    if (!isObject(c) || !isNonEmptyString(c.file) || !Number.isInteger(c.from) || !Number.isInteger(c.to) || (c.from as number) < 1 || (c.to as number) < (c.from as number)) {
+      return `"evidence.cites[${i}]" must be { file, from, to } with 1 <= from <= to`;
+    }
+  }
+  if (e.status === "unknown" && !isNonEmptyString(e.why)) return '"evidence.why" must say why it is not known';
+  if (e.why !== undefined && !isNonEmptyString(e.why)) return '"evidence.why" must be a non-empty string';
+  return null;
+}
+
 // What is wrong with one Node of a layer, or null when it is fine. `seen` holds the ids already taken on that layer.
 // The same rules apply to a file edited by hand and to what the builder proposes.
 export function nodeProblem(layer: string, n: unknown, seen: Set<string>): string | null {
@@ -120,7 +140,7 @@ export function nodeProblem(layer: string, n: unknown, seen: Set<string>): strin
     : seen.has(n.id as string) ? `duplicate id "${n.id}"`
     : !isNonEmptyString(n.title) ? '"title" must be a non-empty string'
     : n.traces !== undefined && !(Array.isArray(n.traces) && n.traces.every(isNonEmptyString)) ? '"traces" must be an array of non-empty strings'
-    : layerChecks[layer](n) ?? rationaleProblem(n.rationale);
+    : layerChecks[layer](n) ?? rationaleProblem(n.rationale) ?? (n.evidence === undefined ? null : evidenceProblem(n.evidence));
 }
 
 // A problem in plain words for the interface: which layer and file, which item (its id, else its position), which field, and what was ignored.

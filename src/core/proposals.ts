@@ -1,8 +1,8 @@
 // Proposals: changes the builder suggests to the authored layers. Nothing is written until the person accepts.
 // The builder never touches the files: it only calls tools that create a pending Proposal here.
 import { randomBytes } from "node:crypto";
-import { lstatSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { dirname, isAbsolute, join, normalize, relative, sep } from "node:path";
 import { architecturePreview } from "./architecture.ts";
 import { groupProblem, loadAuthored, nodeProblem, rationaleProblem, roleProblem } from "./authored.ts";
 import { coreWrote } from "./guard.ts";
@@ -55,6 +55,26 @@ const relationTargetProblem = (layer: string, node: Fields, ids: Set<unknown>) =
 // The first thing wrong with a Node: its own fields, its parent, or where its relations point.
 const fitProblem = (layer: AuthoredLayerKey, node: unknown, nodeIds: Set<string>, parentIds: Set<unknown>, targetIds: Set<unknown>) =>
   nodeProblem(layer, node, nodeIds) ?? parentProblem(layer, node as Fields, parentIds) ?? relationTargetProblem(layer, node as Fields, targetIds);
+// The citations of a Node's evidence must hold: each file is inside the Project and exists, and the cited lines are in it (layer-inference 03). The core cannot tell that the code SAYS what the claim says.
+const MAX_CITED_FILE_BYTES = 5 * 1024 * 1024;
+function citationProblem(projectPath: string, evidence: unknown): string | null {
+  const cites = ((evidence as Fields | undefined)?.cites ?? []) as { file: string; from: number; to: number }[];
+  let root: string;
+  try { root = realpathSync(projectPath); } catch { return "The Project folder cannot be read"; }
+  for (const c of cites) {
+    if (isAbsolute(c.file) || normalize(c.file).split(sep).includes("..")) return `The citation "${c.file}" must name a file inside the Project, written relative to it`;
+    let real: string, stat;
+    try { real = realpathSync(join(projectPath, c.file)); stat = statSync(real); } catch { return `The citation "${c.file}" does not exist in the Project`; }
+    const inside = relative(root, real);
+    if (inside.startsWith("..") || isAbsolute(inside)) return `The citation "${c.file}" must name a file inside the Project, written relative to it`;
+    if (!stat.isFile()) return `The citation "${c.file}" is not a file`;
+    if (stat.size > MAX_CITED_FILE_BYTES) return `The citation "${c.file}" is a file too large to check (over 5 MB)`;
+    const text = readFileSync(real, "utf8");
+    const lines = text.split("\n").length - (text.endsWith("\n") ? 1 : 0);
+    if (c.to > lines) return `The citation "${c.file}" lines ${c.from}-${c.to} goes past the end of the file: it has ${lines} lines`;
+  }
+  return null;
+}
 const childOf = (nodes: { id?: unknown; parent?: unknown }[], id: string) => nodes.find((n) => n.parent === id)?.id;
 
 let counter = 0;
@@ -92,7 +112,7 @@ export function propose(
     if (existing.some((n) => n.id === nodeId)) return { error: `A Node with id "${nodeId}" already exists on the ${key} layer`, refusal: { reason: "exists", layer: key, nodeId } };
     const waiting = pending.find((p) => p.kind === "add" && p.nodeId === nodeId);
     if (waiting) return { error: `A proposal to add "${nodeId}" is already pending`, refusal: { reason: "pending", layer: key, nodeId, proposalId: waiting.id } };
-    const problem = fitProblem(key, request.node, new Set(), ids, new Set([...ids, nodeId]));
+    const problem = fitProblem(key, request.node, new Set(), ids, new Set([...ids, nodeId])) ?? (request.node.evidence !== undefined ? citationProblem(project.path, request.node.evidence) : null);
     if (problem) return { error: `Invalid node: ${problem}` };
     node = request.node;
   } else {
@@ -108,7 +128,7 @@ export function propose(
       if (request.changes.id !== undefined && request.changes.id !== nodeId) return { error: 'The "id" of a Node cannot be changed: remove it and add a new one' };
       changes = request.changes;
       node = { ...current, ...changes };
-      const problem = fitProblem(key, node, new Set(), new Set([...ids].filter((i) => i !== nodeId)), ids);
+      const problem = fitProblem(key, node, new Set(), new Set([...ids].filter((i) => i !== nodeId)), ids) ?? (changes.evidence !== undefined ? citationProblem(project.path, changes.evidence) : null);
       if (problem) return { error: `Invalid change: ${problem}` };
     } else {
       const child = childOf([...existing, ...adds.map((p) => ({ id: p.nodeId, ...p.node }))], nodeId);

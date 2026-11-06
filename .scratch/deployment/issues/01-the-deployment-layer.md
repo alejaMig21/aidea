@@ -2,7 +2,7 @@
 
 **What to build:** Decided 2026-11-03 and 04: a layer of its own, a sibling of Architecture, reached with the layer bar. Level 1 only: the C4-style deployment (deployment nodes that nest, infrastructure nodes such as a load balancer, firewall or DNS, and container instances), one environment at a time through a selector (My machine, Staging, Production). An instance points to its Architecture box by a trace link (broken if the box is deleted). "My machine" can be derived from the run recipe; the other environments are written with the Tutor. It has a Legend, a Probe before its first class and a "Teach me through it" class. Zoom never changes layer.
 
-**Blocked by:** layer-inference 03.
+**Blocked by:** None (can start immediately).
 
 **Status:** needs-info: a spec first
 

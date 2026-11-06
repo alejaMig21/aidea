@@ -2,7 +2,7 @@
 
 **What to build:** The person attaches a folder or a web page and the Tutor reads it, read-only, as untrusted data, and teaches from it as a lesson. Nothing leaves the machine without the person's consent.
 
-**Blocked by:** layer-inference 03.
+**Blocked by:** None (can start immediately).
 
 **Status:** needs-info: an idea; the person confirms it and says which sources
 
