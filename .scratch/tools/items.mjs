@@ -112,7 +112,6 @@ export const items = [
   "t": "A structural index of any language from a replaceable provider (Codebase Memory first)",
   "w": "layer-inference 10",
   "d": [
-   "lp07",
    "cbs"
   ]
  },
@@ -125,15 +124,6 @@ export const items = [
   "w": "layer-inference 11",
   "d": [],
   "file": "layer-inference/11"
- },
- {
-  "id": "lp07",
-  "k": "T",
-  "s": "L",
-  "file": "language-plugins/07",
-  "t": "A plugin can ship a variant per system, use a program on the machine, or download one with permission",
-  "w": "language-plugins 07",
-  "d": []
  },
  {
   "id": "lp05",
@@ -151,9 +141,7 @@ export const items = [
   "file": "language-plugins/03",
   "t": "TypeScript and JavaScript become a built-in plugin with a variant per system",
   "w": "language-plugins 03",
-  "d": [
-   "lp07"
-  ]
+  "d": []
  },
  {
   "id": "la05",
@@ -453,8 +441,7 @@ export const items = [
   "t": "Packaging: one installer per system and processor (Windows, macOS, Linux; x64 and arm64), signing and notarization on macOS, the variants of the built-in plugins (today aidea runs with `electron .`)",
   "w": "packaging 01",
   "d": [
-   "lp03",
-   "lp07"
+   "lp03"
   ],
   "file": "packaging/01",
   "ext": "a spec first (signing accounts, the CI, how updates arrive)"

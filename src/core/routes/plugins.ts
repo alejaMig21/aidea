@@ -13,6 +13,16 @@ const handler: Handler = async (req, res, core) => {
     core.send(res, 200, { plugins: core.plugins.list(), services: core.plugins.services(), events: core.plugins.eventList(), safeMode: core.plugins.safe });
     return true;
   }
+  // The downloads that plugins asked for (language-plugins 07): what, from where and how big, for the person to answer. The core downloads only after "accept".
+  if (req.method === "GET" && req.url === "/plugins/downloads") { core.send(res, 200, { downloads: core.plugins.downloads() }); return true; }
+  if (req.method === "POST" && req.url === "/plugins/downloads/answer") {
+    const body = (await core.readJson(req, res)) as { id?: unknown; decision?: unknown } | null | undefined;
+    if (body === undefined) return true;
+    if (!body || typeof body.id !== "string" || (body.decision !== "accept" && body.decision !== "decline")) { core.send(res, 400, { error: 'send { id, decision: "accept" or "decline" }' }); return true; }
+    const known = core.plugins.answerDownload(body.id, body.decision);
+    core.send(res, known ? 200 : 404, known ? { ok: true } : { error: "Nothing is waiting for that answer" });
+    return true;
+  }
   // A named call to a plugin's host half.
   const callRoute = /^\/plugins\/([^/?]+)\/call\/([^/?]+)$/.exec(req.url ?? "");
   if (callRoute) {

@@ -17,11 +17,12 @@ import { createPluginState } from "./state.ts";
 import type { PluginState as Chosen } from "./state.ts";
 import { createMemorySecretStore, createSettings } from "./settings.ts";
 import type { Settings } from "./settings.ts";
+import { checkProgram, createPrograms, unavailableReason, variantFor } from "./programs.ts";
 
 export type PluginState = "active" | "inactive" | "failed" | "incompatible";
 export type PluginInfo = { id: string; title: string; version: string; state: PluginState; reason?: string; ui: boolean; builtin: boolean; required: boolean; settings: boolean; description: string; publisher: string; capabilities: string[] }; // `ui`: it has an interface half; `builtin`: it ships with aidea; `required`: it ships with aidea and cannot be removed or switched off
 type Undo = () => unknown;
-type Entry = { id: string; folder: string; builtin: boolean; manifest?: Manifest; state: PluginState; reason?: string; undo: Undo[]; returned?: Undo; ran?: boolean; waiting?: boolean }; // `ran`: its code was activated in this session; `returned`: what `activate` returned, run after every other undo
+type Entry = { variantDir?: string; id: string; folder: string; builtin: boolean; manifest?: Manifest; state: PluginState; reason?: string; undo: Undo[]; returned?: Undo; ran?: boolean; waiting?: boolean }; // `ran`: its code was activated in this session; `returned`: what `activate` returned, run after every other undo
 
 // What an event listener or a guard rule may answer. Only "deny" and "ask" count; anything else, an "allow" included, is ignored (a plugin can only tighten).
 export type Verdict = { decision: "allow" } | { decision: "deny"; reason: string } | { decision: "ask"; question: string };
@@ -44,6 +45,10 @@ export type PluginContext = {
   teach: { state: (provide: (context: { project?: string }) => unknown) => void };
   // The language slot: a plugin whose manifest declares `language` provides its adapter once (`analyze`, and `flow`, `run` if it has them).
   languages: { provide: (adapter: LanguageAdapter) => void };
+  // The folder of the variant of this plugin that matches this machine (language-plugins 07), or null when it declares none.
+  variant: { dir: string } | null;
+  // Programs: run one the plugin declared (found on the machine, or downloaded) by its name; ask to download one it declared (the person is asked first). docs/plugin-api.md.
+  programs: { run: (name: string, args?: string[]) => Promise<{ code: number | null; stdout: string; stderr: string; error?: string }>; download: (name: string) => Promise<string> };
   data: { readonly dir: string };
   settings: { get: (key: string) => unknown };
   secrets: { get: (name: string) => string | undefined };
@@ -95,6 +100,7 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
   const reason = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
   async function undoAll(entry: Entry) {
+    programs.cancel(entry.id);
     const all = [...entry.undo.splice(0).reverse(), ...(entry.returned ? [entry.returned] : [])];
     entry.returned = undefined;
     for (const undo of all) {
@@ -102,6 +108,8 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
     }
   }
 
+  const programs = createPrograms((id) => access.dataDir(id));
+  const who = (e: Entry) => ({ id: e.id, title: e.manifest?.title ?? e.id, capabilities: e.manifest?.capabilities ?? [], programs: e.manifest?.programs, downloads: e.manifest?.downloads });
   function contextFor(entry: Entry): PluginContext {
     const manifest = entry.manifest!;
     let provided = false;
@@ -169,6 +177,11 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
         },
       },
       // Its own folder for data, its settings (the schema is in its manifest) and, when it declared the "secrets" capability, its secrets. Nothing here leads to another plugin.
+      variant: entry.variantDir ? { dir: entry.variantDir } : null,
+      programs: {
+        run: (name, args = []) => programs.run(who(entry), name, args),
+        download: (name) => programs.download(who(entry), name),
+      },
       data: { get dir() { return access.dataDir(manifest.id); } },
       settings: { get: (key) => access.get(manifest.id, manifest.settings, key) },
       secrets: {
@@ -218,6 +231,18 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
       entry.waiting = true;
       entry.reason = `needs the service "${missing}"`;
       return entry;
+    }
+    // A variant for this system, and the programs it needs on the machine (language-plugins 07): a plugin that cannot have them waits, inactive, and says what is missing.
+    const wanted = entry.manifest;
+    entry.variantDir = undefined;
+    if (wanted.variants?.length) {
+      const v = variantFor(wanted.variants);
+      if (!v) { entry.state = "inactive"; entry.waiting = false; entry.reason = unavailableReason(wanted.variants); return entry; }
+      entry.variantDir = join(entry.folder, v.folder);
+    }
+    for (const p of wanted.programs ?? []) {
+      const problem = await checkProgram(p);
+      if (problem) { entry.state = "inactive"; entry.waiting = false; entry.reason = problem; return entry; }
     }
     entry.waiting = false;
     entry.ran = true;
@@ -344,6 +369,9 @@ export function createPluginHost(roots: { dir: string; builtin: boolean }[] = []
     unregister,
     // The settings schema of an installed plugin (for the settings routes).
     schemaOf: (id: string) => (id.includes("#") ? undefined : entries.get(id)?.manifest?.settings),
+    // The downloads that plugins asked for and the person has not answered yet, and the answer (language-plugins 07).
+    downloads: () => programs.pending(),
+    answerDownload: (id: string, decision: "accept" | "decline") => programs.answer(id, decision),
     active: (id: string) => entries.get(id)?.state === "active",
     has: (id: string) => entries.has(id) && !id.includes("#"),
     list: (): PluginInfo[] => [...entries.values()].map(info),

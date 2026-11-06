@@ -46,6 +46,7 @@ export function scanPlugin(dir: string): Report {
   const declared = new Set(manifest?.capabilities ?? []);
   const used = new Map<string, string>(); // capability -> the first file that uses it
   let writes: string | undefined; // the first file that writes a file
+  let usesPrograms: string | undefined; // the first file that asks ctx.programs to run or download something
   let root = dir;
   try { root = realpathSync(dir); } catch { /* a missing folder has nothing to walk */ }
 
@@ -89,6 +90,7 @@ export function scanPlugin(dir: string): Report {
     else if (/\beval\s*\(|\bnew\s+Function\s*\(/.test(text)) add({ id: "dynamic-code", severity: "warn", message: `${rel} builds code at run time (eval or Function)`, file: rel });
     if (text.split("\n").some((line) => line.length > 5000)) add({ id: "long-lines", severity: "warn", message: `${rel} has very long lines (minified or bundled code is hard to read)`, file: rel });
     if (!writes && WRITES.test(text)) writes = rel;
+    if (!usesPrograms && /\bprograms\s*\.\s*(?:run|download)\s*\(/.test(text)) usesPrograms = rel;
     for (const [capability, patterns] of Object.entries(USES)) if (!used.has(capability) && patterns.some((p) => p.test(text))) used.set(capability, rel);
     if (rel === manifest?.ui && (/#[0-9a-fA-F]{3,8}\b/.test(text) || /\brgba?\(/.test(text) || /\b\d+(?:\.\d+)?px\b/.test(text))) add({ id: "literal-style", severity: "warn", message: `${rel} uses literal colours or sizes; use the style tokens of the API`, file: rel });
   };
@@ -109,6 +111,11 @@ export function scanPlugin(dir: string): Report {
         if (!needed) add({ id: "unused-action", severity: "warn", message: `declares "${cls}" but its code does not seem to use it`, file: "aidea-plugin.json" });
       }
     }
+    // What the plugin asks of the machine (language-plugins 07): shown, never run here. Code that uses ctx.programs without declaring anything is blocked.
+    for (const p of manifest.programs ?? []) add({ id: "program-declared", severity: "warn", message: `uses a program already on the machine: ${p.name} ("${p.command}"${p.min ? `, version ${p.min} or later` : ""})`, file: "aidea-plugin.json" });
+    for (const d of manifest.downloads ?? []) add({ id: "download-declared", severity: "warn", message: `asks to download "${d.name}" (${(d.bytes / 1048576).toFixed(1)} MB) from ${new URL(d.url).host}, only after the person says yes`, file: "aidea-plugin.json" });
+    if (manifest.variants?.length) add({ id: "variants-declared", severity: "warn", message: `ships a variant for each of: ${manifest.variants.map((v) => `${v.os.join("/")} ${v.cpu.join("/")}`).join(", ")}`, file: "aidea-plugin.json" });
+    if (usesPrograms && !manifest.programs?.length && !manifest.downloads?.length) add({ id: "undeclared-program", severity: "block", message: 'uses ctx.programs without declaring "programs" or "downloads" in the manifest', file: usesPrograms });
     // The lesson (plugin-lessons 03): what it names must still exist; no lesson is only a warning.
     for (const p of surfaceProblems(dir, manifest)) add({ id: p.id, severity: "warn", message: p.message, file: "aidea-plugin.json" }); // the teaching surface (plugin-teaching 04)
     if (manifest.lesson) for (const message of lessonFindings(dir, manifest)) add({ id: "lesson-stale", severity: "warn", message, file: manifest.lesson });

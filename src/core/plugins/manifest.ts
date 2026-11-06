@@ -5,6 +5,8 @@ import { ACTION_CLASSES, isActionClass } from "./actions.ts";
 import { readLesson } from "./lesson.ts";
 import { schemaProblems } from "./settings.ts";
 import type { SettingField } from "./settings.ts";
+import { CPU, MAX_DOWNLOAD_BYTES, OS, downloadUrlOk } from "./programs.ts";
+import type { DownloadDecl, ProgramDecl, Variant } from "./programs.ts";
 
 export const API_VERSION = "0.1";
 // Whether this aidea can run a plugin that asks for `api` (docs/plugin-api.md): before 1.0 only the exact version; from 1.0 the same major and a minor that is not newer.
@@ -23,7 +25,7 @@ export type Teach = { view: string; checks: TeachCheck[]; module?: string }; // 
 export type LanguageDeclaration = { id: string; label: string; extensions: string[] };
 export type Manifest = {
   id: string; version: string; title: string; description: string; publisher: string; api: string;
-  main?: string; ui?: string; icon?: string; lesson?: string; teach?: Teach; language?: LanguageDeclaration; actions?: string[];
+  main?: string; ui?: string; icon?: string; lesson?: string; teach?: Teach; language?: LanguageDeclaration; actions?: string[]; variants?: Variant[]; programs?: ProgramDecl[]; downloads?: DownloadDecl[];
   capabilities: string[]; requires: string[]; provides: string[];
   events: Record<string, EventDeclaration>;
   settings: Record<string, SettingField>;
@@ -81,6 +83,56 @@ function languageProblems(l: unknown): string[] {
   return out;
 }
 
+// The problems of the three declarations of language-plugins 07, each naming its field.
+const FILE_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+const subset = (v: unknown, all: string[]) => Array.isArray(v) && v.length > 0 && v.every((x) => all.includes(x as string));
+function variantsProblems(dir: string, v: unknown): string[] {
+  if (!Array.isArray(v) || v.length < 1 || v.length > 10) return ['"variants" must be a list of 1 to 10 variants'];
+  const out: string[] = [];
+  v.forEach((x, i) => {
+    const d = x as Record<string, unknown> | null;
+    if (!d || typeof d !== "object") return void out.push(`"variants"[${i}] must be an object`);
+    if (!subset(d.os, OS)) out.push(`"variants"[${i}] "os" must be a list of: ${OS.join(", ")}`);
+    if (!subset(d.cpu, CPU)) out.push(`"variants"[${i}] "cpu" must be a list of: ${CPU.join(", ")}`);
+    if (inside(dir, d.folder) === null) out.push(`"variants"[${i}] "folder" must be a path inside the plugin folder`);
+  });
+  return out;
+}
+function programsProblems(list: unknown, caps: string[]): string[] {
+  if (!Array.isArray(list) || list.length < 1 || list.length > 10) return ['"programs" must be a list of 1 to 10 programs'];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  list.forEach((x, i) => {
+    const p = x as Record<string, unknown> | null;
+    if (!p || typeof p !== "object") return void out.push(`"programs"[${i}] must be an object`);
+    if (typeof p.name !== "string" || !NAME.test(p.name)) out.push(`"programs"[${i}] "name" must be a short name of lowercase letters, digits and "-"`);
+    else if (seen.has(p.name)) out.push(`"programs" lists "${p.name}" twice`); else seen.add(p.name);
+    if (typeof p.command !== "string" || !FILE_NAME.test(p.command)) out.push(`"programs"[${i}] "command" must be the name of a program (no folders), such as "python"`);
+    if (p.args !== undefined && (!isList(p.args) || p.args.length > 5 || p.args.some((a) => a.length > 100))) out.push(`"programs"[${i}] "args" must be a list of up to 5 short texts`);
+    if (p.min !== undefined && (typeof p.min !== "string" || !/^\d+(\.\d+)*$/.test(p.min))) out.push(`"programs"[${i}] "min" must be a version like 3.9`);
+    if (!isText(p.help, 200)) out.push(`"programs"[${i}] "help" must say in up to 200 characters how to get it`);
+  });
+  if (!caps.includes("processes")) out.push('"programs" needs the capability "processes" in "capabilities"');
+  return out;
+}
+function downloadsProblems(list: unknown, caps: string[]): string[] {
+  if (!Array.isArray(list) || list.length < 1 || list.length > 10) return ['"downloads" must be a list of 1 to 10 downloads'];
+  const out: string[] = [];
+  list.forEach((x, i) => {
+    const d = x as Record<string, unknown> | null;
+    if (!d || typeof d !== "object") return void out.push(`"downloads"[${i}] must be an object`);
+    if (typeof d.name !== "string" || !NAME.test(d.name)) out.push(`"downloads"[${i}] "name" must be a short name of lowercase letters, digits and "-"`);
+    if (d.os !== undefined && !subset(d.os, OS)) out.push(`"downloads"[${i}] "os" must be a list of: ${OS.join(", ")}`);
+    if (d.cpu !== undefined && !subset(d.cpu, CPU)) out.push(`"downloads"[${i}] "cpu" must be a list of: ${CPU.join(", ")}`);
+    if (typeof d.url !== "string" || !downloadUrlOk(d.url)) out.push(`"downloads"[${i}] "url" must be an https address`);
+    if (!Number.isInteger(d.bytes) || (d.bytes as number) < 1 || (d.bytes as number) > MAX_DOWNLOAD_BYTES) out.push(`"downloads"[${i}] "bytes" must be the exact size, up to ${MAX_DOWNLOAD_BYTES / 1024 / 1024} MB`);
+    if (typeof d.sha256 !== "string" || !/^[0-9a-f]{64}$/.test(d.sha256)) out.push(`"downloads"[${i}] "sha256" must be 64 lowercase hex digits`);
+    if (typeof d.file !== "string" || !FILE_NAME.test(d.file)) out.push(`"downloads"[${i}] "file" must be a file name (no folders)`);
+  });
+  if (!caps.includes("network")) out.push('"downloads" needs the capability "network" in "capabilities"');
+  return out;
+}
+
 export function readManifest(dir: string): { manifest: Manifest } | { problems: string[] } {
   const file = join(dir, "aidea-plugin.json");
   let raw: unknown;
@@ -119,6 +171,10 @@ export function readManifest(dir: string): { manifest: Manifest } | { problems: 
     if (mod !== undefined && inside(dir, mod) === null) problems.push('"teach" "module" must be a path inside the plugin folder');
   }
   if (m.language !== undefined) problems.push(...languageProblems(m.language));
+  const caps = isList(m.capabilities) ? m.capabilities : [];
+  if (m.variants !== undefined) problems.push(...variantsProblems(dir, m.variants));
+  if (m.programs !== undefined) problems.push(...programsProblems(m.programs, caps));
+  if (m.downloads !== undefined) problems.push(...downloadsProblems(m.downloads, caps));
   if (m.actions !== undefined && (!Array.isArray(m.actions) || m.actions.some((a) => !isActionClass(a)))) problems.push(`"actions" must be a list of classes of action: ${ACTION_CLASSES.map((c) => c.id).join(", ")}${Array.isArray(m.actions) ? ` (not ${m.actions.filter((a) => !isActionClass(a)).join(", ")})` : ""}`);
   if (m.required !== undefined && typeof m.required !== "boolean") problems.push('"required" must be true or false');
   if (m.icon !== undefined && !problems.some((p) => p.startsWith('"icon"'))) {
@@ -128,7 +184,7 @@ export function readManifest(dir: string): { manifest: Manifest } | { problems: 
   return {
     manifest: {
       id: m.id as string, version: m.version as string, title: m.title as string, description: m.description as string, publisher: m.publisher as string, api: m.api as string,
-      main: m.main as string | undefined, ui: m.ui as string | undefined, icon: m.icon as string | undefined, lesson: m.lesson as string | undefined, teach: m.teach as Teach | undefined, language: m.language as LanguageDeclaration | undefined, actions: m.actions as string[] | undefined,
+      main: m.main as string | undefined, ui: m.ui as string | undefined, icon: m.icon as string | undefined, lesson: m.lesson as string | undefined, teach: m.teach as Teach | undefined, language: m.language as LanguageDeclaration | undefined, variants: m.variants as Variant[] | undefined, programs: m.programs as ProgramDecl[] | undefined, downloads: m.downloads as DownloadDecl[] | undefined, actions: m.actions as string[] | undefined,
       capabilities: (m.capabilities as string[]) ?? [], requires: (m.requires as string[]) ?? [], provides: (m.provides as string[]) ?? [],
       events: (m.events as Record<string, EventDeclaration>) ?? {}, settings: (m.settings as Record<string, SettingField>) ?? {}, required: m.required === true,
     },

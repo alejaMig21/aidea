@@ -102,6 +102,20 @@ A plugin that can be taught gives the Tutor a read-only view of its state and na
 - The module runs in a process of its own started with Node's `--permission`: it can read the plugin's folder and nothing else, so it cannot write a file or start a program; the network is cut before it loads. It has 3 seconds and 20,000 characters of answer; beyond that it is stopped with a plain message. This is a safety net, not a sandbox: the snapshot function runs in the plugin's own half with the plugin's own capabilities.
 - What comes back reaches the Tutor marked as untrusted data: it never follows instructions found in it.
 
+### Variants, programs and downloads
+
+A plugin that needs a program (a language's analyser, for example) gets it the way VS Code does, in one of three ways. All three are declared in the manifest, shown by the scan, and never run while the plugin is in the quarantine.
+
+- **`variants`**: `[{ os: ["win32" | "darwin" | "linux", ...], cpu: ["x64" | "arm64" | "ia32", ...], folder }]`. The plugin folder holds one subfolder for each; aidea picks the one that matches this machine and the host half reads it as `ctx.variant.dir` (`null` when the plugin declares none). When none matches, the plugin stays inactive and the manager says "not available for this system".
+- **`programs`**: `[{ name, command, args?, min?, help }]`, a program already on the machine. `command` is a program name found on the path (no folders); `args` (default `["--version"]`) is how aidea asks its version; `min` is the oldest version the plugin accepts; `help` says how to get it. Needs the capability `processes`. When the program is missing or too old the plugin stays inactive and the manager says what is missing and how to get it; enabling it again checks once more.
+- **`downloads`**: `[{ name, os?, cpu?, url, bytes, sha256, file }]`, a file the plugin wants to download on first use, one entry per system (the one whose `os` and `cpu` match is used). `url` is https (plain http only from this machine, for tests); `bytes` is the exact size and `sha256` the hash of the file. Needs the capability `network`.
+
+The host half uses them through `ctx.programs`:
+
+- `ctx.programs.run(name, args?)` runs a program the plugin declared, by its name (one of `programs`, or a downloaded one); never a path. It resolves with `{ code, stdout, stderr }` (and `error` when it could not start). Needs the capability `processes`. A name the plugin did not declare is refused.
+- `ctx.programs.download(name)` asks the person. The core shows what, from where (the address) and how big, in its own dialog, and downloads only after `accept` (`GET /plugins/downloads` lists the questions, `POST /plugins/downloads/answer { id, decision }` answers). It does not follow redirects, stops at the declared size, checks the hash, and keeps nothing that does not match. It resolves with the path of the file in the plugin's own data folder; asking again for a file that is there and whose hash holds does not ask again. A refusal, a mismatch or a switch off rejects it.
+- The scan lists the three declarations as warnings. Code that calls `ctx.programs` without declaring `programs` or `downloads` is a blocking finding. A compiled program inside the plugin folder is still a blocking finding of its own; the person confirms it by name when installing.
+
 ### The language slot
 
 A plugin that reads a language declares `language` in its manifest and, in its host half, gives its adapter once: `ctx.languages.provide({ analyze, flow?, run?, examples?, signature? })`.

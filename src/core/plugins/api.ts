@@ -41,7 +41,7 @@ export const EVENT_MODES = ["announce", "ask"];
 export const MANIFEST_FIELDS = [
   { name: "id", required: true }, { name: "version", required: true }, { name: "title", required: true }, { name: "description", required: true }, { name: "publisher", required: true }, { name: "api", required: true },
   { name: "main", required: false }, { name: "ui", required: false }, { name: "icon", required: false }, { name: "capabilities", required: false }, { name: "requires", required: false },
-  { name: "provides", required: false }, { name: "events", required: false }, { name: "settings", required: false }, { name: "lesson", required: false }, { name: "teach", required: false }, { name: "language", required: false }, { name: "required", required: false },
+  { name: "variants", required: false }, { name: "programs", required: false }, { name: "downloads", required: false }, { name: "provides", required: false }, { name: "events", required: false }, { name: "settings", required: false }, { name: "lesson", required: false }, { name: "teach", required: false }, { name: "language", required: false }, { name: "required", required: false },
 ];
 
 // What an agent needs to know before it writes a plugin: the fixed facts plus what the active plugins registered now. It changes nothing.

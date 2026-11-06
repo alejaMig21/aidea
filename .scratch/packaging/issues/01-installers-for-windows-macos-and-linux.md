@@ -2,7 +2,7 @@
 
 **What to build:** aidea runs today with `electron .`. Package it: one installer per system and processor (Windows x64 and arm64, macOS x64 and arm64, Linux x64 and arm64), each built with the variants of the built-in plugins for that system (the TypeScript native program, for example). On macOS the app and every native program inside are signed and notarized. A test fails the build when a variant is missing.
 
-**Blocked by:** language-plugins 03, language-plugins 07.
+**Blocked by:** language-plugins 03.
 
 **Status:** needs-info: a spec first (signing accounts, the CI, how updates arrive)
 
