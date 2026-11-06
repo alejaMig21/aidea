@@ -1,6 +1,6 @@
 # 03: Every claim in a Proposal carries evidence, and the core checks it
 
-**What to build:** A Proposal that adds or changes a Node on an authored layer can carry `evidence`: a list of files and line ranges, and a status for the claim: observed, inferred or unknown. The core checks that each cited file exists and that the cited lines exist; a Proposal with a citation that does not hold is refused with the citation named. The status shows on the Node and in the legend. Evidence is not required for Nodes the person writes themselves.
+**What to build:** A Proposal that the Tutor makes to add or change a Node on an authored layer can carry `evidence`: a list of files and line ranges, and a status for the claim: observed, inferred or unknown. The core checks that each cited file exists and that the cited lines exist; a Proposal with a citation that does not hold is refused with the citation named. The status shows on the Node and in the legend. Evidence is not required for Nodes the person writes themselves. The Builder makes no Proposals on the layers (roles-and-contract 11), so this is the Tutor's alone; the check sits in the one place every Proposal goes through.
 
 **Blocked by:** None (can start immediately).
 

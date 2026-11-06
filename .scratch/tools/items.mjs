@@ -34,7 +34,7 @@ export const items = [
   "k": "T",
   "s": "M",
   "file": "layer-inference/03",
-  "t": "Every claim in a Proposal carries evidence (files and lines; observed, inferred or unknown) and the core refuses citations that do not hold",
+  "t": "Every claim in a Tutor Proposal carries evidence (files and lines; observed, inferred or unknown) and the core refuses citations that do not hold",
   "w": "layer-inference 03",
   "d": []
  },
@@ -223,6 +223,7 @@ export const items = [
   "k": "T",
   "s": "M",
   "file": "roles-and-contract/05",
+  "ext": "Decide what the plugin stores: the Contract is only a computed summary for now",
   "t": "The person approves the Contract (the Plan Mode of the whole project) and it is versioned",
   "w": "roles-and-contract 05",
   "d": []

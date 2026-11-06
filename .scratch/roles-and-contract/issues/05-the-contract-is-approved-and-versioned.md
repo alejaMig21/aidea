@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** needs-info: the person decided on 2026-11-05 that the Contract is only a summary computed from the accepted layers, for now. A draft, an approval and versions need something stored. Decide first what is stored (for example a recorded approval of a snapshot of the layers) or whether the Contract becomes an object of its own.
 
 - [ ] The Contract has draft and approved states; Approve is the person's action only.
 - [ ] An approved Contract keeps its versions and shows what changed between them.
