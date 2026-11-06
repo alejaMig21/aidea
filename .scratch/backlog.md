@@ -9,7 +9,7 @@ Rules:
 4. The status of a ticket says whether it can start: `ready-for-agent`, or `needs-info` and what it waits for (shown in the Wait column).
 5. Every new built-in plugin ships a lesson and a teaching surface (plugin-lessons, plugin-teaching): items that create one depend on those.
 
-Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (67 items, 4 levels).
+Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (68 items, 4 levels).
 ## Level 0: no dependencies
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
@@ -26,6 +26,7 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | cbs | T | M | Spike: measure Codebase Memory MCP as a code-graph tool for the agents on Telegram, a Unity project and a Node monorepo, with and without it (indexing writes nothing into the project; one background process per account shares the person's cache; licence not looked at) | layer-inference 11 | - | 2 | quota |
 | inst_spec | T | S | Write the Instances spec: a plugin declares a minimum number of instances and can run N times (N Builders each on a branch, N Tutors, N Canvases each on a layer); the Panel registry and the saved Layout name an instance | roles-and-providers 02 | - | 2 | the person decides the open points |
 | tr09 | T | L | The three authored layers (Business, Requirements, Architecture) become plugins with a lesson, a view and checks, so the Tutor uses them like any other | tutor-rewrite 09 | - | 1 | the person decides whether the three authored layers become plugins |
+| bnp | T | M | The Builder cannot propose changes to the layers: it stops and says in the chat what the Contract lacks | roles-and-contract 11 | - | - | - |
 | bp05 | T | L | The cold analysis of a big project takes under 2 s: per-file facts extracted in parallel worker processes, resolved across files; incremental | big-projects 05 | - | - | - |
 | collab | T | XL | Real-time cursors and shared work (needs a relay server) | collaboration 01 | - | - | an idea |
 | ed | T | S | Let the person edit the input data of a recording (the named lists cover part of it) | animation-and-data 05 | - | - | - |

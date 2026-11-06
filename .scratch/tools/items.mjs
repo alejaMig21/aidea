@@ -708,5 +708,14 @@ export const items = [
   "d": [
    "prov"
   ]
+ },
+ {
+  "id": "bnp",
+  "k": "T",
+  "s": "M",
+  "file": "roles-and-contract/11",
+  "t": "The Builder cannot propose changes to the layers: it stops and says in the chat what the Contract lacks",
+  "w": "roles-and-contract 11",
+  "d": []
  }
 ];
