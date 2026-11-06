@@ -8,3 +8,8 @@ __pycache__/
 .claude/worktrees/
 .atl/
 .builder/
+
+# Electron/browser profile caches written by live checks
+.scratch/**/Code Cache/
+.scratch/**/GPUCache/
+.scratch/**/DawnWebGPUCache/

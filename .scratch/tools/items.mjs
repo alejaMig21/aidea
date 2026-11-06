@@ -338,6 +338,33 @@ export const items = [
   "d": []
  },
  {
+  "id": "lf09",
+  "k": "T",
+  "s": "S",
+  "file": "live-findings/09",
+  "t": "Switching the Python plugin off or on redraws the Project at once (today the old picture stays until Refresh)",
+  "w": "live-findings 09",
+  "d": []
+ },
+ {
+  "id": "lf10",
+  "k": "T",
+  "s": "S",
+  "file": "live-findings/10",
+  "t": "The Tutor's chat line says \"remove\" for a removal (today it says \"change\")",
+  "w": "live-findings 10",
+  "d": []
+ },
+ {
+  "id": "lf11",
+  "k": "T",
+  "s": "S",
+  "file": "live-findings/11",
+  "t": "The page loads with no console error (\"playbackLayer is not defined\" today)",
+  "w": "live-findings 11",
+  "d": []
+ },
+ {
   "id": "lf01",
   "k": "T",
   "s": "S",
