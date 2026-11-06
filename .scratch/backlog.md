@@ -100,7 +100,7 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 
 ## Tickets that are not work any more
 
-Obsolete: live-findings 04, v1-gaps 11, tutor 10. Folded into other work: aidea-guide 01's live check (plugin-lessons 05).
+Obsolete: live-findings 04, v1-gaps 11, tutor 10. Dropped on purpose: roles-and-contract 07 (a plan mode per task is the person's choice, not a rule). Split into deliveries: animation-and-data 01 (now 08 to 11). Folded into other work: aidea-guide 01's live check (plugin-lessons 05).
 
 ## Not read in this pass
 
