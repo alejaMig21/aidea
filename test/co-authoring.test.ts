@@ -203,6 +203,52 @@ test("propose_change makes a pending change; accepting writes it, rejecting does
   assert.deepEqual(await t.proposals(), []);
 });
 
+test("propose_remove asks to remove a Node only after the person answered about it; accepting removes it, a Node that holds others is refused, rejecting keeps it", async () => {
+  const t = await newCore();
+  const seen: Record<string, any> = {};
+  const element = "architecture:quote-db";
+  tutor = async function* (call) {
+    seen.before = await call("propose_remove", { layer: "architecture", id: "quote-db", element });
+    await call("ask", askElement(element, "Do you still need the quote database?"));
+    seen.proposed = await call("propose_remove", { layer: "architecture", id: "quote-db", element, because: "They said it is not needed any more." });
+    seen.parent = await call("propose_remove", { layer: "architecture", id: "web-app", element });
+    seen.ghost = await call("propose_remove", { layer: "architecture", id: "ghost", element });
+    yield { type: "text", text: "done" };
+  };
+  const events = await t.runClass();
+  assert.equal(seen.before.isError, true);
+  assert.match(text(seen.before), /Ask the person about architecture:quote-db first/);
+  const [removal] = events.filter((e) => e.type === "proposal");
+  assert.equal(seen.proposed.isError, undefined, text(seen.proposed));
+  assert.equal(removal.kind, "remove");
+  assert.equal(removal.nodeId, "quote-db");
+  assert.equal(removal.source.role, "tutor");
+  assert.equal(removal.fromAnswer, "a customer who sells their own work");
+  assert.equal(seen.parent.isError, true);
+  assert.match(text(seen.parent), /parent of "quote-db"/);
+  assert.equal(seen.ghost.isError, true);
+  assert.match(text(seen.ghost), /not found/i);
+  assert.ok(t.layerFile("architecture").nodes.some((n: any) => n.id === "quote-db"), "nothing is removed before the person decides");
+
+  const decide = async (decision: string) => (await t.post("/proposals/answer", { id: removal.id, secret: removal.secret, decision })).status;
+  assert.equal(await decide("accept"), 200);
+  assert.ok(!t.layerFile("architecture").nodes.some((n: any) => n.id === "quote-db"));
+});
+
+test("a removal the person rejects changes nothing", async () => {
+  const t = await newCore();
+  const element = "architecture:quote-db";
+  tutor = async function* (call) {
+    await call("ask", askElement(element, "Do you still need the quote database?"));
+    await call("propose_remove", { layer: "architecture", id: "quote-db", element });
+    yield { type: "text", text: "done" };
+  };
+  const [removal] = (await t.runClass()).filter((e) => e.type === "proposal");
+  assert.equal((await t.post("/proposals/answer", { id: removal.id, secret: removal.secret, decision: "reject" })).status, 200);
+  assert.ok(t.layerFile("architecture").nodes.some((n: any) => n.id === "quote-db"));
+  assert.deepEqual(await t.proposals(), []);
+});
+
 test("an accepted Tutor Node can cite the person's words in its Rationale, and the answer is Evidence", async () => {
   const t = await newCore();
   let classId = "";
@@ -228,7 +274,7 @@ test("the Tutor can change a Node only by a Proposal: the tool list, and the ins
     yield { type: "text", text: "done" };
   };
   await t.runClass();
-  assert.deepEqual(names, ["begin_step", "predict", "explain", "ask", "review", "measure", "measure_done", "offer_practice", "practice_targets", "problem", "hint", "held_ideas", "finish_class", "propose_node", "propose_change", "get_plan", "plan_ahead", "set_plan", "read_layers", "read_node", "list_files", "read_file", "read_recording", "read_quarantined_plugin", "list_plugin_lessons", "read_plugin_lesson", "read_plugin_view", "check_plugin"]);
+  assert.deepEqual(names, ["begin_step", "predict", "explain", "ask", "review", "measure", "measure_done", "offer_practice", "practice_targets", "problem", "hint", "held_ideas", "finish_class", "propose_node", "propose_change", "propose_remove", "get_plan", "plan_ahead", "set_plan", "read_layers", "read_node", "list_files", "read_file", "read_recording", "read_quarantined_plugin", "list_plugin_lessons", "read_plugin_lesson", "read_plugin_view", "check_plugin"]);
   assert.ok(TUTOR_INSTRUCTIONS.length <= 4000, `${TUTOR_INSTRUCTIONS.length} characters`);
   assert.match(TUTOR_INSTRUCTIONS, /element/);
   assert.match(TUTOR_INSTRUCTIONS, /own words/);

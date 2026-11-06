@@ -36,6 +36,11 @@ export const AUTHORING_TOOLS = [
     description: `Proposes changing fields of an existing Node, from what the person said (give only the fields that change; the id cannot change). Refused until the person answered an \`ask\` tagged with the same \`element\`. Nothing changes until the person accepts.${CITE}`,
     inputSchema: { type: "object", properties: { layer: LAYERS, id: { type: "string" }, changes: { type: "object" }, element }, required: ["layer", "id", "changes", "element"] },
   },
+  {
+    name: "propose_remove",
+    description: `Proposes removing a Node from a layer, when the person says they no longer want it. Refused until the person answered an \`ask\` tagged with the same \`element\`. A Node that holds other Nodes cannot be removed until they are. Nothing changes until the person accepts.${CITE}`,
+    inputSchema: { type: "object", properties: { layer: LAYERS, id: { type: "string" }, element, because: { type: "string", description: "Optional: one sentence on why you propose it" } }, required: ["layer", "id", "element"] },
+  },
 ];
 
 type Reply = { text: string; isError?: true };
@@ -43,10 +48,10 @@ type Ctx = { core: Core; token: string; lesson: Lesson; gaveUp: AbortSignal };
 const err = (text: string): Reply => ({ text, isError: true });
 const tag = (v: unknown) => (typeof v === "string" && v.trim() && v.length <= 100 ? v.trim() : null);
 
-// Handles `ask` with an element, propose_node and propose_change. Anything else is not ours (undefined).
+// Handles `ask` with an element, propose_node, propose_change and propose_remove. Anything else is not ours (undefined).
 export async function runAuthoringTool(name: string, args: Record<string, unknown>, { core, token, lesson, gaveUp }: Ctx): Promise<Reply | undefined> {
   const isAsk = name === "ask" && args.element !== undefined;
-  if (!isAsk && name !== "propose_node" && name !== "propose_change") return undefined;
+  if (!isAsk && name !== "propose_node" && name !== "propose_change" && name !== "propose_remove") return undefined;
   const conversation = core.permissions.conversationOf(token);
   if (!conversation?.classId) return err("The class is not running");
   if (lesson.aboutAidea && !isAsk) return err("This class is about aidea itself, so it makes no proposals. Do not propose anything: go on teaching with begin_step, predict, explain and ask.");
@@ -75,7 +80,7 @@ export async function runAuthoringTool(name: string, args: Record<string, unknow
   if (args.because !== undefined && (typeof args.because !== "string" || args.because.length > 1000)) return err("because must be text of at most 1000 characters");
   const project = core.projects.get(conversation.project);
   if (!project) return err("The Project is not open");
-  const kind: Proposal["kind"] = name === "propose_node" ? "add" : "update";
+  const kind: Proposal["kind"] = name === "propose_node" ? "add" : name === "propose_change" ? "update" : "remove";
   const result = propose(core.proposals, project, conversation.secret, kind, { layer: args.layer, node: args.node, id: args.id, changes: args.changes });
   if ("error" in result) {
     if (result.refusal) conversation.emit(refusedEvent(result.refusal, "tutor"));

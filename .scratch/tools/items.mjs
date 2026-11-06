@@ -680,14 +680,5 @@ export const items = [
   "d": [
    "prov"
   ]
- },
- {
-  "id": "tpr",
-  "k": "T",
-  "s": "S",
-  "file": "roles-and-contract/12",
-  "t": "The Tutor can propose removing a Node (the Builder no longer proposes anything on the layers)",
-  "w": "roles-and-contract 12",
-  "d": []
  }
 ];

@@ -371,7 +371,7 @@ export function layerClassMessage(layer: string): string {
   return (
     `The person opened a class on the ${layer} layer ("Teach me through it"). This is a co-authoring class, not a lecture: you help them write the layer in their own words. ${content}${plain}` +
     `Your FIRST question to the person is about the first element, "${first}": ask it with ask {kind: "text", element: "${tag(layer, first)}", prompt} in plain words, with no jargon and no explanation before it (no begin_step, no stepId). They speak first.\n` +
-    "Then turn what they said into propose_node or propose_change for that element, quoting their words in rationale.why. Only after that offer alternatives, as one more ask with the same element, starting \"Other ways to see this\". " +
+    "Then turn what they said into propose_node or propose_change for that element (or propose_remove when they say they no longer want it), quoting their words in rationale.why. Only after that offer alternatives, as one more ask with the same element, starting \"Other ways to see this\". " +
     "Go on to the next element in the order given, with the tag of each element from the content. If they are stuck on a word, explain it briefly (explain needs an open step: begin_step then predict first) and go back to the question.\n" +
     `Plan: call get_plan once. If it has nothing for the ${layer} layer, add at most two concepts with set_plan (usual: ${JSON.stringify(concepts)}), keeping the rest. The Plan only matters for the short explanations above. Begin with your first question.`
   );
