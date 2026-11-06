@@ -452,7 +452,7 @@ export const items = [
   "s": "XL",
   "t": "The git versions plugin: commits and files changed, the Canvas at a chosen commit, all branches as an animated graph, the state of the working folder (shown only). Ships a lesson and a teaching surface",
   "w": "versions 02",
-  "d": ["an1"],
+  "d": [],
   "file": "versions/02",
   "ext": "a spec first"
  },
@@ -491,7 +491,9 @@ export const items = [
   "s": "M",
   "t": "Compare two algorithms side by side on the same data",
   "w": "animation-and-data 02",
-  "d": ["an2"],
+  "d": [
+   "an2"
+  ],
   "file": "animation-and-data/02",
   "ext": "an idea"
  },
@@ -501,7 +503,7 @@ export const items = [
   "s": "M",
   "t": "More drawing pieces for Data: hash table, call stack and recursion tree, state machine, grid, weighted graph",
   "w": "animation-and-data 03",
-  "d": ["an1"],
+  "d": [],
   "file": "animation-and-data/03",
   "ext": "an idea"
  },
@@ -535,7 +537,7 @@ export const items = [
   "s": "L",
   "t": "A timeline view for concurrency",
   "w": "animation-and-data 04",
-  "d": ["an1"],
+  "d": [],
   "file": "animation-and-data/04",
   "ext": "an idea"
  },
@@ -579,7 +581,7 @@ export const items = [
   "s": "XL",
   "t": "A performance lens: how time and memory grow with the size of the data",
   "w": "animation-and-data 06",
-  "d": ["an1"],
+  "d": [],
   "file": "animation-and-data/06",
   "ext": "an idea"
  },
@@ -589,7 +591,9 @@ export const items = [
   "s": "XL",
   "t": "A visual debugger for people who are not engineers (Playback and Data cover part)",
   "w": "animation-and-data 07",
-  "d": ["an2"],
+  "d": [
+   "an2"
+  ],
   "file": "animation-and-data/07",
   "ext": "say what Playback and Data still lack for this"
  },
@@ -660,22 +664,13 @@ export const items = [
   ]
  },
  {
-  "id": "an1",
-  "k": "T",
-  "s": "L",
-  "file": "animation-and-data/08",
-  "t": "The animation engine: the picture format, the registry of pieces (open to plugins) and the animation between steps, proved with a list",
-  "w": "animation-and-data 08",
-  "d": []
- },
- {
   "id": "an2",
   "k": "T",
   "s": "L",
   "file": "animation-and-data/09",
   "t": "Python records pictures of the new format and Data draws with the engine, what it draws today unchanged",
   "w": "animation-and-data 09",
-  "d": ["an1"]
+  "d": []
  },
  {
   "id": "an3",
@@ -684,7 +679,9 @@ export const items = [
   "file": "animation-and-data/10",
   "t": "Tree, weighted graph and grid pieces, with real algorithms as examples",
   "w": "animation-and-data 10",
-  "d": ["an2"]
+  "d": [
+   "an2"
+  ]
  },
  {
   "id": "an4",
@@ -693,6 +690,8 @@ export const items = [
   "file": "animation-and-data/11",
   "t": "A consumer outside Data draws with the engine and brings a piece of its own (the proof for the git graph)",
   "w": "animation-and-data 11",
-  "d": ["an3"]
+  "d": [
+   "an3"
+  ]
  }
 ];

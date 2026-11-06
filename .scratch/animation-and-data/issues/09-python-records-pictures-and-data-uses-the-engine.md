@@ -2,7 +2,7 @@
 
 **What to build:** The second delivery (spec decisions 7 and 4). The language plugin that runs a function (Python, `playback.py`) writes the recording of a run in the engine's format: a picture for each step, pieces with stable ids (`value`, `list`, `map`, `object`, with a pointer as an edge between two element ids). No translator is kept: the old recorded shapes go away. Data draws with the engine and what it draws today does not change (a box, a row of cells, keys pointing to values, objects with arrows, CHANGED / NEW / WAS, "Text", "Save image"). The limits stay as they are (spec decision 10).
 
-**Blocked by:** animation-and-data 08.
+**Blocked by:** None (can start immediately).
 
 **Status:** ready-for-agent
 

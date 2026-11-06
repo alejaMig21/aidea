@@ -9,14 +9,14 @@ Rules:
 4. The status of a ticket says whether it can start: `ready-for-agent`, or `needs-info` and what it waits for (shown in the Wait column).
 5. Every new built-in plugin ships a lesson and a teaching surface (plugin-lessons, plugin-teaching): items that create one depend on those.
 
-Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (68 items, 4 levels).
+Sizes are the agent's estimate, not measured: S under an hour or two, M one session, L two or three, XL many and a spec first. `T` marks an item that has a ticket (all of them). `wait` is something outside the work itself: a decision or hardware of the person, or quota for a live check. Last reordered: 2026-11-05 (67 items, 4 levels).
 ## Level 0: no dependencies
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
-| an1 | T | L | The animation engine: the picture format, the registry of pieces (open to plugins) and the animation between steps, proved with a list | animation-and-data 08 | - | 9 | - |
 | li02 | T | M | The fingerprint of a project (tree, manifests, entry points, documents, git summary) and a Tutor tool to read it | layer-inference 02 | - | 6 | - |
 | pp02 | T | M | Guard rules match by class and scope, whoever acts | plugin-policies 02 | - | 5 | - |
+| an2 | T | L | Python records pictures of the new format and Data draws with the engine, what it draws today unchanged | animation-and-data 09 | - | 4 | - |
 | lp03 | T | L | TypeScript and JavaScript become a built-in plugin with a variant per system | language-plugins 03 | - | 4 | - |
 | prov | T | XL | Roles and Providers: the Tutor and the Builder become roles filled by provider plugins; the agent adapter becomes a (required) plugin. Part of migrating the rest of the existing features into plugins (Files, Code, Playback, the layers), each with its own specification, as the plugin-system spec left it | roles-and-providers 01 | - | 4 | the spec the plugin-system spec left out (which services stay single-instance, the list of named slots, the required plugins) |
 | li04 | T | M | A Project is my own, someone else's to study, or new: asked once, kept, changeable | layer-inference 04 | - | 3 | - |
@@ -39,6 +39,8 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | li06 | T | L | Architecture patterns judged by the Tutor and checked by the core (layered, hexagonal, event-driven, plugin-based) | layer-inference 06 | - | - | - |
 | li08 | T | L | A project-kind plugin for Unity (scenes, prefabs, ScriptableObjects) | layer-inference 08 | - | - | the person: what a project-kind plugin may return |
 | lp05 | T | M | One Components layer for several languages, the language in each Node's info | language-plugins 05 | - | - | - |
+| perf | T | XL | A performance lens: how time and memory grow with the size of the data | animation-and-data 06 | - | - | an idea |
+| pieces | T | M | More drawing pieces for Data: hash table, call stack and recursion tree, state machine, grid, weighted graph | animation-and-data 03 | - | - | an idea |
 | pm | T | M | Measure aidea with a very high number of heavy plugins (after the built-in features are plugins, so the measure is the real one) | housekeeping 05 | - | - | - |
 | pt06 | T | L | A change inside a plugin reaches the person as a lesson and a Proposal they accept (the Tutor never acts) | plugin-teaching 06 | - | - | the person: how a plugin applies an accepted Proposal |
 | pw | T | M | Detect warnings (not only failures) when Play starts parts; restart only one part quickly | housekeeping 04 | - | - | how a warning is detected (a pattern the recipe declares, the stderr, an exit code) and shown |
@@ -46,15 +48,17 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | rt10 | T | S | Live check: the Builder proposes a run recipe | run-and-terminal 10 | - | - | real Builder (quota) |
 | sv | T | M | A release-numbers plugin (semver, `v1.0.0`): reads the commits since the last version tag and proposes the next number (`fix` raises the last digit, `feat` the middle one, a breaking change the first), says why, the person accepts. Not the git history plugin. Ships a lesson and a teaching surface | versions 01 | - | - | - |
 | tb | T | S | Merge the Canvas's own title bar with the layer bar (needs a ticket) | housekeeping 01 | - | - | - |
+| tl | T | L | A timeline view for concurrency | animation-and-data 04 | - | - | an idea |
 | v1g01 | T | S | Live check: the Builder cannot write aidea files except by Proposals | v1-gaps 01 | - | - | real Builder (quota) |
+| vg | T | XL | The git versions plugin: commits and files changed, the Canvas at a chosen commit, all branches as an animated graph, the state of the working folder (shown only). Ships a lesson and a teaching surface | versions 02 | - | - | a spec first |
 
-## Level 1: depends only on levels below (22 items)
+## Level 1: depends only on levels below (20 items)
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
-| an2 | T | L | Python records pictures of the new format and Data draws with the engine, what it draws today unchanged | animation-and-data 09 | an1 | 4 | - |
 | li07 | T | M | Git history tells live code from legacy (tool `read_history`) | layer-inference 07 | li02 | 3 | - |
 | rc06 | T | L | The Contract has tasks from the Architecture (first) and the Requirements (after), with status and owner; the Differences become progress | roles-and-contract 06 | rc05 | 2 | - |
+| an3 | T | L | Tree, weighted graph and grid pieces, with real algorithms as examples | animation-and-data 10 | an2 | 1 | - |
 | inst | T | XL | Instances: any plugin can be started several times | roles-and-providers 03 | inst_spec, prov | 1 | waits for the Instances spec, from which its boxes are written |
 | la05 | T | L | Run a TypeScript or JavaScript function for Playback: separate Node process with `--permission` plus a fake-network guard (decided 2026-11-03) | language-adapters 05 | lp03 | 1 | - |
 | li10 | T | L | A structural index of any language from a replaceable provider (Codebase Memory first) | layer-inference 10 | cbs | 1 | the comparison spike |
@@ -62,27 +66,23 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | pl05 | T | M | Split the old guide into the kernel trunk and one lesson per plugin (and the live check of aidea-guide 01) | plugin-lessons 05 | pl02 | 1 | the person: which parts are the kernel's |
 | agents | T | M | Another agent adapter (Codex, Kimi, DeepSeek over ACP): a spike, then one each, as provider plugins | roles-and-providers 04 | prov | - | the person picks which agent first |
 | bp04 | T | M | The Tutor reads the structure of a project fast (overview, callers and callees, one function's code) from the structural map, whichever source fills it | big-projects 04 | li02 | - | - |
+| cmp | T | M | Compare two algorithms side by side on the same data | animation-and-data 02 | an2 | - | an idea |
+| dbg | T | XL | A visual debugger for people who are not engineers (Playback and Data cover part) | animation-and-data 07 | an2 | - | say what Playback and Data still lack for this |
 | hints | T | M | Short contextual hints the first time a part is used | plugin-lessons 06 | pl02 | - | an idea |
 | li01 | T | M | Opening shows the fingerprint at once and never waits for the analysis; the layers fill in as it finishes | layer-inference 01 | li02 | - | - |
 | net | T | L | Logical network level of Deployment (subnets, VLANs) | deployment 02 | dep | - | waits for a real network engineer's diagram |
-| perf | T | XL | A performance lens: how time and memory grow with the size of the data | animation-and-data 06 | an1 | - | an idea |
-| pieces | T | M | More drawing pieces for Data: hash table, call stack and recursion tree, state machine, grid, weighted graph | animation-and-data 03 | an1 | - | an idea |
 | pp03 | T | L | Detect and revert a write to the Project that nobody mediated | plugin-policies 03 | pp02 | - | - |
 | pp04 | T | M | The screen says, per rule and plugin, prevented or detected, and why something was stopped | plugin-policies 04 | pp02 | - | - |
 | pp05 | T | S | The person can lift a policy for one task, visibly and logged | plugin-policies 05 | pp02 | - | - |
 | pp07 | T | S | The authored-layer guard becomes the first policy (same behaviour, on the policy mechanism) | plugin-policies 07 | pp02 | - | - |
 | pt08 | T | M | Playback declares a teaching surface (the recordings made, the step reached; checks) once it is a plugin | plugin-teaching 08 | prov | - | Playback must first be a plugin |
-| tl | T | L | A timeline view for concurrency | animation-and-data 04 | an1 | - | an idea |
-| vg | T | XL | The git versions plugin: commits and files changed, the Canvas at a chosen commit, all branches as an animated graph, the state of the working folder (shown only). Ships a lesson and a teaching surface | versions 02 | an1 | - | a spec first |
 
-## Level 2: depends only on levels below (10 items)
+## Level 2: depends only on levels below (8 items)
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
 | li05 | T | L | The Tutor teaches the three layers of a project the person studies: Proposals the person accepts, each explained with evidence; asks only the learning goal; study notes, not a Contract | layer-inference 05 | li02, li04, li07 | 2 | - |
-| an3 | T | L | Tree, weighted graph and grid pieces, with real algorithms as examples | animation-and-data 10 | an2 | 1 | - |
-| cmp | T | M | Compare two algorithms side by side on the same data | animation-and-data 02 | an2 | - | an idea |
-| dbg | T | XL | A visual debugger for people who are not engineers (Playback and Data cover part) | animation-and-data 07 | an2 | - | say what Playback and Data still lack for this |
+| an4 | T | M | A consumer outside Data draws with the engine and brings a piece of its own (the proof for the git graph) | animation-and-data 11 | an3 | - | - |
 | la13 | T | L | The record of values for TypeScript and JavaScript (nothing is recorded today) | layout-and-data 13 note | la05 | - | - |
 | lsp | T | XL | Reuse existing language servers for `analyze`, or a light parser instead of the TypeScript compiler | language-plugins 08 | li10 | - | - |
 | pp06 | T | M | The Contract plugin offers its rule: what is not in the Contract is not developed | plugin-policies 06 | pp02, rc06 | - | - |
@@ -90,11 +90,10 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | tr08 | T | L | The Tutor stops knowing the layers, the differences, the Contract and the guide by name: it learns each one from its plugin's lesson, view and checks | tutor-rewrite 08 | pl05, tr09 | - | - |
 | tr10 | T | S | The Learner graph starts empty in the first build: the person is its first learner | tutor-rewrite 10 | pkg | - | - |
 
-## Level 3: depends only on levels below (3 items)
+## Level 3: depends only on levels below (2 items)
 
 | ID | | Size | Work | Where | Depends on | Unblocks | Wait |
 |---|---|---|---|---|---|---|---|
-| an4 | T | M | A consumer outside Data draws with the engine and brings a piece of its own (the proof for the git graph) | animation-and-data 11 | an3 | - | - |
 | li09 | T | M | The blind exam moves into the repository and runs with the Tutor (three or more projects, one not in Python, repeat runs) | layer-inference 09 | li05 | - | - |
 | pr | T | L | Contribute to a public repository (fork, branch, pull request); `git clone` does not exist | layer-inference 13 | li05 | - | an idea |
 

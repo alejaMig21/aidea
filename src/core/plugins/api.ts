@@ -34,6 +34,16 @@ export const SLOTS = [
       attach: "function(api) -> dispose, required: api.set([{ layer, node, mark }]) replaces the marks of this entry",
     },
   },
+  {
+    name: "engine.piece",
+    kind: "list",
+    entry: {
+      kind: "text, required: the name a recording uses for this piece; a kind that exists is refused",
+      elements: "function(piece) -> Map<elementId, text>, required: the engine compares two pictures with it to find NEW and CHANGED",
+      draw: "function({ g, piece, mark, was, track }), required: adds SVG to g; mark(id) is \"new\", \"changed\" or null; track(id, node, { x, y }) lets the engine move the element",
+      text: "function(piece) -> text, required: the piece written as words",
+    },
+  },
   { name: "layout.topbar", kind: "list", entry: { id: "text, required", render: "function(container) -> dispose, required: draws the control in the top bar" } },
 ];
 export const STYLE_TOKENS = ["--bg", "--bar", "--canvas", "--panel", "--raised", "--selected", "--line", "--control", "--text", "--muted", "--label", "--accent", "--accent-soft", "--on-accent", "--proposal", "--authored", "--derived", "--danger", "--unresolved", "--sans", "--mono"];
