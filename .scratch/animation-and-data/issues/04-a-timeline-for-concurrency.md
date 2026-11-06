@@ -2,7 +2,7 @@
 
 **What to build:** Show what several threads or async tasks did and when, as lanes on a timeline, with the step control. It needs the recording to capture concurrency, which Playback does not today.
 
-**Blocked by:** animation-and-data 01.
+**Blocked by:** animation-and-data 08.
 
 **Status:** needs-info: an idea; it needs a recording of threads and async tasks that does not exist
 

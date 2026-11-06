@@ -1,0 +1,35 @@
+# The animation engine
+
+Status: agreed with the person in conversation (2026-11-06); ticketed (issues 08 to 11).
+
+Source: ticket `issues/01-the-animation-engine.md`, `.scratch/future/ideas.md`, `.scratch/future/interviews-pending.md` topic 4, `src/ui/features/58-data.js` (what Data draws today) and `src/core/playback.py` (what Python records today).
+
+## What exists today (checked in the code)
+
+The Data layer draws the variables a recording holds at the step being shown, in step with Playback: a scalar as a labelled box, a list as a row of cells, a dictionary as keys pointing to values, an object as a box with its fields, objects that point to objects (linked lists, trees, graphs) as framed nodes with an arrow for every pointer. What the last step changed is marked in words (CHANGED, NEW, WAS) as well as by look. Only Python records today.
+
+Python records, for each visited step, the shape of every local variable at that moment (`visits: [{ step, locals }]`; shapes `scalar`, `seq`, `map`, `object`, `ref` to an object already described, `cut` and `opaque`). That is already a whole picture of each step, not a list of changes: the engine's format (decision 4) is that same idea with identities, more kinds of piece and a place for pieces that are not variables.
+
+## Decisions (agreed with the person)
+
+1. **Purpose: both, with one of them as the proof (2026-11-06).** The engine serves the classic algorithms (sorting, tree traversal, paths in a graph or a grid) AND things that are not the data of a function (the git history, a performance lens).
+2. **The classic algorithms come first and guide the design; the git graph (versions 02) is the proof that the engine is general.** So the engine is first built for what Data already draws and for the algorithm shapes (tree, weighted graph, grid), and the git graph is drawn with it afterwards without changing the engine.
+3. **Any plugin may hand the engine a recording of its own.** The language plugins give the recording of a function they run; the versions plugin gives its history as steps; the engine draws both the same way. The recording is not made only for functions.
+4. **Each step of a recording is a whole picture, not a list of changes.** A step says which pieces exist and with what data; the engine compares one picture with the next to know what appeared, moved or changed, and animates that. So any step can be jumped to or stepped back to without replaying the ones before, as Playback does today. A consequence: every element in a picture carries an id that stays the same from step to step, given by whoever writes the recording, so the engine does not have to guess which box is which. CHANGED, NEW and WAS are found by the engine by comparing pictures; the recording does not mark them.
+5. **A plugin can add a piece from the first version.** There is a registry of pieces; each piece is registered with its name and the way it is drawn. The pieces that ship with aidea (list, tree, weighted graph, grid) use the same registry as a plugin's own, so the git graph can bring a piece of its own (branches in lanes) without changing aidea.
+6. **The animation follows the speed that already exists.** A transition lasts a fraction of the time of a step (about 70%) at the speed chosen in Playback (Slow, Normal, Fast, Very fast), so there is one control, not two. A consumer that has no Playback (the git graph) uses the Normal speed. With the Animations switch off a step is a plain change, as in the rest of aidea.
+7. **Python records pictures of the new format from the start (the person chose this over a translator).** The recording of a function becomes the whole picture of each step in the engine's format. The language plugin that runs the function (Python today, `playback.py`) writes it, so every language plugin writes the same thing and no translator has to be kept: a compatibility layer over one tool so that it behaves like the rest is a patch, and the person does not want patches (see below). The consequence, accepted: the tests that fix the old recorded shapes (`playback-shapes`, `playback`, the Data page test and the ones that read the recording) move to the new format; what the person sees in Data and Playback does not change. The ticket's line "Data uses the engine with its existing tests unchanged" becomes "Data uses the engine and what it draws does not change".
+8. **Four deliveries, in this order, each working on its own:** (1) the engine and the picture format, with the registry and the animation between steps, proved with one piece, the list; (2) Python records pictures and Data uses the engine, drawing what it draws today (a box, a list, a dictionary, objects with arrows); (3) the new pieces, tree, weighted graph and grid, with real algorithms as examples; (4) a consumer outside Data that draws with the engine and brings a piece of its own, the proof for the git graph.
+
+9. **"Text" and "Save image" belong to the engine.** Every consumer gets the text form of a picture and the picture saved as an image. So each piece in the registry must also say how it writes itself as text (a list as "[3, 1, 2]", a graph as "A connects to B"), which also helps whoever cannot see the drawing well.
+10. **The limits do not change.** The cuts that exist today stay as they are (a value cut at 6 levels of depth, more than 500 elements shown cut, a run cut at 2,000 steps; `playback.py`) and they only affect the recording of ONE function when it is played, not the opening or the drawing of a big Project (that is `big-projects`). Whoever writes the steps decides how much to show and notes how many are missing; the engine draws that note the same way for every consumer ("... and N more"). The engine adds no new limit now. A care for the git graph (`vg`): a repository with tens of thousands of commits must be cut by the plugin that writes its steps, or the window can stall.
+
+## The picture format (proposal, for the person to review)
+
+A recording is `{ steps: [Picture] }`. A Picture is `{ label, pieces: [Piece] }`: `label` says in plain words what this step is ("line 12", "commit 3f2a"). A Piece is `{ id, kind, name?, data }`: `id` is stable across steps, `kind` is a name in the registry (`value`, `list`, `map`, `object`, `tree`, `graph`, `grid`, or a plugin's own), `name` is the label the person reads (a variable's name), and `data` has the shape that kind defines. Every element inside a piece (a cell, a node, an edge) has its own `id`, stable across steps. The limits that exist today (depth, number of nodes, "hidden" counts) stay and are part of `data`. What a piece is for each language plugin: Python writes `list` for a list, a tuple or a set, `map` for a dictionary, `object` for an instance and `value` for a scalar; a pointer is an edge between two element ids.
+
+## Not here
+
+- A new Playback or a new Flow: the engine draws what they hand it.
+- The git graph itself and the performance lens: they are consumers (versions 02, animation-and-data 06).
+- Editing the input data of a recording (animation-and-data 05).

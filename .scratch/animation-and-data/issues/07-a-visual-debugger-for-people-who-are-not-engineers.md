@@ -2,7 +2,7 @@
 
 **What to build:** The person's idea: debuggers have a thousand options and most people use only next step and read the variables. Playback and Data already do much of that. First, write what is still missing for a person who is not an engineer (say in plain words what each step did, what changed, where it went wrong), then build it.
 
-**Blocked by:** animation-and-data 01.
+**Blocked by:** animation-and-data 09.
 
 **Status:** needs-info: say what Playback and Data still lack for this
 

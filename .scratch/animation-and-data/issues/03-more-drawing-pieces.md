@@ -2,7 +2,7 @@
 
 **What to build:** Add pieces to the engine, each its own piece and test: a hash table (buckets), the call stack with the recursion tree, a state machine, and a weighted graph if the engine did not bring it.
 
-**Blocked by:** animation-and-data 01.
+**Blocked by:** animation-and-data 08.
 
 **Status:** needs-info: an idea; the person picks which pieces first
 

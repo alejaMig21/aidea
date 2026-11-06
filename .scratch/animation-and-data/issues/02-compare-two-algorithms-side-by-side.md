@@ -2,7 +2,7 @@
 
 **What to build:** Play two functions on the same data and show their Data side by side with one step control, so the person sees why one is faster: counts of steps and comparisons next to each drawing.
 
-**Blocked by:** animation-and-data 01.
+**Blocked by:** animation-and-data 09.
 
 **Status:** needs-info: an idea; the person confirms it is wanted
 

@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** needs-info: a spec first (what exists in Data and what the engine adds)
+**Status:** split on 2026-11-06 into 08, 09, 10 and 11 after the spec was agreed (`.scratch/animation-and-data/spec.md`); this ticket stays as the umbrella and is not built on its own.
 
 - [ ] The spec says which pieces exist, which are new and how a plugin adds one.
 - [ ] Tree, weighted graph and grid pieces are drawn from the recorded shapes.
