@@ -8,7 +8,7 @@ import { join } from "node:path";
 import type { Adapter, AgentEvent } from "../src/core/types.ts";
 import { createClaudeAdapter } from "../src/core/adapter/claude.ts";
 import { startCore } from "../src/core/server.ts";
-import { fixture } from "./helpers.ts";
+import { fixture, viaCore } from "./helpers.ts";
 
 type Call = { name: string; arguments?: unknown };
 type RunOptions = Parameters<Adapter["run"]>[0];
@@ -28,7 +28,7 @@ const asBuilder: Adapter = {
       fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: ++id, method, params }) }).then((r) => r.json());
     await rpc("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "fake", version: "0" } });
     if (listTools) told.push(((await rpc("tools/list", {})).result.tools as { name: string }[]).map((t) => t.name).join(","));
-    for (const call of script) told.push((await rpc("tools/call", call)).result.content[0].text);
+    for (const call of script) told.push((await viaCore(core, url, rpc, call)).result.content[0].text);
     yield { type: "result", text: "", usage: {} };
   },
 };
@@ -114,13 +114,14 @@ test("read_contract leaves out pending Proposals", async () => {
   assert.ok(!text.includes("cs-new"));
 });
 
-test("the builder session is told to read the Contract first and to depart from it only through a Proposal", async () => {
+test("the builder session is told to read the Contract first and, when it lacks something, to stop and say so in the chat", async () => {
   const dir = await openComplete();
   await builderReads(dir, []);
   const instructions = launched[0].instructions ?? "";
   assert.match(instructions, /read_contract/);
   assert.match(instructions, /before/i);
-  assert.match(instructions, /Proposal/);
+  assert.match(instructions, /stop/i);
+  assert.doesNotMatch(instructions, /Proposal/);
 });
 
 test("the Claude adapter appends the instructions to Claude Code's system prompt", async () => {

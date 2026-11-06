@@ -27,7 +27,6 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | dep | T | XL | The Deployment layer (C4-style level 1, an environment selector, instances pointing at Architecture, legend, Probe and class) | deployment 01 | - | 1 | a spec first |
 | tr09 | T | L | The three authored layers (Business, Requirements, Architecture) become plugins with a lesson, a view and checks, so the Tutor uses them like any other | tutor-rewrite 09 | - | 1 | the person decides whether the three authored layers become plugins |
 | att | T | L | The Tutor reads sources the person attaches (a folder, a web page), as untrusted data, taught as a lesson | layer-inference 12 | - | - | an idea |
-| bnp | T | M | The Builder cannot propose changes to the layers: it stops and says in the chat what the Contract lacks | roles-and-contract 11 | - | - | - |
 | bp05 | T | L | The cold analysis of a big project takes under 2 s: per-file facts extracted in parallel worker processes, resolved across files; incremental | big-projects 05 | - | - | - |
 | collab | T | XL | Real-time cursors and shared work (needs a relay server) | collaboration 01 | - | - | an idea |
 | ed | T | S | Let the person edit the input data of a recording (the named lists cover part of it) | animation-and-data 05 | - | - | - |
@@ -47,6 +46,7 @@ Sizes are the agent's estimate, not measured: S under an hour or two, M one sess
 | rt10 | T | S | Live check: the Builder proposes a run recipe | run-and-terminal 10 | - | - | real Builder (quota) |
 | sv | T | M | A release-numbers plugin (semver, `v1.0.0`): reads the commits since the last version tag and proposes the next number (`fix` raises the last digit, `feat` the middle one, a breaking change the first), says why, the person accepts. Not the git history plugin. Ships a lesson and a teaching surface | versions 01 | - | - | - |
 | tb | T | S | Merge the Canvas's own title bar with the layer bar (needs a ticket) | housekeeping 01 | - | - | - |
+| tpr | T | S | The Tutor can propose removing a Node (the Builder no longer proposes anything on the layers) | roles-and-contract 12 | - | - | - |
 | v1g01 | T | S | Live check: the Builder cannot write aidea files except by Proposals | v1-gaps 01 | - | - | real Builder (quota) |
 
 ## Level 1: depends only on levels below (22 items)

@@ -6,6 +6,7 @@ import { join } from "node:path";
 import type { Adapter, AgentEvent } from "../src/core/types.ts";
 import { startCore } from "../src/core/server.ts";
 import { fixture } from "./helpers.ts";
+import { propose } from "../src/core/proposals.ts";
 
 type Reply = { content: { text: string }[]; isError?: boolean };
 type RunOptions = Parameters<Adapter["run"]>[0];
@@ -107,14 +108,10 @@ test("read_layers returns the accepted layers and marks pending Proposals as pen
     assert.equal(before.layers.requirements[0].id, "us-request-quote");
     assert.deepEqual(before.pending, []);
   });
-  // A builder Proposal is pending, and shows up marked so, outside the accepted layers.
-  let proposalId = "";
-  script = async (call) => {
-    const r = json(await call("propose_add_node", { layer: "business", node: { id: "vp-new", title: "New", block: "value propositions", rationale: { why: "w", rejected: [] } } }));
-    proposalId = r.proposal;
-  };
-  await drain(await post("/chat", { project, message: "propose" }));
-  assert.ok(proposalId);
+  // A Proposal is pending, and shows up marked so, outside the accepted layers.
+  const made = propose(core.proposals, core.projects.get(project)!, "test-secret", "add", { layer: "business", node: { id: "vp-new", title: "New", block: "value propositions", rationale: { why: "w", rejected: [] } } }) as any;
+  const proposalId = made.proposal?.id;
+  assert.ok(proposalId, made.error);
   await asTutor(async (call) => {
     const after = json(await call("read_layers"));
     assert.ok(!JSON.stringify(after.layers).includes("vp-new"), "pending is not accepted");

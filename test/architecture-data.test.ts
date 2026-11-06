@@ -4,7 +4,8 @@ import { cpSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { startCore } from "../src/core/server.ts";
-import { fixture, startTestCore } from "./helpers.ts";
+import { fixture, startTestCore, viaCore } from "./helpers.ts";
+import { NODE_HELP } from "../src/core/tutor-authoring.ts";
 
 let t: Awaited<ReturnType<typeof startTestCore>>;
 const scratch: string[] = [];
@@ -128,7 +129,7 @@ async function builder(dir: string, name: string, args: unknown) {
         const rpc = (method: string, params: unknown) =>
           fetch(url, { method: "POST", headers: { "content-type": "application/json", accept: "application/json, text/event-stream" }, body: JSON.stringify({ jsonrpc: "2.0", id: 2, method, params }) }).then((r) => r.json());
         await rpc("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "fake", version: "0" } });
-        reply = name === "tools/list" ? (await rpc("tools/list", {})).result : (await rpc("tools/call", { name, arguments: args })).result;
+        reply = name === "tools/list" ? (await rpc("tools/list", {})).result : (await viaCore(core, url, rpc, { name, arguments: args })).result;
         yield { type: "text", text: "done" };
       },
     },
@@ -148,10 +149,8 @@ function copyOfC4() {
   return dir;
 }
 
-test("the builder's tool descriptions mention kind, description and relations", async () => {
-  const { reply } = await builder(copyOfC4(), "tools/list", {});
-  const text = reply.tools.map((x: any) => x.description).join(" ");
-  for (const word of ["kind", "description", "relations", "external"]) assert.match(text, new RegExp(word));
+test("the help the Tutor gets for a Node mentions kind, description and relations", () => {
+  for (const word of ["kind", "description", "relations", "external"]) assert.match(NODE_HELP, new RegExp(word));
 });
 
 test("a Proposal adds a Node with the new fields; accepting writes it in the existing format", async () => {

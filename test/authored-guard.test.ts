@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Adapter, AgentEvent } from "../src/core/types.ts";
 import { startCore } from "../src/core/server.ts";
-import { fixture } from "./helpers.ts";
+import { fixture, viaCore } from "./helpers.ts";
 
 // A stand-in builder that does whatever the test says to the Project's files while its turn runs.
 let mcpUrl = "";
@@ -50,7 +50,7 @@ async function acceptedMidTurn(project: string, node: object, after: (dir: strin
   during = async (dir) => {
     const rpc = (method: string, params: unknown) => fetch(mcpUrl, { method: "POST", headers: { "content-type": "application/json", accept: "application/json, text/event-stream" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) });
     await rpc("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "fake", version: "0" } });
-    await (await rpc("tools/call", { name: "propose_add_node", arguments: { layer: "architecture", node } })).text();
+    await viaCore(core, mcpUrl, rpc, { name: "propose_add_node", arguments: { layer: "architecture", node } });
     await gate;
     after(dir);
   };

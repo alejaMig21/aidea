@@ -53,11 +53,11 @@ const PARTS: Record<string, Part> = {
   proposals: {
     name: "Proposals",
     hint: "How do changes get in?",
-    what: `When the builder or the Tutor wants to change a written layer, it makes a Proposal. A Proposal is drawn with a dashed outline on the Canvas, the chat shows a line with a "Review" button, and nothing is saved until you press "Accept" in the Tutor panel; "Reject" throws it away. If the builder suggests something that is already there, or already waiting, the chat says so, and for a waiting one it has an "Open it" button.`,
+    what: `When the Tutor wants to change a written layer, it makes a Proposal (the builder never does: it works from your Contract). A Proposal is drawn with a dashed outline on the Canvas, the chat shows a line with a "Review" button, and nothing is saved until you press "Accept" in the Tutor panel; "Reject" throws it away. If the Tutor suggests something that is already there, or already waiting, the chat says so, and for a waiting one it has an "Open it" button.`,
     question: "Why might you want to read a change before accepting it?",
-    example: "The builder suggests a requirement you did not ask for; you reject it and nothing changes.",
+    example: "The Tutor suggests a requirement you did not mean; you reject it and nothing changes.",
     narration: "Nothing reaches your written layers without your say. Every change arrives as a Proposal first.",
-    tryIt: `Ask the builder to add a requirement, for example that a shopper can save a cart, and when its Proposal line appears press "Review".`,
+    tryIt: `Start a class with the Tutor, tell it what your project should do, for example that a shopper can save a cart, and when its Proposal line appears press "Review".`,
   },
   tutor: {
     name: "The Tutor",
@@ -80,7 +80,7 @@ const PARTS: Record<string, Part> = {
   contract: {
     name: "The Contract",
     hint: "What did I agree?",
-    what: `The Contract panel (it comes from the Contract plugin) is a checklist of what you have agreed on the Business, Requirements and Architecture layers, and it shows how many checks are met. The builder reads it before building, and may only depart from it through a Proposal you accept.`,
+    what: `The Contract panel (it comes from the Contract plugin) is a checklist of what you have agreed on the Business, Requirements and Architecture layers, and it shows how many checks are met. The builder reads it before building and works from it without changing it: if it needs something the Contract lacks, it stops and tells you in the chat, and you decide.`,
     question: "What have you decided so far that the builder must respect?",
     example: "You accepted a requirement; from then on the builder builds towards it.",
     narration: "What you accept becomes the agreement the builder works to.",
@@ -110,7 +110,7 @@ export const GUIDE = {
   name: "How aidea works",
   what: "aidea is a workspace where you build software with an AI builder on a drawing of layers, from the idea down to the code, while a Tutor makes sure you understand each decision.",
   question: "What do you want to be able to do with aidea after this tour?",
-  example: "Describe a project, let the builder propose its requirements, accept the ones you agree with and learn the reasons behind them.",
+  example: "Describe a project, let the Tutor help you write its requirements, accept the ones you agree with and learn the reasons behind them.",
   order: ["first look", "builder", "asking", "plugin", "canvas", "proposals", "tutor", "plan", "contract", "differences", "playback"],
   elements: PARTS,
 };

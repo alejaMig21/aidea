@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Adapter, AgentEvent } from "../src/core/types.ts";
 import { startCore } from "../src/core/server.ts";
-import { fixture } from "./helpers.ts";
+import { fixture, viaCore } from "./helpers.ts";
 
 type Call = { name: string; arguments?: unknown };
 let script: Call[] = [];
@@ -20,7 +20,7 @@ const asBuilder: Adapter = {
       fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: ++id, method, params }) }).then((r) => r.json());
     await rpc("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "fake", version: "0" } });
     if (listTools) told.push(((await rpc("tools/list", {})).result.tools as { name: string }[]).map((t) => t.name).join(","));
-    for (const call of script) told.push((await rpc("tools/call", call)).result.content[0].text);
+    for (const call of script) told.push((await viaCore(core, url, rpc, call)).result.content[0].text);
     yield { type: "result", text: "", usage: {} };
   },
 };
@@ -160,7 +160,7 @@ test("a patterns field that is not a list, or a group without an id, is a proble
   assert.deepEqual(data.problems.map((p: any) => p.field), ["patterns[0].id"]);
 });
 
-test("the builder can propose a Pattern group; it is validated, pending, and written only on accept", async () => {
+test("a Pattern group Proposal is validated, pending, and written only on accept (the Builder no longer makes it, see roles-and-contract 11)", async () => {
   const dir = await open("hexagonal-clean");
   await editArchitecture(dir, (doc) => delete doc.patterns);
   const group = { id: "hex", name: "Hexagonal shop", kind: "hexagonal", roles: [{ node: "core", role: "domain" }, { node: "store", role: "infrastructure" }], rationale: why };
@@ -171,7 +171,7 @@ test("the builder can propose a Pattern group; it is validated, pending, and wri
   };
 
   const listed = await run([], true);
-  assert.ok(listed && told[0].split(",").includes("propose_pattern_group"));
+  assert.ok(listed && !told[0].split(",").includes("propose_pattern_group"), "the Builder is not offered it");
 
   await run([
     { name: "propose_pattern_group", arguments: { group: { ...group, kind: "spaghetti" } } },

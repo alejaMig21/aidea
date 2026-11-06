@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Adapter, AgentEvent } from "../src/core/types.ts";
 import { startCore } from "../src/core/server.ts";
-import { fixture, startTestCore } from "./helpers.ts";
+import { fixture, startTestCore, viaCore } from "./helpers.ts";
 
 let t: Awaited<ReturnType<typeof startTestCore>>;
 const scratch: string[] = [];
@@ -134,6 +134,7 @@ test("layers without parent or relations keep their layout and carry no boundari
 
 // The builder is a stand-in that makes the given tool calls over MCP, as in test/proposals.test.ts.
 let script: { name: string; arguments: unknown }[] = [];
+let theCore: any; // the core of the test that is running: the stand-in Builder makes its Proposals through it
 const asBuilder: Adapter = {
   options: { modes: [], models: [] },
   run: async function* ({ permission }): AsyncGenerator<AgentEvent> {
@@ -142,13 +143,13 @@ const asBuilder: Adapter = {
     const rpc = (method: string, params: unknown) =>
       fetch(url, { method: "POST", headers: { "content-type": "application/json", accept: "application/json, text/event-stream" }, body: JSON.stringify({ jsonrpc: "2.0", id: ++id, method, params }) }).then((r) => r.json());
     await rpc("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "fake", version: "0" } });
-    for (const call of script) yield { type: "text", text: JSON.stringify(await rpc("tools/call", call)) };
+    for (const call of script) yield { type: "text", text: JSON.stringify(await viaCore(theCore, url, rpc, call)) };
   },
 };
 
 test("a Proposal that adds a child previews inside the boundary, and one that adds a relation previews its arrow", async () => {
   const dir = await open(nodes);
-  const core = await startCore({ port: 0, adapter: asBuilder });
+  const core = (theCore = await startCore({ port: 0, adapter: asBuilder }));
   try {
     const cache = { id: "cache", title: "Cache", technology: "Redis", kind: "container", parent: "studio", description: "Keeps quotes fast.", rationale: why };
     const relations = [...nodes[2].relations!, { to: "cache", label: "Invalidates", technology: "Redis protocol" }];

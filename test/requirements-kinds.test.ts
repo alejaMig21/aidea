@@ -6,7 +6,8 @@ import { join } from "node:path";
 import type { Adapter, AgentEvent } from "../src/core/types.ts";
 import { loadAuthored } from "../src/core/authored.ts";
 import { startCore } from "../src/core/server.ts";
-import { fixture } from "./helpers.ts";
+import { fixture, viaCore } from "./helpers.ts";
+import { NODE_HELP } from "../src/core/tutor-authoring.ts";
 
 // A stand-in for the builder: it makes these tool calls over MCP and tells what each answered, plus the tool descriptions.
 let script: { name: string; arguments?: unknown }[] = [];
@@ -27,7 +28,7 @@ const asBuilder: Adapter = {
     const listed = await rpc("tools/list", {});
     descriptions = listed.result.tools.map((t: { description: string }) => t.description).join("\n");
     for (const call of script) {
-      const reply = await rpc("tools/call", call);
+      const reply = await viaCore(core, url, rpc, call);
       const result = reply.result ?? { isError: true, content: [{ text: JSON.stringify(reply.error) }] };
       seen.push({ isError: !!result.isError, text: result.content[0].text });
       yield { type: "text", text: result.content[0].text };
@@ -155,8 +156,6 @@ test("changing a functional requirement into a non-functional one needs its new 
   assert.match(told[0].text, /"statement"/);
 });
 
-test("the builder's tool descriptions mention the kinds and their fields", async () => {
-  const dir = await freshProject();
-  await builderCalls(dir, [{ name: "list_proposals" }]);
-  for (const word of ["kind", "non-functional", "criteria", "statement", "quality", "measure"]) assert.ok(descriptions.includes(word), word);
+test("the help the Tutor gets for a Node mentions the kinds and their fields", () => {
+  for (const word of ["kind", "non-functional", "criteria", "statement", "quality", "measure"]) assert.ok(NODE_HELP.includes(word), word);
 });

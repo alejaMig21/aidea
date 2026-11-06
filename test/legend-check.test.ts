@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import type { Adapter, AgentEvent } from "../src/core/types.ts";
 import { startCore } from "../src/core/server.ts";
-import { fixture } from "./helpers.ts";
+import { fixture, viaCore } from "./helpers.ts";
 
 // Opens the legend-check Project (one example of everything each layer can draw) in a headless Chrome, shows the five layers and
 // compares each layer's "?" legend with what was really drawn, both ways. The page side is legend-check-page.js.
@@ -69,7 +69,7 @@ const proposer: Adapter = {
     await rpc("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "fake", version: "0" } });
     const cache = { id: "cache", title: "Cache", technology: "Redis", rationale: { why: "Quotes are read far more often than written.", rejected: [] } };
     for (const call of [{ name: "propose_add_node", arguments: { layer: "architecture", node: cache } }, { name: "propose_remove_node", arguments: { layer: "architecture", id: "plan" } }]) {
-      await rpc("tools/call", call);
+      await viaCore(core, url, rpc, call);
     }
     yield { type: "text", text: "proposed" };
   },

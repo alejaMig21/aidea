@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Adapter, AgentEvent } from "../src/core/types.ts";
 import { startCore } from "../src/core/server.ts";
+import { viaCore } from "./helpers.ts";
 
 // A stand-in for Claude Code that makes one MCP tool call, as in proposals.test.ts.
 let call: { name: string; arguments: unknown } | null = null;
@@ -19,7 +20,7 @@ const asBuilder: Adapter = {
         body: JSON.stringify({ jsonrpc: "2.0", id: 2, method, params }),
       }).then((r) => r.json());
     await rpc("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "fake", version: "0" } });
-    if (call) yield { type: "text", text: JSON.stringify(await rpc("tools/call", call)) };
+    if (call) yield { type: "text", text: JSON.stringify(await viaCore(core, url, rpc, call)) };
   },
 };
 

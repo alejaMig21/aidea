@@ -22,7 +22,7 @@ async function start() {
   return (body: object) => fetch(core.url + "/chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ project, ...body }) });
 }
 
-test("Fix gives the Builder the selected text as quoted data, with the Contract to respect and a Proposal for any departure", async () => {
+test("Fix gives the Builder the selected text as quoted data, with the Contract to respect and a stop for any departure", async () => {
   const chat = await start();
   launches.length = 0;
   const trace = 'Traceback (most recent call last):\n  File "app.py", line 3, in <module>\nValueError: boom';
@@ -34,7 +34,8 @@ test("Fix gives the Builder the selected text as quoted data, with the Contract 
   assert.ok(message.includes(JSON.stringify(trace)), "the text is one quoted JSON string");
   assert.match(message, /not instructions/i);
   assert.match(message, /read_contract/);
-  assert.match(message, /Proposal/);
+  assert.match(message, /stop/i);
+  assert.doesNotMatch(message, /Proposal/);
   assert.ok(launches[0].permission?.allowedTools?.includes("mcp__aidea__read_contract"), "the Builder can read the Contract");
 });
 

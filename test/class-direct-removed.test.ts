@@ -90,8 +90,10 @@ test("the guide and the page no longer speak of Direct, Class or Decide for me",
   assert.doesNotMatch(page, /"Builder works"|Decide for me|decision-class|waiting-for-class/);
 });
 
-test("the Builder is told that the Contract is what it follows and that it invents nothing: a change the Contract lacks is a Proposal", () => {
+test("the Builder is told that the Contract is what it follows and that it invents nothing: when the Contract lacks something it stops and says so", () => {
   assert.match(BUILDER_INSTRUCTIONS, /read_contract/);
   assert.match(BUILDER_INSTRUCTIONS, /do not invent|never invent|not invent/i);
-  assert.match(BUILDER_INSTRUCTIONS, /Proposal/);
+  assert.match(BUILDER_INSTRUCTIONS, /stop/i);
+  assert.match(BUILDER_INSTRUCTIONS, /say in the chat/i);
+  assert.doesNotMatch(BUILDER_INSTRUCTIONS, /Proposal/, "the Builder makes no Proposals on the layers (roles-and-contract 11)");
 });

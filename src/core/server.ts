@@ -149,6 +149,9 @@ export async function startCore({ port, adapter: defaultAdapter = createClaudeAd
     adapter,
     plugins: core.plugins, // the kernel's plugin host, for embedding code and tests
     quarantine: core.quarantine,
+    permissions: core.permissions, // the conversations, the open Projects and the Proposals, for tests that act as an agent
+    projects: core.projects,
+    proposals: core.proposals,
     close: () => server.close(),
   };
 }

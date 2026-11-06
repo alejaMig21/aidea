@@ -6,7 +6,7 @@ import { join } from "node:path";
 import type { Adapter, AgentEvent } from "../src/core/types.ts";
 import { loadAuthored } from "../src/core/authored.ts";
 import { startCore } from "../src/core/server.ts";
-import { fixture } from "./helpers.ts";
+import { fixture, viaCore } from "./helpers.ts";
 
 type Call = { name: string; arguments?: unknown };
 type Seen = { isError: boolean; text: string };
@@ -32,7 +32,7 @@ const asBuilder: Adapter = {
       yield { type: "text", text: listed.result.tools.map((t: { name: string }) => t.name).join(",") };
     }
     for (const call of script) {
-      const reply = await rpc("tools/call", call);
+      const reply = await viaCore(core, url, rpc, call);
       const result = reply.result ?? { isError: true, content: [{ text: JSON.stringify(reply.error) }] };
       seen.push({ isError: !!result.isError, text: result.content[0].text });
       yield { type: "text", text: result.content[0].text };
@@ -87,11 +87,12 @@ const cache = {
 };
 const addCache = { name: "propose_add_node", arguments: { layer: "architecture", node: cache } };
 
-test("the builder's tools are offered next to the permission tool", async () => {
+test("the builder's tools are offered next to the permission tool, and none of them proposes changes to the layers", async () => {
   const dir = await freshProject();
   const { events } = await builderCalls(dir, [], true);
   const names = events.find((e) => e.type === "text")!.text.split(",");
-  for (const tool of ["approve", "propose_add_node", "propose_update_node", "propose_remove_node", "list_proposals"]) assert.ok(names.includes(tool), tool);
+  for (const tool of ["approve", "list_proposals"]) assert.ok(names.includes(tool), tool);
+  for (const tool of ["propose_add_node", "propose_update_node", "propose_remove_node", "propose_pattern_group"]) assert.ok(!names.includes(tool), tool);
 });
 
 test("adding a Node produces a pending Proposal and changes no file", async () => {

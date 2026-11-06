@@ -1,4 +1,4 @@
-// Proposals: changes the builder suggests to the authored layers, highlighted on their layer until the person decides.
+// Proposals: changes the Tutor suggests to the authored layers, highlighted on their layer until the person decides.
 // The core says what is pending and where each Proposal is drawn; this draws it and sends the person's decision.
 const proposalStyle = document.createElement("style");
 proposalStyle.textContent = `
@@ -96,7 +96,7 @@ function proposalRefusedParts(event, who) {
   return [`${who} tried to add "${event.nodeId}", but ${why}`, ...(open ? [open] : [])];
 }
 
-const proposalNoKey = "This window cannot decide this proposal any more, because the page was reloaded or the proposal was made in another window. Ask the builder for the change again here.";
+const proposalNoKey = "This window cannot decide this proposal any more, because the page was reloaded or the proposal was made in another window. Ask the Tutor for the change again here.";
 // The details of one Proposal in the right-hand panel, with the person's decision.
 function showProposal(p) {
   const old = authoredData?.layers[p.layer]?.nodes.find((n) => n.id === p.nodeId);
